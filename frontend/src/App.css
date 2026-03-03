@@ -1,0 +1,167 @@
+.app-root {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
+  background: radial-gradient(circle at top left, #0f172a, #020617);
+  color: #e5e7eb;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.app-sidebar {
+  background: linear-gradient(to bottom, #020617, #0b1120);
+  border-right: 1px solid rgba(148, 163, 184, 0.2);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.app-logo {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.app-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.app-nav a {
+  color: #e5e7eb;
+  text-decoration: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  transition: background 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+.app-nav a:hover {
+  background: rgba(37, 99, 235, 0.15);
+  color: #bfdbfe;
+  transform: translateX(2px);
+}
+
+.app-main {
+  padding: 1.5rem 2rem;
+}
+
+.card {
+  background: rgba(15, 23, 42, 0.9);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.kpi-card {
+  background: radial-gradient(circle at top left, #1e293b, #020617);
+  border-radius: 0.9rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.kpi-card h3 {
+  font-size: 0.9rem;
+  color: #9ca3af;
+  margin-bottom: 0.35rem;
+}
+
+.kpi-card p {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.data-table th,
+.data-table td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid rgba(51, 65, 85, 0.9);
+  text-align: left;
+}
+
+.data-table th {
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.form-grid input,
+.form-grid select {
+  border-radius: 0.5rem;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  padding: 0.35rem 0.5rem;
+  background: rgba(15, 23, 42, 0.8);
+  color: #e5e7eb;
+}
+
+.form-full-width {
+  grid-column: 1 / -1;
+}
+
+.form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+button {
+  background: linear-gradient(to right, #2563eb, #4f46e5);
+  color: white;
+  border: none;
+  border-radius: 999px;
+  padding: 0.45rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(37, 99, 235, 0.5);
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 40px rgba(37, 99, 235, 0.7);
+}
+
+@media (max-width: 768px) {
+  .app-root {
+    grid-template-columns: 1fr;
+  }
+
+  .app-sidebar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
