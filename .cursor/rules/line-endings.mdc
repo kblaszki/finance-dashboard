@@ -1,0 +1,10 @@
+---
+description: Use LF line endings for all text files in this repository.
+alwaysApply: true
+---
+
+# Line endings (LF)
+
+- Always use **LF** (`\n`), never **CRLF** (`\r\n`), when creating or editing files.
+- Do not change line endings to CRLF, even on Windows.
+- Project enforcement: `.editorconfig` (`end_of_line = lf`) and `.gitattributes` (`eol=lf`).

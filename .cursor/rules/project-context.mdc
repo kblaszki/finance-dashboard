@@ -27,6 +27,10 @@ After changing models in `backend/prisma/schema.prisma`:
 cd backend && npx prisma migrate dev --name <migration_description>
 ```
 
+## Line endings
+
+- **LF only** — see [line-endings.mdc](mdc:.cursor/rules/line-endings.mdc), `.editorconfig`, `.gitattributes`.
+
 ## Code changes
 
 - Minimal diff; no refactors outside the task scope (see golden-rule).
