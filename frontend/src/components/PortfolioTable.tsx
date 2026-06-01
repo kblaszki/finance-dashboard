@@ -25,40 +25,41 @@ export function PortfolioTable() {
 
   return (
     <div className="card">
-      <h2>Portfel inwestycyjny</h2>
       {loading ? (
-        <p>Ładowanie...</p>
+        <p className="loading-state">Ładowanie...</p>
       ) : (
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Symbol</th>
-              <th>Ilość</th>
-              <th>Cena zakupu</th>
-              <th>Aktualna cena</th>
-              <th>Waluta</th>
-              <th>Wartość (wybrana)</th>
-              <th>Kategoria</th>
-            </tr>
-          </thead>
-          <tbody>
-            {positions.map((p) => (
-              <tr key={p.id}>
-                <td>{p.symbol}</td>
-                <td>{p.quantity}</td>
-                <td>{formatMoney(p.buyPrice, p.currency)}</td>
-                <td>{formatMoney(p.currentPrice, p.currency)}</td>
-                <td>{p.currency}</td>
-                <td>
-                  {p.positionValueConverted != null && p.convertedCurrency
-                    ? formatMoney(p.positionValueConverted, p.convertedCurrency)
-                    : '—'}
-                </td>
-                <td>{p.category}</td>
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Symbol</th>
+                <th>Ilość</th>
+                <th>Cena zakupu</th>
+                <th>Aktualna cena</th>
+                <th>Waluta</th>
+                <th>Wartość (wybrana)</th>
+                <th>Kategoria</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {positions.map((p) => (
+                <tr key={p.id}>
+                  <td>{p.symbol}</td>
+                  <td>{p.quantity}</td>
+                  <td>{formatMoney(p.buyPrice, p.currency)}</td>
+                  <td>{formatMoney(p.currentPrice, p.currency)}</td>
+                  <td>{p.currency}</td>
+                  <td>
+                    {p.positionValueConverted != null && p.convertedCurrency
+                      ? formatMoney(p.positionValueConverted, p.convertedCurrency)
+                      : '—'}
+                  </td>
+                  <td>{p.category}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   )

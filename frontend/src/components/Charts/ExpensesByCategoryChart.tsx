@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { apiClient } from '../../api/client'
 import { Pie, PieChart, ResponsiveContainer, Tooltip, Cell } from 'recharts'
 import { useCurrency } from '../../state/currency'
+import { useTheme } from '../../state/theme'
 import { formatMoney } from '../../utils/format'
 
 interface ExpenseByCategory {
@@ -11,15 +12,33 @@ interface ExpenseByCategory {
   fxAsOf?: string
 }
 
-const COLORS = ['#2563eb', '#16a34a', '#f97316', '#ec4899', '#8b5cf6', '#0ea5e9']
+const CHART_COLOR_KEYS = [
+  '--chart-1',
+  '--chart-2',
+  '--chart-3',
+  '--chart-4',
+  '--chart-5',
+  '--chart-6',
+] as const
+
+function getChartColors(): string[] {
+  const styles = getComputedStyle(document.documentElement)
+  return CHART_COLOR_KEYS.map((key) => styles.getPropertyValue(key).trim() || '#2563eb')
+}
 
 export function ExpensesByCategoryChart() {
   const [data, setData] = useState<ExpenseByCategory[]>([])
   const { currency } = useCurrency()
+  const { theme } = useTheme()
+  const [colors, setColors] = useState(getChartColors)
 
   useEffect(() => {
     void load()
   }, [currency])
+
+  useEffect(() => {
+    setColors(getChartColors())
+  }, [theme])
 
   async function load() {
     const response = await apiClient.get<ExpenseByCategory[]>(
@@ -28,8 +47,20 @@ export function ExpensesByCategoryChart() {
     setData(response)
   }
 
+  const tooltipStyle = useMemo(
+    () => ({
+      backgroundColor: getComputedStyle(document.documentElement)
+        .getPropertyValue('--color-surface')
+        .trim(),
+      border: `1px solid ${getComputedStyle(document.documentElement).getPropertyValue('--color-border').trim()}`,
+      borderRadius: '0.5rem',
+      color: getComputedStyle(document.documentElement).getPropertyValue('--color-text').trim(),
+    }),
+    [theme],
+  )
+
   if (!data.length) {
-    return <p>Brak danych o wydatkach.</p>
+    return <p className="empty-state">Brak danych o wydatkach.</p>
   }
 
   return (
@@ -44,16 +75,18 @@ export function ExpensesByCategoryChart() {
             cx="50%"
             cy="50%"
             outerRadius={100}
-            label
+            label={{ fill: 'var(--color-text)' }}
           >
             {data.map((entry, index) => (
-              <Cell key={entry.category} fill={COLORS[index % COLORS.length]} />
+              <Cell key={entry.category} fill={colors[index % colors.length]} />
             ))}
           </Pie>
-          <Tooltip formatter={(value) => formatMoney(Number(value), currency)} />
+          <Tooltip
+            formatter={(value) => formatMoney(Number(value), currency)}
+            contentStyle={tooltipStyle}
+          />
         </PieChart>
       </ResponsiveContainer>
     </div>
   )
 }
-

@@ -46,7 +46,6 @@ export function TransactionTable() {
 
   return (
     <div className="card">
-      <h2>Transakcje</h2>
       <form className="form-grid" onSubmit={handleSubmit}>
         <label>
           Typ
@@ -104,43 +103,47 @@ export function TransactionTable() {
           />
         </label>
         <div className="form-actions">
-          <button type="submit">Dodaj transakcję</button>
+          <button type="submit" className="btn-primary">
+            Dodaj transakcję
+          </button>
         </div>
       </form>
 
       {loading ? (
-        <p>Ładowanie...</p>
+        <p className="loading-state">Ładowanie...</p>
       ) : (
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Data</th>
-              <th>Typ</th>
-              <th>Kategoria</th>
-              <th>Kwota</th>
-              <th>Waluta</th>
-              <th>Kwota (wybrana)</th>
-              <th>Opis</th>
-            </tr>
-          </thead>
-          <tbody>
-            {transactions.map((t) => (
-              <tr key={t.id}>
-                <td>{new Date(t.date).toLocaleDateString()}</td>
-                <td>{t.type === 'INCOME' ? 'Przychód' : 'Wydatek'}</td>
-                <td>{t.category}</td>
-                <td>{formatMoney(t.amount, t.currency)}</td>
-                <td>{t.currency}</td>
-                <td>
-                  {t.amountConverted != null && t.convertedCurrency
-                    ? formatMoney(t.amountConverted, t.convertedCurrency)
-                    : '—'}
-                </td>
-                <td>{t.description}</td>
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Typ</th>
+                <th>Kategoria</th>
+                <th>Kwota</th>
+                <th>Waluta</th>
+                <th>Kwota (wybrana)</th>
+                <th>Opis</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {transactions.map((t) => (
+                <tr key={t.id}>
+                  <td>{new Date(t.date).toLocaleDateString()}</td>
+                  <td>{t.type === 'INCOME' ? 'Przychód' : 'Wydatek'}</td>
+                  <td>{t.category}</td>
+                  <td>{formatMoney(t.amount, t.currency)}</td>
+                  <td>{t.currency}</td>
+                  <td>
+                    {t.amountConverted != null && t.convertedCurrency
+                      ? formatMoney(t.amountConverted, t.convertedCurrency)
+                      : '—'}
+                  </td>
+                  <td>{t.description}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   )

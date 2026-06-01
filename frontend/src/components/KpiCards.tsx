@@ -29,7 +29,7 @@ export function KpiCards() {
   }
 
   if (!stats) {
-    return <p>Ładowanie KPI...</p>
+    return <p className="loading-state">Ładowanie KPI...</p>
   }
 
   const income = Number(stats.income ?? 0)
