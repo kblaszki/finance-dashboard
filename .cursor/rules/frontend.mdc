@@ -1,0 +1,13 @@
+---
+description: Frontend React/Vite — UI and API client conventions for finance-dashboard.
+globs: frontend/**
+alwaysApply: false
+---
+
+# Frontend
+
+- Functional components + TypeScript; routing in `frontend/src/App.tsx` (react-router-dom).
+- HTTP calls via `frontend/src/api/` (`client.ts`, `transactionsApi.ts`, `portfolioApi.ts`).
+- Display currency: context in `frontend/src/state/currency.tsx`.
+- Formatting: `frontend/src/utils/format.ts`.
+- Styles: existing classes in `App.css` / `index.css` — match the current UI layout.

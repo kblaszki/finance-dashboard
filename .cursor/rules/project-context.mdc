@@ -1,0 +1,34 @@
+---
+description: Finance Dashboard — monorepo layout, commands, and conventions (complements golden-rule).
+alwaysApply: true
+---
+
+# Finance Dashboard — project context
+
+Behavioral rules: [golden-rule.mdc](mdc:.cursor/rules/golden-rule.mdc). Below is repository-specific context only.
+
+## Layout
+
+- `backend/` — Express + Prisma + SQLite (`prisma/schema.prisma`, `src/app.ts`, `src/fx.ts`)
+- `frontend/` — Vite + React + TypeScript (`src/components/`, `src/api/`, `src/state/`)
+- Repository root: `npm run dev`, `npm run build`
+
+## Running locally
+
+- Backend: `http://localhost:4000` (`cd backend && npm run dev`)
+- Frontend: `http://localhost:5173` (`cd frontend && npm run dev`)
+- Both: `npm run dev` from the repository root
+
+## Database
+
+After changing models in `backend/prisma/schema.prisma`:
+
+```bash
+cd backend && npx prisma migrate dev --name <migration_description>
+```
+
+## Code changes
+
+- Minimal diff; no refactors outside the task scope (see golden-rule).
+- New endpoints should match existing handlers in `app.ts`.
+- New views/components under `frontend/src/components/`; API client code under `frontend/src/api/`.
