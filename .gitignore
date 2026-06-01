@@ -8,6 +8,7 @@ pnpm-debug.log*
 ## Env / secrets
 .env
 .env.*
+!.env.example
 
 ## Builds / caches
 dist/
