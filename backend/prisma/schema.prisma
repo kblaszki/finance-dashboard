@@ -10,8 +10,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id                 Int                 @id @default(autoincrement())
+  email              String              @unique
+  passwordHash       String
+  createdAt          DateTime            @default(now())
+  transactions       Transaction[]
+  portfolioPositions PortfolioPosition[]
+  budgets            Budget[]
+}
+
 model Transaction {
-  id          Int       @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   type        String
   amount      Decimal
   currency    String
@@ -22,10 +34,24 @@ model Transaction {
 
 model PortfolioPosition {
   id           Int      @id @default(autoincrement())
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   symbol       String
   quantity     Decimal
   buyPrice     Decimal
   currentPrice Decimal
   currency     String
   category     String
+}
+
+model Budget {
+  id          Int     @id @default(autoincrement())
+  userId      Int
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  yearMonth   String
+  category    String?
+  limitAmount Decimal
+  currency    String
+
+  @@unique([userId, yearMonth, category])
 }

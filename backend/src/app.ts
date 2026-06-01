@@ -3,6 +3,15 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import { convertAmount, getFxRatesPlnPerUnit, getMissingCurrencies } from "./fx";
+import {
+  AuthedRequest,
+  hashPassword,
+  normalizeEmail,
+  requireAuth,
+  signToken,
+  validatePassword,
+  verifyPassword,
+} from "./auth";
 
 dotenv.config();
 
@@ -21,23 +30,153 @@ function toNumber(v: unknown): number {
   if (typeof v === "number") return v;
   if (typeof v === "string") return Number(v);
   if (v && typeof v === "object") {
-    const anyV = v as any;
+    const anyV = v as { toNumber?: () => number; toString?: () => string };
     if (typeof anyV.toNumber === "function") return anyV.toNumber();
     if (typeof anyV.toString === "function") return Number(anyV.toString());
   }
   return Number(v);
 }
 
+function budgetCategoryToDb(category: unknown): string {
+  const c = String(category ?? "").trim();
+  return c || "";
+}
+
+function budgetCategoryFromDb(category: string | null): string | null {
+  if (!category) return null;
+  return category;
+}
+
+function parseYearMonth(value: unknown): string | null {
+  const ym = String(value ?? "").trim();
+  if (!/^\d{4}-\d{2}$/.test(ym)) return null;
+  const [y, m] = ym.split("-").map(Number);
+  if (m < 1 || m > 12) return null;
+  return ym;
+}
+
+function monthDateRange(yearMonth: string): { start: Date; end: Date } {
+  const [y, m] = yearMonth.split("-").map(Number);
+  const start = new Date(Date.UTC(y, m - 1, 1, 0, 0, 0, 0));
+  const end = new Date(Date.UTC(y, m, 0, 23, 59, 59, 999));
+  return { start, end };
+}
+
+function serializeBudget(b: {
+  id: number;
+  userId: number;
+  yearMonth: string;
+  category: string | null;
+  limitAmount: unknown;
+  currency: string;
+}) {
+  return {
+    id: b.id,
+    userId: b.userId,
+    yearMonth: b.yearMonth,
+    category: budgetCategoryFromDb(b.category),
+    limitAmount: toNumber(b.limitAmount),
+    currency: normalizeCurrency(b.currency),
+  };
+}
+
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
-app.get("/api/transactions", async (req, res) => {
+app.post("/api/auth/register", async (req, res) => {
   try {
+    const email = normalizeEmail(req.body.email);
+    const passwordError = validatePassword(req.body.password);
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+    if (passwordError) {
+      return res.status(400).json({ error: passwordError });
+    }
+
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      return res.status(409).json({ error: "Email already registered" });
+    }
+
+    const passwordHash = await hashPassword(String(req.body.password));
+    const user = await prisma.user.create({
+      data: { email, passwordHash },
+    });
+
+    const token = signToken(user.id);
+    res.status(201).json({
+      token,
+      user: { id: user.id, email: user.email },
+    });
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    if (error instanceof Error && error.message.includes("JWT_SECRET")) {
+      return res.status(500).json({ error: "Server misconfigured" });
+    }
+    res.status(500).json({ error: "Failed to register" });
+  }
+});
+
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const email = normalizeEmail(req.body.email);
+    const password = String(req.body.password ?? "");
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required" });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user || !(await verifyPassword(password, user.passwordHash))) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
+
+    const token = signToken(user.id);
+    res.json({
+      token,
+      user: { id: user.id, email: user.email },
+    });
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    if (error instanceof Error && error.message.includes("JWT_SECRET")) {
+      return res.status(500).json({ error: "Server misconfigured" });
+    }
+    res.status(500).json({ error: "Failed to login" });
+  }
+});
+
+app.get("/api/auth/me", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.userId! },
+      select: { id: true, email: true },
+    });
+    if (!user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    res.json(user);
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch user" });
+  }
+});
+
+app.get("/api/transactions", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
     const { from, to, type, category, currency } = req.query;
     const displayCurrency = normalizeCurrency(currency);
 
-    const where: any = {};
+    const where: {
+      userId: number;
+      date?: { gte?: Date; lte?: Date };
+      type?: string;
+      category?: string;
+    } = { userId };
 
     if (from || to) {
       where.date = {};
@@ -109,8 +248,9 @@ app.get("/api/transactions", async (req, res) => {
   }
 });
 
-app.post("/api/transactions", async (req, res) => {
+app.post("/api/transactions", requireAuth, async (req: AuthedRequest, res) => {
   try {
+    const userId = req.userId!;
     const { type, amount, currency, category, date, description } = req.body;
 
     if (!type || !amount || !currency || !category || !date) {
@@ -119,6 +259,7 @@ app.post("/api/transactions", async (req, res) => {
 
     const created = await prisma.transaction.create({
       data: {
+        userId,
         type,
         amount,
         currency: normalizeCurrency(currency),
@@ -140,9 +281,15 @@ app.post("/api/transactions", async (req, res) => {
   }
 });
 
-app.put("/api/transactions/:id", async (req, res) => {
+app.put("/api/transactions/:id", requireAuth, async (req: AuthedRequest, res) => {
   try {
+    const userId = req.userId!;
     const id = Number(req.params.id);
+    const existing = await prisma.transaction.findFirst({ where: { id, userId } });
+    if (!existing) {
+      return res.status(404).json({ error: "Transaction not found" });
+    }
+
     const { type, amount, currency, category, date, description } = req.body;
 
     const updated = await prisma.transaction.update({
@@ -169,10 +316,14 @@ app.put("/api/transactions/:id", async (req, res) => {
   }
 });
 
-app.delete("/api/transactions/:id", async (req, res) => {
+app.delete("/api/transactions/:id", requireAuth, async (req: AuthedRequest, res) => {
   try {
+    const userId = req.userId!;
     const id = Number(req.params.id);
-    await prisma.transaction.delete({ where: { id } });
+    const result = await prisma.transaction.deleteMany({ where: { id, userId } });
+    if (result.count === 0) {
+      return res.status(404).json({ error: "Transaction not found" });
+    }
     res.status(204).send();
   } catch (error) {
     // eslint-disable-next-line no-console
@@ -181,12 +332,12 @@ app.delete("/api/transactions/:id", async (req, res) => {
   }
 });
 
-app.get("/api/portfolio", async (_req, res) => {
+app.get("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
   try {
-    const reqAny = _req as any;
-    const displayCurrency = normalizeCurrency(reqAny?.query?.currency);
+    const userId = req.userId!;
+    const displayCurrency = normalizeCurrency(req.query.currency);
 
-    const positions = await prisma.portfolioPosition.findMany();
+    const positions = await prisma.portfolioPosition.findMany({ where: { userId } });
 
     const normalized = positions.map((p) => ({
       ...p,
@@ -219,9 +370,19 @@ app.get("/api/portfolio", async (_req, res) => {
       normalized.map((p) => {
         const fromCcy = p.currency;
         const buyPriceConverted = convertAmount(p.buyPrice, fromCcy, displayCurrency, plnPerUnit);
-        const currentPriceConverted = convertAmount(p.currentPrice, fromCcy, displayCurrency, plnPerUnit);
+        const currentPriceConverted = convertAmount(
+          p.currentPrice,
+          fromCcy,
+          displayCurrency,
+          plnPerUnit,
+        );
         const positionValue = p.quantity * p.currentPrice;
-        const positionValueConverted = convertAmount(positionValue, fromCcy, displayCurrency, plnPerUnit);
+        const positionValueConverted = convertAmount(
+          positionValue,
+          fromCcy,
+          displayCurrency,
+          plnPerUnit,
+        );
         return {
           ...p,
           buyPriceConverted,
@@ -239,16 +400,10 @@ app.get("/api/portfolio", async (_req, res) => {
   }
 });
 
-app.post("/api/portfolio", async (req, res) => {
+app.post("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
   try {
-    const {
-      symbol,
-      quantity,
-      buyPrice,
-      currentPrice,
-      currency,
-      category,
-    } = req.body;
+    const userId = req.userId!;
+    const { symbol, quantity, buyPrice, currentPrice, currency, category } = req.body;
 
     if (!symbol || !quantity || !buyPrice || !currentPrice || !currency) {
       return res.status(400).json({ error: "Missing required fields" });
@@ -256,6 +411,7 @@ app.post("/api/portfolio", async (req, res) => {
 
     const created = await prisma.portfolioPosition.create({
       data: {
+        userId,
         symbol,
         quantity,
         buyPrice,
@@ -279,17 +435,16 @@ app.post("/api/portfolio", async (req, res) => {
   }
 });
 
-app.put("/api/portfolio/:id", async (req, res) => {
+app.put("/api/portfolio/:id", requireAuth, async (req: AuthedRequest, res) => {
   try {
+    const userId = req.userId!;
     const id = Number(req.params.id);
-    const {
-      symbol,
-      quantity,
-      buyPrice,
-      currentPrice,
-      currency,
-      category,
-    } = req.body;
+    const existing = await prisma.portfolioPosition.findFirst({ where: { id, userId } });
+    if (!existing) {
+      return res.status(404).json({ error: "Portfolio position not found" });
+    }
+
+    const { symbol, quantity, buyPrice, currentPrice, currency, category } = req.body;
 
     const updated = await prisma.portfolioPosition.update({
       where: { id },
@@ -317,10 +472,14 @@ app.put("/api/portfolio/:id", async (req, res) => {
   }
 });
 
-app.delete("/api/portfolio/:id", async (req, res) => {
+app.delete("/api/portfolio/:id", requireAuth, async (req: AuthedRequest, res) => {
   try {
+    const userId = req.userId!;
     const id = Number(req.params.id);
-    await prisma.portfolioPosition.delete({ where: { id } });
+    const result = await prisma.portfolioPosition.deleteMany({ where: { id, userId } });
+    if (result.count === 0) {
+      return res.status(404).json({ error: "Portfolio position not found" });
+    }
     res.status(204).send();
   } catch (error) {
     // eslint-disable-next-line no-console
@@ -329,14 +488,139 @@ app.delete("/api/portfolio/:id", async (req, res) => {
   }
 });
 
-app.get("/api/stats/summary", async (req, res) => {
+app.get("/api/budgets", requireAuth, async (req: AuthedRequest, res) => {
   try {
+    const userId = req.userId!;
+    const yearMonth = req.query.yearMonth ? String(req.query.yearMonth) : undefined;
+    const where: { userId: number; yearMonth?: string } = { userId };
+    if (yearMonth) {
+      if (!parseYearMonth(yearMonth)) {
+        return res.status(400).json({ error: "Invalid yearMonth format (YYYY-MM)" });
+      }
+      where.yearMonth = yearMonth;
+    }
+
+    const budgets = await prisma.budget.findMany({
+      where,
+      orderBy: [{ yearMonth: "desc" }, { category: "asc" }],
+    });
+
+    res.json(budgets.map(serializeBudget));
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch budgets" });
+  }
+});
+
+app.post("/api/budgets", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const yearMonth = parseYearMonth(req.body.yearMonth);
+    const { limitAmount, currency } = req.body;
+    const categoryDb = budgetCategoryToDb(req.body.category);
+
+    if (!yearMonth || limitAmount == null || !currency) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    const created = await prisma.budget.create({
+      data: {
+        userId,
+        yearMonth,
+        category: categoryDb,
+        limitAmount,
+        currency: normalizeCurrency(currency),
+      },
+    });
+
+    res.status(201).json(serializeBudget(created));
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      (error as { code: string }).code === "P2002"
+    ) {
+      return res.status(409).json({ error: "Budget already exists for this month and category" });
+    }
+    res.status(500).json({ error: "Failed to create budget" });
+  }
+});
+
+app.put("/api/budgets/:id", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const id = Number(req.params.id);
+    const existing = await prisma.budget.findFirst({ where: { id, userId } });
+    if (!existing) {
+      return res.status(404).json({ error: "Budget not found" });
+    }
+
+    const yearMonth =
+      req.body.yearMonth !== undefined ? parseYearMonth(req.body.yearMonth) : existing.yearMonth;
+    if (req.body.yearMonth !== undefined && !yearMonth) {
+      return res.status(400).json({ error: "Invalid yearMonth format (YYYY-MM)" });
+    }
+
+    const categoryDb =
+      req.body.category !== undefined
+        ? budgetCategoryToDb(req.body.category)
+        : existing.category ?? "";
+
+    const updated = await prisma.budget.update({
+      where: { id },
+      data: {
+        yearMonth: yearMonth ?? undefined,
+        category: categoryDb,
+        limitAmount: req.body.limitAmount ?? undefined,
+        currency: req.body.currency ? normalizeCurrency(req.body.currency) : undefined,
+      },
+    });
+
+    res.json(serializeBudget(updated));
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      (error as { code: string }).code === "P2002"
+    ) {
+      return res.status(409).json({ error: "Budget already exists for this month and category" });
+    }
+    res.status(500).json({ error: "Failed to update budget" });
+  }
+});
+
+app.delete("/api/budgets/:id", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const id = Number(req.params.id);
+    const result = await prisma.budget.deleteMany({ where: { id, userId } });
+    if (result.count === 0) {
+      return res.status(404).json({ error: "Budget not found" });
+    }
+    res.status(204).send();
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to delete budget" });
+  }
+});
+
+app.get("/api/stats/summary", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
     const displayCurrency = normalizeCurrency(req.query.currency) || "PLN";
 
     const [transactions, portfolioPositions, txCount, fx] = await Promise.all([
-      prisma.transaction.findMany(),
-      prisma.portfolioPosition.findMany(),
-      prisma.transaction.count(),
+      prisma.transaction.findMany({ where: { userId } }),
+      prisma.portfolioPosition.findMany({ where: { userId } }),
+      prisma.transaction.count({ where: { userId } }),
       getFxRatesPlnPerUnit(),
     ]);
 
@@ -392,11 +676,12 @@ app.get("/api/stats/summary", async (req, res) => {
   }
 });
 
-app.get("/api/stats/expenses-by-category", async (req, res) => {
+app.get("/api/stats/expenses-by-category", requireAuth, async (req: AuthedRequest, res) => {
   try {
+    const userId = req.userId!;
     const displayCurrency = normalizeCurrency(req.query.currency) || "PLN";
     const [expenses, fx] = await Promise.all([
-      prisma.transaction.findMany({ where: { type: "EXPENSE" } }),
+      prisma.transaction.findMany({ where: { userId, type: "EXPENSE" } }),
       getFxRatesPlnPerUnit(),
     ]);
 
@@ -436,6 +721,91 @@ app.get("/api/stats/expenses-by-category", async (req, res) => {
   }
 });
 
+app.get("/api/stats/budget-progress", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const displayCurrency = normalizeCurrency(req.query.currency) || "PLN";
+    const yearMonth =
+      parseYearMonth(req.query.yearMonth) ||
+      `${new Date().getUTCFullYear()}-${String(new Date().getUTCMonth() + 1).padStart(2, "0")}`;
+
+    const [budgets, fx] = await Promise.all([
+      prisma.budget.findMany({ where: { userId, yearMonth } }),
+      getFxRatesPlnPerUnit(),
+    ]);
+
+    if (budgets.length === 0) {
+      res.json([]);
+      return;
+    }
+
+    const { start, end } = monthDateRange(yearMonth);
+    const expenses = await prisma.transaction.findMany({
+      where: {
+        userId,
+        type: "EXPENSE",
+        date: { gte: start, lte: end },
+      },
+    });
+
+    const expenseCurrencies = [
+      ...expenses.map((t) => normalizeCurrency(t.currency)),
+      ...budgets.map((b) => normalizeCurrency(b.currency)),
+      displayCurrency,
+    ];
+    const missing = getMissingCurrencies(expenseCurrencies, fx.plnPerUnit);
+    if (missing.length) {
+      res.status(400).json({
+        error: "Missing FX rates for some currencies",
+        missingCurrencies: missing,
+        fxAsOf: fx.asOf,
+      });
+      return;
+    }
+
+    const progress = budgets.map((b) => {
+      const limitAmount = convertAmount(
+        toNumber(b.limitAmount),
+        normalizeCurrency(b.currency),
+        displayCurrency,
+        fx.plnPerUnit,
+      );
+
+      const categoryFilter = budgetCategoryFromDb(b.category);
+      const relevant = categoryFilter
+        ? expenses.filter((e) => e.category === categoryFilter)
+        : expenses;
+
+      const spent = relevant.reduce((acc, t) => {
+        const amount = toNumber(t.amount);
+        const fromCcy = normalizeCurrency(t.currency);
+        return acc + convertAmount(amount, fromCcy, displayCurrency, fx.plnPerUnit);
+      }, 0);
+
+      const remaining = limitAmount - spent;
+      const percentUsed = limitAmount > 0 ? (spent / limitAmount) * 100 : 0;
+
+      return {
+        id: b.id,
+        yearMonth: b.yearMonth,
+        category: categoryFilter,
+        limitAmount,
+        spent,
+        remaining,
+        percentUsed,
+        currency: displayCurrency,
+        fxAsOf: fx.asOf,
+      };
+    });
+
+    res.json(progress);
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to compute budget progress" });
+  }
+});
+
 app.get("/api/fx/rates", async (_req, res) => {
   try {
     const fx = await getFxRatesPlnPerUnit();
@@ -455,4 +825,3 @@ app.listen(PORT, () => {
   // eslint-disable-next-line no-console
   console.log(`Backend server running on http://localhost:${PORT}`);
 });
-
