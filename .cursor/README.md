@@ -8,8 +8,9 @@
 | [project-context.mdc](rules/project-context.mdc) | Always Apply | Every Agent session |
 | [backend.mdc](rules/backend.mdc) | Apply to files | Files under `backend/**` |
 | [frontend.mdc](rules/frontend.mdc) | Apply to files | Files under `frontend/**` |
+| [markdown.mdc](rules/markdown.mdc) | Apply to files | `**/*.md`, `**/*.mdx` |
 
-`golden-rule.mdc` holds general behavioral guidelines (Karpathy). `project-context.mdc` adds this repository’s context. `backend` and `frontend` rules attach automatically when files from those directories are in context.
+`golden-rule.mdc` holds general behavioral guidelines (Karpathy). `project-context.mdc` adds this repository’s context. `backend` and `frontend` rules attach automatically when files from those directories are in context. `markdown` enforces English for documentation files.
 
 ## Verification
 

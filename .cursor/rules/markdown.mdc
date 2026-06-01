@@ -1,0 +1,13 @@
+---
+description: Write and edit project Markdown documentation in English only.
+globs: **/*.md,**/*.mdx
+alwaysApply: false
+---
+
+# Markdown documentation
+
+- Write all project Markdown in **English**: root `README.md`, `docs/`, `.cursor/README.md`, ADRs, changelogs, and comments in doc files.
+- When translating or updating docs, replace non-English prose; do not leave mixed languages in the same file.
+- Keep code blocks, paths, commands, and identifiers unchanged unless they are explanatory prose.
+- UI copy inside the app (React labels, etc.) is separate; this rule applies to `.md` / `.mdx` documentation only.
+- Match the tone of existing English docs: clear headings, short sections, copy-pasteable commands.
