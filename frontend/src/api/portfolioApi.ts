@@ -29,3 +29,19 @@ export async function fetchPortfolio(opts?: { currency?: string }): Promise<Port
   return apiClient.get<PortfolioPosition[]>(`/api/portfolio${q}`);
 }
 
+export async function createPortfolioPosition(
+  input: PortfolioPositionInput,
+): Promise<PortfolioPosition> {
+  return apiClient.post<PortfolioPosition>("/api/portfolio", input);
+}
+
+export async function updatePortfolioPosition(
+  id: number,
+  input: Partial<PortfolioPositionInput>,
+): Promise<PortfolioPosition> {
+  return apiClient.put<PortfolioPosition>(`/api/portfolio/${id}`, input);
+}
+
+export async function deletePortfolioPosition(id: number): Promise<void> {
+  return apiClient.delete(`/api/portfolio/${id}`);
+}

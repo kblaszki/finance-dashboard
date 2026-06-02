@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { fetchExpensesByCategory } from '../../api/statsApi'
+import { fetchIncomeByCategory } from '../../api/statsApi'
 import type { CategoryAmount } from '../../api/statsApi'
 import { Pie, PieChart, ResponsiveContainer, Tooltip, Cell } from 'recharts'
 import { useCurrency } from '../../state/currency'
@@ -18,10 +18,10 @@ const CHART_COLOR_KEYS = [
 
 function getChartColors(): string[] {
   const styles = getComputedStyle(document.documentElement)
-  return CHART_COLOR_KEYS.map((key) => styles.getPropertyValue(key).trim() || '#2563eb')
+  return CHART_COLOR_KEYS.map((key) => styles.getPropertyValue(key).trim() || '#16a34a')
 }
 
-export function ExpensesByCategoryChart() {
+export function IncomeByCategoryChart() {
   const [data, setData] = useState<CategoryAmount[]>([])
   const { currency } = useCurrency()
   const { range } = usePeriod()
@@ -37,7 +37,7 @@ export function ExpensesByCategoryChart() {
   }, [theme])
 
   async function load() {
-    const response = await fetchExpensesByCategory({
+    const response = await fetchIncomeByCategory({
       currency,
       from: range.from,
       to: range.to,
@@ -60,15 +60,15 @@ export function ExpensesByCategoryChart() {
   if (!data.length) {
     return (
       <div className="card">
-        <h2>Wydatki według kategorii</h2>
-        <p className="empty-state">Brak danych o wydatkach w wybranym okresie.</p>
+        <h2>Przychody według kategorii</h2>
+        <p className="empty-state">Brak danych o przychodach w wybranym okresie.</p>
       </div>
     )
   }
 
   return (
     <div className="card">
-      <h2>Wydatki według kategorii</h2>
+      <h2>Przychody według kategorii</h2>
       <ResponsiveContainer width="100%" height={260}>
         <PieChart>
           <Pie

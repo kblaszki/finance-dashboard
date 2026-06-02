@@ -1,30 +1,24 @@
 import { useEffect, useState } from 'react'
-import { apiClient } from '../api/client'
+import { fetchSummaryStats } from '../api/statsApi'
 import { useCurrency } from '../state/currency'
+import { usePeriod } from '../state/period'
 import { formatMoney } from '../utils/format'
 
-interface SummaryStats {
-  income: number
-  expenses: number
-  balance: number
-  portfolioValue: number
-  transactionsCount: number
-  currency?: string
-  fxAsOf?: string
-}
-
 export function KpiCards() {
-  const [stats, setStats] = useState<SummaryStats | null>(null)
+  const [stats, setStats] = useState<Awaited<ReturnType<typeof fetchSummaryStats>> | null>(null)
   const { currency } = useCurrency()
+  const { range } = usePeriod()
 
   useEffect(() => {
     void load()
-  }, [currency])
+  }, [currency, range.from, range.to])
 
   async function load() {
-    const data = await apiClient.get<SummaryStats>(
-      `/api/stats/summary?currency=${encodeURIComponent(currency)}`,
-    )
+    const data = await fetchSummaryStats({
+      currency,
+      from: range.from,
+      to: range.to,
+    })
     setStats(data)
   }
 
@@ -40,26 +34,25 @@ export function KpiCards() {
   return (
     <div className="kpi-grid">
       <div className="kpi-card">
-        <h3>Przychody</h3>
+        <h3>Przychody (okres)</h3>
         <p>{formatMoney(income, currency)}</p>
       </div>
       <div className="kpi-card">
-        <h3>Wydatki</h3>
+        <h3>Wydatki (okres)</h3>
         <p>{formatMoney(expenses, currency)}</p>
       </div>
       <div className="kpi-card">
-        <h3>Saldo</h3>
+        <h3>Saldo (okres)</h3>
         <p>{formatMoney(balance, currency)}</p>
       </div>
       <div className="kpi-card">
-        <h3>Wartość portfela</h3>
+        <h3>Wartość portfela (dziś)</h3>
         <p>{formatMoney(portfolioValue, currency)}</p>
       </div>
       <div className="kpi-card">
-        <h3>Transakcje (łącznie)</h3>
+        <h3>Transakcje (okres)</h3>
         <p>{stats.transactionsCount}</p>
       </div>
     </div>
   )
 }
-

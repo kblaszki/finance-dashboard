@@ -396,6 +396,104 @@
   border-color: var(--color-negative, #c0392b);
 }
 
+.period-filter h2 {
+  margin: 0 0 var(--space-md);
+}
+
+.period-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  align-items: flex-end;
+}
+
+.period-filter-row label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.period-filter-row select,
+.period-filter-row input {
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+.period-filter-summary {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  padding-bottom: var(--space-xs);
+}
+
+.charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-lg);
+}
+
+.charts-row > .card {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .charts-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-xs) var(--space-sm);
+  font-size: 0.85rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.btn-secondary:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.transaction-edit-row td {
+  background: var(--color-accent-subtle);
+}
+
+.transaction-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+  align-items: flex-end;
+}
+
+.transaction-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.transaction-filters select,
+.transaction-filters input {
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: inherit;
+}
+
 @media (max-width: 1024px) {
   .app-main {
     padding: var(--space-lg);

@@ -4,6 +4,10 @@ import { TransactionTable } from './components/TransactionTable'
 import { PortfolioTable } from './components/PortfolioTable'
 import { KpiCards } from './components/KpiCards'
 import { ExpensesByCategoryChart } from './components/Charts/ExpensesByCategoryChart'
+import { IncomeByCategoryChart } from './components/Charts/IncomeByCategoryChart'
+import { CashFlowChart } from './components/Charts/CashFlowChart'
+import { PeriodFilter } from './components/PeriodFilter'
+import { PeriodProvider } from './state/period'
 import { CurrencySelect } from './components/CurrencySelect'
 import { ThemeToggle } from './components/ThemeToggle'
 import { ProtectedRoute } from './components/ProtectedRoute'
@@ -93,15 +97,22 @@ function AppShell() {
 
 function DashboardPage() {
   return (
-    <div className="page dashboard-page">
-      <h1 className="page-title">Dashboard</h1>
-      <KpiCards />
-      <section className="card">
-        <h2>Budżety (bieżący miesiąc)</h2>
-        <BudgetProgress />
-      </section>
-      <ExpensesByCategoryChart />
-    </div>
+    <PeriodProvider>
+      <div className="page dashboard-page">
+        <h1 className="page-title">Dashboard</h1>
+        <PeriodFilter />
+        <KpiCards />
+        <CashFlowChart />
+        <div className="charts-row">
+          <ExpensesByCategoryChart />
+          <IncomeByCategoryChart />
+        </div>
+        <section className="card">
+          <h2>Budżety</h2>
+          <BudgetProgress />
+        </section>
+      </div>
+    </PeriodProvider>
   )
 }
 

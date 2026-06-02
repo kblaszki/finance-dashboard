@@ -62,6 +62,51 @@ function monthDateRange(yearMonth: string): { start: Date; end: Date } {
   return { start, end };
 }
 
+function parseDateQuery(value: unknown): Date | null {
+  if (value == null || value === "") return null;
+  const d = new Date(String(value));
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function transactionDateFilter(
+  from?: unknown,
+  to?: unknown,
+): { gte?: Date; lte?: Date } | undefined {
+  const fromDate = parseDateQuery(from);
+  const toDate = parseDateQuery(to);
+  if (!fromDate && !toDate) return undefined;
+
+  const date: { gte?: Date; lte?: Date } = {};
+  if (fromDate) {
+    const gte = new Date(fromDate);
+    gte.setHours(0, 0, 0, 0);
+    date.gte = gte;
+  }
+  if (toDate) {
+    const lte = new Date(toDate);
+    lte.setHours(23, 59, 59, 999);
+    date.lte = lte;
+  }
+  return date;
+}
+
+function yearMonthFromDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  return `${y}-${m}`;
+}
+
+function listYearMonthsInRange(from: Date, to: Date): string[] {
+  const months: string[] = [];
+  const cur = new Date(from.getFullYear(), from.getMonth(), 1);
+  const end = new Date(to.getFullYear(), to.getMonth(), 1);
+  while (cur <= end) {
+    months.push(yearMonthFromDate(cur));
+    cur.setMonth(cur.getMonth() + 1);
+  }
+  return months;
+}
+
 function serializeBudget(b: {
   id: number;
   userId: number;
@@ -616,11 +661,13 @@ app.get("/api/stats/summary", requireAuth, async (req: AuthedRequest, res) => {
   try {
     const userId = req.userId!;
     const displayCurrency = normalizeCurrency(req.query.currency) || "PLN";
+    const dateFilter = transactionDateFilter(req.query.from, req.query.to);
+    const txWhere = dateFilter ? { userId, date: dateFilter } : { userId };
 
     const [transactions, portfolioPositions, txCount, fx] = await Promise.all([
-      prisma.transaction.findMany({ where: { userId } }),
+      prisma.transaction.findMany({ where: txWhere }),
       prisma.portfolioPosition.findMany({ where: { userId } }),
-      prisma.transaction.count({ where: { userId } }),
+      prisma.transaction.count({ where: txWhere }),
       getFxRatesPlnPerUnit(),
     ]);
 
@@ -676,17 +723,124 @@ app.get("/api/stats/summary", requireAuth, async (req: AuthedRequest, res) => {
   }
 });
 
+async function aggregateByCategory(
+  userId: number,
+  type: "INCOME" | "EXPENSE",
+  displayCurrency: string,
+  from?: unknown,
+  to?: unknown,
+) {
+  const dateFilter = transactionDateFilter(from, to);
+  const where: {
+    userId: number;
+    type: string;
+    date?: { gte?: Date; lte?: Date };
+  } = { userId, type };
+  if (dateFilter) where.date = dateFilter;
+
+  const [rows, fx] = await Promise.all([
+    prisma.transaction.findMany({ where }),
+    getFxRatesPlnPerUnit(),
+  ]);
+
+  const missing = getMissingCurrencies(
+    [...rows.map((t) => normalizeCurrency(t.currency)), displayCurrency],
+    fx.plnPerUnit,
+  );
+  if (missing.length) {
+    return {
+      error: {
+        status: 400,
+        body: {
+          error: "Missing FX rates for some currencies",
+          missingCurrencies: missing,
+          fxAsOf: fx.asOf,
+        },
+      },
+    };
+  }
+
+  const byCategory = new Map<string, number>();
+  for (const t of rows) {
+    const amount = toNumber(t.amount);
+    const fromCcy = normalizeCurrency(t.currency);
+    const converted = convertAmount(amount, fromCcy, displayCurrency, fx.plnPerUnit);
+    byCategory.set(t.category, (byCategory.get(t.category) ?? 0) + converted);
+  }
+
+  return {
+    data: [...byCategory.entries()].map(([category, amount]) => ({
+      category,
+      amount,
+      currency: displayCurrency,
+      fxAsOf: fx.asOf,
+    })),
+  };
+}
+
 app.get("/api/stats/expenses-by-category", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const displayCurrency = normalizeCurrency(req.query.currency) || "PLN";
+    const result = await aggregateByCategory(
+      req.userId!,
+      "EXPENSE",
+      displayCurrency,
+      req.query.from,
+      req.query.to,
+    );
+    if (result.error) {
+      res.status(result.error.status).json(result.error.body);
+      return;
+    }
+    res.json(result.data);
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to compute expenses by category" });
+  }
+});
+
+app.get("/api/stats/income-by-category", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const displayCurrency = normalizeCurrency(req.query.currency) || "PLN";
+    const result = await aggregateByCategory(
+      req.userId!,
+      "INCOME",
+      displayCurrency,
+      req.query.from,
+      req.query.to,
+    );
+    if (result.error) {
+      res.status(result.error.status).json(result.error.body);
+      return;
+    }
+    res.json(result.data);
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to compute income by category" });
+  }
+});
+
+app.get("/api/stats/cashflow-over-time", requireAuth, async (req: AuthedRequest, res) => {
   try {
     const userId = req.userId!;
     const displayCurrency = normalizeCurrency(req.query.currency) || "PLN";
-    const [expenses, fx] = await Promise.all([
-      prisma.transaction.findMany({ where: { userId, type: "EXPENSE" } }),
+    const dateFilter = transactionDateFilter(req.query.from, req.query.to);
+
+    if (!dateFilter?.gte || !dateFilter?.lte) {
+      return res.status(400).json({ error: "from and to query parameters are required" });
+    }
+
+    const [transactions, fx] = await Promise.all([
+      prisma.transaction.findMany({
+        where: { userId, date: dateFilter },
+      }),
       getFxRatesPlnPerUnit(),
     ]);
 
     const missing = getMissingCurrencies(
-      [...expenses.map((t) => normalizeCurrency(t.currency)), displayCurrency],
+      [...transactions.map((t) => normalizeCurrency(t.currency)), displayCurrency],
       fx.plnPerUnit,
     );
     if (missing.length) {
@@ -698,18 +852,32 @@ app.get("/api/stats/expenses-by-category", requireAuth, async (req: AuthedReques
       return;
     }
 
-    const byCategory = new Map<string, number>();
-    for (const t of expenses) {
+    const periods = listYearMonthsInRange(dateFilter.gte, dateFilter.lte);
+    const incomeByPeriod = new Map<string, number>();
+    const expensesByPeriod = new Map<string, number>();
+    for (const p of periods) {
+      incomeByPeriod.set(p, 0);
+      expensesByPeriod.set(p, 0);
+    }
+
+    for (const t of transactions) {
+      const period = yearMonthFromDate(new Date(t.date));
       const amount = toNumber(t.amount);
       const fromCcy = normalizeCurrency(t.currency);
       const converted = convertAmount(amount, fromCcy, displayCurrency, fx.plnPerUnit);
-      byCategory.set(t.category, (byCategory.get(t.category) ?? 0) + converted);
+      if (t.type === "INCOME") {
+        incomeByPeriod.set(period, (incomeByPeriod.get(period) ?? 0) + converted);
+      }
+      if (t.type === "EXPENSE") {
+        expensesByPeriod.set(period, (expensesByPeriod.get(period) ?? 0) + converted);
+      }
     }
 
     res.json(
-      [...byCategory.entries()].map(([category, amount]) => ({
-        category,
-        amount,
+      periods.map((period) => ({
+        period,
+        income: incomeByPeriod.get(period) ?? 0,
+        expenses: expensesByPeriod.get(period) ?? 0,
         currency: displayCurrency,
         fxAsOf: fx.asOf,
       })),
@@ -717,7 +885,7 @@ app.get("/api/stats/expenses-by-category", requireAuth, async (req: AuthedReques
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(error);
-    res.status(500).json({ error: "Failed to compute expenses by category" });
+    res.status(500).json({ error: "Failed to compute cashflow over time" });
   }
 });
 

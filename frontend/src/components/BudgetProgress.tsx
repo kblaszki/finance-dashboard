@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { BudgetProgress as BudgetProgressItem } from "../api/budgetsApi";
 import { fetchBudgetProgress } from "../api/budgetsApi";
 import { useCurrency } from "../state/currency";
+import { usePeriodOptional } from "../state/period";
 import { formatMoney } from "../utils/format";
 
 function currentYearMonth(): string {
@@ -20,7 +21,8 @@ type Props = {
 };
 
 export function BudgetProgress(props: Props) {
-  const yearMonth = props.yearMonth ?? currentYearMonth();
+  const period = usePeriodOptional();
+  const yearMonth = props.yearMonth ?? period?.yearMonth ?? currentYearMonth();
   const { currency } = useCurrency();
   const [items, setItems] = useState<BudgetProgressItem[]>([]);
   const [loading, setLoading] = useState(false);
