@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
 import type { PortfolioPosition, PortfolioPositionInput } from '../api/portfolioApi'
-import { createPortfolioPosition, fetchPortfolio } from '../api/portfolioApi'
+import {
+  createPortfolioPosition,
+  fetchPortfolio,
+  refreshPortfolioMarketData,
+} from '../api/portfolioApi'
 import { SUPPORTED_CURRENCIES, useCurrency } from '../state/currency'
 import { formatMoney } from '../utils/format'
 
@@ -18,6 +22,8 @@ export function PortfolioTable() {
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState<PortfolioPositionInput>(emptyForm)
   const [error, setError] = useState<string | null>(null)
+  const [refreshingMarket, setRefreshingMarket] = useState(false)
+  const [refreshInfo, setRefreshInfo] = useState<string | null>(null)
   const { currency: displayCurrency } = useCurrency()
 
   useEffect(() => {
@@ -57,8 +63,32 @@ export function PortfolioTable() {
     }
   }
 
+  async function handleRefreshMarketData() {
+    setRefreshingMarket(true)
+    setRefreshInfo(null)
+    setError(null)
+    try {
+      const response = await refreshPortfolioMarketData()
+      setRefreshInfo(
+        `Odświeżono ${response.updated}/${response.requested} tickerów${response.errors.length ? `, błędy: ${response.errors.length}` : ''}`,
+      )
+      await load()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Nie udało się odświeżyć wycen')
+    } finally {
+      setRefreshingMarket(false)
+    }
+  }
+
   return (
     <div className="card">
+      <div className="row" style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+        <h2>Portfel inwestycyjny</h2>
+        <button type="button" className="btn-secondary" onClick={handleRefreshMarketData} disabled={refreshingMarket}>
+          {refreshingMarket ? 'Odświeżanie...' : 'Odśwież wyceny EOD'}
+        </button>
+      </div>
+
       <form className="form-grid" onSubmit={handleSubmit}>
         <label>
           Symbol
@@ -130,6 +160,7 @@ export function PortfolioTable() {
       </form>
 
       {error && <p className="auth-error">{error}</p>}
+      {refreshInfo && <p className="loading-state">{refreshInfo}</p>}
 
       {loading ? (
         <p className="loading-state">Ładowanie...</p>
@@ -146,6 +177,8 @@ export function PortfolioTable() {
                 <th>Aktualna cena</th>
                 <th>Waluta</th>
                 <th>Wartość (wybrana)</th>
+                <th>Status danych</th>
+                <th>Data close</th>
                 <th>Kategoria</th>
               </tr>
             </thead>
@@ -155,12 +188,20 @@ export function PortfolioTable() {
                   <td>{p.symbol}</td>
                   <td>{p.quantity}</td>
                   <td>{formatMoney(p.buyPrice, p.currency)}</td>
-                  <td>{formatMoney(p.currentPrice, p.currency)}</td>
+                  <td>
+                    {p.lastClose != null && p.marketDataCurrency
+                      ? formatMoney(p.lastClose, p.marketDataCurrency)
+                      : formatMoney(p.currentPrice, p.currency)}
+                  </td>
                   <td>{p.currency}</td>
                   <td>
                     {p.positionValueConverted != null && p.convertedCurrency
                       ? formatMoney(p.positionValueConverted, p.convertedCurrency)
                       : '—'}
+                  </td>
+                  <td>{p.marketDataStatus ?? 'missing'}</td>
+                  <td>
+                    {p.lastCloseDate ? new Date(p.lastCloseDate).toLocaleDateString() : '—'}
                   </td>
                   <td>{p.category}</td>
                 </tr>

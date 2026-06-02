@@ -55,3 +55,17 @@ model Budget {
 
   @@unique([userId, yearMonth, category])
 }
+
+model MarketPriceSnapshot {
+  id         Int      @id @default(autoincrement())
+  symbol     String
+  exchange   String?
+  currency   String
+  close      Decimal
+  priceDate  DateTime
+  fetchedAt  DateTime @default(now())
+  source     String
+
+  @@index([symbol, priceDate])
+  @@unique([symbol, priceDate, source])
+}

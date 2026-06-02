@@ -4,6 +4,12 @@ import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import { convertAmount, getFxRatesPlnPerUnit, getMissingCurrencies } from "./fx";
 import {
+  classifyMarketDataStatus,
+  getLatestSnapshotsForSymbols,
+  refreshSymbolsLastClose,
+  TwelveDataProvider,
+} from "./marketData";
+import {
   AuthedRequest,
   hashPassword,
   normalizeEmail,
@@ -21,6 +27,20 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 4000;
+const MARKET_DATA_SOURCE = "twelve_data";
+const MARKET_DATA_EXPIRE_DAYS = 7;
+const MARKET_REFRESH_COOLDOWN_MS = 60 * 1000;
+const lastManualRefreshAtByUser = new Map<number, number>();
+
+const twelveDataProvider = (() => {
+  try {
+    return new TwelveDataProvider();
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.warn("Market data provider not initialized:", error);
+    return null;
+  }
+})();
 
 function normalizeCurrency(code: unknown): string {
   return String(code ?? "").trim().toUpperCase();
@@ -383,9 +403,14 @@ app.get("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
     const displayCurrency = normalizeCurrency(req.query.currency);
 
     const positions = await prisma.portfolioPosition.findMany({ where: { userId } });
+    const snapshotsBySymbol = await getLatestSnapshotsForSymbols(
+      prisma,
+      positions.map((p) => p.symbol),
+    );
 
     const normalized = positions.map((p) => ({
       ...p,
+      symbol: String(p.symbol).trim().toUpperCase(),
       quantity: toNumber(p.quantity),
       buyPrice: toNumber(p.buyPrice),
       currentPrice: toNumber(p.currentPrice),
@@ -413,23 +438,39 @@ app.get("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
 
     res.json(
       normalized.map((p) => {
+        const snapshot = snapshotsBySymbol.get(p.symbol);
+        const marketDataStatus = classifyMarketDataStatus(
+          new Date(),
+          snapshot?.priceDate,
+          2,
+          MARKET_DATA_EXPIRE_DAYS,
+        );
+        const lastClose = snapshot ? toNumber(snapshot.close) : null;
+        const lastCloseDate = snapshot?.priceDate ?? null;
+        const marketCurrency = snapshot ? normalizeCurrency(snapshot.currency) : p.currency;
+        const marketValue =
+          marketDataStatus !== "missing" && marketDataStatus !== "expired" && lastClose != null
+            ? p.quantity * lastClose
+            : null;
+
         const fromCcy = p.currency;
         const buyPriceConverted = convertAmount(p.buyPrice, fromCcy, displayCurrency, plnPerUnit);
-        const currentPriceConverted = convertAmount(
-          p.currentPrice,
-          fromCcy,
-          displayCurrency,
-          plnPerUnit,
-        );
-        const positionValue = p.quantity * p.currentPrice;
-        const positionValueConverted = convertAmount(
-          positionValue,
-          fromCcy,
-          displayCurrency,
-          plnPerUnit,
-        );
+        const currentPriceConverted =
+          lastClose != null
+            ? convertAmount(lastClose, marketCurrency, displayCurrency, plnPerUnit)
+            : null;
+        const positionValueConverted =
+          marketValue != null
+            ? convertAmount(marketValue, marketCurrency, displayCurrency, plnPerUnit)
+            : null;
         return {
           ...p,
+          marketDataStatus,
+          lastClose,
+          lastCloseDate,
+          marketDataCurrency: marketCurrency,
+          marketDataSource: snapshot?.source ?? MARKET_DATA_SOURCE,
+          marketDataFetchedAt: snapshot?.fetchedAt ?? null,
           buyPriceConverted,
           currentPriceConverted,
           positionValueConverted,
@@ -670,10 +711,18 @@ app.get("/api/stats/summary", requireAuth, async (req: AuthedRequest, res) => {
       prisma.transaction.count({ where: txWhere }),
       getFxRatesPlnPerUnit(),
     ]);
+    const snapshotsBySymbol = await getLatestSnapshotsForSymbols(
+      prisma,
+      portfolioPositions.map((p) => p.symbol),
+    );
 
     const allCurrencies = [
       ...transactions.map((t) => normalizeCurrency(t.currency)),
-      ...portfolioPositions.map((p) => normalizeCurrency(p.currency)),
+      ...portfolioPositions.map((p) => {
+        const symbol = String(p.symbol).trim().toUpperCase();
+        const snapshot = snapshotsBySymbol.get(symbol);
+        return normalizeCurrency(snapshot?.currency ?? p.currency);
+      }),
       displayCurrency,
     ];
     const missing = getMissingCurrencies(allCurrencies, fx.plnPerUnit);
@@ -699,10 +748,29 @@ app.get("/api/stats/summary", requireAuth, async (req: AuthedRequest, res) => {
 
     const balance = income - expenses;
 
+    let stalePositionsCount = 0;
+    let pricedPositionsCount = 0;
+    let portfolioValuationAsOf: Date | null = null;
     const portfolioValue = portfolioPositions.reduce((acc, p) => {
       const qty = toNumber(p.quantity);
-      const price = toNumber(p.currentPrice);
-      const fromCcy = normalizeCurrency(p.currency);
+      const symbol = String(p.symbol).trim().toUpperCase();
+      const snapshot = snapshotsBySymbol.get(symbol);
+      const status = classifyMarketDataStatus(
+        new Date(),
+        snapshot?.priceDate,
+        2,
+        MARKET_DATA_EXPIRE_DAYS,
+      );
+      if (status === "stale") stalePositionsCount += 1;
+      if (!snapshot || status === "missing" || status === "expired") {
+        return acc;
+      }
+      pricedPositionsCount += 1;
+      if (!portfolioValuationAsOf || snapshot.priceDate < portfolioValuationAsOf) {
+        portfolioValuationAsOf = snapshot.priceDate;
+      }
+      const price = toNumber(snapshot.close);
+      const fromCcy = normalizeCurrency(snapshot.currency);
       const value = qty * price;
       return acc + convertAmount(value, fromCcy, displayCurrency, fx.plnPerUnit);
     }, 0);
@@ -715,6 +783,10 @@ app.get("/api/stats/summary", requireAuth, async (req: AuthedRequest, res) => {
       balance,
       portfolioValue,
       transactionsCount: txCount,
+      portfolioValueMarketDataAsOf: portfolioValuationAsOf,
+      stalePositionsCount,
+      pricedPositionsCount,
+      totalPositionsCount: portfolioPositions.length,
     });
   } catch (error) {
     // eslint-disable-next-line no-console
@@ -988,6 +1060,71 @@ app.get("/api/fx/rates", async (_req, res) => {
     res.status(500).json({ error: "Failed to fetch FX rates" });
   }
 });
+
+app.post("/api/market-data/refresh", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    if (!twelveDataProvider) {
+      return res.status(503).json({
+        error: "Market data provider is not configured",
+      });
+    }
+
+    const userId = req.userId!;
+    const now = Date.now();
+    const lastRun = lastManualRefreshAtByUser.get(userId);
+    if (lastRun && now - lastRun < MARKET_REFRESH_COOLDOWN_MS) {
+      return res.status(429).json({
+        error: "Refresh is cooling down. Try again in a minute.",
+      });
+    }
+    const payloadSymbols = Array.isArray(req.body?.symbols)
+      ? req.body.symbols.map((s: unknown) => String(s))
+      : [];
+    const symbols =
+      payloadSymbols.length > 0
+        ? payloadSymbols
+        : (
+            await prisma.portfolioPosition.findMany({
+              where: { userId },
+              select: { symbol: true },
+            })
+          ).map((p) => p.symbol);
+
+    const result = await refreshSymbolsLastClose(prisma, twelveDataProvider, symbols);
+    lastManualRefreshAtByUser.set(userId, now);
+    res.json({
+      source: twelveDataProvider.source,
+      ...result,
+    });
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to refresh market data" });
+  }
+});
+
+function scheduleMarketDataRefresh() {
+  if (!twelveDataProvider) return;
+  const every12HoursMs = 12 * 60 * 60 * 1000;
+  setInterval(async () => {
+    try {
+      const symbols = (
+        await prisma.portfolioPosition.findMany({
+          select: { symbol: true },
+        })
+      ).map((p) => p.symbol);
+      if (!symbols.length) return;
+      const result = await refreshSymbolsLastClose(prisma, twelveDataProvider, symbols);
+      // eslint-disable-next-line no-console
+      console.log("Scheduled market refresh:", result);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error("Scheduled market refresh failed:", error);
+    }
+  }, every12HoursMs);
+}
+
+scheduleMarketDataRefresh();
 
 app.listen(PORT, () => {
   // eslint-disable-next-line no-console

@@ -48,10 +48,23 @@ export function KpiCards() {
       <div className="kpi-card">
         <h3>Wartość portfela (dziś)</h3>
         <p>{formatMoney(portfolioValue, currency)}</p>
+        <small>
+          {stats.portfolioValueMarketDataAsOf
+            ? `Wycena EOD: ${new Date(stats.portfolioValueMarketDataAsOf).toLocaleDateString()}`
+            : 'Brak świeżych danych rynkowych'}
+        </small>
       </div>
       <div className="kpi-card">
         <h3>Transakcje (okres)</h3>
         <p>{stats.transactionsCount}</p>
+        <small>
+          {typeof stats.pricedPositionsCount === 'number' &&
+          typeof stats.totalPositionsCount === 'number'
+            ? `Wycenione pozycje: ${stats.pricedPositionsCount}/${stats.totalPositionsCount}${
+                stats.stalePositionsCount ? `, nieświeże: ${stats.stalePositionsCount}` : ''
+              }`
+            : null}
+        </small>
       </div>
     </div>
   )

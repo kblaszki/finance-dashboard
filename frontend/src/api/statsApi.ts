@@ -8,6 +8,10 @@ export type SummaryStats = {
   transactionsCount: number;
   currency?: string;
   fxAsOf?: string;
+  portfolioValueMarketDataAsOf?: string | null;
+  stalePositionsCount?: number;
+  pricedPositionsCount?: number;
+  totalPositionsCount?: number;
 };
 
 export type CategoryAmount = {
