@@ -9,6 +9,8 @@ export type EodPrice = {
   source: string;
 };
 
+export type EodPricePoint = EodPrice;
+
 export type RefreshResult = {
   requested: number;
   updated: number;
@@ -19,10 +21,11 @@ export type RefreshResult = {
 export interface EodPriceProvider {
   readonly source: string;
   fetchLastClose(symbol: string): Promise<EodPrice>;
+  fetchDailyHistory(symbol: string, startDate: Date, endDate: Date): Promise<EodPricePoint[]>;
 }
 
 type PrismaLike = {
-  marketPriceSnapshot: {
+  marketPriceHistory: {
     upsert(args: {
       where: {
         symbol_priceDate_source: {
@@ -163,6 +166,48 @@ export class TwelveDataProvider implements EodPriceProvider {
       source: this.source,
     };
   }
+
+  async fetchDailyHistory(symbolInput: string, startDate: Date, endDate: Date): Promise<EodPricePoint[]> {
+    const symbol = normalizeSymbol(symbolInput);
+    if (!symbol) throw new Error("Symbol is required");
+
+    const q = new URLSearchParams({
+      symbol,
+      interval: "1day",
+      start_date: startDate.toISOString().slice(0, 10),
+      end_date: endDate.toISOString().slice(0, 10),
+      order: "ASC",
+      outputsize: "5000",
+      apikey: this.apiKey,
+    });
+    const payload = (await fetchJson(
+      `${this.baseUrl}/time_series?${q.toString()}`,
+    )) as TwelveDataSeriesResponse;
+
+    if (payload?.status === "error") {
+      throw new Error(payload.message || `Provider error code ${payload.code ?? "unknown"}`);
+    }
+
+    const points = payload.values ?? [];
+    const currency = normalizeCurrency(payload.meta?.currency ?? "USD");
+    const exchange = payload.meta?.exchange ?? null;
+    return points
+      .filter((p) => p.datetime && p.close != null)
+      .map((p) => {
+        const close = Number(p.close);
+        if (!Number.isFinite(close) || close <= 0 || !p.datetime) {
+          throw new Error(`Invalid close value in history for ${symbol}`);
+        }
+        return {
+          symbol,
+          exchange,
+          currency,
+          close,
+          priceDate: parseTwelveDataPriceDate(p.datetime),
+          source: this.source,
+        };
+      });
+  }
 }
 
 export function classifyMarketDataStatus(
@@ -195,7 +240,7 @@ export async function refreshSymbolsLastClose(
   for (const symbol of symbols) {
     try {
       const quote = await provider.fetchLastClose(symbol);
-      await prisma.marketPriceSnapshot.upsert({
+      await prisma.marketPriceHistory.upsert({
         where: {
           symbol_priceDate_source: {
             symbol: quote.symbol,
@@ -237,7 +282,7 @@ export async function getLatestSnapshotsForSymbols(
   rawSymbols: string[],
 ) {
   const symbols = [...new Set(rawSymbols.map(normalizeSymbol).filter(Boolean))];
-  const rows = await prisma.marketPriceSnapshot
+  const rows = await prisma.marketPriceHistory
     .findMany({
       where: { symbol: { in: symbols } },
       orderBy: [{ symbol: "asc" }, { priceDate: "desc" }, { fetchedAt: "desc" }],
@@ -263,5 +308,40 @@ export async function getLatestSnapshotsForSymbols(
     }
   }
   return latestBySymbol;
+}
+
+export async function upsertPriceHistory(
+  prisma: PrismaLike,
+  points: EodPricePoint[],
+): Promise<{ insertedOrUpdated: number }> {
+  let insertedOrUpdated = 0;
+  for (const point of points) {
+    await prisma.marketPriceHistory.upsert({
+      where: {
+        symbol_priceDate_source: {
+          symbol: point.symbol,
+          priceDate: point.priceDate,
+          source: point.source,
+        },
+      },
+      create: {
+        symbol: point.symbol,
+        exchange: point.exchange ?? null,
+        currency: point.currency,
+        close: point.close,
+        priceDate: point.priceDate,
+        source: point.source,
+        fetchedAt: new Date(),
+      },
+      update: {
+        exchange: point.exchange ?? null,
+        currency: point.currency,
+        close: point.close,
+        fetchedAt: new Date(),
+      },
+    });
+    insertedOrUpdated += 1;
+  }
+  return { insertedOrUpdated };
 }
 

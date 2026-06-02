@@ -17,6 +17,7 @@ model User {
   createdAt          DateTime            @default(now())
   transactions       Transaction[]
   portfolioPositions PortfolioPosition[]
+  portfolioLots      PortfolioLot[]
   budgets            Budget[]
 }
 
@@ -44,6 +45,21 @@ model PortfolioPosition {
   category     String
 }
 
+model PortfolioLot {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  symbol    String
+  quantity  Decimal
+  buyPrice  Decimal
+  buyDate   DateTime
+  currency  String
+  category  String
+  createdAt DateTime @default(now())
+
+  @@index([userId, symbol])
+}
+
 model Budget {
   id          Int     @id @default(autoincrement())
   userId      Int
@@ -65,6 +81,20 @@ model MarketPriceSnapshot {
   priceDate  DateTime
   fetchedAt  DateTime @default(now())
   source     String
+
+  @@index([symbol, priceDate])
+  @@unique([symbol, priceDate, source])
+}
+
+model MarketPriceHistory {
+  id        Int      @id @default(autoincrement())
+  symbol    String
+  exchange  String?
+  currency  String
+  close     Decimal
+  priceDate DateTime
+  fetchedAt DateTime @default(now())
+  source    String
 
   @@index([symbol, priceDate])
   @@unique([symbol, priceDate, source])

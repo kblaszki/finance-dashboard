@@ -1,13 +1,14 @@
 import { apiClient } from "./client";
 
 export interface PortfolioPosition {
-  id: number;
+  id: number | string;
   symbol: string;
   quantity: number;
   buyPrice: number;
-  currentPrice: number;
+  buyDate?: string | null;
   currency: string;
   category: string;
+  lotsCount?: number;
   marketDataStatus?: "fresh" | "stale" | "expired" | "missing";
   lastClose?: number | null;
   lastCloseDate?: string | null;
@@ -16,7 +17,10 @@ export interface PortfolioPosition {
   marketDataFetchedAt?: string | null;
   buyPriceConverted?: number;
   currentPriceConverted?: number | null;
+  positionCostConverted?: number | null;
   positionValueConverted?: number | null;
+  profitAbs?: number | null;
+  profitPct?: number | null;
   convertedCurrency?: string;
   fxAsOf?: string;
 }
@@ -25,7 +29,7 @@ export interface PortfolioPositionInput {
   symbol: string;
   quantity: number;
   buyPrice: number;
-  currentPrice: number;
+  buyDate: string;
   currency: string;
   category?: string;
 }
@@ -38,8 +42,9 @@ export async function fetchPortfolio(opts?: { currency?: string }): Promise<Port
 export type MarketRefreshResponse = {
   source: string;
   requested: number;
-  updated: number;
-  skipped: number;
+  symbolsProcessed: number;
+  rowsInserted: number;
+  rowsUpdated: number;
   errors: Array<{ symbol: string; error: string }>;
 };
 
@@ -66,4 +71,28 @@ export async function updatePortfolioPosition(
 
 export async function deletePortfolioPosition(id: number): Promise<void> {
   return apiClient.delete(`/api/portfolio/${id}`);
+}
+
+export type PortfolioHistoryPoint = {
+  date: string;
+  close: number;
+  closeCurrency: string;
+  quantity: number;
+  positionValue: number;
+  costBasis: number;
+  profitAbs: number;
+  profitPct: number;
+  currency: string;
+};
+
+export async function fetchPortfolioSymbolHistory(opts: {
+  symbol: string;
+  method: "weighted" | "fifo";
+  currency: string;
+}): Promise<PortfolioHistoryPoint[]> {
+  const q = new URLSearchParams({
+    method: opts.method,
+    currency: opts.currency,
+  });
+  return apiClient.get<PortfolioHistoryPoint[]>(`/api/portfolio/${encodeURIComponent(opts.symbol)}/history?${q.toString()}`);
 }

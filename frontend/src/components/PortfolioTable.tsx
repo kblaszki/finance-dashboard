@@ -7,12 +7,13 @@ import {
 } from '../api/portfolioApi'
 import { SUPPORTED_CURRENCIES, useCurrency } from '../state/currency'
 import { formatMoney } from '../utils/format'
+import { useNavigate } from 'react-router-dom'
 
 const emptyForm: PortfolioPositionInput = {
   symbol: '',
   quantity: 0,
   buyPrice: 0,
-  currentPrice: 0,
+  buyDate: new Date().toISOString().slice(0, 10),
   currency: 'PLN',
   category: 'UNSPECIFIED',
 }
@@ -25,6 +26,7 @@ export function PortfolioTable() {
   const [refreshingMarket, setRefreshingMarket] = useState(false)
   const [refreshInfo, setRefreshInfo] = useState<string | null>(null)
   const { currency: displayCurrency } = useCurrency()
+  const navigate = useNavigate()
 
   useEffect(() => {
     void load()
@@ -45,8 +47,8 @@ export function PortfolioTable() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.symbol.trim() || form.quantity <= 0 || form.buyPrice <= 0 || form.currentPrice <= 0) {
-      setError('Symbol, ilość i ceny muszą być poprawne')
+    if (!form.symbol.trim() || form.quantity <= 0 || form.buyPrice <= 0 || !form.buyDate) {
+      setError('Symbol, ilość, data i cena zakupu muszą być poprawne')
       return
     }
     setError(null)
@@ -70,7 +72,7 @@ export function PortfolioTable() {
     try {
       const response = await refreshPortfolioMarketData()
       setRefreshInfo(
-        `Odświeżono ${response.updated}/${response.requested} tickerów${response.errors.length ? `, błędy: ${response.errors.length}` : ''}`,
+        `Odświeżono ${response.symbolsProcessed}/${response.requested} tickerów, punkty historii: ${response.rowsInserted}${response.errors.length ? `, błędy: ${response.errors.length}` : ''}`,
       )
       await load()
     } catch (err) {
@@ -122,14 +124,12 @@ export function PortfolioTable() {
           />
         </label>
         <label>
-          Aktualna cena
+          Data zakupu
           <input
-            type="number"
-            min={0.01}
-            step="0.01"
+            type="date"
             required
-            value={form.currentPrice || ''}
-            onChange={(e) => setForm({ ...form, currentPrice: Number(e.target.value) })}
+            value={form.buyDate}
+            onChange={(e) => setForm({ ...form, buyDate: e.target.value })}
           />
         </label>
         <label>
@@ -176,10 +176,13 @@ export function PortfolioTable() {
                 <th>Cena zakupu</th>
                 <th>Aktualna cena</th>
                 <th>Waluta</th>
+                <th>Koszt (wybrana)</th>
                 <th>Wartość (wybrana)</th>
+                <th>Zysk (wybrana)</th>
                 <th>Status danych</th>
                 <th>Data close</th>
                 <th>Kategoria</th>
+                <th>Analiza</th>
               </tr>
             </thead>
             <tbody>
@@ -191,12 +194,22 @@ export function PortfolioTable() {
                   <td>
                     {p.lastClose != null && p.marketDataCurrency
                       ? formatMoney(p.lastClose, p.marketDataCurrency)
-                      : formatMoney(p.currentPrice, p.currency)}
+                      : '—'}
                   </td>
                   <td>{p.currency}</td>
                   <td>
+                    {p.positionCostConverted != null && p.convertedCurrency
+                      ? formatMoney(p.positionCostConverted, p.convertedCurrency)
+                      : '—'}
+                  </td>
+                  <td>
                     {p.positionValueConverted != null && p.convertedCurrency
                       ? formatMoney(p.positionValueConverted, p.convertedCurrency)
+                      : '—'}
+                  </td>
+                  <td>
+                    {p.profitAbs != null && p.convertedCurrency
+                      ? `${formatMoney(p.profitAbs, p.convertedCurrency)} (${(p.profitPct ?? 0).toFixed(2)}%)`
                       : '—'}
                   </td>
                   <td>{p.marketDataStatus ?? 'missing'}</td>
@@ -204,6 +217,15 @@ export function PortfolioTable() {
                     {p.lastCloseDate ? new Date(p.lastCloseDate).toLocaleDateString() : '—'}
                   </td>
                   <td>{p.category}</td>
+                  <td>
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={() => navigate(`/portfolio/${encodeURIComponent(p.symbol)}`)}
+                    >
+                      Analizuj
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

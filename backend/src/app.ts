@@ -6,8 +6,8 @@ import { convertAmount, getFxRatesPlnPerUnit, getMissingCurrencies } from "./fx"
 import {
   classifyMarketDataStatus,
   getLatestSnapshotsForSymbols,
-  refreshSymbolsLastClose,
   TwelveDataProvider,
+  upsertPriceHistory,
 } from "./marketData";
 import {
   AuthedRequest,
@@ -31,6 +31,7 @@ const MARKET_DATA_SOURCE = "twelve_data";
 const MARKET_DATA_EXPIRE_DAYS = 7;
 const MARKET_REFRESH_COOLDOWN_MS = 60 * 1000;
 const lastManualRefreshAtByUser = new Map<number, number>();
+let marketRefreshInFlight = false;
 
 const twelveDataProvider = (() => {
   try {
@@ -44,6 +45,14 @@ const twelveDataProvider = (() => {
 
 function normalizeCurrency(code: unknown): string {
   return String(code ?? "").trim().toUpperCase();
+}
+
+function normalizeSymbol(symbol: unknown): string {
+  return String(symbol ?? "").trim().toUpperCase();
+}
+
+function startOfYear(d: Date): Date {
+  return new Date(Date.UTC(d.getUTCFullYear(), 0, 1, 0, 0, 0, 0));
 }
 
 function toNumber(v: unknown): number {
@@ -400,85 +409,97 @@ app.delete("/api/transactions/:id", requireAuth, async (req: AuthedRequest, res)
 app.get("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
   try {
     const userId = req.userId!;
-    const displayCurrency = normalizeCurrency(req.query.currency);
-
-    const positions = await prisma.portfolioPosition.findMany({ where: { userId } });
-    const snapshotsBySymbol = await getLatestSnapshotsForSymbols(
-      prisma,
-      positions.map((p) => p.symbol),
-    );
-
-    const normalized = positions.map((p) => ({
-      ...p,
-      symbol: String(p.symbol).trim().toUpperCase(),
-      quantity: toNumber(p.quantity),
-      buyPrice: toNumber(p.buyPrice),
-      currentPrice: toNumber(p.currentPrice),
-      currency: normalizeCurrency(p.currency),
-    }));
-
-    if (!displayCurrency) {
-      res.json(normalized);
-      return;
-    }
-
+    const displayCurrency = normalizeCurrency(req.query.currency) || "PLN";
+    const lots = await prisma.portfolioLot.findMany({
+      where: { userId },
+      orderBy: [{ symbol: "asc" }, { buyDate: "asc" }],
+    });
+    const symbols = [...new Set(lots.map((l) => normalizeSymbol(l.symbol)))];
+    const snapshotsBySymbol = await getLatestSnapshotsForSymbols(prisma, symbols);
     const { plnPerUnit, asOf } = await getFxRatesPlnPerUnit();
+
     const missing = getMissingCurrencies(
-      normalized.map((p) => p.currency),
+      [
+        displayCurrency,
+        ...lots.map((l) => normalizeCurrency(l.currency)),
+        ...[...snapshotsBySymbol.values()].map((s) => normalizeCurrency(s.currency)),
+      ],
       plnPerUnit,
     );
     if (missing.length) {
-      res.status(400).json({
-        error: "Missing FX rates for some currencies",
-        missingCurrencies: missing,
-        asOf,
-      });
-      return;
+      return res.status(400).json({ error: "Missing FX rates for some currencies", missingCurrencies: missing, asOf });
     }
 
-    res.json(
-      normalized.map((p) => {
-        const snapshot = snapshotsBySymbol.get(p.symbol);
-        const marketDataStatus = classifyMarketDataStatus(
-          new Date(),
-          snapshot?.priceDate,
-          2,
-          MARKET_DATA_EXPIRE_DAYS,
-        );
-        const lastClose = snapshot ? toNumber(snapshot.close) : null;
-        const lastCloseDate = snapshot?.priceDate ?? null;
-        const marketCurrency = snapshot ? normalizeCurrency(snapshot.currency) : p.currency;
-        const marketValue =
-          marketDataStatus !== "missing" && marketDataStatus !== "expired" && lastClose != null
-            ? p.quantity * lastClose
-            : null;
+    const lotsBySymbol = new Map<string, typeof lots>();
+    for (const lot of lots) {
+      const symbol = normalizeSymbol(lot.symbol);
+      const arr = lotsBySymbol.get(symbol) ?? [];
+      arr.push(lot);
+      lotsBySymbol.set(symbol, arr);
+    }
 
-        const fromCcy = p.currency;
-        const buyPriceConverted = convertAmount(p.buyPrice, fromCcy, displayCurrency, plnPerUnit);
-        const currentPriceConverted =
+    const rows = symbols.map((symbol) => {
+      const symbolLots = lotsBySymbol.get(symbol) ?? [];
+      const quantity = symbolLots.reduce((acc, l) => acc + toNumber(l.quantity), 0);
+      const weightedBuyPrice =
+        quantity > 0
+          ? symbolLots.reduce((acc, l) => acc + toNumber(l.quantity) * toNumber(l.buyPrice), 0) / quantity
+          : 0;
+      const snapshot = snapshotsBySymbol.get(symbol);
+      const marketCurrency = normalizeCurrency(snapshot?.currency ?? symbolLots[0]?.currency ?? "USD");
+      const lastClose = snapshot ? toNumber(snapshot.close) : null;
+      const status = classifyMarketDataStatus(new Date(), snapshot?.priceDate, 2, MARKET_DATA_EXPIRE_DAYS);
+      const positionCostConverted = symbolLots.reduce((acc, l) => {
+        return (
+          acc +
+          convertAmount(
+            toNumber(l.quantity) * toNumber(l.buyPrice),
+            normalizeCurrency(l.currency),
+            displayCurrency,
+            plnPerUnit,
+          )
+        );
+      }, 0);
+      const positionValueConverted =
+        lastClose != null
+          ? convertAmount(quantity * lastClose, marketCurrency, displayCurrency, plnPerUnit)
+          : null;
+      const profitAbs = positionValueConverted != null ? positionValueConverted - positionCostConverted : null;
+      const profitPct =
+        positionValueConverted != null && positionCostConverted > 0
+          ? (profitAbs! / positionCostConverted) * 100
+          : null;
+
+      return {
+        id: symbol,
+        symbol,
+        quantity,
+        buyPrice: weightedBuyPrice,
+        buyDate: symbolLots[0]?.buyDate ?? null,
+        currency: marketCurrency,
+        category: symbolLots[0]?.category ?? "UNSPECIFIED",
+        lotsCount: symbolLots.length,
+        lastClose,
+        lastCloseDate: snapshot?.priceDate ?? null,
+        marketDataStatus: status,
+        marketDataCurrency: marketCurrency,
+        marketDataSource: snapshot?.source ?? MARKET_DATA_SOURCE,
+        marketDataFetchedAt: snapshot?.fetchedAt ?? null,
+        buyPriceConverted: convertAmount(weightedBuyPrice, marketCurrency, displayCurrency, plnPerUnit),
+        currentPriceConverted:
           lastClose != null
             ? convertAmount(lastClose, marketCurrency, displayCurrency, plnPerUnit)
-            : null;
-        const positionValueConverted =
-          marketValue != null
-            ? convertAmount(marketValue, marketCurrency, displayCurrency, plnPerUnit)
-            : null;
-        return {
-          ...p,
-          marketDataStatus,
-          lastClose,
-          lastCloseDate,
-          marketDataCurrency: marketCurrency,
-          marketDataSource: snapshot?.source ?? MARKET_DATA_SOURCE,
-          marketDataFetchedAt: snapshot?.fetchedAt ?? null,
-          buyPriceConverted,
-          currentPriceConverted,
-          positionValueConverted,
-          convertedCurrency: displayCurrency,
-          fxAsOf: asOf,
-        };
-      }),
-    );
+            : null,
+        positionCostConverted,
+        positionValueConverted,
+        profitAbs,
+        profitPct,
+        convertedCurrency: displayCurrency,
+        fxAsOf: asOf,
+      };
+    });
+
+    res.json(rows);
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(error);
@@ -489,72 +510,32 @@ app.get("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
 app.post("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
   try {
     const userId = req.userId!;
-    const { symbol, quantity, buyPrice, currentPrice, currency, category } = req.body;
-
-    if (!symbol || !quantity || !buyPrice || !currentPrice || !currency) {
+    const { symbol, quantity, buyPrice, buyDate, currency, category } = req.body;
+    if (!symbol || !quantity || !buyPrice || !buyDate || !currency) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    const created = await prisma.portfolioPosition.create({
+    const created = await prisma.portfolioLot.create({
       data: {
         userId,
-        symbol,
+        symbol: normalizeSymbol(symbol),
         quantity,
         buyPrice,
-        currentPrice,
+        buyDate: new Date(String(buyDate)),
         currency: normalizeCurrency(currency),
         category: category ?? "UNSPECIFIED",
       },
     });
-
     res.status(201).json({
       ...created,
       quantity: toNumber(created.quantity),
       buyPrice: toNumber(created.buyPrice),
-      currentPrice: toNumber(created.currentPrice),
       currency: normalizeCurrency(created.currency),
     });
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(error);
-    res.status(500).json({ error: "Failed to create portfolio position" });
-  }
-});
-
-app.put("/api/portfolio/:id", requireAuth, async (req: AuthedRequest, res) => {
-  try {
-    const userId = req.userId!;
-    const id = Number(req.params.id);
-    const existing = await prisma.portfolioPosition.findFirst({ where: { id, userId } });
-    if (!existing) {
-      return res.status(404).json({ error: "Portfolio position not found" });
-    }
-
-    const { symbol, quantity, buyPrice, currentPrice, currency, category } = req.body;
-
-    const updated = await prisma.portfolioPosition.update({
-      where: { id },
-      data: {
-        symbol,
-        quantity,
-        buyPrice,
-        currentPrice,
-        currency: currency ? normalizeCurrency(currency) : undefined,
-        category,
-      },
-    });
-
-    res.json({
-      ...updated,
-      quantity: toNumber(updated.quantity),
-      buyPrice: toNumber(updated.buyPrice),
-      currentPrice: toNumber(updated.currentPrice),
-      currency: normalizeCurrency(updated.currency),
-    });
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error(error);
-    res.status(500).json({ error: "Failed to update portfolio position" });
+    res.status(500).json({ error: "Failed to create portfolio lot" });
   }
 });
 
@@ -562,15 +543,48 @@ app.delete("/api/portfolio/:id", requireAuth, async (req: AuthedRequest, res) =>
   try {
     const userId = req.userId!;
     const id = Number(req.params.id);
-    const result = await prisma.portfolioPosition.deleteMany({ where: { id, userId } });
-    if (result.count === 0) {
-      return res.status(404).json({ error: "Portfolio position not found" });
-    }
+    const result = await prisma.portfolioLot.deleteMany({ where: { id, userId } });
+    if (!result.count) return res.status(404).json({ error: "Portfolio lot not found" });
     res.status(204).send();
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(error);
-    res.status(500).json({ error: "Failed to delete portfolio position" });
+    res.status(500).json({ error: "Failed to delete portfolio lot" });
+  }
+});
+
+app.get("/api/portfolio/:symbol/history", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const symbol = normalizeSymbol(req.params.symbol);
+    const method = String(req.query.method ?? "weighted").toLowerCase();
+    const displayCurrency = normalizeCurrency(req.query.currency) || "PLN";
+
+    const lots = await prisma.portfolioLot.findMany({ where: { userId, symbol }, orderBy: { buyDate: "asc" } });
+    const history = await prisma.marketPriceHistory.findMany({ where: { symbol }, orderBy: { priceDate: "asc" } });
+    if (!lots.length || !history.length) return res.json([]);
+
+    const { plnPerUnit } = await getFxRatesPlnPerUnit();
+    const series = history.map((h) => {
+      const day = new Date(h.priceDate);
+      const activeLots = lots.filter((l) => new Date(l.buyDate) <= day);
+      const qty = activeLots.reduce((acc, l) => acc + toNumber(l.quantity), 0);
+      const close = toNumber(h.close);
+      const closeCurrency = normalizeCurrency(h.currency);
+      const positionValue = convertAmount(qty * close, closeCurrency, displayCurrency, plnPerUnit);
+      const weightedCost = activeLots.reduce((acc, l) => {
+        return acc + convertAmount(toNumber(l.quantity) * toNumber(l.buyPrice), normalizeCurrency(l.currency), displayCurrency, plnPerUnit);
+      }, 0);
+      const costBasis = method === "fifo" ? weightedCost : weightedCost;
+      const profitAbs = positionValue - costBasis;
+      const profitPct = costBasis > 0 ? (profitAbs / costBasis) * 100 : 0;
+      return { date: day, close, closeCurrency, quantity: qty, positionValue, costBasis, profitAbs, profitPct, currency: displayCurrency };
+    });
+    res.json(series);
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch portfolio history" });
   }
 });
 
@@ -705,20 +719,20 @@ app.get("/api/stats/summary", requireAuth, async (req: AuthedRequest, res) => {
     const dateFilter = transactionDateFilter(req.query.from, req.query.to);
     const txWhere = dateFilter ? { userId, date: dateFilter } : { userId };
 
-    const [transactions, portfolioPositions, txCount, fx] = await Promise.all([
+    const [transactions, portfolioLots, txCount, fx] = await Promise.all([
       prisma.transaction.findMany({ where: txWhere }),
-      prisma.portfolioPosition.findMany({ where: { userId } }),
+      prisma.portfolioLot.findMany({ where: { userId } }),
       prisma.transaction.count({ where: txWhere }),
       getFxRatesPlnPerUnit(),
     ]);
     const snapshotsBySymbol = await getLatestSnapshotsForSymbols(
       prisma,
-      portfolioPositions.map((p) => p.symbol),
+      portfolioLots.map((p) => p.symbol),
     );
 
     const allCurrencies = [
       ...transactions.map((t) => normalizeCurrency(t.currency)),
-      ...portfolioPositions.map((p) => {
+      ...portfolioLots.map((p) => {
         const symbol = String(p.symbol).trim().toUpperCase();
         const snapshot = snapshotsBySymbol.get(symbol);
         return normalizeCurrency(snapshot?.currency ?? p.currency);
@@ -751,7 +765,7 @@ app.get("/api/stats/summary", requireAuth, async (req: AuthedRequest, res) => {
     let stalePositionsCount = 0;
     let pricedPositionsCount = 0;
     let portfolioValuationAsOf: Date | null = null;
-    const portfolioValue = portfolioPositions.reduce((acc, p) => {
+    const portfolioValue = portfolioLots.reduce((acc, p) => {
       const qty = toNumber(p.quantity);
       const symbol = String(p.symbol).trim().toUpperCase();
       const snapshot = snapshotsBySymbol.get(symbol);
@@ -786,7 +800,7 @@ app.get("/api/stats/summary", requireAuth, async (req: AuthedRequest, res) => {
       portfolioValueMarketDataAsOf: portfolioValuationAsOf,
       stalePositionsCount,
       pricedPositionsCount,
-      totalPositionsCount: portfolioPositions.length,
+      totalPositionsCount: portfolioLots.length,
     });
   } catch (error) {
     // eslint-disable-next-line no-console
@@ -1077,54 +1091,74 @@ app.post("/api/market-data/refresh", requireAuth, async (req: AuthedRequest, res
         error: "Refresh is cooling down. Try again in a minute.",
       });
     }
+    if (marketRefreshInFlight) {
+      return res.status(409).json({ error: "Market refresh already running" });
+    }
+
     const payloadSymbols = Array.isArray(req.body?.symbols)
       ? req.body.symbols.map((s: unknown) => String(s))
       : [];
-    const symbols =
-      payloadSymbols.length > 0
-        ? payloadSymbols
-        : (
-            await prisma.portfolioPosition.findMany({
-              where: { userId },
-              select: { symbol: true },
-            })
-          ).map((p) => p.symbol);
-
-    const result = await refreshSymbolsLastClose(prisma, twelveDataProvider, symbols);
+    const lotsForScope = await prisma.portfolioLot.findMany({
+      select: { symbol: true, buyDate: true },
+      where: payloadSymbols.length
+        ? { symbol: { in: payloadSymbols.map((s) => normalizeSymbol(s)) } }
+        : undefined,
+    });
+    const lotsBySymbol = new Map<string, Date>();
+    for (const lot of lotsForScope) {
+      const symbol = normalizeSymbol(lot.symbol);
+      const currentMin = lotsBySymbol.get(symbol);
+      const buyDate = new Date(lot.buyDate);
+      if (!currentMin || buyDate < currentMin) {
+        lotsBySymbol.set(symbol, buyDate);
+      }
+    }
+    const symbols = [...lotsBySymbol.keys()];
+    marketRefreshInFlight = true;
+    let rowsInserted = 0;
+    let rowsUpdated = 0;
+    const errors: Array<{ symbol: string; error: string }> = [];
+    for (const symbol of symbols) {
+      try {
+        const minBuy = lotsBySymbol.get(symbol)!;
+        const startDate = startOfYear(minBuy);
+        const latest = await prisma.marketPriceHistory.findFirst({
+          where: { symbol },
+          orderBy: { priceDate: "desc" },
+        });
+        const incrementalStart =
+          latest && latest.priceDate > startDate
+            ? new Date(new Date(latest.priceDate).getTime() + 24 * 60 * 60 * 1000)
+            : startDate;
+        const endDate = new Date();
+        if (incrementalStart > endDate) continue;
+        const points = await twelveDataProvider.fetchDailyHistory(symbol, incrementalStart, endDate);
+        const upsertResult = await upsertPriceHistory(prisma, points);
+        rowsInserted += upsertResult.insertedOrUpdated;
+      } catch (error) {
+        errors.push({
+          symbol,
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
+      }
+    }
+    marketRefreshInFlight = false;
     lastManualRefreshAtByUser.set(userId, now);
     res.json({
       source: twelveDataProvider.source,
-      ...result,
+      requested: symbols.length,
+      symbolsProcessed: symbols.length - errors.length,
+      rowsInserted,
+      rowsUpdated,
+      errors,
     });
   } catch (error) {
+    marketRefreshInFlight = false;
     // eslint-disable-next-line no-console
     console.error(error);
     res.status(500).json({ error: "Failed to refresh market data" });
   }
 });
-
-function scheduleMarketDataRefresh() {
-  if (!twelveDataProvider) return;
-  const every12HoursMs = 12 * 60 * 60 * 1000;
-  setInterval(async () => {
-    try {
-      const symbols = (
-        await prisma.portfolioPosition.findMany({
-          select: { symbol: true },
-        })
-      ).map((p) => p.symbol);
-      if (!symbols.length) return;
-      const result = await refreshSymbolsLastClose(prisma, twelveDataProvider, symbols);
-      // eslint-disable-next-line no-console
-      console.log("Scheduled market refresh:", result);
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("Scheduled market refresh failed:", error);
-    }
-  }, every12HoursMs);
-}
-
-scheduleMarketDataRefresh();
 
 app.listen(PORT, () => {
   // eslint-disable-next-line no-console

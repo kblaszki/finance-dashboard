@@ -16,6 +16,7 @@ import { BudgetTable } from './components/BudgetTable'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { useAuth } from './state/auth'
+import { PortfolioPositionAnalysis } from './components/PortfolioPositionAnalysis'
 
 function navLinkClass({ isActive }: { isActive: boolean }) {
   return isActive ? 'active' : undefined
@@ -31,6 +32,7 @@ function App() {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/transactions" element={<TransactionsPage />} />
           <Route path="/portfolio" element={<PortfolioPage />} />
+          <Route path="/portfolio/:symbol" element={<PortfolioAnalysisPage />} />
           <Route path="/budgets" element={<BudgetsPage />} />
         </Route>
       </Route>
@@ -139,6 +141,14 @@ function BudgetsPage() {
     <div className="page">
       <h1 className="page-title">Budżety</h1>
       <BudgetTable />
+    </div>
+  )
+}
+
+function PortfolioAnalysisPage() {
+  return (
+    <div className="page">
+      <PortfolioPositionAnalysis />
     </div>
   )
 }
