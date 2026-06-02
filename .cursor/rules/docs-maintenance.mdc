@@ -1,0 +1,20 @@
+---
+description: Keep docs/ in sync when changing API, schema, or routes (glob-scoped).
+globs: backend/prisma/schema.prisma,backend/src/app.ts,frontend/src/api/**/*.ts,frontend/src/App.tsx
+alwaysApply: false
+---
+
+# Documentation maintenance
+
+Applies when editing schema, routes, API clients, or app routing.
+
+- New or changed REST route: add/update **one row** in [docs/api.md](mdc:docs/api.md).
+- Model or relation change: update [docs/domain.md](mdc:docs/domain.md).
+- New route/page or API client module: update [docs/frontend.md](mdc:docs/frontend.md).
+- Auth/FX/architecture change: update [docs/architecture.md](mdc:docs/architecture.md) only if behavior changed.
+
+Skip doc updates for trivial changes (typo, CSS-only, comment-only).
+
+Do **not** expand `golden-rule.mdc` or `project-context.mdc` per feature — only when global conventions change.
+
+Keep entries short (table rows); no full JSON examples in docs.

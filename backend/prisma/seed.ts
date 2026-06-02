@@ -6,6 +6,7 @@ const prisma = new PrismaClient();
 
 const DEMO_EMAIL = "demo@finance.local";
 const DEMO_PASSWORD = "demo12345";
+const MARKET_SOURCE = "DEMO_SEED";
 
 const EXPENSE_CATEGORIES = ["FOOD", "TRANSPORT", "HOUSING", "ENTERTAINMENT", "HEALTH", "SHOPPING"];
 const INCOME_CATEGORIES = ["SALARY", "FREELANCE", "INVESTMENT"];
@@ -44,6 +45,13 @@ function daysAgo(days: number): Date {
   return d;
 }
 
+function daysAgoAtHour(days: number, hour: number): Date {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  d.setHours(hour, randomInt(0, 59), 0, 0);
+  return d;
+}
+
 function yearMonth(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -60,8 +68,10 @@ async function main() {
   });
 
   await prisma.transaction.deleteMany({ where: { userId: user.id } });
+  await prisma.portfolioTrade.deleteMany({ where: { userId: user.id } });
   await prisma.portfolioPosition.deleteMany({ where: { userId: user.id } });
   await prisma.budget.deleteMany({ where: { userId: user.id } });
+  await prisma.investmentPortfolio.deleteMany({ where: { userId: user.id } });
 
   const transactions: {
     userId: number;
@@ -102,45 +112,184 @@ async function main() {
 
   await prisma.transaction.createMany({ data: transactions });
 
-  await prisma.portfolioPosition.createMany({
-    data: [
-      {
+  const [usdPortfolio, eurPortfolio] = await Promise.all([
+    prisma.investmentPortfolio.create({
+      data: {
         userId: user.id,
-        symbol: "AAPL",
-        quantity: 5,
-        buyPrice: 170,
-        currentPrice: 198,
-        currency: "USD",
-        category: "TECH",
+        name: "Akcje USA",
+        baseCurrency: "USD",
+        cashBalance: 0,
       },
-      {
+    }),
+    prisma.investmentPortfolio.create({
+      data: {
         userId: user.id,
-        symbol: "MSFT",
-        quantity: 3,
-        buyPrice: 380,
-        currentPrice: 415,
-        currency: "USD",
-        category: "TECH",
+        name: "ETF Europa",
+        baseCurrency: "EUR",
+        cashBalance: 0,
       },
-      {
-        userId: user.id,
-        symbol: "VWCE.DE",
-        quantity: 12,
-        buyPrice: 98,
-        currentPrice: 112,
-        currency: "EUR",
-        category: "ETF",
-      },
-      {
-        userId: user.id,
-        symbol: "PKO",
-        quantity: 50,
-        buyPrice: 42,
-        currentPrice: 48.5,
-        currency: "PLN",
-        category: "BANKS",
-      },
-    ],
+    }),
+  ]);
+
+  const transferTransactions = [
+    {
+      userId: user.id,
+      type: "TRANSFER_TO_PORTFOLIO",
+      amount: 3500,
+      currency: "USD",
+      category: "INVESTMENT",
+      date: daysAgoAtHour(85, 12),
+      description: "Zasilenie portfela Akcje USA",
+      portfolioId: usdPortfolio.id,
+    },
+    {
+      userId: user.id,
+      type: "TRANSFER_TO_PORTFOLIO",
+      amount: 1800,
+      currency: "EUR",
+      category: "INVESTMENT",
+      date: daysAgoAtHour(70, 12),
+      description: "Zasilenie portfela ETF Europa",
+      portfolioId: eurPortfolio.id,
+    },
+    {
+      userId: user.id,
+      type: "TRANSFER_TO_PORTFOLIO",
+      amount: 1200,
+      currency: "USD",
+      category: "INVESTMENT",
+      date: daysAgoAtHour(32, 12),
+      description: "Dodatkowe zasilenie portfela Akcje USA",
+      portfolioId: usdPortfolio.id,
+    },
+  ];
+  await prisma.transaction.createMany({ data: transferTransactions });
+
+  const trades = [
+    {
+      userId: user.id,
+      portfolioId: usdPortfolio.id,
+      side: "BUY",
+      symbol: "AAPL",
+      quantity: 6,
+      tradePrice: 178,
+      tradeDate: daysAgoAtHour(80, 15),
+      currency: "USD",
+      category: "TECH",
+    },
+    {
+      userId: user.id,
+      portfolioId: usdPortfolio.id,
+      side: "BUY",
+      symbol: "MSFT",
+      quantity: 3,
+      tradePrice: 392,
+      tradeDate: daysAgoAtHour(63, 15),
+      currency: "USD",
+      category: "TECH",
+    },
+    {
+      userId: user.id,
+      portfolioId: usdPortfolio.id,
+      side: "SELL",
+      symbol: "AAPL",
+      quantity: 1,
+      tradePrice: 201,
+      tradeDate: daysAgoAtHour(20, 15),
+      currency: "USD",
+      category: "TECH",
+    },
+    {
+      userId: user.id,
+      portfolioId: eurPortfolio.id,
+      side: "BUY",
+      symbol: "VWCE.DE",
+      quantity: 10,
+      tradePrice: 102,
+      tradeDate: daysAgoAtHour(66, 14),
+      currency: "EUR",
+      category: "ETF",
+    },
+    {
+      userId: user.id,
+      portfolioId: eurPortfolio.id,
+      side: "BUY",
+      symbol: "EUNL.DE",
+      quantity: 5,
+      tradePrice: 89,
+      tradeDate: daysAgoAtHour(36, 14),
+      currency: "EUR",
+      category: "ETF",
+    },
+  ];
+  await prisma.portfolioTrade.createMany({ data: trades });
+
+  const symbols = ["AAPL", "MSFT", "VWCE.DE", "EUNL.DE"];
+  const symbolCurrency: Record<string, string> = {
+    AAPL: "USD",
+    MSFT: "USD",
+    "VWCE.DE": "EUR",
+    "EUNL.DE": "EUR",
+  };
+  const startPrice: Record<string, number> = {
+    AAPL: 170,
+    MSFT: 370,
+    "VWCE.DE": 96,
+    "EUNL.DE": 84,
+  };
+  const dailyDrift: Record<string, number> = {
+    AAPL: 0.45,
+    MSFT: 0.5,
+    "VWCE.DE": 0.16,
+    "EUNL.DE": 0.14,
+  };
+
+  await prisma.marketPriceSnapshot.deleteMany({
+    where: { source: MARKET_SOURCE, symbol: { in: symbols } },
+  });
+  await prisma.marketPriceHistory.deleteMany({
+    where: { source: MARKET_SOURCE, symbol: { in: symbols } },
+  });
+
+  const historyRows: {
+    symbol: string;
+    currency: string;
+    close: number;
+    priceDate: Date;
+    source: string;
+    fetchedAt: Date;
+  }[] = [];
+  for (const symbol of symbols) {
+    for (let day = 75; day >= 0; day -= 1) {
+      const trend = startPrice[symbol] + (75 - day) * dailyDrift[symbol];
+      const noise = randomAmount(-2.2, 2.2);
+      const close = Math.max(5, Math.round((trend + noise) * 100) / 100);
+      historyRows.push({
+        symbol,
+        currency: symbolCurrency[symbol],
+        close,
+        priceDate: daysAgoAtHour(day, 22),
+        source: MARKET_SOURCE,
+        fetchedAt: new Date(),
+      });
+    }
+  }
+  await prisma.marketPriceHistory.createMany({ data: historyRows });
+
+  const latestBySymbol = new Map<string, (typeof historyRows)[number]>();
+  for (const row of historyRows) {
+    const prev = latestBySymbol.get(row.symbol);
+    if (!prev || row.priceDate > prev.priceDate) latestBySymbol.set(row.symbol, row);
+  }
+  await prisma.marketPriceSnapshot.createMany({
+    data: Array.from(latestBySymbol.values()).map((row) => ({
+      symbol: row.symbol,
+      currency: row.currency,
+      close: row.close,
+      priceDate: row.priceDate,
+      source: row.source,
+      fetchedAt: row.fetchedAt,
+    })),
   });
 
   const now = new Date();
@@ -180,7 +329,7 @@ async function main() {
   console.log(`Seed OK for user: ${DEMO_EMAIL} (password: ${DEMO_PASSWORD})`);
   // eslint-disable-next-line no-console
   console.log(
-    `  ${transactions.length} transactions, 4 portfolio positions, ${months.length * 4} budgets`,
+    `  ${transactions.length + transferTransactions.length} transactions, ${trades.length} trades, ${months.length * 4} budgets`,
   );
 }
 

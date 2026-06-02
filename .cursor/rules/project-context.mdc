@@ -5,34 +5,20 @@ alwaysApply: true
 
 # Finance Dashboard — project context
 
-Behavioral rules: [golden-rule.mdc](mdc:.cursor/rules/golden-rule.mdc). Below is repository-specific context only.
+Behavioral rules: [golden-rule.mdc](mdc:.cursor/rules/golden-rule.mdc). Agent index: [AGENTS.md](mdc:AGENTS.md). Deep docs: `docs/` (on-demand, not duplicated here).
 
 ## Layout
 
-- `backend/` — Express + Prisma + SQLite (`prisma/schema.prisma`, `src/app.ts`, `src/fx.ts`)
+- `backend/` — Express + Prisma + SQLite (`prisma/schema.prisma`, `src/app.ts`, `src/fx.ts`, `src/auth.ts`)
 - `frontend/` — Vite + React + TypeScript (`src/components/`, `src/api/`, `src/state/`)
 - Repository root: `npm run dev`, `npm run build`
 
-## Running locally
+## Local dev
 
-- Backend: `http://localhost:4000` (`cd backend && npm run dev`)
-- Frontend: `http://localhost:5173` (`cd frontend && npm run dev`)
-- Both: `npm run dev` from the repository root
+- Root: `npm run dev` (backend `:4000`, frontend `:5173`). Setup, env, seed: [README.md](mdc:README.md).
 
-## Database
+## Conventions
 
-After changing models in `backend/prisma/schema.prisma`:
-
-```bash
-cd backend && npx prisma migrate dev --name <migration_description>
-```
-
-## Line endings
-
-- **LF only** — see [line-endings.mdc](mdc:.cursor/rules/line-endings.mdc), `.editorconfig`, `.gitattributes`.
-
-## Code changes
-
-- Minimal diff; no refactors outside the task scope (see golden-rule).
-- New endpoints should match existing handlers in `app.ts`.
-- New views/components under `frontend/src/components/`; API client code under `frontend/src/api/`.
+- **LF only** — [line-endings.mdc](mdc:.cursor/rules/line-endings.mdc), `.editorconfig`, `.gitattributes`.
+- Minimal diff (golden-rule). New routes in `backend/src/app.ts`; API clients in `frontend/src/api/`; UI in `frontend/src/components/`.
+- Schema changes: `cd backend && npx prisma migrate dev --name <description>` — see [README.md](mdc:README.md) for reset notes.
