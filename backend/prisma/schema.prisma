@@ -18,6 +18,7 @@ model User {
   transactions       Transaction[]
   portfolioPositions PortfolioPosition[]
   portfolioTrades    PortfolioTrade[]
+  investmentPortfolios InvestmentPortfolio[]
   budgets            Budget[]
 }
 
@@ -31,6 +32,10 @@ model Transaction {
   category    String
   date        DateTime
   description String?
+  portfolioId Int?
+  portfolio   InvestmentPortfolio? @relation(fields: [portfolioId], references: [id], onDelete: SetNull)
+
+  @@index([userId, portfolioId])
 }
 
 model PortfolioPosition {
@@ -57,8 +62,27 @@ model PortfolioTrade {
   currency  String
   category  String
   createdAt DateTime @default(now())
+  portfolioId Int
+  portfolio InvestmentPortfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
 
-  @@index([userId, symbol])
+  @@index([userId, portfolioId, symbol])
+}
+
+model InvestmentPortfolio {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  baseCurrency String
+  cashBalance  Decimal  @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  trades       PortfolioTrade[]
+  transactions Transaction[]
+
+  @@unique([userId, name])
+  @@index([userId, baseCurrency])
 }
 
 model Budget {

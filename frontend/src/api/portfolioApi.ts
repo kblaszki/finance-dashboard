@@ -26,6 +26,7 @@ export interface PortfolioPosition {
 }
 
 export interface PortfolioPositionInput {
+  portfolioId: number;
   side: "BUY" | "SELL";
   symbol: string;
   quantity: number;
@@ -37,6 +38,7 @@ export interface PortfolioPositionInput {
 
 export interface PortfolioTrade {
   id: number;
+  portfolioId: number;
   side: "BUY" | "SELL";
   symbol: string;
   quantity: number;
@@ -47,9 +49,11 @@ export interface PortfolioTrade {
   createdAt: string;
 }
 
-export async function fetchPortfolio(opts?: { currency?: string }): Promise<PortfolioPosition[]> {
-  const q = opts?.currency ? `?currency=${encodeURIComponent(opts.currency)}` : "";
-  return apiClient.get<PortfolioPosition[]>(`/api/portfolio${q}`);
+export async function fetchPortfolio(opts: { currency?: string; portfolioId: number }): Promise<PortfolioPosition[]> {
+  const q = new URLSearchParams();
+  q.set("portfolioId", String(opts.portfolioId));
+  if (opts.currency) q.set("currency", opts.currency);
+  return apiClient.get<PortfolioPosition[]>(`/api/portfolio?${q.toString()}`);
 }
 
 export type MarketRefreshResponse = {
@@ -86,9 +90,10 @@ export async function deletePortfolioPosition(id: number): Promise<void> {
   return apiClient.delete(`/api/portfolio/${id}`);
 }
 
-export async function fetchPortfolioTrades(opts?: { symbol?: string }): Promise<PortfolioTrade[]> {
-  const q = opts?.symbol ? `?symbol=${encodeURIComponent(opts.symbol)}` : "";
-  return apiClient.get<PortfolioTrade[]>(`/api/portfolio/trades${q}`);
+export async function fetchPortfolioTrades(opts: { symbol?: string; portfolioId: number }): Promise<PortfolioTrade[]> {
+  const q = new URLSearchParams({ portfolioId: String(opts.portfolioId) });
+  if (opts.symbol) q.set("symbol", opts.symbol);
+  return apiClient.get<PortfolioTrade[]>(`/api/portfolio/trades?${q.toString()}`);
 }
 
 export async function updatePortfolioTrade(
@@ -114,10 +119,12 @@ export async function fetchPortfolioSymbolHistory(opts: {
   symbol: string;
   method: "weighted" | "fifo";
   currency: string;
+  portfolioId: number;
 }): Promise<PortfolioHistoryPoint[]> {
   const q = new URLSearchParams({
     method: opts.method,
     currency: opts.currency,
+    portfolioId: String(opts.portfolioId),
   });
   return apiClient.get<PortfolioHistoryPoint[]>(`/api/portfolio/${encodeURIComponent(opts.symbol)}/history?${q.toString()}`);
 }

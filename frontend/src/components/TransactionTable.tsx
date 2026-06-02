@@ -12,6 +12,7 @@ import {
 } from '../api/transactionsApi'
 import { SUPPORTED_CURRENCIES, useCurrency } from '../state/currency'
 import { formatMoney } from '../utils/format'
+import { fetchPortfolios, type InvestmentPortfolio } from '../api/portfoliosApi'
 
 const emptyForm: TransactionInput = {
   type: 'EXPENSE',
@@ -43,11 +44,16 @@ export function TransactionTable() {
   const [filterType, setFilterType] = useState<'' | TransactionType>('')
   const [filterFrom, setFilterFrom] = useState('')
   const [filterTo, setFilterTo] = useState('')
+  const [portfolios, setPortfolios] = useState<InvestmentPortfolio[]>([])
   const { currency: displayCurrency } = useCurrency()
 
   useEffect(() => {
     void load()
   }, [displayCurrency, filterType, filterFrom, filterTo])
+
+  useEffect(() => {
+    void fetchPortfolios().then(setPortfolios).catch(() => {})
+  }, [])
 
   async function load() {
     setLoading(true)
@@ -70,6 +76,10 @@ export function TransactionTable() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (form.amount <= 0 || !form.category.trim()) {
+    if (form.type === 'TRANSFER_TO_PORTFOLIO' && !form.portfolioId) {
+      setError('Dla transferu wybierz portfel docelowy')
+      return
+    }
       setError('Kwota musi być > 0 i kategoria jest wymagana')
       return
     }
@@ -137,8 +147,27 @@ export function TransactionTable() {
             <option value="">Wszystkie</option>
             <option value="INCOME">Przychód</option>
             <option value="EXPENSE">Wydatek</option>
+            <option value="TRANSFER_TO_PORTFOLIO">Transfer do portfela</option>
           </select>
         </label>
+        {form.type === 'TRANSFER_TO_PORTFOLIO' && (
+          <label>
+            Portfel docelowy
+            <select
+              value={form.portfolioId ?? ''}
+              onChange={(e) => {
+                const id = Number(e.target.value)
+                const selected = portfolios.find((p) => p.id === id)
+                setForm({ ...form, portfolioId: id, currency: selected?.baseCurrency ?? form.currency })
+              }}
+            >
+              <option value="">Wybierz…</option>
+              {portfolios.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </label>
+        )}
         <label>
           Od
           <input
@@ -340,7 +369,7 @@ export function TransactionTable() {
                 ) : (
                   <tr key={t.id}>
                     <td>{new Date(t.date).toLocaleDateString()}</td>
-                    <td>{t.type === 'INCOME' ? 'Przychód' : 'Wydatek'}</td>
+                    <td>{t.type === 'INCOME' ? 'Przychód' : t.type === 'EXPENSE' ? 'Wydatek' : 'Transfer do portfela'}</td>
                     <td>{t.category}</td>
                     <td>{formatMoney(t.amount, t.currency)}</td>
                     <td>{t.currency}</td>

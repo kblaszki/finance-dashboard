@@ -6,6 +6,7 @@ import App from './App.tsx'
 import { CurrencyProvider } from './state/currency'
 import { ThemeProvider } from './state/theme'
 import { AuthProvider } from './state/auth'
+import { PortfolioProvider } from './state/portfolio'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -13,7 +14,9 @@ createRoot(document.getElementById('root')!).render(
       <AuthProvider>
         <ThemeProvider>
           <CurrencyProvider>
-            <App />
+            <PortfolioProvider>
+              <App />
+            </PortfolioProvider>
           </CurrencyProvider>
         </ThemeProvider>
       </AuthProvider>

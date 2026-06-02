@@ -8,8 +8,11 @@ import {
 import { SUPPORTED_CURRENCIES, useCurrency } from '../state/currency'
 import { formatMoney } from '../utils/format'
 import { useNavigate } from 'react-router-dom'
+import { createPortfolio, fetchPortfolios, type InvestmentPortfolio } from '../api/portfoliosApi'
+import { useActivePortfolio } from '../state/portfolio'
 
 const emptyForm: PortfolioPositionInput = {
+  portfolioId: 0,
   side: 'BUY',
   symbol: '',
   quantity: 0,
@@ -26,18 +29,40 @@ export function PortfolioTable() {
   const [error, setError] = useState<string | null>(null)
   const [refreshingMarket, setRefreshingMarket] = useState(false)
   const [refreshInfo, setRefreshInfo] = useState<string | null>(null)
+  const [portfolios, setPortfolios] = useState<InvestmentPortfolio[]>([])
+  const [newPortfolioName, setNewPortfolioName] = useState('')
+  const [newPortfolioCurrency, setNewPortfolioCurrency] = useState('PLN')
   const { currency: displayCurrency } = useCurrency()
+  const { activePortfolioId, setActivePortfolioId } = useActivePortfolio()
   const navigate = useNavigate()
 
   useEffect(() => {
-    void load()
-  }, [displayCurrency])
+    void loadPortfolios()
+  }, [])
+
+  useEffect(() => {
+    if (activePortfolioId) void load()
+  }, [displayCurrency, activePortfolioId])
+
+  useEffect(() => {
+    const selected = portfolios.find((p) => p.id === activePortfolioId)
+    if (selected) {
+      setForm((prev) => ({ ...prev, currency: selected.baseCurrency, portfolioId: selected.id }))
+    }
+  }, [portfolios, activePortfolioId])
+
+  async function loadPortfolios() {
+    const rows = await fetchPortfolios()
+    setPortfolios(rows)
+    if (!activePortfolioId && rows.length) setActivePortfolioId(rows[0].id)
+  }
 
   async function load() {
     setLoading(true)
     setError(null)
     try {
-      const data = await fetchPortfolio({ currency: displayCurrency })
+      if (!activePortfolioId) return
+      const data = await fetchPortfolio({ currency: displayCurrency, portfolioId: activePortfolioId })
       setPositions(data)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Błąd ładowania')
@@ -48,6 +73,10 @@ export function PortfolioTable() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (!activePortfolioId) {
+      setError('Wybierz portfel')
+      return
+    }
     if (!form.symbol.trim() || form.quantity <= 0 || form.tradePrice <= 0 || !form.tradeDate) {
       setError('Typ, symbol, ilość, data i cena transakcji muszą być poprawne')
       return
@@ -56,10 +85,11 @@ export function PortfolioTable() {
     try {
       await createPortfolioPosition({
         ...form,
+        portfolioId: activePortfolioId,
         symbol: form.symbol.trim().toUpperCase(),
         category: form.category?.trim() || 'UNSPECIFIED',
       })
-      setForm(emptyForm)
+      setForm({ ...emptyForm, portfolioId: activePortfolioId })
       await load()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Nie udało się dodać pozycji')
@@ -83,8 +113,47 @@ export function PortfolioTable() {
     }
   }
 
+  async function handleCreatePortfolio(e: React.FormEvent) {
+    e.preventDefault()
+    if (!newPortfolioName.trim()) return
+    const created = await createPortfolio({ name: newPortfolioName.trim(), baseCurrency: newPortfolioCurrency })
+    await loadPortfolios()
+    setActivePortfolioId(created.id)
+    setForm((prev) => ({ ...prev, currency: created.baseCurrency, portfolioId: created.id }))
+    setNewPortfolioName('')
+  }
+
+  const activePortfolio = portfolios.find((p) => p.id === activePortfolioId) ?? null
+
   return (
     <div className="card">
+      <form className="form-grid" onSubmit={handleCreatePortfolio}>
+        <label>
+          Aktywny portfel
+          <select value={activePortfolioId ?? ''} onChange={(e) => setActivePortfolioId(Number(e.target.value))}>
+            {portfolios.map((p) => (
+              <option key={p.id} value={p.id}>{p.name} ({p.baseCurrency})</option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Saldo gotówki
+          <input value={activePortfolio ? formatMoney(activePortfolio.cashBalance, activePortfolio.baseCurrency) : '—'} readOnly />
+        </label>
+        <label>
+          Nowy portfel
+          <input value={newPortfolioName} onChange={(e) => setNewPortfolioName(e.target.value)} placeholder="np. XTB" />
+        </label>
+        <label>
+          Waluta portfela
+          <select value={newPortfolioCurrency} onChange={(e) => setNewPortfolioCurrency(e.target.value)}>
+            {SUPPORTED_CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </label>
+        <div className="form-actions">
+          <button type="submit" className="btn-secondary">Dodaj portfel</button>
+        </div>
+      </form>
       <div className="row" style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
         <h2>Portfel inwestycyjny</h2>
         <button type="button" className="btn-secondary" onClick={handleRefreshMarketData} disabled={refreshingMarket}>
@@ -146,10 +215,8 @@ export function PortfolioTable() {
             value={form.currency}
             onChange={(e) => setForm({ ...form, currency: e.target.value })}
           >
-            {SUPPORTED_CURRENCIES.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
+            {(activePortfolio ? [activePortfolio.baseCurrency] : SUPPORTED_CURRENCIES).map((c) => (
+              <option key={c} value={c}>{c}</option>
             ))}
           </select>
         </label>

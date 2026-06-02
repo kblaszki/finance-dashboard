@@ -1,6 +1,6 @@
 import { apiClient } from "./client";
 
-export type TransactionType = "INCOME" | "EXPENSE";
+export type TransactionType = "INCOME" | "EXPENSE" | "TRANSFER_TO_PORTFOLIO";
 
 export interface Transaction {
   id: number;
@@ -10,6 +10,7 @@ export interface Transaction {
   category: string;
   date: string;
   description?: string | null;
+  portfolioId?: number | null;
   amountConverted?: number;
   convertedCurrency?: string;
   fxAsOf?: string;
@@ -22,6 +23,7 @@ export interface TransactionInput {
   category: string;
   date: string;
   description?: string;
+  portfolioId?: number | null;
 }
 
 export type TransactionFilters = {
@@ -29,6 +31,7 @@ export type TransactionFilters = {
   type?: TransactionType;
   from?: string;
   to?: string;
+  portfolioId?: number;
 };
 
 function buildQuery(opts?: TransactionFilters): string {
@@ -38,6 +41,7 @@ function buildQuery(opts?: TransactionFilters): string {
   if (opts.type) params.set("type", opts.type);
   if (opts.from) params.set("from", opts.from);
   if (opts.to) params.set("to", opts.to);
+  if (opts.portfolioId) params.set("portfolioId", String(opts.portfolioId));
   const q = params.toString();
   return q ? `?${q}` : "";
 }

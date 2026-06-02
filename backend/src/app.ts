@@ -18,6 +18,7 @@ import {
   validatePassword,
   verifyPassword,
 } from "./auth";
+import { computePortfolioCashBalance } from "./portfolioCash";
 
 dotenv.config();
 
@@ -212,6 +213,55 @@ function serializeBudget(b: {
   };
 }
 
+function serializePortfolio(p: {
+  id: number;
+  userId: number;
+  name: string;
+  baseCurrency: string;
+  cashBalance: unknown;
+  createdAt: Date;
+  updatedAt: Date;
+}) {
+  return {
+    id: p.id,
+    userId: p.userId,
+    name: p.name,
+    baseCurrency: normalizeCurrency(p.baseCurrency),
+    cashBalance: toNumber(p.cashBalance),
+    createdAt: p.createdAt,
+    updatedAt: p.updatedAt,
+  };
+}
+
+async function recomputePortfolioCashBalance(
+  prismaClient: PrismaClient,
+  userId: number,
+  portfolioId: number,
+) {
+  const [transfers, trades] = await Promise.all([
+    prismaClient.transaction.findMany({
+      where: { userId, portfolioId, type: "TRANSFER_TO_PORTFOLIO" },
+      select: { amount: true },
+    }),
+    prismaClient.portfolioTrade.findMany({
+      where: { userId, portfolioId },
+      select: { side: true, quantity: true, tradePrice: true },
+    }),
+  ]);
+  const balance = computePortfolioCashBalance(
+    transfers.map((t) => ({ amount: toNumber(t.amount) })),
+    trades.map((t) => ({
+      side: t.side,
+      quantity: toNumber(t.quantity),
+      tradePrice: toNumber(t.tradePrice),
+    })),
+  );
+  await prismaClient.investmentPortfolio.update({
+    where: { id: portfolioId },
+    data: { cashBalance: balance },
+  });
+}
+
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
@@ -297,10 +347,86 @@ app.get("/api/auth/me", requireAuth, async (req: AuthedRequest, res) => {
   }
 });
 
+app.get("/api/portfolios", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const portfolios = await prisma.investmentPortfolio.findMany({
+      where: { userId },
+      orderBy: { createdAt: "asc" },
+    });
+    res.json(portfolios.map(serializePortfolio));
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch portfolios" });
+  }
+});
+
+app.post("/api/portfolios", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const name = String(req.body.name ?? "").trim();
+    const baseCurrency = normalizeCurrency(req.body.baseCurrency);
+    if (!name || !baseCurrency) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+    const created = await prisma.investmentPortfolio.create({
+      data: { userId, name, baseCurrency, cashBalance: 0 },
+    });
+    res.status(201).json(serializePortfolio(created));
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    if (error && typeof error === "object" && "code" in error && (error as { code: string }).code === "P2002") {
+      return res.status(409).json({ error: "Portfolio name already exists" });
+    }
+    res.status(500).json({ error: "Failed to create portfolio" });
+  }
+});
+
+app.put("/api/portfolios/:id", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const id = Number(req.params.id);
+    const existing = await prisma.investmentPortfolio.findFirst({ where: { id, userId } });
+    if (!existing) return res.status(404).json({ error: "Portfolio not found" });
+    const data: Record<string, unknown> = {};
+    if (req.body.name !== undefined) data.name = String(req.body.name).trim();
+    if (req.body.baseCurrency !== undefined) data.baseCurrency = normalizeCurrency(req.body.baseCurrency);
+    const updated = await prisma.investmentPortfolio.update({ where: { id }, data });
+    res.json(serializePortfolio(updated));
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to update portfolio" });
+  }
+});
+
+app.delete("/api/portfolios/:id", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const id = Number(req.params.id);
+    const [tradeCount, txCount] = await Promise.all([
+      prisma.portfolioTrade.count({ where: { userId, portfolioId: id } }),
+      prisma.transaction.count({ where: { userId, portfolioId: id } }),
+    ]);
+    if (tradeCount > 0 || txCount > 0) {
+      return res.status(400).json({ error: "Cannot delete portfolio with related operations" });
+    }
+    const result = await prisma.investmentPortfolio.deleteMany({ where: { id, userId } });
+    if (!result.count) return res.status(404).json({ error: "Portfolio not found" });
+    res.status(204).send();
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to delete portfolio" });
+  }
+});
+
 app.get("/api/transactions", requireAuth, async (req: AuthedRequest, res) => {
   try {
     const userId = req.userId!;
-    const { from, to, type, category, currency } = req.query;
+    const { from, to, type, category, currency, portfolioId } = req.query;
     const displayCurrency = normalizeCurrency(currency);
 
     const where: {
@@ -308,6 +434,7 @@ app.get("/api/transactions", requireAuth, async (req: AuthedRequest, res) => {
       date?: { gte?: Date; lte?: Date };
       type?: string;
       category?: string;
+      portfolioId?: number;
     } = { userId };
 
     if (from || to) {
@@ -326,6 +453,9 @@ app.get("/api/transactions", requireAuth, async (req: AuthedRequest, res) => {
 
     if (category) {
       where.category = String(category);
+    }
+    if (portfolioId) {
+      where.portfolioId = Number(portfolioId);
     }
 
     const transactions = await prisma.transaction.findMany({
@@ -383,10 +513,23 @@ app.get("/api/transactions", requireAuth, async (req: AuthedRequest, res) => {
 app.post("/api/transactions", requireAuth, async (req: AuthedRequest, res) => {
   try {
     const userId = req.userId!;
-    const { type, amount, currency, category, date, description } = req.body;
+    const { type, amount, currency, category, date, description, portfolioId } = req.body;
+    const prevPortfolioId = existing.portfolioId;
 
     if (!type || !amount || !currency || !category || !date) {
       return res.status(400).json({ error: "Missing required fields" });
+    }
+    let normalizedPortfolioId: number | null = null;
+    if (type === "TRANSFER_TO_PORTFOLIO") {
+      if (!portfolioId) return res.status(400).json({ error: "portfolioId is required for transfer" });
+      normalizedPortfolioId = Number(portfolioId);
+      const portfolio = await prisma.investmentPortfolio.findFirst({
+        where: { id: normalizedPortfolioId, userId },
+      });
+      if (!portfolio) return res.status(404).json({ error: "Portfolio not found" });
+      if (normalizeCurrency(portfolio.baseCurrency) !== normalizeCurrency(currency)) {
+        return res.status(400).json({ error: "Transfer currency must match portfolio base currency" });
+      }
     }
 
     const created = await prisma.transaction.create({
@@ -398,6 +541,7 @@ app.post("/api/transactions", requireAuth, async (req: AuthedRequest, res) => {
         category,
         date: new Date(date),
         description: description ?? null,
+        portfolioId: normalizedPortfolioId,
       },
     });
 
@@ -406,6 +550,9 @@ app.post("/api/transactions", requireAuth, async (req: AuthedRequest, res) => {
       amount: toNumber(created.amount),
       currency: normalizeCurrency(created.currency),
     });
+    if (normalizedPortfolioId) {
+      await recomputePortfolioCashBalance(prisma, userId, normalizedPortfolioId);
+    }
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(error);
@@ -422,7 +569,7 @@ app.put("/api/transactions/:id", requireAuth, async (req: AuthedRequest, res) =>
       return res.status(404).json({ error: "Transaction not found" });
     }
 
-    const { type, amount, currency, category, date, description } = req.body;
+    const { type, amount, currency, category, date, description, portfolioId } = req.body;
 
     const updated = await prisma.transaction.update({
       where: { id },
@@ -433,6 +580,7 @@ app.put("/api/transactions/:id", requireAuth, async (req: AuthedRequest, res) =>
         category,
         date: date ? new Date(date) : undefined,
         description,
+        portfolioId: portfolioId != null ? Number(portfolioId) : undefined,
       },
     });
 
@@ -441,6 +589,10 @@ app.put("/api/transactions/:id", requireAuth, async (req: AuthedRequest, res) =>
       amount: toNumber(updated.amount),
       currency: normalizeCurrency(updated.currency),
     });
+    if (prevPortfolioId) await recomputePortfolioCashBalance(prisma, userId, prevPortfolioId);
+    if (updated.portfolioId && updated.portfolioId !== prevPortfolioId) {
+      await recomputePortfolioCashBalance(prisma, userId, updated.portfolioId);
+    }
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(error);
@@ -452,10 +604,12 @@ app.delete("/api/transactions/:id", requireAuth, async (req: AuthedRequest, res)
   try {
     const userId = req.userId!;
     const id = Number(req.params.id);
+    const existing = await prisma.transaction.findFirst({ where: { id, userId } });
     const result = await prisma.transaction.deleteMany({ where: { id, userId } });
     if (result.count === 0) {
       return res.status(404).json({ error: "Transaction not found" });
     }
+    if (existing?.portfolioId) await recomputePortfolioCashBalance(prisma, userId, existing.portfolioId);
     res.status(204).send();
   } catch (error) {
     // eslint-disable-next-line no-console
@@ -468,8 +622,14 @@ app.get("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
   try {
     const userId = req.userId!;
     const displayCurrency = normalizeCurrency(req.query.currency) || "PLN";
+    const portfolioId = req.query.portfolioId ? Number(req.query.portfolioId) : null;
+    if (!portfolioId) {
+      return res.status(400).json({ error: "portfolioId is required" });
+    }
+    const portfolio = await prisma.investmentPortfolio.findFirst({ where: { id: portfolioId, userId } });
+    if (!portfolio) return res.status(404).json({ error: "Portfolio not found" });
     const trades = await prisma.portfolioTrade.findMany({
-      where: { userId },
+      where: { userId, portfolioId },
       orderBy: [{ symbol: "asc" }, { tradeDate: "asc" }],
     });
     const symbols = [...new Set(trades.map((t) => normalizeSymbol(t.symbol)))];
@@ -549,6 +709,7 @@ app.get("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
         profitPct,
         convertedCurrency: displayCurrency,
         fxAsOf: asOf,
+        portfolioId,
       };
     });
 
@@ -563,14 +724,19 @@ app.get("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
 app.post("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
   try {
     const userId = req.userId!;
-    const { side, symbol, quantity, tradePrice, tradeDate, currency, category } = req.body;
+    const { side, symbol, quantity, tradePrice, tradeDate, currency, category, portfolioId } = req.body;
     const normalizedSide = String(side ?? "BUY").toUpperCase();
-    if (!symbol || !quantity || !tradePrice || !tradeDate || !currency || !["BUY", "SELL"].includes(normalizedSide)) {
+    if (!symbol || !quantity || !tradePrice || !tradeDate || !currency || !portfolioId || !["BUY", "SELL"].includes(normalizedSide)) {
       return res.status(400).json({ error: "Missing required fields" });
     }
-
+    const pid = Number(portfolioId);
+    const portfolio = await prisma.investmentPortfolio.findFirst({ where: { id: pid, userId } });
+    if (!portfolio) return res.status(404).json({ error: "Portfolio not found" });
+    if (normalizeCurrency(portfolio.baseCurrency) !== normalizeCurrency(currency)) {
+      return res.status(400).json({ error: "Trade currency must match portfolio base currency" });
+    }
     if (normalizedSide === "SELL") {
-      const existingTrades = await prisma.portfolioTrade.findMany({ where: { userId, symbol: normalizeSymbol(symbol) } });
+      const existingTrades = await prisma.portfolioTrade.findMany({ where: { userId, portfolioId: pid, symbol: normalizeSymbol(symbol) } });
       const netQty = existingTrades.reduce((acc, l) => {
         const q = toNumber(l.quantity);
         return acc + (l.side === "BUY" ? q : -q);
@@ -578,11 +744,16 @@ app.post("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
       if (toNumber(quantity) > netQty) {
         return res.status(400).json({ error: "Sell quantity exceeds current holdings" });
       }
+    } else {
+      const cash = toNumber(portfolio.cashBalance);
+      const grossValue = toNumber(quantity) * toNumber(tradePrice);
+      if (grossValue > cash) return res.status(400).json({ error: "Insufficient portfolio cash balance" });
     }
 
     const created = await prisma.portfolioTrade.create({
       data: {
         userId,
+        portfolioId: pid,
         side: normalizedSide,
         symbol: normalizeSymbol(symbol),
         quantity,
@@ -598,6 +769,7 @@ app.post("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
       tradePrice: toNumber(created.tradePrice),
       currency: normalizeCurrency(created.currency),
     });
+    await recomputePortfolioCashBalance(prisma, userId, pid);
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(error);
@@ -609,8 +781,9 @@ app.get("/api/portfolio/trades", requireAuth, async (req: AuthedRequest, res) =>
   try {
     const userId = req.userId!;
     const symbol = req.query.symbol ? normalizeSymbol(req.query.symbol) : undefined;
+    const portfolioId = req.query.portfolioId ? Number(req.query.portfolioId) : null;
     const trades = await prisma.portfolioTrade.findMany({
-      where: symbol ? { userId, symbol } : { userId },
+      where: symbol ? { userId, symbol, portfolioId: portfolioId ?? undefined } : { userId, portfolioId: portfolioId ?? undefined },
       orderBy: [{ symbol: "asc" }, { tradeDate: "desc" }],
     });
     res.json(
@@ -645,6 +818,14 @@ app.put("/api/portfolio/:id", requireAuth, async (req: AuthedRequest, res) => {
     if (req.body.tradeDate !== undefined) data.tradeDate = new Date(String(req.body.tradeDate));
     if (req.body.currency !== undefined) data.currency = normalizeCurrency(req.body.currency);
     if (req.body.category !== undefined) data.category = req.body.category;
+    const portfolioId = Number(req.body.portfolioId ?? existing.portfolioId);
+    const portfolio = await prisma.investmentPortfolio.findFirst({ where: { id: portfolioId, userId } });
+    if (!portfolio) return res.status(404).json({ error: "Portfolio not found" });
+    const nextCurrency = normalizeCurrency(String(req.body.currency ?? existing.currency));
+    if (nextCurrency !== normalizeCurrency(portfolio.baseCurrency)) {
+      return res.status(400).json({ error: "Trade currency must match portfolio base currency" });
+    }
+    data.portfolioId = portfolioId;
 
     const updated = await prisma.portfolioTrade.update({ where: { id }, data });
     res.json({
@@ -655,6 +836,10 @@ app.put("/api/portfolio/:id", requireAuth, async (req: AuthedRequest, res) => {
       tradePrice: toNumber(updated.tradePrice),
       currency: normalizeCurrency(updated.currency),
     });
+    await recomputePortfolioCashBalance(prisma, userId, existing.portfolioId);
+    if (portfolioId !== existing.portfolioId) {
+      await recomputePortfolioCashBalance(prisma, userId, portfolioId);
+    }
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(error);
@@ -666,8 +851,10 @@ app.delete("/api/portfolio/:id", requireAuth, async (req: AuthedRequest, res) =>
   try {
     const userId = req.userId!;
     const id = Number(req.params.id);
+    const existing = await prisma.portfolioTrade.findFirst({ where: { id, userId } });
     const result = await prisma.portfolioTrade.deleteMany({ where: { id, userId } });
     if (!result.count) return res.status(404).json({ error: "Portfolio trade not found" });
+    if (existing?.portfolioId) await recomputePortfolioCashBalance(prisma, userId, existing.portfolioId);
     res.status(204).send();
   } catch (error) {
     // eslint-disable-next-line no-console
@@ -682,8 +869,10 @@ app.get("/api/portfolio/:symbol/history", requireAuth, async (req: AuthedRequest
     const symbol = normalizeSymbol(req.params.symbol);
     const method = String(req.query.method ?? "weighted").toLowerCase();
     const displayCurrency = normalizeCurrency(req.query.currency) || "PLN";
+    const portfolioId = req.query.portfolioId ? Number(req.query.portfolioId) : null;
+    if (!portfolioId) return res.status(400).json({ error: "portfolioId is required" });
 
-    const trades = await prisma.portfolioTrade.findMany({ where: { userId, symbol }, orderBy: { tradeDate: "asc" } });
+    const trades = await prisma.portfolioTrade.findMany({ where: { userId, symbol, portfolioId }, orderBy: { tradeDate: "asc" } });
     const history = await prisma.marketPriceHistory.findMany({ where: { symbol }, orderBy: { priceDate: "asc" } });
     if (!trades.length || !history.length) return res.json([]);
 

@@ -9,11 +9,13 @@ import {
 import { useCurrency } from '../state/currency'
 import { formatMoney } from '../utils/format'
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { useActivePortfolio } from '../state/portfolio'
 
 export function PortfolioPositionAnalysis() {
   const params = useParams()
   const symbol = String(params.symbol ?? '').toUpperCase()
   const { currency } = useCurrency()
+  const { activePortfolioId } = useActivePortfolio()
   const [method, setMethod] = useState<'weighted' | 'fifo'>('weighted')
   const [data, setData] = useState<PortfolioHistoryPoint[]>([])
   const [trades, setTrades] = useState<PortfolioTrade[]>([])
@@ -21,16 +23,17 @@ export function PortfolioPositionAnalysis() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (!symbol) return
+    if (!symbol || !activePortfolioId) return
     void load()
-  }, [symbol, method, currency])
+  }, [symbol, method, currency, activePortfolioId])
 
   async function load() {
     setLoading(true)
     setError(null)
     try {
-      const rows = await fetchPortfolioSymbolHistory({ symbol, method, currency })
-      const symbolTrades = await fetchPortfolioTrades({ symbol })
+      if (!activePortfolioId) return
+      const rows = await fetchPortfolioSymbolHistory({ symbol, method, currency, portfolioId: activePortfolioId })
+      const symbolTrades = await fetchPortfolioTrades({ symbol, portfolioId: activePortfolioId })
       setData(rows)
       setTrades(symbolTrades)
     } catch (e) {
