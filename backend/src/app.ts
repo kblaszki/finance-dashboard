@@ -137,32 +137,61 @@ function listYearMonthsInRange(from: Date, to: Date): string[] {
 }
 
 function costBasisWeighted(
-  lots: Array<{ quantity: unknown; buyPrice: unknown; currency: string }>,
+  lots: Array<{ side: string; quantity: unknown; tradePrice: unknown; currency: string }>,
   displayCurrency: string,
   plnPerUnit: Record<string, number>,
 ) {
-  return lots.reduce((acc, l) => {
-    const lotCost = toNumber(l.quantity) * toNumber(l.buyPrice);
-    return acc + convertAmount(lotCost, normalizeCurrency(l.currency), displayCurrency, plnPerUnit);
-  }, 0);
+  let qty = 0;
+  let cost = 0;
+  for (const l of lots) {
+    const q = toNumber(l.quantity);
+    const lotCost = convertAmount(
+      q * toNumber(l.tradePrice),
+      normalizeCurrency(l.currency),
+      displayCurrency,
+      plnPerUnit,
+    );
+    if (l.side === "BUY") {
+      qty += q;
+      cost += lotCost;
+    } else {
+      const sellQty = Math.min(q, qty);
+      const avgCost = qty > 0 ? cost / qty : 0;
+      qty -= sellQty;
+      cost -= avgCost * sellQty;
+    }
+  }
+  return cost;
 }
 
 function costBasisFifo(
-  lots: Array<{ quantity: unknown; buyPrice: unknown; currency: string }>,
+  lots: Array<{ side: string; quantity: unknown; tradePrice: unknown; currency: string }>,
   displayCurrency: string,
   plnPerUnit: Record<string, number>,
 ) {
-  // FIFO lot valuation groundwork (equivalent to weighted while there are only BUY lots).
-  const queue = lots.map((l) => ({
-    qty: toNumber(l.quantity),
-    buyPrice: toNumber(l.buyPrice),
-    currency: normalizeCurrency(l.currency),
-  }));
-  let total = 0;
-  for (const lot of queue) {
-    total += convertAmount(lot.qty * lot.buyPrice, lot.currency, displayCurrency, plnPerUnit);
+  const queue: Array<{ qty: number; unitCost: number }> = [];
+  for (const l of lots) {
+    const q = toNumber(l.quantity);
+    const unitCost = convertAmount(
+      toNumber(l.tradePrice),
+      normalizeCurrency(l.currency),
+      displayCurrency,
+      plnPerUnit,
+    );
+    if (l.side === "BUY") {
+      queue.push({ qty: q, unitCost });
+      continue;
+    }
+    let toSell = q;
+    while (toSell > 0 && queue.length > 0) {
+      const first = queue[0];
+      const used = Math.min(toSell, first.qty);
+      first.qty -= used;
+      toSell -= used;
+      if (first.qty <= 0) queue.shift();
+    }
   }
-  return total;
+  return queue.reduce((acc, lot) => acc + lot.qty * lot.unitCost, 0);
 }
 
 function serializeBudget(b: {
@@ -441,7 +470,7 @@ app.get("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
     const displayCurrency = normalizeCurrency(req.query.currency) || "PLN";
     const lots = await prisma.portfolioLot.findMany({
       where: { userId },
-      orderBy: [{ symbol: "asc" }, { buyDate: "asc" }],
+      orderBy: [{ symbol: "asc" }, { tradeDate: "asc" }],
     });
     const symbols = [...new Set(lots.map((l) => normalizeSymbol(l.symbol)))];
     const snapshotsBySymbol = await getLatestSnapshotsForSymbols(prisma, symbols);
@@ -469,26 +498,21 @@ app.get("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
 
     const rows = symbols.map((symbol) => {
       const symbolLots = lotsBySymbol.get(symbol) ?? [];
-      const quantity = symbolLots.reduce((acc, l) => acc + toNumber(l.quantity), 0);
-      const weightedBuyPrice =
-        quantity > 0
-          ? symbolLots.reduce((acc, l) => acc + toNumber(l.quantity) * toNumber(l.buyPrice), 0) / quantity
-          : 0;
       const snapshot = snapshotsBySymbol.get(symbol);
       const marketCurrency = normalizeCurrency(snapshot?.currency ?? symbolLots[0]?.currency ?? "USD");
+      let quantity = 0;
+      for (const lot of symbolLots) {
+        const q = toNumber(lot.quantity);
+        quantity += lot.side === "BUY" ? q : -q;
+      }
+      quantity = Math.max(0, quantity);
+      const weightedBuyPrice =
+        quantity > 0
+          ? costBasisWeighted(symbolLots, marketCurrency, plnPerUnit) / quantity
+          : 0;
       const lastClose = snapshot ? toNumber(snapshot.close) : null;
       const status = classifyMarketDataStatus(new Date(), snapshot?.priceDate, 2, MARKET_DATA_EXPIRE_DAYS);
-      const positionCostConverted = symbolLots.reduce((acc, l) => {
-        return (
-          acc +
-          convertAmount(
-            toNumber(l.quantity) * toNumber(l.buyPrice),
-            normalizeCurrency(l.currency),
-            displayCurrency,
-            plnPerUnit,
-          )
-        );
-      }, 0);
+      const positionCostConverted = costBasisWeighted(symbolLots, displayCurrency, plnPerUnit);
       const positionValueConverted =
         lastClose != null
           ? convertAmount(quantity * lastClose, marketCurrency, displayCurrency, plnPerUnit)
@@ -504,7 +528,7 @@ app.get("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
         symbol,
         quantity,
         buyPrice: weightedBuyPrice,
-        buyDate: symbolLots[0]?.buyDate ?? null,
+        buyDate: symbolLots[0]?.tradeDate ?? null,
         currency: marketCurrency,
         category: symbolLots[0]?.category ?? "UNSPECIFIED",
         lotsCount: symbolLots.length,
@@ -539,18 +563,31 @@ app.get("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
 app.post("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
   try {
     const userId = req.userId!;
-    const { symbol, quantity, buyPrice, buyDate, currency, category } = req.body;
-    if (!symbol || !quantity || !buyPrice || !buyDate || !currency) {
+    const { side, symbol, quantity, tradePrice, tradeDate, currency, category } = req.body;
+    const normalizedSide = String(side ?? "BUY").toUpperCase();
+    if (!symbol || !quantity || !tradePrice || !tradeDate || !currency || !["BUY", "SELL"].includes(normalizedSide)) {
       return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    if (normalizedSide === "SELL") {
+      const existingLots = await prisma.portfolioLot.findMany({ where: { userId, symbol: normalizeSymbol(symbol) } });
+      const netQty = existingLots.reduce((acc, l) => {
+        const q = toNumber(l.quantity);
+        return acc + (l.side === "BUY" ? q : -q);
+      }, 0);
+      if (toNumber(quantity) > netQty) {
+        return res.status(400).json({ error: "Sell quantity exceeds current holdings" });
+      }
     }
 
     const created = await prisma.portfolioLot.create({
       data: {
         userId,
+        side: normalizedSide,
         symbol: normalizeSymbol(symbol),
         quantity,
-        buyPrice,
-        buyDate: new Date(String(buyDate)),
+        tradePrice,
+        tradeDate: new Date(String(tradeDate)),
         currency: normalizeCurrency(currency),
         category: category ?? "UNSPECIFIED",
       },
@@ -558,7 +595,7 @@ app.post("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
     res.status(201).json({
       ...created,
       quantity: toNumber(created.quantity),
-      buyPrice: toNumber(created.buyPrice),
+      tradePrice: toNumber(created.tradePrice),
       currency: normalizeCurrency(created.currency),
     });
   } catch (error) {
@@ -573,14 +610,15 @@ app.get("/api/portfolio/lots", requireAuth, async (req: AuthedRequest, res) => {
     const userId = req.userId!;
     const lots = await prisma.portfolioLot.findMany({
       where: { userId },
-      orderBy: [{ symbol: "asc" }, { buyDate: "desc" }],
+      orderBy: [{ symbol: "asc" }, { tradeDate: "desc" }],
     });
     res.json(
       lots.map((l) => ({
         ...l,
         symbol: normalizeSymbol(l.symbol),
+        side: l.side,
         quantity: toNumber(l.quantity),
-        buyPrice: toNumber(l.buyPrice),
+        tradePrice: toNumber(l.tradePrice),
         currency: normalizeCurrency(l.currency),
       })),
     );
@@ -600,18 +638,20 @@ app.put("/api/portfolio/:id", requireAuth, async (req: AuthedRequest, res) => {
 
     const data: Record<string, unknown> = {};
     if (req.body.symbol !== undefined) data.symbol = normalizeSymbol(req.body.symbol);
+    if (req.body.side !== undefined) data.side = String(req.body.side).toUpperCase();
     if (req.body.quantity !== undefined) data.quantity = req.body.quantity;
-    if (req.body.buyPrice !== undefined) data.buyPrice = req.body.buyPrice;
-    if (req.body.buyDate !== undefined) data.buyDate = new Date(String(req.body.buyDate));
+    if (req.body.tradePrice !== undefined) data.tradePrice = req.body.tradePrice;
+    if (req.body.tradeDate !== undefined) data.tradeDate = new Date(String(req.body.tradeDate));
     if (req.body.currency !== undefined) data.currency = normalizeCurrency(req.body.currency);
     if (req.body.category !== undefined) data.category = req.body.category;
 
     const updated = await prisma.portfolioLot.update({ where: { id }, data });
     res.json({
       ...updated,
+      side: updated.side,
       symbol: normalizeSymbol(updated.symbol),
       quantity: toNumber(updated.quantity),
-      buyPrice: toNumber(updated.buyPrice),
+      tradePrice: toNumber(updated.tradePrice),
       currency: normalizeCurrency(updated.currency),
     });
   } catch (error) {
@@ -642,15 +682,20 @@ app.get("/api/portfolio/:symbol/history", requireAuth, async (req: AuthedRequest
     const method = String(req.query.method ?? "weighted").toLowerCase();
     const displayCurrency = normalizeCurrency(req.query.currency) || "PLN";
 
-    const lots = await prisma.portfolioLot.findMany({ where: { userId, symbol }, orderBy: { buyDate: "asc" } });
+    const lots = await prisma.portfolioLot.findMany({ where: { userId, symbol }, orderBy: { tradeDate: "asc" } });
     const history = await prisma.marketPriceHistory.findMany({ where: { symbol }, orderBy: { priceDate: "asc" } });
     if (!lots.length || !history.length) return res.json([]);
 
     const { plnPerUnit } = await getFxRatesPlnPerUnit();
     const series = history.map((h) => {
       const day = new Date(h.priceDate);
-      const activeLots = lots.filter((l) => new Date(l.buyDate) <= day);
-      const qty = activeLots.reduce((acc, l) => acc + toNumber(l.quantity), 0);
+      const activeLots = lots.filter((l) => new Date(l.tradeDate) <= day);
+      let qty = 0;
+      for (const l of activeLots) {
+        const q = toNumber(l.quantity);
+        qty += l.side === "BUY" ? q : -q;
+      }
+      qty = Math.max(0, qty);
       const close = toNumber(h.close);
       const closeCurrency = normalizeCurrency(h.currency);
       const positionValue = convertAmount(qty * close, closeCurrency, displayCurrency, plnPerUnit);
@@ -847,7 +892,7 @@ app.get("/api/stats/summary", requireAuth, async (req: AuthedRequest, res) => {
     let pricedPositionsCount = 0;
     let portfolioValuationAsOf: Date | null = null;
     const portfolioValue = portfolioLots.reduce((acc, p) => {
-      const qty = toNumber(p.quantity);
+      const qtySigned = p.side === "BUY" ? toNumber(p.quantity) : -toNumber(p.quantity);
       const symbol = String(p.symbol).trim().toUpperCase();
       const snapshot = snapshotsBySymbol.get(symbol);
       const status = classifyMarketDataStatus(
@@ -866,7 +911,7 @@ app.get("/api/stats/summary", requireAuth, async (req: AuthedRequest, res) => {
       }
       const price = toNumber(snapshot.close);
       const fromCcy = normalizeCurrency(snapshot.currency);
-      const value = qty * price;
+      const value = Math.max(0, qtySigned) * price;
       return acc + convertAmount(value, fromCcy, displayCurrency, fx.plnPerUnit);
     }, 0);
 
@@ -1180,7 +1225,7 @@ app.post("/api/market-data/refresh", requireAuth, async (req: AuthedRequest, res
       ? req.body.symbols.map((s: unknown) => String(s))
       : [];
     const lotsForScope = await prisma.portfolioLot.findMany({
-      select: { symbol: true, buyDate: true },
+      select: { symbol: true, tradeDate: true },
       where: payloadSymbols.length
         ? { symbol: { in: payloadSymbols.map((s) => normalizeSymbol(s)) } }
         : undefined,
@@ -1189,9 +1234,9 @@ app.post("/api/market-data/refresh", requireAuth, async (req: AuthedRequest, res
     for (const lot of lotsForScope) {
       const symbol = normalizeSymbol(lot.symbol);
       const currentMin = lotsBySymbol.get(symbol);
-      const buyDate = new Date(lot.buyDate);
-      if (!currentMin || buyDate < currentMin) {
-        lotsBySymbol.set(symbol, buyDate);
+      const tradeDate = new Date(lot.tradeDate);
+      if (!currentMin || tradeDate < currentMin) {
+        lotsBySymbol.set(symbol, tradeDate);
       }
     }
     const symbols = [...lotsBySymbol.keys()];

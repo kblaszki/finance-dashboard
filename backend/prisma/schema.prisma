@@ -49,10 +49,11 @@ model PortfolioLot {
   id        Int      @id @default(autoincrement())
   userId    Int
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  side      String   @default("BUY")
   symbol    String
   quantity  Decimal
-  buyPrice  Decimal
-  buyDate   DateTime
+  tradePrice Decimal
+  tradeDate DateTime
   currency  String
   category  String
   createdAt DateTime @default(now())

@@ -12,10 +12,11 @@ import { formatMoney } from '../utils/format'
 import { useNavigate } from 'react-router-dom'
 
 const emptyForm: PortfolioPositionInput = {
+  side: 'BUY',
   symbol: '',
   quantity: 0,
-  buyPrice: 0,
-  buyDate: new Date().toISOString().slice(0, 10),
+  tradePrice: 0,
+  tradeDate: new Date().toISOString().slice(0, 10),
   currency: 'PLN',
   category: 'UNSPECIFIED',
 }
@@ -52,8 +53,8 @@ export function PortfolioTable() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.symbol.trim() || form.quantity <= 0 || form.buyPrice <= 0 || !form.buyDate) {
-      setError('Symbol, ilość, data i cena zakupu muszą być poprawne')
+    if (!form.symbol.trim() || form.quantity <= 0 || form.tradePrice <= 0 || !form.tradeDate) {
+      setError('Typ, symbol, ilość, data i cena transakcji muszą być poprawne')
       return
     }
     setError(null)
@@ -108,6 +109,13 @@ export function PortfolioTable() {
 
       <form className="form-grid" onSubmit={handleSubmit}>
         <label>
+          Typ transakcji
+          <select value={form.side} onChange={(e) => setForm({ ...form, side: e.target.value as 'BUY' | 'SELL' })}>
+            <option value="BUY">Zakup</option>
+            <option value="SELL">Sprzedaż</option>
+          </select>
+        </label>
+        <label>
           Symbol
           <input
             required
@@ -128,23 +136,23 @@ export function PortfolioTable() {
           />
         </label>
         <label>
-          Cena zakupu
+          Cena transakcji
           <input
             type="number"
             min={0.01}
             step="0.01"
             required
-            value={form.buyPrice || ''}
-            onChange={(e) => setForm({ ...form, buyPrice: Number(e.target.value) })}
+            value={form.tradePrice || ''}
+            onChange={(e) => setForm({ ...form, tradePrice: Number(e.target.value) })}
           />
         </label>
         <label>
-          Data zakupu
+          Data transakcji
           <input
             type="date"
             required
-            value={form.buyDate}
-            onChange={(e) => setForm({ ...form, buyDate: e.target.value })}
+            value={form.tradeDate}
+            onChange={(e) => setForm({ ...form, tradeDate: e.target.value })}
           />
         </label>
         <label>
@@ -188,6 +196,7 @@ export function PortfolioTable() {
             <thead>
               <tr>
                 <th>Symbol</th>
+                <th>Typ</th>
                 <th>Ilość</th>
                 <th>Cena zakupu</th>
                 <th>Aktualna cena</th>
@@ -205,6 +214,7 @@ export function PortfolioTable() {
               {positions.map((p) => (
                 <tr key={p.id}>
                   <td>{p.symbol}</td>
+                  <td>{p.lotsCount && p.lotsCount > 0 ? `${p.lotsCount} lotów` : '—'}</td>
                   <td>{p.quantity}</td>
                   <td>{formatMoney(p.buyPrice, p.currency)}</td>
                   <td>
@@ -253,9 +263,10 @@ export function PortfolioTable() {
             <thead>
               <tr>
                 <th>Symbol</th>
+                <th>Typ</th>
                 <th>Ilość</th>
-                <th>Cena zakupu</th>
-                <th>Data zakupu</th>
+                <th>Cena transakcji</th>
+                <th>Data transakcji</th>
                 <th>Waluta</th>
                 <th>Kategoria</th>
                 <th>Akcje</th>
@@ -265,9 +276,10 @@ export function PortfolioTable() {
               {lots.map((l) => (
                 <tr key={l.id}>
                   <td>{l.symbol}</td>
+                  <td>{l.side === 'BUY' ? 'Zakup' : 'Sprzedaż'}</td>
                   <td>{l.quantity}</td>
-                  <td>{formatMoney(l.buyPrice, l.currency)}</td>
-                  <td>{new Date(l.buyDate).toLocaleDateString()}</td>
+                  <td>{formatMoney(l.tradePrice, l.currency)}</td>
+                  <td>{new Date(l.tradeDate).toLocaleDateString()}</td>
                   <td>{l.currency}</td>
                   <td>{l.category}</td>
                   <td>

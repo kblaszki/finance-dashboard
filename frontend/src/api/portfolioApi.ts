@@ -26,20 +26,22 @@ export interface PortfolioPosition {
 }
 
 export interface PortfolioPositionInput {
+  side: "BUY" | "SELL";
   symbol: string;
   quantity: number;
-  buyPrice: number;
-  buyDate: string;
+  tradePrice: number;
+  tradeDate: string;
   currency: string;
   category?: string;
 }
 
 export interface PortfolioLot {
   id: number;
+  side: "BUY" | "SELL";
   symbol: string;
   quantity: number;
-  buyPrice: number;
-  buyDate: string;
+  tradePrice: number;
+  tradeDate: string;
   currency: string;
   category: string;
   createdAt: string;
