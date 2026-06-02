@@ -136,6 +136,35 @@ function listYearMonthsInRange(from: Date, to: Date): string[] {
   return months;
 }
 
+function costBasisWeighted(
+  lots: Array<{ quantity: unknown; buyPrice: unknown; currency: string }>,
+  displayCurrency: string,
+  plnPerUnit: Record<string, number>,
+) {
+  return lots.reduce((acc, l) => {
+    const lotCost = toNumber(l.quantity) * toNumber(l.buyPrice);
+    return acc + convertAmount(lotCost, normalizeCurrency(l.currency), displayCurrency, plnPerUnit);
+  }, 0);
+}
+
+function costBasisFifo(
+  lots: Array<{ quantity: unknown; buyPrice: unknown; currency: string }>,
+  displayCurrency: string,
+  plnPerUnit: Record<string, number>,
+) {
+  // FIFO lot valuation groundwork (equivalent to weighted while there are only BUY lots).
+  const queue = lots.map((l) => ({
+    qty: toNumber(l.quantity),
+    buyPrice: toNumber(l.buyPrice),
+    currency: normalizeCurrency(l.currency),
+  }));
+  let total = 0;
+  for (const lot of queue) {
+    total += convertAmount(lot.qty * lot.buyPrice, lot.currency, displayCurrency, plnPerUnit);
+  }
+  return total;
+}
+
 function serializeBudget(b: {
   id: number;
   userId: number;
@@ -539,6 +568,59 @@ app.post("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
   }
 });
 
+app.get("/api/portfolio/lots", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const lots = await prisma.portfolioLot.findMany({
+      where: { userId },
+      orderBy: [{ symbol: "asc" }, { buyDate: "desc" }],
+    });
+    res.json(
+      lots.map((l) => ({
+        ...l,
+        symbol: normalizeSymbol(l.symbol),
+        quantity: toNumber(l.quantity),
+        buyPrice: toNumber(l.buyPrice),
+        currency: normalizeCurrency(l.currency),
+      })),
+    );
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch portfolio lots" });
+  }
+});
+
+app.put("/api/portfolio/:id", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const id = Number(req.params.id);
+    const existing = await prisma.portfolioLot.findFirst({ where: { id, userId } });
+    if (!existing) return res.status(404).json({ error: "Portfolio lot not found" });
+
+    const data: Record<string, unknown> = {};
+    if (req.body.symbol !== undefined) data.symbol = normalizeSymbol(req.body.symbol);
+    if (req.body.quantity !== undefined) data.quantity = req.body.quantity;
+    if (req.body.buyPrice !== undefined) data.buyPrice = req.body.buyPrice;
+    if (req.body.buyDate !== undefined) data.buyDate = new Date(String(req.body.buyDate));
+    if (req.body.currency !== undefined) data.currency = normalizeCurrency(req.body.currency);
+    if (req.body.category !== undefined) data.category = req.body.category;
+
+    const updated = await prisma.portfolioLot.update({ where: { id }, data });
+    res.json({
+      ...updated,
+      symbol: normalizeSymbol(updated.symbol),
+      quantity: toNumber(updated.quantity),
+      buyPrice: toNumber(updated.buyPrice),
+      currency: normalizeCurrency(updated.currency),
+    });
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to update portfolio lot" });
+  }
+});
+
 app.delete("/api/portfolio/:id", requireAuth, async (req: AuthedRequest, res) => {
   try {
     const userId = req.userId!;
@@ -572,10 +654,9 @@ app.get("/api/portfolio/:symbol/history", requireAuth, async (req: AuthedRequest
       const close = toNumber(h.close);
       const closeCurrency = normalizeCurrency(h.currency);
       const positionValue = convertAmount(qty * close, closeCurrency, displayCurrency, plnPerUnit);
-      const weightedCost = activeLots.reduce((acc, l) => {
-        return acc + convertAmount(toNumber(l.quantity) * toNumber(l.buyPrice), normalizeCurrency(l.currency), displayCurrency, plnPerUnit);
-      }, 0);
-      const costBasis = method === "fifo" ? weightedCost : weightedCost;
+      const weightedCost = costBasisWeighted(activeLots, displayCurrency, plnPerUnit);
+      const fifoCost = costBasisFifo(activeLots, displayCurrency, plnPerUnit);
+      const costBasis = method === "fifo" ? fifoCost : weightedCost;
       const profitAbs = positionValue - costBasis;
       const profitPct = costBasis > 0 ? (profitAbs / costBasis) * 100 : 0;
       return { date: day, close, closeCurrency, quantity: qty, positionValue, costBasis, profitAbs, profitPct, currency: displayCurrency };

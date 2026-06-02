@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
-import type { PortfolioPosition, PortfolioPositionInput } from '../api/portfolioApi'
+import type { PortfolioLot, PortfolioPosition, PortfolioPositionInput } from '../api/portfolioApi'
 import {
   createPortfolioPosition,
   fetchPortfolio,
+  fetchPortfolioLots,
   refreshPortfolioMarketData,
+  deletePortfolioPosition,
 } from '../api/portfolioApi'
 import { SUPPORTED_CURRENCIES, useCurrency } from '../state/currency'
 import { formatMoney } from '../utils/format'
@@ -20,6 +22,7 @@ const emptyForm: PortfolioPositionInput = {
 
 export function PortfolioTable() {
   const [positions, setPositions] = useState<PortfolioPosition[]>([])
+  const [lots, setLots] = useState<PortfolioLot[]>([])
   const [loading, setLoading] = useState(false)
   const [form, setForm] = useState<PortfolioPositionInput>(emptyForm)
   const [error, setError] = useState<string | null>(null)
@@ -37,7 +40,9 @@ export function PortfolioTable() {
     setError(null)
     try {
       const data = await fetchPortfolio({ currency: displayCurrency })
+      const lotsData = await fetchPortfolioLots()
       setPositions(data)
+      setLots(lotsData)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Błąd ładowania')
     } finally {
@@ -79,6 +84,16 @@ export function PortfolioTable() {
       setError(err instanceof Error ? err.message : 'Nie udało się odświeżyć wycen')
     } finally {
       setRefreshingMarket(false)
+    }
+  }
+
+  async function handleDeleteLot(id: number) {
+    setError(null)
+    try {
+      await deletePortfolioPosition(id)
+      await load()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Nie udało się usunąć lotu')
     }
   }
 
@@ -167,6 +182,7 @@ export function PortfolioTable() {
       ) : positions.length === 0 ? (
         <p className="empty-state">Brak pozycji w portfelu.</p>
       ) : (
+        <>
         <div className="table-wrap">
           <table className="data-table">
             <thead>
@@ -231,6 +247,40 @@ export function PortfolioTable() {
             </tbody>
           </table>
         </div>
+        <h3>Loty zakupowe</h3>
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Symbol</th>
+                <th>Ilość</th>
+                <th>Cena zakupu</th>
+                <th>Data zakupu</th>
+                <th>Waluta</th>
+                <th>Kategoria</th>
+                <th>Akcje</th>
+              </tr>
+            </thead>
+            <tbody>
+              {lots.map((l) => (
+                <tr key={l.id}>
+                  <td>{l.symbol}</td>
+                  <td>{l.quantity}</td>
+                  <td>{formatMoney(l.buyPrice, l.currency)}</td>
+                  <td>{new Date(l.buyDate).toLocaleDateString()}</td>
+                  <td>{l.currency}</td>
+                  <td>{l.category}</td>
+                  <td>
+                    <button type="button" className="btn-secondary" onClick={() => handleDeleteLot(l.id)}>
+                      Usuń lot
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        </>
       )}
     </div>
   )
