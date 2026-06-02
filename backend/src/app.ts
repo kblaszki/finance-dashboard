@@ -468,18 +468,18 @@ app.get("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
   try {
     const userId = req.userId!;
     const displayCurrency = normalizeCurrency(req.query.currency) || "PLN";
-    const lots = await prisma.portfolioLot.findMany({
+    const trades = await prisma.portfolioTrade.findMany({
       where: { userId },
       orderBy: [{ symbol: "asc" }, { tradeDate: "asc" }],
     });
-    const symbols = [...new Set(lots.map((l) => normalizeSymbol(l.symbol)))];
+    const symbols = [...new Set(trades.map((t) => normalizeSymbol(t.symbol)))];
     const snapshotsBySymbol = await getLatestSnapshotsForSymbols(prisma, symbols);
     const { plnPerUnit, asOf } = await getFxRatesPlnPerUnit();
 
     const missing = getMissingCurrencies(
       [
         displayCurrency,
-        ...lots.map((l) => normalizeCurrency(l.currency)),
+        ...trades.map((t) => normalizeCurrency(t.currency)),
         ...[...snapshotsBySymbol.values()].map((s) => normalizeCurrency(s.currency)),
       ],
       plnPerUnit,
@@ -488,31 +488,31 @@ app.get("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
       return res.status(400).json({ error: "Missing FX rates for some currencies", missingCurrencies: missing, asOf });
     }
 
-    const lotsBySymbol = new Map<string, typeof lots>();
-    for (const lot of lots) {
-      const symbol = normalizeSymbol(lot.symbol);
-      const arr = lotsBySymbol.get(symbol) ?? [];
-      arr.push(lot);
-      lotsBySymbol.set(symbol, arr);
+    const tradesBySymbol = new Map<string, typeof trades>();
+    for (const trade of trades) {
+      const symbol = normalizeSymbol(trade.symbol);
+      const arr = tradesBySymbol.get(symbol) ?? [];
+      arr.push(trade);
+      tradesBySymbol.set(symbol, arr);
     }
 
     const rows = symbols.map((symbol) => {
-      const symbolLots = lotsBySymbol.get(symbol) ?? [];
+      const symbolTrades = tradesBySymbol.get(symbol) ?? [];
       const snapshot = snapshotsBySymbol.get(symbol);
-      const marketCurrency = normalizeCurrency(snapshot?.currency ?? symbolLots[0]?.currency ?? "USD");
+      const marketCurrency = normalizeCurrency(snapshot?.currency ?? symbolTrades[0]?.currency ?? "USD");
       let quantity = 0;
-      for (const lot of symbolLots) {
-        const q = toNumber(lot.quantity);
-        quantity += lot.side === "BUY" ? q : -q;
+      for (const trade of symbolTrades) {
+        const q = toNumber(trade.quantity);
+        quantity += trade.side === "BUY" ? q : -q;
       }
       quantity = Math.max(0, quantity);
       const weightedBuyPrice =
         quantity > 0
-          ? costBasisWeighted(symbolLots, marketCurrency, plnPerUnit) / quantity
+          ? costBasisWeighted(symbolTrades, marketCurrency, plnPerUnit) / quantity
           : 0;
       const lastClose = snapshot ? toNumber(snapshot.close) : null;
       const status = classifyMarketDataStatus(new Date(), snapshot?.priceDate, 2, MARKET_DATA_EXPIRE_DAYS);
-      const positionCostConverted = costBasisWeighted(symbolLots, displayCurrency, plnPerUnit);
+      const positionCostConverted = costBasisWeighted(symbolTrades, displayCurrency, plnPerUnit);
       const positionValueConverted =
         lastClose != null
           ? convertAmount(quantity * lastClose, marketCurrency, displayCurrency, plnPerUnit)
@@ -528,10 +528,10 @@ app.get("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
         symbol,
         quantity,
         buyPrice: weightedBuyPrice,
-        buyDate: symbolLots[0]?.tradeDate ?? null,
+        buyDate: symbolTrades[0]?.tradeDate ?? null,
         currency: marketCurrency,
-        category: symbolLots[0]?.category ?? "UNSPECIFIED",
-        lotsCount: symbolLots.length,
+        category: symbolTrades[0]?.category ?? "UNSPECIFIED",
+        lotsCount: symbolTrades.length,
         lastClose,
         lastCloseDate: snapshot?.priceDate ?? null,
         marketDataStatus: status,
@@ -570,8 +570,8 @@ app.post("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
     }
 
     if (normalizedSide === "SELL") {
-      const existingLots = await prisma.portfolioLot.findMany({ where: { userId, symbol: normalizeSymbol(symbol) } });
-      const netQty = existingLots.reduce((acc, l) => {
+      const existingTrades = await prisma.portfolioTrade.findMany({ where: { userId, symbol: normalizeSymbol(symbol) } });
+      const netQty = existingTrades.reduce((acc, l) => {
         const q = toNumber(l.quantity);
         return acc + (l.side === "BUY" ? q : -q);
       }, 0);
@@ -580,7 +580,7 @@ app.post("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
       }
     }
 
-    const created = await prisma.portfolioLot.create({
+    const created = await prisma.portfolioTrade.create({
       data: {
         userId,
         side: normalizedSide,
@@ -601,31 +601,32 @@ app.post("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(error);
-    res.status(500).json({ error: "Failed to create portfolio lot" });
+    res.status(500).json({ error: "Failed to create portfolio trade" });
   }
 });
 
-app.get("/api/portfolio/lots", requireAuth, async (req: AuthedRequest, res) => {
+app.get("/api/portfolio/trades", requireAuth, async (req: AuthedRequest, res) => {
   try {
     const userId = req.userId!;
-    const lots = await prisma.portfolioLot.findMany({
-      where: { userId },
+    const symbol = req.query.symbol ? normalizeSymbol(req.query.symbol) : undefined;
+    const trades = await prisma.portfolioTrade.findMany({
+      where: symbol ? { userId, symbol } : { userId },
       orderBy: [{ symbol: "asc" }, { tradeDate: "desc" }],
     });
     res.json(
-      lots.map((l) => ({
-        ...l,
-        symbol: normalizeSymbol(l.symbol),
-        side: l.side,
-        quantity: toNumber(l.quantity),
-        tradePrice: toNumber(l.tradePrice),
-        currency: normalizeCurrency(l.currency),
+      trades.map((t) => ({
+        ...t,
+        symbol: normalizeSymbol(t.symbol),
+        side: t.side,
+        quantity: toNumber(t.quantity),
+        tradePrice: toNumber(t.tradePrice),
+        currency: normalizeCurrency(t.currency),
       })),
     );
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(error);
-    res.status(500).json({ error: "Failed to fetch portfolio lots" });
+    res.status(500).json({ error: "Failed to fetch portfolio trades" });
   }
 });
 
@@ -633,8 +634,8 @@ app.put("/api/portfolio/:id", requireAuth, async (req: AuthedRequest, res) => {
   try {
     const userId = req.userId!;
     const id = Number(req.params.id);
-    const existing = await prisma.portfolioLot.findFirst({ where: { id, userId } });
-    if (!existing) return res.status(404).json({ error: "Portfolio lot not found" });
+    const existing = await prisma.portfolioTrade.findFirst({ where: { id, userId } });
+    if (!existing) return res.status(404).json({ error: "Portfolio trade not found" });
 
     const data: Record<string, unknown> = {};
     if (req.body.symbol !== undefined) data.symbol = normalizeSymbol(req.body.symbol);
@@ -645,7 +646,7 @@ app.put("/api/portfolio/:id", requireAuth, async (req: AuthedRequest, res) => {
     if (req.body.currency !== undefined) data.currency = normalizeCurrency(req.body.currency);
     if (req.body.category !== undefined) data.category = req.body.category;
 
-    const updated = await prisma.portfolioLot.update({ where: { id }, data });
+    const updated = await prisma.portfolioTrade.update({ where: { id }, data });
     res.json({
       ...updated,
       side: updated.side,
@@ -657,7 +658,7 @@ app.put("/api/portfolio/:id", requireAuth, async (req: AuthedRequest, res) => {
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(error);
-    res.status(500).json({ error: "Failed to update portfolio lot" });
+    res.status(500).json({ error: "Failed to update portfolio trade" });
   }
 });
 
@@ -665,13 +666,13 @@ app.delete("/api/portfolio/:id", requireAuth, async (req: AuthedRequest, res) =>
   try {
     const userId = req.userId!;
     const id = Number(req.params.id);
-    const result = await prisma.portfolioLot.deleteMany({ where: { id, userId } });
-    if (!result.count) return res.status(404).json({ error: "Portfolio lot not found" });
+    const result = await prisma.portfolioTrade.deleteMany({ where: { id, userId } });
+    if (!result.count) return res.status(404).json({ error: "Portfolio trade not found" });
     res.status(204).send();
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(error);
-    res.status(500).json({ error: "Failed to delete portfolio lot" });
+    res.status(500).json({ error: "Failed to delete portfolio trade" });
   }
 });
 
@@ -682,16 +683,16 @@ app.get("/api/portfolio/:symbol/history", requireAuth, async (req: AuthedRequest
     const method = String(req.query.method ?? "weighted").toLowerCase();
     const displayCurrency = normalizeCurrency(req.query.currency) || "PLN";
 
-    const lots = await prisma.portfolioLot.findMany({ where: { userId, symbol }, orderBy: { tradeDate: "asc" } });
+    const trades = await prisma.portfolioTrade.findMany({ where: { userId, symbol }, orderBy: { tradeDate: "asc" } });
     const history = await prisma.marketPriceHistory.findMany({ where: { symbol }, orderBy: { priceDate: "asc" } });
-    if (!lots.length || !history.length) return res.json([]);
+    if (!trades.length || !history.length) return res.json([]);
 
     const { plnPerUnit } = await getFxRatesPlnPerUnit();
     const series = history.map((h) => {
       const day = new Date(h.priceDate);
-      const activeLots = lots.filter((l) => new Date(l.tradeDate) <= day);
+      const activeTrades = trades.filter((l) => new Date(l.tradeDate) <= day);
       let qty = 0;
-      for (const l of activeLots) {
+      for (const l of activeTrades) {
         const q = toNumber(l.quantity);
         qty += l.side === "BUY" ? q : -q;
       }
@@ -699,8 +700,8 @@ app.get("/api/portfolio/:symbol/history", requireAuth, async (req: AuthedRequest
       const close = toNumber(h.close);
       const closeCurrency = normalizeCurrency(h.currency);
       const positionValue = convertAmount(qty * close, closeCurrency, displayCurrency, plnPerUnit);
-      const weightedCost = costBasisWeighted(activeLots, displayCurrency, plnPerUnit);
-      const fifoCost = costBasisFifo(activeLots, displayCurrency, plnPerUnit);
+      const weightedCost = costBasisWeighted(activeTrades, displayCurrency, plnPerUnit);
+      const fifoCost = costBasisFifo(activeTrades, displayCurrency, plnPerUnit);
       const costBasis = method === "fifo" ? fifoCost : weightedCost;
       const profitAbs = positionValue - costBasis;
       const profitPct = costBasis > 0 ? (profitAbs / costBasis) * 100 : 0;
@@ -845,20 +846,20 @@ app.get("/api/stats/summary", requireAuth, async (req: AuthedRequest, res) => {
     const dateFilter = transactionDateFilter(req.query.from, req.query.to);
     const txWhere = dateFilter ? { userId, date: dateFilter } : { userId };
 
-    const [transactions, portfolioLots, txCount, fx] = await Promise.all([
+    const [transactions, portfolioTrades, txCount, fx] = await Promise.all([
       prisma.transaction.findMany({ where: txWhere }),
-      prisma.portfolioLot.findMany({ where: { userId } }),
+      prisma.portfolioTrade.findMany({ where: { userId } }),
       prisma.transaction.count({ where: txWhere }),
       getFxRatesPlnPerUnit(),
     ]);
     const snapshotsBySymbol = await getLatestSnapshotsForSymbols(
       prisma,
-      portfolioLots.map((p) => p.symbol),
+      portfolioTrades.map((p) => p.symbol),
     );
 
     const allCurrencies = [
       ...transactions.map((t) => normalizeCurrency(t.currency)),
-      ...portfolioLots.map((p) => {
+      ...portfolioTrades.map((p) => {
         const symbol = String(p.symbol).trim().toUpperCase();
         const snapshot = snapshotsBySymbol.get(symbol);
         return normalizeCurrency(snapshot?.currency ?? p.currency);
@@ -891,7 +892,7 @@ app.get("/api/stats/summary", requireAuth, async (req: AuthedRequest, res) => {
     let stalePositionsCount = 0;
     let pricedPositionsCount = 0;
     let portfolioValuationAsOf: Date | null = null;
-    const portfolioValue = portfolioLots.reduce((acc, p) => {
+    const portfolioValue = portfolioTrades.reduce((acc, p) => {
       const qtySigned = p.side === "BUY" ? toNumber(p.quantity) : -toNumber(p.quantity);
       const symbol = String(p.symbol).trim().toUpperCase();
       const snapshot = snapshotsBySymbol.get(symbol);
@@ -926,7 +927,7 @@ app.get("/api/stats/summary", requireAuth, async (req: AuthedRequest, res) => {
       portfolioValueMarketDataAsOf: portfolioValuationAsOf,
       stalePositionsCount,
       pricedPositionsCount,
-      totalPositionsCount: portfolioLots.length,
+      totalPositionsCount: portfolioTrades.length,
     });
   } catch (error) {
     // eslint-disable-next-line no-console
@@ -1224,29 +1225,29 @@ app.post("/api/market-data/refresh", requireAuth, async (req: AuthedRequest, res
     const payloadSymbols = Array.isArray(req.body?.symbols)
       ? req.body.symbols.map((s: unknown) => String(s))
       : [];
-    const lotsForScope = await prisma.portfolioLot.findMany({
+    const tradesForScope = await prisma.portfolioTrade.findMany({
       select: { symbol: true, tradeDate: true },
       where: payloadSymbols.length
         ? { symbol: { in: payloadSymbols.map((s) => normalizeSymbol(s)) } }
         : undefined,
     });
-    const lotsBySymbol = new Map<string, Date>();
-    for (const lot of lotsForScope) {
-      const symbol = normalizeSymbol(lot.symbol);
-      const currentMin = lotsBySymbol.get(symbol);
-      const tradeDate = new Date(lot.tradeDate);
+    const tradesBySymbol = new Map<string, Date>();
+    for (const trade of tradesForScope) {
+      const symbol = normalizeSymbol(trade.symbol);
+      const currentMin = tradesBySymbol.get(symbol);
+      const tradeDate = new Date(trade.tradeDate);
       if (!currentMin || tradeDate < currentMin) {
-        lotsBySymbol.set(symbol, tradeDate);
+        tradesBySymbol.set(symbol, tradeDate);
       }
     }
-    const symbols = [...lotsBySymbol.keys()];
+    const symbols = [...tradesBySymbol.keys()];
     marketRefreshInFlight = true;
     let rowsInserted = 0;
     let rowsUpdated = 0;
     const errors: Array<{ symbol: string; error: string }> = [];
     for (const symbol of symbols) {
       try {
-        const minBuy = lotsBySymbol.get(symbol)!;
+        const minBuy = tradesBySymbol.get(symbol)!;
         const startDate = startOfYear(minBuy);
         const latest = await prisma.marketPriceHistory.findFirst({
           where: { symbol },

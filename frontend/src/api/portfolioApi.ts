@@ -35,7 +35,7 @@ export interface PortfolioPositionInput {
   category?: string;
 }
 
-export interface PortfolioLot {
+export interface PortfolioTrade {
   id: number;
   side: "BUY" | "SELL";
   symbol: string;
@@ -86,15 +86,16 @@ export async function deletePortfolioPosition(id: number): Promise<void> {
   return apiClient.delete(`/api/portfolio/${id}`);
 }
 
-export async function fetchPortfolioLots(): Promise<PortfolioLot[]> {
-  return apiClient.get<PortfolioLot[]>("/api/portfolio/lots");
+export async function fetchPortfolioTrades(opts?: { symbol?: string }): Promise<PortfolioTrade[]> {
+  const q = opts?.symbol ? `?symbol=${encodeURIComponent(opts.symbol)}` : "";
+  return apiClient.get<PortfolioTrade[]>(`/api/portfolio/trades${q}`);
 }
 
-export async function updatePortfolioLot(
+export async function updatePortfolioTrade(
   id: number,
   input: Partial<PortfolioPositionInput>,
-): Promise<PortfolioLot> {
-  return apiClient.put<PortfolioLot>(`/api/portfolio/${id}`, input);
+): Promise<PortfolioTrade> {
+  return apiClient.put<PortfolioTrade>(`/api/portfolio/${id}`, input);
 }
 
 export type PortfolioHistoryPoint = {

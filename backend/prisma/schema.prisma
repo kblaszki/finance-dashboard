@@ -17,7 +17,7 @@ model User {
   createdAt          DateTime            @default(now())
   transactions       Transaction[]
   portfolioPositions PortfolioPosition[]
-  portfolioLots      PortfolioLot[]
+  portfolioTrades    PortfolioTrade[]
   budgets            Budget[]
 }
 
@@ -45,7 +45,7 @@ model PortfolioPosition {
   category     String
 }
 
-model PortfolioLot {
+model PortfolioTrade {
   id        Int      @id @default(autoincrement())
   userId    Int
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
