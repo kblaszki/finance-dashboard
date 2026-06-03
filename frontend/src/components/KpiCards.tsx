@@ -42,16 +42,19 @@ export function KpiCards() {
         <p>{formatMoney(expenses, currency)}</p>
       </div>
       <div className="kpi-card">
-        <h3>Saldo (okres)</h3>
+        <h3>Przepływ netto (okres)</h3>
         <p>{formatMoney(balance, currency)}</p>
+        <small>Przychody − wydatki (transakcje globalne)</small>
       </div>
       <div className="kpi-card">
-        <h3>Wartość portfela (dziś)</h3>
+        <h3>Makler — razem (dziś)</h3>
         <p>{formatMoney(portfolioValue, currency)}</p>
         <small>
+          Papiery: {formatMoney(Number(stats.brokerSecurities ?? 0), currency)} · Gotówka:{' '}
+          {formatMoney(Number(stats.brokerCash ?? 0), currency)}
           {stats.portfolioValueMarketDataAsOf
-            ? `Wycena EOD: ${new Date(stats.portfolioValueMarketDataAsOf).toLocaleDateString()}`
-            : 'Brak świeżych danych rynkowych'}
+            ? ` · EOD: ${new Date(stats.portfolioValueMarketDataAsOf).toLocaleDateString()}`
+            : ''}
         </small>
       </div>
       <div className="kpi-card">

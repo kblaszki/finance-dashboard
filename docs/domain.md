@@ -7,42 +7,56 @@ Source of truth: [`backend/prisma/schema.prisma`](../backend/prisma/schema.prism
 | Model | Purpose | Scoped by |
 |-------|---------|-----------|
 | `User` | Email + `passwordHash` | — |
-| `Transaction` | Cash income/expense (`type`, `amount`, `category`, `date`) | `userId`; optional `portfolioId` link |
-| `InvestmentPortfolio` | Named portfolio (`name`, `baseCurrency`, `cashBalance`) | `userId`; unique `[userId, name]` |
+| `Transaction` | Cash flows (`INCOME`, `EXPENSE`, `TRANSFER_TO_PORTFOLIO`) | `userId`; optional `portfolioId`, `accountId`, `categoryId` |
+| `InvestmentPortfolio` | Brokerage account (`name`, `baseCurrency`, `cashBalance`) | `userId`; unique `[userId, name]` |
 | `PortfolioTrade` | BUY/SELL lots per symbol inside a portfolio | `userId` + `portfolioId` |
-| `Budget` | Monthly limit (`yearMonth` `YYYY-MM`, optional `category`) | `userId`; unique `[userId, yearMonth, category]` |
-| `MarketPriceSnapshot` | Latest close per symbol (valuation) | Global (not per user) |
+| `FinancialAccount` | Bank, real estate, crypto, liability, bonds wrapper | `userId`; `type` + unique `[userId, name]` |
+| `Category` | Income/expense tree (`parentId`, `kind`) | `userId` |
+| `BondHolding` | Treasury bond line (series, nominal) on `BONDS` account | `accountId` |
+| `Budget` | Monthly limit (`yearMonth` `YYYY-MM`, optional `category`) | `userId` |
+| `MarketPriceSnapshot` | Latest close per symbol (valuation) | Global |
 | `MarketPriceHistory` | Historical closes for charts | Global |
 
-## Portfolio model (current)
+## Portfolio model (brokerage)
 
 Investment workflow is **trade-based**:
 
 1. User creates `InvestmentPortfolio` records (`/api/portfolios`).
 2. Trades (`PortfolioTrade`) are recorded via `POST /api/portfolio` (BUY/SELL).
-3. `GET /api/portfolio?portfolioId=&currency=` aggregates trades per symbol, applies market snapshots and FX, returns position rows (not raw DB rows).
+3. `GET /api/portfolio?portfolioId=&currency=` aggregates trades per symbol, applies market snapshots and FX.
 
-Cash balance on `InvestmentPortfolio` is maintained via `backend/src/portfolioCash.ts` and linked cash `Transaction` rows where applicable.
+Cash balance on `InvestmentPortfolio` is maintained via `backend/src/portfolioCash.ts` and `TRANSFER_TO_PORTFOLIO` transactions.
+
+Valuation helpers: `backend/src/portfolioValuation.ts`, net worth: `backend/src/netWorth.ts`.
+
+## Financial accounts
+
+| `type` | Balance / value |
+|--------|-----------------|
+| `BANK` | `openingBalance` + INCOME − EXPENSE on linked transactions |
+| `REAL_ESTATE`, `CRYPTO`, `LIABILITY` | `manualValue` (liabilities subtracted in net worth) |
+| `BONDS` | Sum of `BondHolding.nominal` synced to `manualValue` |
+
+## Categories
+
+- Hierarchical via `Category.parentId`.
+- Transactions store denormalized `category` path string and optional `categoryId`.
+- Stats charts roll up amounts to root category name.
 
 ## Legacy: `PortfolioPosition`
 
-`PortfolioPosition` remains in the schema for older data but **new UI/API flows use `PortfolioTrade` + `InvestmentPortfolio`**. Do not add features on `PortfolioPosition` unless migrating legacy data.
-
-## Budget categories
-
-- Empty `category` in DB (`""`) means overall monthly budget.
-- API exposes `category: null` for overall via `budgetCategoryFromDb` / `budgetCategoryToDb` in `app.ts`.
+`PortfolioPosition` remains in the schema for older data but **new UI/API flows use `PortfolioTrade` + `InvestmentPortfolio`**.
 
 ## Transaction types
 
-- `INCOME` / `EXPENSE` (string on `Transaction.type`).
-- Stats and dashboard aggregate by type and date range (`from` / `to` query params).
+- `INCOME` / `EXPENSE` — cashflow and bank balances.
+- `TRANSFER_TO_PORTFOLIO` — increases brokerage cash; requires `portfolioId`.
 
 ## Market data
 
 - Snapshots keyed by `symbol`, `priceDate`, `source`.
-- Staleness/expiry logic in `marketData.ts` (`classifyMarketDataStatus`).
-- Manual refresh: `POST /api/market-data/refresh` (per-user cooldown).
+- Staleness/expiry logic in `marketData.ts`.
+- Manual refresh: `POST /api/market-data/refresh`.
 
 ## Related docs
 

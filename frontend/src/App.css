@@ -118,6 +118,12 @@
   margin: 0;
 }
 
+.kpi-highlight {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0.25rem 0 0;
+}
+
 .data-table {
   width: 100%;
   border-collapse: collapse;

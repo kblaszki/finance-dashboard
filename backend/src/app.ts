@@ -19,6 +19,16 @@ import {
   verifyPassword,
 } from "./auth";
 import { computePortfolioCashBalance } from "./portfolioCash";
+import {
+  computeBrokerSecuritiesValuation,
+  computePortfolioValueOverTime,
+  sumBrokerCash,
+  type TradeLot,
+} from "./portfolioValuation";
+import { computeNetWorth } from "./netWorth";
+import { computeBankBalancesForUser, syncBondAccountManualValue } from "./accounts";
+import { buildCategoryPath, listCategoriesWithPaths, rollupCategoryAmounts } from "./categories";
+import { mapCsvRows, parseCsvText } from "./csvImport";
 
 dotenv.config();
 
@@ -426,7 +436,7 @@ app.delete("/api/portfolios/:id", requireAuth, async (req: AuthedRequest, res) =
 app.get("/api/transactions", requireAuth, async (req: AuthedRequest, res) => {
   try {
     const userId = req.userId!;
-    const { from, to, type, category, currency, portfolioId } = req.query;
+    const { from, to, type, category, currency, portfolioId, accountId } = req.query;
     const displayCurrency = normalizeCurrency(currency);
 
     const where: {
@@ -435,6 +445,7 @@ app.get("/api/transactions", requireAuth, async (req: AuthedRequest, res) => {
       type?: string;
       category?: string;
       portfolioId?: number;
+      accountId?: number;
     } = { userId };
 
     if (from || to) {
@@ -456,6 +467,9 @@ app.get("/api/transactions", requireAuth, async (req: AuthedRequest, res) => {
     }
     if (portfolioId) {
       where.portfolioId = Number(portfolioId);
+    }
+    if (accountId) {
+      where.accountId = Number(accountId);
     }
 
     const transactions = await prisma.transaction.findMany({
@@ -510,14 +524,38 @@ app.get("/api/transactions", requireAuth, async (req: AuthedRequest, res) => {
   }
 });
 
+async function resolveCategoryFields(
+  userId: number,
+  category: unknown,
+  categoryId: unknown,
+): Promise<{ category: string; categoryId: number | null }> {
+  if (categoryId != null && categoryId !== "") {
+    const id = Number(categoryId);
+    const path = await buildCategoryPath(prisma, userId, id);
+    if (!path) throw new Error("Category not found");
+    return { category: path, categoryId: id };
+  }
+  const c = String(category ?? "").trim();
+  return { category: c, categoryId: null };
+}
+
 app.post("/api/transactions", requireAuth, async (req: AuthedRequest, res) => {
   try {
     const userId = req.userId!;
-    const { type, amount, currency, category, date, description, portfolioId } = req.body;
-    const prevPortfolioId = existing.portfolioId;
+    const { type, amount, currency, category, categoryId, date, description, portfolioId, accountId } =
+      req.body;
 
-    if (!type || !amount || !currency || !category || !date) {
+    if (!type || !amount || !currency || !date) {
       return res.status(400).json({ error: "Missing required fields" });
+    }
+    let categoryFields: { category: string; categoryId: number | null };
+    try {
+      categoryFields = await resolveCategoryFields(userId, category, categoryId);
+    } catch {
+      return res.status(404).json({ error: "Category not found" });
+    }
+    if (!categoryFields.category && type !== "TRANSFER_TO_PORTFOLIO") {
+      return res.status(400).json({ error: "Category is required" });
     }
     let normalizedPortfolioId: number | null = null;
     if (type === "TRANSFER_TO_PORTFOLIO") {
@@ -532,16 +570,27 @@ app.post("/api/transactions", requireAuth, async (req: AuthedRequest, res) => {
       }
     }
 
+    let normalizedAccountId: number | null = null;
+    if (accountId != null && accountId !== "") {
+      normalizedAccountId = Number(accountId);
+      const bank = await prisma.financialAccount.findFirst({
+        where: { id: normalizedAccountId, userId, type: "BANK" },
+      });
+      if (!bank) return res.status(404).json({ error: "Bank account not found" });
+    }
+
     const created = await prisma.transaction.create({
       data: {
         userId,
         type,
         amount,
         currency: normalizeCurrency(currency),
-        category,
+        category: categoryFields.category,
+        categoryId: categoryFields.categoryId,
         date: new Date(date),
         description: description ?? null,
         portfolioId: normalizedPortfolioId,
+        accountId: normalizedAccountId,
       },
     });
 
@@ -569,19 +618,41 @@ app.put("/api/transactions/:id", requireAuth, async (req: AuthedRequest, res) =>
       return res.status(404).json({ error: "Transaction not found" });
     }
 
-    const { type, amount, currency, category, date, description, portfolioId } = req.body;
+    const { type, amount, currency, category, categoryId, date, description, portfolioId, accountId } =
+      req.body;
+
+    const data: Record<string, unknown> = {
+      type,
+      amount,
+      currency: currency ? normalizeCurrency(currency) : undefined,
+      date: date ? new Date(date) : undefined,
+      description,
+      portfolioId: portfolioId != null ? Number(portfolioId) : undefined,
+    };
+    if (category !== undefined || categoryId !== undefined) {
+      try {
+        const fields = await resolveCategoryFields(userId, category ?? existing.category, categoryId);
+        data.category = fields.category;
+        data.categoryId = fields.categoryId;
+      } catch {
+        return res.status(404).json({ error: "Category not found" });
+      }
+    }
+    if (accountId !== undefined) {
+      if (accountId == null || accountId === "") {
+        data.accountId = null;
+      } else {
+        const bank = await prisma.financialAccount.findFirst({
+          where: { id: Number(accountId), userId, type: "BANK" },
+        });
+        if (!bank) return res.status(404).json({ error: "Bank account not found" });
+        data.accountId = Number(accountId);
+      }
+    }
 
     const updated = await prisma.transaction.update({
       where: { id },
-      data: {
-        type,
-        amount,
-        currency: currency ? normalizeCurrency(currency) : undefined,
-        category,
-        date: date ? new Date(date) : undefined,
-        description,
-        portfolioId: portfolioId != null ? Number(portfolioId) : undefined,
-      },
+      data,
     });
 
     res.json({
@@ -1078,32 +1149,23 @@ app.get("/api/stats/summary", requireAuth, async (req: AuthedRequest, res) => {
 
     const balance = income - expenses;
 
-    let stalePositionsCount = 0;
-    let pricedPositionsCount = 0;
-    let portfolioValuationAsOf: Date | null = null;
-    const portfolioValue = portfolioTrades.reduce((acc, p) => {
-      const qtySigned = p.side === "BUY" ? toNumber(p.quantity) : -toNumber(p.quantity);
-      const symbol = String(p.symbol).trim().toUpperCase();
-      const snapshot = snapshotsBySymbol.get(symbol);
-      const status = classifyMarketDataStatus(
-        new Date(),
-        snapshot?.priceDate,
-        2,
-        MARKET_DATA_EXPIRE_DAYS,
-      );
-      if (status === "stale") stalePositionsCount += 1;
-      if (!snapshot || status === "missing" || status === "expired") {
-        return acc;
-      }
-      pricedPositionsCount += 1;
-      if (!portfolioValuationAsOf || snapshot.priceDate < portfolioValuationAsOf) {
-        portfolioValuationAsOf = snapshot.priceDate;
-      }
-      const price = toNumber(snapshot.close);
-      const fromCcy = normalizeCurrency(snapshot.currency);
-      const value = Math.max(0, qtySigned) * price;
-      return acc + convertAmount(value, fromCcy, displayCurrency, fx.plnPerUnit);
-    }, 0);
+    const tradeLots: TradeLot[] = portfolioTrades.map((p) => ({
+      portfolioId: p.portfolioId,
+      side: p.side,
+      symbol: p.symbol,
+      quantity: p.quantity,
+      currency: p.currency,
+    }));
+    const brokerVal = computeBrokerSecuritiesValuation({
+      trades: tradeLots,
+      snapshotsBySymbol,
+      displayCurrency,
+      plnPerUnit: fx.plnPerUnit,
+      marketDataExpireDays: MARKET_DATA_EXPIRE_DAYS,
+    });
+    const portfolios = await prisma.investmentPortfolio.findMany({ where: { userId } });
+    const brokerCash = sumBrokerCash(portfolios, displayCurrency, fx.plnPerUnit);
+    const portfolioValue = brokerVal.securitiesValue + brokerCash;
 
     res.json({
       currency: displayCurrency,
@@ -1112,11 +1174,13 @@ app.get("/api/stats/summary", requireAuth, async (req: AuthedRequest, res) => {
       expenses,
       balance,
       portfolioValue,
+      brokerSecurities: brokerVal.securitiesValue,
+      brokerCash,
       transactionsCount: txCount,
-      portfolioValueMarketDataAsOf: portfolioValuationAsOf,
-      stalePositionsCount,
-      pricedPositionsCount,
-      totalPositionsCount: portfolioTrades.length,
+      portfolioValueMarketDataAsOf: brokerVal.valuationAsOf,
+      stalePositionsCount: brokerVal.stalePositionsCount,
+      pricedPositionsCount: brokerVal.pricedPositionsCount,
+      totalPositionsCount: brokerVal.totalPositionsCount,
     });
   } catch (error) {
     // eslint-disable-next-line no-console
@@ -1162,16 +1226,21 @@ async function aggregateByCategory(
     };
   }
 
-  const byCategory = new Map<string, number>();
+  const pathItems: Array<{ categoryPath: string; amount: number }> = [];
   for (const t of rows) {
     const amount = toNumber(t.amount);
     const fromCcy = normalizeCurrency(t.currency);
     const converted = convertAmount(amount, fromCcy, displayCurrency, fx.plnPerUnit);
-    byCategory.set(t.category, (byCategory.get(t.category) ?? 0) + converted);
+    let path = t.category;
+    if (t.categoryId) {
+      path = await buildCategoryPath(prisma, userId, t.categoryId);
+      if (!path) path = t.category;
+    }
+    pathItems.push({ categoryPath: path, amount: converted });
   }
 
   return {
-    data: [...byCategory.entries()].map(([category, amount]) => ({
+    data: rollupCategoryAmounts(pathItems).map(({ category, amount }) => ({
       category,
       amount,
       currency: displayCurrency,
@@ -1373,6 +1442,534 @@ app.get("/api/stats/budget-progress", requireAuth, async (req: AuthedRequest, re
     // eslint-disable-next-line no-console
     console.error(error);
     res.status(500).json({ error: "Failed to compute budget progress" });
+  }
+});
+
+app.get("/api/stats/net-worth", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const displayCurrency = normalizeCurrency(req.query.currency) || "PLN";
+    const fx = await getFxRatesPlnPerUnit();
+
+    const [portfolioTrades, portfolios, financialAccounts, bankBalances] = await Promise.all([
+      prisma.portfolioTrade.findMany({ where: { userId } }),
+      prisma.investmentPortfolio.findMany({ where: { userId } }),
+      prisma.financialAccount.findMany({ where: { userId } }),
+      computeBankBalancesForUser(prisma, userId),
+    ]);
+
+    const snapshotsBySymbol = await getLatestSnapshotsForSymbols(
+      prisma,
+      portfolioTrades.map((p) => p.symbol),
+    );
+
+    const allCurrencies = [
+      displayCurrency,
+      ...portfolios.map((p) => normalizeCurrency(p.baseCurrency)),
+      ...financialAccounts.map((a) => normalizeCurrency(a.currency)),
+      ...portfolioTrades.map((p) => {
+        const symbol = normalizeSymbol(p.symbol);
+        const snapshot = snapshotsBySymbol.get(symbol);
+        return normalizeCurrency(snapshot?.currency ?? p.currency);
+      }),
+    ];
+    const missing = getMissingCurrencies(allCurrencies, fx.plnPerUnit);
+    if (missing.length) {
+      return res.status(400).json({
+        error: "Missing FX rates for some currencies",
+        missingCurrencies: missing,
+        fxAsOf: fx.asOf,
+      });
+    }
+
+    const result = computeNetWorth({
+      displayCurrency,
+      plnPerUnit: fx.plnPerUnit,
+      fxAsOf: fx.asOf,
+      marketDataExpireDays: MARKET_DATA_EXPIRE_DAYS,
+      trades: portfolioTrades.map((p) => ({
+        portfolioId: p.portfolioId,
+        side: p.side,
+        symbol: p.symbol,
+        quantity: p.quantity,
+        currency: p.currency,
+      })),
+      portfolios,
+      snapshotsBySymbol,
+      financialAccounts,
+      bankBalances,
+    });
+
+    res.json({
+      ...result,
+      portfolioValueMarketDataAsOf: result.portfolioValueMarketDataAsOf,
+    });
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to compute net worth" });
+  }
+});
+
+app.get("/api/stats/portfolio-value-over-time", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const displayCurrency = normalizeCurrency(req.query.currency) || "PLN";
+    const dateFilter = transactionDateFilter(req.query.from, req.query.to);
+    if (!dateFilter?.gte || !dateFilter?.lte) {
+      return res.status(400).json({ error: "from and to query parameters are required" });
+    }
+
+    const [trades, transfers, portfolios, fx] = await Promise.all([
+      prisma.portfolioTrade.findMany({ where: { userId } }),
+      prisma.transaction.findMany({
+        where: { userId, type: "TRANSFER_TO_PORTFOLIO" },
+        select: { portfolioId: true, amount: true, date: true },
+      }),
+      prisma.investmentPortfolio.findMany({ where: { userId } }),
+      getFxRatesPlnPerUnit(),
+    ]);
+
+    const symbols = [...new Set(trades.map((t) => normalizeSymbol(t.symbol)))];
+    const historyRows = await prisma.marketPriceHistory.findMany({
+      where: { symbol: { in: symbols } },
+      orderBy: [{ symbol: "asc" }, { priceDate: "asc" }],
+    });
+    const historyBySymbol = new Map<string, Array<{ priceDate: Date; close: unknown; currency: string }>>();
+    for (const row of historyRows) {
+      const sym = normalizeSymbol(row.symbol);
+      const arr = historyBySymbol.get(sym) ?? [];
+      arr.push({ priceDate: row.priceDate, close: row.close, currency: row.currency });
+      historyBySymbol.set(sym, arr);
+    }
+
+    const periods = listYearMonthsInRange(dateFilter.gte, dateFilter.lte);
+    const tradeLots: TradeLot[] = trades.map((t) => ({
+      portfolioId: t.portfolioId,
+      side: t.side,
+      symbol: t.symbol,
+      quantity: t.quantity,
+      tradePrice: t.tradePrice,
+      currency: t.currency,
+      tradeDate: t.tradeDate,
+    }));
+
+    const series = computePortfolioValueOverTime({
+      trades: tradeLots,
+      transfers: transfers
+        .filter((t) => t.portfolioId != null)
+        .map((t) => ({
+          portfolioId: t.portfolioId!,
+          amount: t.amount,
+          date: t.date,
+        })),
+      portfolios,
+      historyBySymbol,
+      periods,
+      displayCurrency,
+      plnPerUnit: fx.plnPerUnit,
+      marketDataExpireDays: MARKET_DATA_EXPIRE_DAYS,
+    });
+
+    res.json(
+      series.map((p) => ({
+        ...p,
+        currency: displayCurrency,
+        fxAsOf: fx.asOf,
+      })),
+    );
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to compute portfolio value over time" });
+  }
+});
+
+function serializeFinancialAccount(a: {
+  id: number;
+  userId: number;
+  type: string;
+  name: string;
+  currency: string;
+  openingBalance: unknown;
+  manualValue: unknown | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}) {
+  return {
+    id: a.id,
+    userId: a.userId,
+    type: a.type,
+    name: a.name,
+    currency: normalizeCurrency(a.currency),
+    openingBalance: toNumber(a.openingBalance),
+    manualValue: a.manualValue != null ? toNumber(a.manualValue) : null,
+    notes: a.notes,
+    createdAt: a.createdAt,
+    updatedAt: a.updatedAt,
+  };
+}
+
+app.get("/api/accounts", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const type = req.query.type ? String(req.query.type).toUpperCase() : undefined;
+    const where: { userId: number; type?: string } = { userId };
+    if (type) where.type = type;
+    const accounts = await prisma.financialAccount.findMany({
+      where,
+      orderBy: [{ type: "asc" }, { name: "asc" }],
+    });
+    const bankBalances = await computeBankBalancesForUser(prisma, userId);
+    res.json(
+      accounts.map((a) => ({
+        ...serializeFinancialAccount(a),
+        balance: a.type === "BANK" ? bankBalances.get(a.id) ?? 0 : null,
+      })),
+    );
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch accounts" });
+  }
+});
+
+app.post("/api/accounts", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const type = String(req.body.type ?? "").toUpperCase();
+    const name = String(req.body.name ?? "").trim();
+    const currency = normalizeCurrency(req.body.currency);
+    if (!name || !currency || !type) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+    const allowed = ["BANK", "REAL_ESTATE", "CRYPTO", "LIABILITY", "BONDS"];
+    if (!allowed.includes(type)) {
+      return res.status(400).json({ error: "Invalid account type" });
+    }
+    const created = await prisma.financialAccount.create({
+      data: {
+        userId,
+        type,
+        name,
+        currency,
+        openingBalance: type === "BANK" ? Number(req.body.openingBalance ?? 0) : 0,
+        manualValue:
+          type !== "BANK" && req.body.manualValue != null ? Number(req.body.manualValue) : null,
+        notes: req.body.notes ?? null,
+      },
+    });
+    res.status(201).json(serializeFinancialAccount(created));
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      (error as { code: string }).code === "P2002"
+    ) {
+      return res.status(409).json({ error: "Account name already exists" });
+    }
+    res.status(500).json({ error: "Failed to create account" });
+  }
+});
+
+app.put("/api/accounts/:id", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const id = Number(req.params.id);
+    const existing = await prisma.financialAccount.findFirst({ where: { id, userId } });
+    if (!existing) return res.status(404).json({ error: "Account not found" });
+
+    const updated = await prisma.financialAccount.update({
+      where: { id },
+      data: {
+        name: req.body.name != null ? String(req.body.name).trim() : undefined,
+        currency: req.body.currency ? normalizeCurrency(req.body.currency) : undefined,
+        openingBalance:
+          existing.type === "BANK" && req.body.openingBalance != null
+            ? Number(req.body.openingBalance)
+            : undefined,
+        manualValue:
+          existing.type !== "BANK" && req.body.manualValue != null
+            ? Number(req.body.manualValue)
+            : req.body.manualValue === null
+              ? null
+              : undefined,
+        notes: req.body.notes !== undefined ? req.body.notes : undefined,
+      },
+    });
+    res.json(serializeFinancialAccount(updated));
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to update account" });
+  }
+});
+
+app.delete("/api/accounts/:id", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const id = Number(req.params.id);
+    const txCount = await prisma.transaction.count({ where: { userId, accountId: id } });
+    if (txCount > 0) {
+      return res.status(400).json({ error: "Cannot delete account with transactions" });
+    }
+    const result = await prisma.financialAccount.deleteMany({ where: { id, userId } });
+    if (!result.count) return res.status(404).json({ error: "Account not found" });
+    res.status(204).send();
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to delete account" });
+  }
+});
+
+app.get("/api/categories", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const kind = req.query.kind ? String(req.query.kind).toUpperCase() : undefined;
+    const rows = await listCategoriesWithPaths(prisma, req.userId!, kind);
+    res.json(rows);
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch categories" });
+  }
+});
+
+app.post("/api/categories", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const name = String(req.body.name ?? "").trim();
+    const kind = String(req.body.kind ?? "").toUpperCase();
+    const parentId = req.body.parentId != null ? Number(req.body.parentId) : null;
+    if (!name || !["INCOME", "EXPENSE"].includes(kind)) {
+      return res.status(400).json({ error: "Invalid category fields" });
+    }
+    if (parentId) {
+      const parent = await prisma.category.findFirst({ where: { id: parentId, userId, kind } });
+      if (!parent) return res.status(404).json({ error: "Parent category not found" });
+    }
+    const created = await prisma.category.create({
+      data: { userId, name, kind, parentId },
+    });
+    const path = await buildCategoryPath(prisma, userId, created.id);
+    res.status(201).json({ id: created.id, parentId: created.parentId, name: created.name, kind, path });
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      (error as { code: string }).code === "P2002"
+    ) {
+      return res.status(409).json({ error: "Category already exists" });
+    }
+    res.status(500).json({ error: "Failed to create category" });
+  }
+});
+
+app.put("/api/categories/:id", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const id = Number(req.params.id);
+    const existing = await prisma.category.findFirst({ where: { id, userId } });
+    if (!existing) return res.status(404).json({ error: "Category not found" });
+    const updated = await prisma.category.update({
+      where: { id },
+      data: {
+        name: req.body.name != null ? String(req.body.name).trim() : undefined,
+        parentId: req.body.parentId !== undefined ? (req.body.parentId != null ? Number(req.body.parentId) : null) : undefined,
+      },
+    });
+    const path = await buildCategoryPath(prisma, userId, updated.id);
+    res.json({ id: updated.id, parentId: updated.parentId, name: updated.name, kind: updated.kind, path });
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to update category" });
+  }
+});
+
+app.delete("/api/categories/:id", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const id = Number(req.params.id);
+    const childCount = await prisma.category.count({ where: { parentId: id, userId } });
+    if (childCount > 0) {
+      return res.status(400).json({ error: "Cannot delete category with subcategories" });
+    }
+    const result = await prisma.category.deleteMany({ where: { id, userId } });
+    if (!result.count) return res.status(404).json({ error: "Category not found" });
+    res.status(204).send();
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to delete category" });
+  }
+});
+
+app.get("/api/accounts/:id/bonds", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const accountId = Number(req.params.id);
+    const account = await prisma.financialAccount.findFirst({
+      where: { id: accountId, userId, type: "BONDS" },
+    });
+    if (!account) return res.status(404).json({ error: "Bond account not found" });
+    const holdings = await prisma.bondHolding.findMany({
+      where: { accountId },
+      orderBy: { purchaseDate: "desc" },
+    });
+    res.json(
+      holdings.map((h) => ({
+        id: h.id,
+        accountId: h.accountId,
+        series: h.series,
+        nominal: toNumber(h.nominal),
+        purchaseDate: h.purchaseDate,
+        currency: normalizeCurrency(h.currency),
+        notes: h.notes,
+      })),
+    );
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch bond holdings" });
+  }
+});
+
+app.post("/api/accounts/:id/bonds", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const accountId = Number(req.params.id);
+    const account = await prisma.financialAccount.findFirst({
+      where: { id: accountId, userId, type: "BONDS" },
+    });
+    if (!account) return res.status(404).json({ error: "Bond account not found" });
+    const { series, nominal, purchaseDate, currency, notes } = req.body;
+    if (!series || nominal == null || !purchaseDate || !currency) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+    const created = await prisma.bondHolding.create({
+      data: {
+        accountId,
+        series: String(series).trim(),
+        nominal: Number(nominal),
+        purchaseDate: new Date(purchaseDate),
+        currency: normalizeCurrency(currency),
+        notes: notes ?? null,
+      },
+    });
+    await syncBondAccountManualValue(prisma, userId, accountId);
+    res.status(201).json({
+      id: created.id,
+      accountId: created.accountId,
+      series: created.series,
+      nominal: toNumber(created.nominal),
+      purchaseDate: created.purchaseDate,
+      currency: normalizeCurrency(created.currency),
+      notes: created.notes,
+    });
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to create bond holding" });
+  }
+});
+
+app.delete("/api/bonds/:id", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const id = Number(req.params.id);
+    const existing = await prisma.bondHolding.findFirst({
+      where: { id },
+      include: { account: true },
+    });
+    if (!existing || existing.account.userId !== userId) {
+      return res.status(404).json({ error: "Bond holding not found" });
+    }
+    await prisma.bondHolding.delete({ where: { id } });
+    await syncBondAccountManualValue(prisma, userId, existing.accountId);
+    res.status(204).send();
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to delete bond holding" });
+  }
+});
+
+app.post("/api/import/csv/preview", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const { csvText, mapping } = req.body;
+    if (!csvText || !mapping) {
+      return res.status(400).json({ error: "csvText and mapping are required" });
+    }
+    const { headers, rows } = parseCsvText(String(csvText));
+    const result = mapCsvRows(headers, rows, mapping);
+    res.json({ headers, rows: result.rows, errors: result.errors });
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to preview CSV import" });
+  }
+});
+
+app.post("/api/import/csv", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const { csvText, mapping, accountId, categoryId, defaultCategory } = req.body;
+    if (!csvText || !mapping || !accountId) {
+      return res.status(400).json({ error: "csvText, mapping and accountId are required" });
+    }
+    const bank = await prisma.financialAccount.findFirst({
+      where: { id: Number(accountId), userId, type: "BANK" },
+    });
+    if (!bank) return res.status(404).json({ error: "Bank account not found" });
+
+    const { headers, rows } = parseCsvText(String(csvText));
+    const parsed = mapCsvRows(headers, rows, mapping);
+    if (parsed.errors.length) {
+      return res.status(400).json({ error: "CSV validation failed", details: parsed.errors });
+    }
+
+    let categoryFields: { category: string; categoryId: number | null };
+    try {
+      categoryFields = await resolveCategoryFields(
+        userId,
+        defaultCategory ?? "Import CSV",
+        categoryId,
+      );
+    } catch {
+      return res.status(404).json({ error: "Category not found" });
+    }
+
+    const created = await prisma.$transaction(
+      parsed.rows.map((row) =>
+        prisma.transaction.create({
+          data: {
+            userId,
+            type: row.type,
+            amount: row.amount,
+            currency: normalizeCurrency(bank.currency),
+            category: categoryFields.category,
+            categoryId: categoryFields.categoryId,
+            date: new Date(row.date),
+            description: row.description || `Import linia ${row.line}`,
+            accountId: bank.id,
+          },
+        }),
+      ),
+    );
+
+    res.status(201).json({ imported: created.length });
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to import CSV" });
   }
 });
 

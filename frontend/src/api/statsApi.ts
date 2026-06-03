@@ -5,6 +5,8 @@ export type SummaryStats = {
   expenses: number;
   balance: number;
   portfolioValue: number;
+  brokerSecurities?: number;
+  brokerCash?: number;
   transactionsCount: number;
   currency?: string;
   fxAsOf?: string;
@@ -12,6 +14,45 @@ export type SummaryStats = {
   stalePositionsCount?: number;
   pricedPositionsCount?: number;
   totalPositionsCount?: number;
+};
+
+export type NetWorthStats = {
+  currency: string;
+  fxAsOf: string;
+  netWorth: number;
+  brokerSecurities: number;
+  brokerCash: number;
+  brokerTotal: number;
+  bankCash: number;
+  manualAssets: number;
+  liabilities: number;
+  bonds: number;
+  portfolioValueMarketDataAsOf?: string | null;
+  stalePositionsCount?: number;
+  pricedPositionsCount?: number;
+  totalPositionsCount?: number;
+  portfolios: Array<{
+    portfolioId: number;
+    name: string;
+    cash: number;
+    securities: number;
+    total: number;
+  }>;
+  accounts: Array<{
+    accountId: number;
+    type: string;
+    name: string;
+    value: number;
+  }>;
+};
+
+export type PortfolioValuePeriod = {
+  period: string;
+  securitiesValue: number;
+  cashValue: number;
+  totalValue: number;
+  currency?: string;
+  fxAsOf?: string;
 };
 
 export type CategoryAmount = {
@@ -63,5 +104,16 @@ export function fetchIncomeByCategory(params: StatsQuery) {
 export function fetchCashflowOverTime(params: StatsQuery) {
   return apiClient.get<CashflowPeriod[]>(
     `/api/stats/cashflow-over-time?${statsQuery(params)}`,
+  );
+}
+
+export function fetchNetWorth(currency: string) {
+  const q = new URLSearchParams({ currency });
+  return apiClient.get<NetWorthStats>(`/api/stats/net-worth?${q}`);
+}
+
+export function fetchPortfolioValueOverTime(params: StatsQuery) {
+  return apiClient.get<PortfolioValuePeriod[]>(
+    `/api/stats/portfolio-value-over-time?${statsQuery(params)}`,
   );
 }

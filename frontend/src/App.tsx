@@ -17,6 +17,13 @@ import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { useAuth } from './state/auth'
 import { PortfolioPositionAnalysis } from './components/PortfolioPositionAnalysis'
+import { NetWorthSection } from './components/NetWorthSection'
+import { PortfolioValueChart } from './components/Charts/PortfolioValueChart'
+import { AllPortfoliosTable } from './components/AllPortfoliosTable'
+import { PortfolioTradesTable } from './components/PortfolioTradesTable'
+import { AccountsTable } from './components/AccountsTable'
+import { CategoriesTable } from './components/CategoriesTable'
+import { CsvImportForm } from './components/CsvImportForm'
 
 function navLinkClass({ isActive }: { isActive: boolean }) {
   return isActive ? 'active' : undefined
@@ -31,8 +38,13 @@ function App() {
         <Route element={<AppShell />}>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/transactions" element={<TransactionsPage />} />
+          <Route path="/portfolios" element={<AllPortfoliosPage />} />
           <Route path="/portfolio" element={<PortfolioPage />} />
+          <Route path="/portfolio/trades" element={<PortfolioTradesPage />} />
           <Route path="/portfolio/:symbol" element={<PortfolioAnalysisPage />} />
+          <Route path="/accounts" element={<AccountsPage />} />
+          <Route path="/categories" element={<CategoriesPage />} />
+          <Route path="/import" element={<ImportPage />} />
           <Route path="/budgets" element={<BudgetsPage />} />
         </Route>
       </Route>
@@ -82,8 +94,20 @@ function AppShell() {
           <NavLink to="/transactions" className={navLinkClass}>
             Transakcje
           </NavLink>
+          <NavLink to="/portfolios" className={navLinkClass}>
+            Portfele
+          </NavLink>
           <NavLink to="/portfolio" className={navLinkClass}>
             Portfel
+          </NavLink>
+          <NavLink to="/accounts" className={navLinkClass}>
+            Konta
+          </NavLink>
+          <NavLink to="/categories" className={navLinkClass}>
+            Kategorie
+          </NavLink>
+          <NavLink to="/import" className={navLinkClass}>
+            Import CSV
           </NavLink>
           <NavLink to="/budgets" className={navLinkClass}>
             Budżety
@@ -103,7 +127,12 @@ function DashboardPage() {
       <div className="page dashboard-page">
         <h1 className="page-title">Dashboard</h1>
         <PeriodFilter />
-        <KpiCards />
+        <NetWorthSection />
+        <section className="card">
+          <h2>Przepływy pieniężne (okres)</h2>
+          <KpiCards />
+        </section>
+        <PortfolioValueChart />
         <CashFlowChart />
         <div className="charts-row">
           <ExpensesByCategoryChart />
@@ -127,11 +156,56 @@ function TransactionsPage() {
   )
 }
 
+function AllPortfoliosPage() {
+  return (
+    <div className="page">
+      <h1 className="page-title">Portfele maklerskie</h1>
+      <AllPortfoliosTable />
+    </div>
+  )
+}
+
 function PortfolioPage() {
   return (
     <div className="page">
       <h1 className="page-title">Portfel</h1>
       <PortfolioTable />
+    </div>
+  )
+}
+
+function PortfolioTradesPage() {
+  return (
+    <div className="page">
+      <h1 className="page-title">Transakcje portfela</h1>
+      <PortfolioTradesTable />
+    </div>
+  )
+}
+
+function AccountsPage() {
+  return (
+    <div className="page">
+      <h1 className="page-title">Konta finansowe</h1>
+      <AccountsTable />
+    </div>
+  )
+}
+
+function CategoriesPage() {
+  return (
+    <div className="page">
+      <h1 className="page-title">Kategorie</h1>
+      <CategoriesTable />
+    </div>
+  )
+}
+
+function ImportPage() {
+  return (
+    <div className="page">
+      <h1 className="page-title">Import CSV</h1>
+      <CsvImportForm />
     </div>
   )
 }

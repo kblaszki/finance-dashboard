@@ -11,15 +11,67 @@ datasource db {
 }
 
 model User {
-  id                 Int                 @id @default(autoincrement())
-  email              String              @unique
-  passwordHash       String
-  createdAt          DateTime            @default(now())
-  transactions       Transaction[]
-  portfolioPositions PortfolioPosition[]
-  portfolioTrades    PortfolioTrade[]
+  id                   Int                   @id @default(autoincrement())
+  email                String                @unique
+  passwordHash         String
+  createdAt            DateTime              @default(now())
+  transactions         Transaction[]
+  portfolioPositions   PortfolioPosition[]
+  portfolioTrades      PortfolioTrade[]
   investmentPortfolios InvestmentPortfolio[]
-  budgets            Budget[]
+  budgets              Budget[]
+  financialAccounts    FinancialAccount[]
+  categories           Category[]
+}
+
+model FinancialAccount {
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            String
+  name            String
+  currency        String
+  openingBalance  Decimal  @default(0)
+  manualValue     Decimal?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  transactions Transaction[]
+  bondHoldings BondHolding[]
+
+  @@unique([userId, name])
+  @@index([userId, type])
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentId  Int?
+  parent    Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children  Category[] @relation("CategoryTree")
+  name      String
+  kind      String
+
+  transactions Transaction[]
+
+  @@unique([userId, parentId, name, kind])
+  @@index([userId, kind])
+}
+
+model BondHolding {
+  id           Int              @id @default(autoincrement())
+  accountId    Int
+  account      FinancialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  series       String
+  nominal      Decimal
+  purchaseDate DateTime
+  currency     String
+  notes        String?
+  createdAt    DateTime         @default(now())
+
+  @@index([accountId])
 }
 
 model Transaction {
@@ -30,12 +82,18 @@ model Transaction {
   amount      Decimal
   currency    String
   category    String
+  categoryId  Int?
+  categoryRef Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   date        DateTime
   description String?
   portfolioId Int?
   portfolio   InvestmentPortfolio? @relation(fields: [portfolioId], references: [id], onDelete: SetNull)
+  accountId   Int?
+  account     FinancialAccount? @relation(fields: [accountId], references: [id], onDelete: SetNull)
 
   @@index([userId, portfolioId])
+  @@index([userId, accountId])
+  @@index([userId, categoryId])
 }
 
 model PortfolioPosition {

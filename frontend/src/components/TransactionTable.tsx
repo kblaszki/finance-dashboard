@@ -13,12 +13,16 @@ import {
 import { SUPPORTED_CURRENCIES, useCurrency } from '../state/currency'
 import { formatMoney } from '../utils/format'
 import { fetchPortfolios, type InvestmentPortfolio } from '../api/portfoliosApi'
+import { fetchAccounts, type FinancialAccount } from '../api/accountsApi'
+import { fetchCategories, type CategoryNode } from '../api/categoriesApi'
 
 const emptyForm: TransactionInput = {
   type: 'EXPENSE',
   amount: 0,
   currency: 'PLN',
   category: '',
+  categoryId: null,
+  accountId: null,
   date: new Date().toISOString().slice(0, 10),
   description: '',
 }
@@ -29,6 +33,9 @@ function toInput(t: Transaction): TransactionInput {
     amount: t.amount,
     currency: t.currency,
     category: t.category,
+    categoryId: t.categoryId ?? null,
+    accountId: t.accountId ?? null,
+    portfolioId: t.portfolioId ?? null,
     date: t.date.slice(0, 10),
     description: t.description ?? '',
   }
@@ -44,15 +51,22 @@ export function TransactionTable() {
   const [filterType, setFilterType] = useState<'' | TransactionType>('')
   const [filterFrom, setFilterFrom] = useState('')
   const [filterTo, setFilterTo] = useState('')
+  const [filterAccountId, setFilterAccountId] = useState('')
   const [portfolios, setPortfolios] = useState<InvestmentPortfolio[]>([])
+  const [bankAccounts, setBankAccounts] = useState<FinancialAccount[]>([])
+  const [expenseCategories, setExpenseCategories] = useState<CategoryNode[]>([])
+  const [incomeCategories, setIncomeCategories] = useState<CategoryNode[]>([])
   const { currency: displayCurrency } = useCurrency()
 
   useEffect(() => {
     void load()
-  }, [displayCurrency, filterType, filterFrom, filterTo])
+  }, [displayCurrency, filterType, filterFrom, filterTo, filterAccountId])
 
   useEffect(() => {
     void fetchPortfolios().then(setPortfolios).catch(() => {})
+    void fetchAccounts('BANK').then(setBankAccounts).catch(() => {})
+    void fetchCategories('EXPENSE').then(setExpenseCategories).catch(() => {})
+    void fetchCategories('INCOME').then(setIncomeCategories).catch(() => {})
   }, [])
 
   async function load() {
@@ -64,6 +78,7 @@ export function TransactionTable() {
         type: filterType || undefined,
         from: filterFrom || undefined,
         to: filterTo || undefined,
+        accountId: filterAccountId ? Number(filterAccountId) : undefined,
       })
       setTransactions(data)
     } catch (e) {
@@ -75,17 +90,27 @@ export function TransactionTable() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (form.amount <= 0 || !form.category.trim()) {
+    if (form.amount <= 0) {
+      setError('Kwota musi być > 0')
+      return
+    }
     if (form.type === 'TRANSFER_TO_PORTFOLIO' && !form.portfolioId) {
       setError('Dla transferu wybierz portfel docelowy')
       return
     }
-      setError('Kwota musi być > 0 i kategoria jest wymagana')
+    if (form.type !== 'TRANSFER_TO_PORTFOLIO' && !form.categoryId && !form.category.trim()) {
+      setError('Wybierz kategorię')
       return
     }
     setError(null)
     try {
-      await createTransaction({ ...form, category: form.category.trim() })
+      const cats = form.type === 'INCOME' ? incomeCategories : expenseCategories
+      const selected = form.categoryId ? cats.find((c) => c.id === form.categoryId) : null
+      await createTransaction({
+        ...form,
+        category: selected?.path ?? form.category.trim(),
+        categoryId: form.categoryId ?? null,
+      })
       setForm(emptyForm)
       await load()
     } catch (err) {
@@ -106,15 +131,18 @@ export function TransactionTable() {
   async function saveEdit(e: React.FormEvent) {
     e.preventDefault()
     if (editingId == null) return
-    if (editForm.amount <= 0 || !editForm.category.trim()) {
-      setError('Kwota musi być > 0 i kategoria jest wymagana')
+    if (editForm.amount <= 0) {
+      setError('Kwota musi być > 0')
       return
     }
     setError(null)
     try {
+      const cats = editForm.type === 'INCOME' ? incomeCategories : expenseCategories
+      const selected = editForm.categoryId ? cats.find((c) => c.id === editForm.categoryId) : null
       await updateTransaction(editingId, {
         ...editForm,
-        category: editForm.category.trim(),
+        category: selected?.path ?? editForm.category.trim(),
+        categoryId: editForm.categoryId ?? null,
       })
       setEditingId(null)
       await load()
@@ -184,6 +212,20 @@ export function TransactionTable() {
             onChange={(e) => setFilterTo(e.target.value)}
           />
         </label>
+        <label>
+          Konto bankowe
+          <select
+            value={filterAccountId}
+            onChange={(e) => setFilterAccountId(e.target.value)}
+          >
+            <option value="">Wszystkie</option>
+            {bankAccounts.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       <form className="form-grid" onSubmit={handleSubmit}>
@@ -197,8 +239,54 @@ export function TransactionTable() {
           >
             <option value="INCOME">Przychód</option>
             <option value="EXPENSE">Wydatek</option>
+            <option value="TRANSFER_TO_PORTFOLIO">Transfer do portfela</option>
           </select>
         </label>
+        {(form.type === 'INCOME' || form.type === 'EXPENSE') && (
+          <label>
+            Konto bankowe
+            <select
+              value={form.accountId ?? ''}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  accountId: e.target.value === '' ? null : Number(e.target.value),
+                })
+              }
+            >
+              <option value="">— brak —</option>
+              {bankAccounts.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {form.type === 'TRANSFER_TO_PORTFOLIO' && (
+          <label>
+            Portfel docelowy
+            <select
+              value={form.portfolioId ?? ''}
+              onChange={(e) => {
+                const id = Number(e.target.value)
+                const selected = portfolios.find((p) => p.id === id)
+                setForm({
+                  ...form,
+                  portfolioId: id,
+                  currency: selected?.baseCurrency ?? form.currency,
+                })
+              }}
+            >
+              <option value="">Wybierz…</option>
+              {portfolios.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <label>
           Kwota
           <input
@@ -223,14 +311,32 @@ export function TransactionTable() {
             ))}
           </select>
         </label>
-        <label>
-          Kategoria
-          <input
-            required
-            value={form.category}
-            onChange={(e) => setForm({ ...form, category: e.target.value })}
-          />
-        </label>
+        {form.type !== 'TRANSFER_TO_PORTFOLIO' && (
+          <label>
+            Kategoria
+            <select
+              required
+              value={form.categoryId ?? ''}
+              onChange={(e) => {
+                const id = e.target.value === '' ? null : Number(e.target.value)
+                const cats = form.type === 'INCOME' ? incomeCategories : expenseCategories
+                const node = id ? cats.find((c) => c.id === id) : null
+                setForm({
+                  ...form,
+                  categoryId: id,
+                  category: node?.path ?? '',
+                })
+              }}
+            >
+              <option value="">Wybierz…</option>
+              {(form.type === 'INCOME' ? incomeCategories : expenseCategories).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.path}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <label>
           Data
           <input

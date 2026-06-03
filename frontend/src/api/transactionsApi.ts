@@ -8,9 +8,11 @@ export interface Transaction {
   amount: number;
   currency: string;
   category: string;
+  categoryId?: number | null;
   date: string;
   description?: string | null;
   portfolioId?: number | null;
+  accountId?: number | null;
   amountConverted?: number;
   convertedCurrency?: string;
   fxAsOf?: string;
@@ -21,9 +23,11 @@ export interface TransactionInput {
   amount: number;
   currency: string;
   category: string;
+  categoryId?: number | null;
   date: string;
   description?: string;
   portfolioId?: number | null;
+  accountId?: number | null;
 }
 
 export type TransactionFilters = {
@@ -32,6 +36,7 @@ export type TransactionFilters = {
   from?: string;
   to?: string;
   portfolioId?: number;
+  accountId?: number;
 };
 
 function buildQuery(opts?: TransactionFilters): string {
@@ -42,6 +47,7 @@ function buildQuery(opts?: TransactionFilters): string {
   if (opts.from) params.set("from", opts.from);
   if (opts.to) params.set("to", opts.to);
   if (opts.portfolioId) params.set("portfolioId", String(opts.portfolioId));
+  if (opts.accountId) params.set("accountId", String(opts.accountId));
   const q = params.toString();
   return q ? `?${q}` : "";
 }
