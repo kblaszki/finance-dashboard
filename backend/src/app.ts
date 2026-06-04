@@ -23,6 +23,7 @@ import {
   computeBrokerSecuritiesValuation,
   computePortfolioValueOverTime,
   sumBrokerCash,
+  validateSellQuantity,
   type TradeLot,
 } from "./portfolioValuation";
 import { computeNetWorth } from "./netWorth";
@@ -807,13 +808,15 @@ app.post("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
       return res.status(400).json({ error: "Trade currency must match portfolio base currency" });
     }
     if (normalizedSide === "SELL") {
-      const existingTrades = await prisma.portfolioTrade.findMany({ where: { userId, portfolioId: pid, symbol: normalizeSymbol(symbol) } });
-      const netQty = existingTrades.reduce((acc, l) => {
-        const q = toNumber(l.quantity);
-        return acc + (l.side === "BUY" ? q : -q);
-      }, 0);
-      if (toNumber(quantity) > netQty) {
-        return res.status(400).json({ error: "Sell quantity exceeds current holdings" });
+      const existingTrades = await prisma.portfolioTrade.findMany({
+        where: { userId, portfolioId: pid, symbol: normalizeSymbol(symbol) },
+      });
+      const sellCheck = validateSellQuantity(existingTrades, toNumber(quantity));
+      if (!sellCheck.ok) {
+        return res.status(400).json({
+          error: `Sprzedaż przekracza posiadaną ilość (dostępne: ${sellCheck.available})`,
+          availableQuantity: sellCheck.available,
+        });
       }
     } else {
       const cash = toNumber(portfolio.cashBalance);
@@ -897,6 +900,28 @@ app.put("/api/portfolio/:id", requireAuth, async (req: AuthedRequest, res) => {
       return res.status(400).json({ error: "Trade currency must match portfolio base currency" });
     }
     data.portfolioId = portfolioId;
+
+    const nextSide = String(data.side ?? existing.side).toUpperCase();
+    const nextSymbol = normalizeSymbol(data.symbol ?? existing.symbol);
+    const nextQuantity = toNumber(data.quantity ?? existing.quantity);
+
+    if (nextSide === "SELL") {
+      const peerTrades = await prisma.portfolioTrade.findMany({
+        where: {
+          userId,
+          portfolioId,
+          symbol: nextSymbol,
+          id: { not: id },
+        },
+      });
+      const sellCheck = validateSellQuantity(peerTrades, nextQuantity);
+      if (!sellCheck.ok) {
+        return res.status(400).json({
+          error: `Sprzedaż przekracza posiadaną ilość (dostępne: ${sellCheck.available})`,
+          availableQuantity: sellCheck.available,
+        });
+      }
+    }
 
     const updated = await prisma.portfolioTrade.update({ where: { id }, data });
     res.json({

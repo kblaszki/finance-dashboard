@@ -57,8 +57,8 @@ Implementation: [`backend/src/app.ts`](../backend/src/app.ts). Auth: `requireAut
 | GET | `/api/portfolio` | Yes | Aggregated positions; `portfolioId`, optional `currency` |
 | POST | `/api/portfolio` | Yes | Record BUY/SELL trade |
 | GET | `/api/portfolio/trades` | Yes | Raw trades; `portfolioId`, optional `symbol` |
-| PUT | `/api/portfolio/:id` | Yes | Update trade by id |
-| DELETE | `/api/portfolio/:id` | Yes | Delete trade |
+| PUT | `/api/portfolio/:id` | Yes | Update trade; SELL validated vs holdings (400 + `availableQuantity`) |
+| DELETE | `/api/portfolio/:id` | Yes | Delete trade; recalculates portfolio cash |
 | GET | `/api/portfolio/:symbol/history` | Yes | Price history for symbol analysis |
 
 ## Budgets

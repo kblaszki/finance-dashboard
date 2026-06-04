@@ -44,12 +44,29 @@ function toNumber(v: unknown): number {
 }
 
 export function quantityForSymbol(trades: TradeLot[]): number {
+  return Math.max(0, signedQuantityForSymbol(trades));
+}
+
+export function signedQuantityForSymbol(
+  trades: Array<{ side: string; quantity: unknown }>,
+): number {
   let quantity = 0;
   for (const trade of trades) {
     const q = toNumber(trade.quantity);
     quantity += trade.side === "BUY" ? q : -q;
   }
-  return Math.max(0, quantity);
+  return quantity;
+}
+
+export function validateSellQuantity(
+  holdingsTrades: Array<{ side: string; quantity: unknown }>,
+  sellQuantity: number,
+): { ok: true } | { ok: false; available: number } {
+  const available = Math.max(0, signedQuantityForSymbol(holdingsTrades));
+  if (sellQuantity > available + 1e-9) {
+    return { ok: false, available };
+  }
+  return { ok: true };
 }
 
 export function groupTradesByPortfolioAndSymbol(

@@ -103,6 +103,10 @@ export async function updatePortfolioTrade(
   return apiClient.put<PortfolioTrade>(`/api/portfolio/${id}`, input);
 }
 
+export async function deletePortfolioTrade(id: number): Promise<void> {
+  return apiClient.delete(`/api/portfolio/${id}`);
+}
+
 export type PortfolioHistoryPoint = {
   date: string;
   close: number;

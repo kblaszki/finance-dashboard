@@ -7,7 +7,7 @@ import {
 } from '../api/portfolioApi'
 import { SUPPORTED_CURRENCIES, useCurrency } from '../state/currency'
 import { formatMoney } from '../utils/format'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { createPortfolio, fetchPortfolios, type InvestmentPortfolio } from '../api/portfoliosApi'
 import { useActivePortfolio } from '../state/portfolio'
 
@@ -154,11 +154,21 @@ export function PortfolioTable() {
           <button type="submit" className="btn-secondary">Dodaj portfel</button>
         </div>
       </form>
-      <div className="row" style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+      <div className="row" style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
         <h2>Portfel inwestycyjny</h2>
-        <button type="button" className="btn-secondary" onClick={handleRefreshMarketData} disabled={refreshingMarket}>
-          {refreshingMarket ? 'Odświeżanie...' : 'Odśwież wyceny EOD'}
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          {activePortfolioId ? (
+            <Link
+              to={`/portfolio/trades?portfolioId=${activePortfolioId}`}
+              className="btn-secondary"
+            >
+              Wszystkie transakcje
+            </Link>
+          ) : null}
+          <button type="button" className="btn-secondary" onClick={handleRefreshMarketData} disabled={refreshingMarket}>
+            {refreshingMarket ? 'Odświeżanie...' : 'Odśwież wyceny EOD'}
+          </button>
+        </div>
       </div>
 
       <form className="form-grid" onSubmit={handleSubmit}>

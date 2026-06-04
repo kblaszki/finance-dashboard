@@ -18,6 +18,7 @@ import { RegisterPage } from './pages/RegisterPage'
 import { useAuth } from './state/auth'
 import { PortfolioPositionAnalysis } from './components/PortfolioPositionAnalysis'
 import { NetWorthSection } from './components/NetWorthSection'
+import { MarketDataBanner } from './components/MarketDataBanner'
 import { PortfolioValueChart } from './components/Charts/PortfolioValueChart'
 import { AllPortfoliosTable } from './components/AllPortfoliosTable'
 import { PortfolioTradesTable } from './components/PortfolioTradesTable'
@@ -127,6 +128,7 @@ function DashboardPage() {
       <div className="page dashboard-page">
         <h1 className="page-title">Dashboard</h1>
         <PeriodFilter />
+        <MarketDataBanner />
         <NetWorthSection />
         <section className="card">
           <h2>Przepływy pieniężne (okres)</h2>

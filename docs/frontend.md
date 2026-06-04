@@ -8,11 +8,11 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 |------|------|----------------|
 | `/login` | Login | `pages/LoginPage.tsx` (guest only) |
 | `/register` | Register | `pages/RegisterPage.tsx` (guest only) |
-| `/` | Dashboard | `NetWorthSection`, `KpiCards`, `PortfolioValueChart`, cashflow charts, `BudgetProgress` |
+| `/` | Dashboard | `MarketDataBanner`, `NetWorthSection`, `KpiCards`, `PortfolioValueChart`, cashflow charts, `BudgetProgress` |
 | `/transactions` | Transactions | `TransactionTable` |
 | `/portfolios` | All broker accounts | `AllPortfoliosTable` |
 | `/portfolio` | Single portfolio | `PortfolioTable` |
-| `/portfolio/trades` | Trade list | `PortfolioTradesTable` |
+| `/portfolio/trades` | Trade list (edit/delete) | `PortfolioTradesTable` |
 | `/portfolio/:symbol` | Symbol analysis | `PortfolioPositionAnalysis` |
 | `/accounts` | Financial accounts | `AccountsTable` |
 | `/categories` | Category tree | `CategoriesTable` |

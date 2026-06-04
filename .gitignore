@@ -15,6 +15,7 @@ dist/
 build/
 coverage/
 .cache/
+plans/
 
 ## Vite / TS
 frontend/dist/

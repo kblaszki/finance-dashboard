@@ -75,6 +75,25 @@
   gap: var(--space-lg);
 }
 
+.market-data-banner {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) 1.25rem;
+  box-shadow: var(--shadow-card);
+}
+
+.market-data-banner p {
+  margin: 0 0 var(--space-sm);
+}
+
+.market-data-banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
 .card {
   background: var(--color-surface);
   border-radius: var(--radius-lg);
