@@ -86,8 +86,11 @@ Implementation: [`backend/src/app.ts`](../backend/src/app.ts). Auth: `requireAut
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/api/import/csv/preview` | Yes | Parse CSV with column mapping |
-| POST | `/api/import/csv` | Yes | Import rows into bank `accountId` |
+| GET | `/api/import/csv/presets` | Yes | Bank CSV presets (`mbank`, `ing`, `generic_pl`) |
+| POST | `/api/import/csv/preview` | Yes | Preview: max 50 rows, income/expense sums, max 20 errors |
+| POST | `/api/import/csv` | Yes | Import into bank `accountId`; `{ imported, skipped }` (idempotent via `importHash`) |
+| POST | `/api/import/broker-csv/preview` | Yes | Preview broker trades CSV |
+| POST | `/api/import/broker-csv` | Yes | Import `PortfolioTrade` rows; `{ imported, skipped, errors }` |
 
 ## FX and market data
 

@@ -106,6 +106,25 @@ The dashboard summarizes finances for a **selected period** (default: current mo
 - Charts: cash flow over time (income vs expenses by month), expenses by category, income by category
 - Budget progress uses the `YYYY-MM` from the range start
 
+## Import CSV
+
+Recommended flow: **Konta** (bank account) → **Kategorie** (optional default category) → **Import CSV** (`/import`).
+
+1. Paste a bank statement export (mBank, ING, or generic PL headers).
+2. Choose a **preset** (mBank / ING / Other) — column mapping fills automatically.
+3. Select the target bank account and preview (up to 50 rows, income/expense totals).
+4. Import — duplicate rows are skipped (`importHash` on date, amount, description, type).
+
+Example headers:
+
+| Bank | Date | Amount | Description |
+|------|------|--------|-------------|
+| mBank | `Data operacji` | `Kwota` | `Opis operacji` |
+| ING | `Data transakcji` | `Kwota` | `Opis transakcji` |
+| Generic | `Data` | `Kwota` | `Opis` |
+
+**Broker import** (same page): map symbol, quantity, price, date columns and target portfolio — creates `PortfolioTrade` rows without auto cash transfer.
+
 ## Transactions and portfolio
 
 - **Transakcje**: income and expenses with category from the tree and optional **bank account** (recommended when accounts exist). Filter by type, date range, and account.

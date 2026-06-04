@@ -91,7 +91,9 @@ model Transaction {
   portfolio   InvestmentPortfolio? @relation(fields: [portfolioId], references: [id], onDelete: SetNull)
   accountId   Int?
   account     FinancialAccount? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  importHash  String?
 
+  @@unique([userId, importHash])
   @@index([userId, portfolioId])
   @@index([userId, accountId])
   @@index([userId, categoryId])

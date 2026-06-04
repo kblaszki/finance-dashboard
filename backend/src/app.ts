@@ -35,7 +35,14 @@ import {
   resolveExpenseCategoryPath,
   rollupCategoryAmounts,
 } from "./categories";
-import { mapCsvRows, parseCsvText } from "./csvImport";
+import {
+  buildCsvPreview,
+  computeTransactionImportHash,
+  mapCsvRows,
+  parseCsvText,
+} from "./csvImport";
+import { buildBrokerCsvPreview, mapBrokerCsvRows } from "./brokerCsvImport";
+import { listCsvPresets } from "./csvPresets";
 
 dotenv.config();
 
@@ -1997,6 +2004,10 @@ app.delete("/api/bonds/:id", requireAuth, async (req: AuthedRequest, res) => {
   }
 });
 
+app.get("/api/import/csv/presets", requireAuth, (_req: AuthedRequest, res) => {
+  res.json(listCsvPresets());
+});
+
 app.post("/api/import/csv/preview", requireAuth, async (req: AuthedRequest, res) => {
   try {
     const { csvText, mapping } = req.body;
@@ -2004,8 +2015,7 @@ app.post("/api/import/csv/preview", requireAuth, async (req: AuthedRequest, res)
       return res.status(400).json({ error: "csvText and mapping are required" });
     }
     const { headers, rows } = parseCsvText(String(csvText));
-    const result = mapCsvRows(headers, rows, mapping);
-    res.json({ headers, rows: result.rows, errors: result.errors });
+    res.json(buildCsvPreview(headers, rows, mapping));
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(error);
@@ -2042,29 +2052,144 @@ app.post("/api/import/csv", requireAuth, async (req: AuthedRequest, res) => {
       return res.status(404).json({ error: "Category not found" });
     }
 
-    const created = await prisma.$transaction(
-      parsed.rows.map((row) =>
-        prisma.transaction.create({
-          data: {
-            userId,
-            type: row.type,
-            amount: row.amount,
-            currency: normalizeCurrency(bank.currency),
-            category: categoryFields.category,
-            categoryId: categoryFields.categoryId,
-            date: new Date(row.date),
-            description: row.description || `Import linia ${row.line}`,
-            accountId: bank.id,
-          },
-        }),
-      ),
-    );
+    let imported = 0;
+    let skipped = 0;
+    for (const row of parsed.rows) {
+      const importHash = computeTransactionImportHash(bank.id, row);
+      const duplicate = await prisma.transaction.findFirst({
+        where: { userId, importHash },
+      });
+      if (duplicate) {
+        skipped += 1;
+        continue;
+      }
+      await prisma.transaction.create({
+        data: {
+          userId,
+          type: row.type,
+          amount: row.amount,
+          currency: normalizeCurrency(bank.currency),
+          category: categoryFields.category,
+          categoryId: categoryFields.categoryId,
+          date: new Date(row.date),
+          description: row.description || `Import linia ${row.line}`,
+          accountId: bank.id,
+          importHash,
+        },
+      });
+      imported += 1;
+    }
 
-    res.status(201).json({ imported: created.length });
+    res.status(201).json({ imported, skipped });
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(error);
     res.status(500).json({ error: "Failed to import CSV" });
+  }
+});
+
+app.post("/api/import/broker-csv/preview", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const { csvText, mapping } = req.body;
+    if (!csvText || !mapping) {
+      return res.status(400).json({ error: "csvText and mapping are required" });
+    }
+    res.json(buildBrokerCsvPreview(String(csvText), mapping));
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to preview broker CSV import" });
+  }
+});
+
+app.post("/api/import/broker-csv", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const { csvText, mapping, portfolioId } = req.body;
+    if (!csvText || !mapping || !portfolioId) {
+      return res.status(400).json({ error: "csvText, mapping and portfolioId are required" });
+    }
+    const pid = Number(portfolioId);
+    const portfolio = await prisma.investmentPortfolio.findFirst({
+      where: { id: pid, userId },
+    });
+    if (!portfolio) return res.status(404).json({ error: "Portfolio not found" });
+
+    const { headers, rows } = parseCsvText(String(csvText));
+    const parsed = mapBrokerCsvRows(headers, rows, mapping);
+    if (parsed.errors.length) {
+      return res.status(400).json({ error: "CSV validation failed", details: parsed.errors });
+    }
+
+    const existingTrades = await prisma.portfolioTrade.findMany({
+      where: { userId, portfolioId: pid },
+    });
+    const holdings = new Map<string, number>();
+    for (const t of existingTrades) {
+      const sym = normalizeSymbol(t.symbol);
+      const q = toNumber(t.quantity);
+      holdings.set(sym, (holdings.get(sym) ?? 0) + (t.side === "BUY" ? q : -q));
+    }
+
+    const sorted = [...parsed.rows].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+    );
+
+    let imported = 0;
+    let skipped = 0;
+    const importErrors: string[] = [];
+
+    for (const row of sorted) {
+      const sym = normalizeSymbol(row.symbol);
+      const dup = existingTrades.find(
+        (t) =>
+          normalizeSymbol(t.symbol) === sym &&
+          t.side === row.side &&
+          toNumber(t.quantity) === row.quantity &&
+          toNumber(t.tradePrice) === row.tradePrice &&
+          new Date(t.tradeDate).toISOString().slice(0, 10) === row.date,
+      );
+      if (dup) {
+        skipped += 1;
+        continue;
+      }
+
+      if (row.side === "SELL") {
+        const available = holdings.get(sym) ?? 0;
+        if (row.quantity > available + 1e-9) {
+          importErrors.push(
+            `Line ${row.line}: SELL ${sym} exceeds holdings (available ${available})`,
+          );
+          continue;
+        }
+        holdings.set(sym, available - row.quantity);
+      } else {
+        holdings.set(sym, (holdings.get(sym) ?? 0) + row.quantity);
+      }
+
+      await prisma.portfolioTrade.create({
+        data: {
+          userId,
+          portfolioId: pid,
+          side: row.side,
+          symbol: sym,
+          quantity: row.quantity,
+          tradePrice: row.tradePrice,
+          tradeDate: new Date(row.date),
+          currency: normalizeCurrency(portfolio.baseCurrency),
+          category: "IMPORT",
+        },
+      });
+      imported += 1;
+    }
+
+    await recomputePortfolioCashBalance(prisma, userId, pid);
+
+    res.status(201).json({ imported, skipped, errors: importErrors.slice(0, 20) });
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to import broker CSV" });
   }
 });
 

@@ -1,3 +1,5 @@
+import { createHash } from "crypto";
+
 export type CsvColumnMapping = {
   dateColumn: string;
   amountColumn: string;
@@ -11,6 +13,18 @@ export type ParsedCsvRow = {
   amount: number;
   description: string;
   type: "INCOME" | "EXPENSE";
+};
+
+export const CSV_PREVIEW_MAX_ROWS = 50;
+export const CSV_PREVIEW_MAX_ERRORS = 20;
+
+export type CsvPreviewSummary = {
+  headers: string[];
+  rows: ParsedCsvRow[];
+  errors: string[];
+  totalRows: number;
+  incomeSum: number;
+  expenseSum: number;
 };
 
 function parseCsvLine(line: string): string[] {
@@ -122,4 +136,38 @@ export function mapCsvRows(
   });
 
   return { rows: parsed, errors };
+}
+
+export function buildCsvPreview(
+  headers: string[],
+  rows: string[][],
+  mapping: CsvColumnMapping,
+): CsvPreviewSummary {
+  const result = mapCsvRows(headers, rows, mapping);
+  const previewRows = result.rows.slice(0, CSV_PREVIEW_MAX_ROWS);
+  const errors = result.errors.slice(0, CSV_PREVIEW_MAX_ERRORS);
+  let incomeSum = 0;
+  let expenseSum = 0;
+  for (const row of result.rows) {
+    if (row.type === "INCOME") incomeSum += row.amount;
+    else expenseSum += row.amount;
+  }
+  return {
+    headers,
+    rows: previewRows,
+    errors,
+    totalRows: result.rows.length,
+    incomeSum: Math.round(incomeSum * 100) / 100,
+    expenseSum: Math.round(expenseSum * 100) / 100,
+  };
+}
+
+export function computeTransactionImportHash(
+  accountId: number,
+  row: Pick<ParsedCsvRow, "date" | "amount" | "description" | "type">,
+): string {
+  const amountKey = row.amount.toFixed(2);
+  const desc = row.description.trim();
+  const payload = `${accountId}|${row.date}|${amountKey}|${desc}|${row.type}`;
+  return createHash("sha256").update(payload).digest("hex");
 }

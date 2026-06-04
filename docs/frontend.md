@@ -16,7 +16,7 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 | `/portfolio/:symbol` | Symbol analysis | `PortfolioPositionAnalysis` |
 | `/accounts` | Financial accounts | `AccountsTable` |
 | `/categories` | Category tree | `CategoriesTable` |
-| `/import` | CSV import | `CsvImportForm` |
+| `/import` | CSV import | `CsvImportForm`, `BrokerCsvImportForm` (bank presets + broker trades) |
 | `/budgets` | Budgets | `BudgetTable` (root expense category select) |
 
 Protected shell: `ProtectedRoute` → `AppShell` (sidebar nav, `CurrencySelect`, `ThemeToggle`, logout).

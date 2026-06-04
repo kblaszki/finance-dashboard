@@ -7,7 +7,7 @@ Source of truth: [`backend/prisma/schema.prisma`](../backend/prisma/schema.prism
 | Model | Purpose | Scoped by |
 |-------|---------|-----------|
 | `User` | Email + `passwordHash` | — |
-| `Transaction` | Cash flows (`INCOME`, `EXPENSE`, `TRANSFER_TO_PORTFOLIO`) | `userId`; optional `portfolioId`, `accountId`, `categoryId` |
+| `Transaction` | Cash flows (`INCOME`, `EXPENSE`, `TRANSFER_TO_PORTFOLIO`) | `userId`; optional `portfolioId`, `accountId`, `categoryId`, `importHash` (CSV dedup) |
 | `InvestmentPortfolio` | Brokerage account (`name`, `baseCurrency`, `cashBalance`) | `userId`; unique `[userId, name]` |
 | `PortfolioTrade` | BUY/SELL lots per symbol inside a portfolio | `userId` + `portfolioId` |
 | `FinancialAccount` | Bank, real estate, crypto, liability, bonds wrapper | `userId`; `type` + unique `[userId, name]` |
