@@ -13,7 +13,7 @@ Source of truth: [`backend/prisma/schema.prisma`](../backend/prisma/schema.prism
 | `FinancialAccount` | Bank, real estate, crypto, liability, bonds wrapper | `userId`; `type` + unique `[userId, name]` |
 | `Category` | Income/expense tree (`parentId`, `kind`) | `userId` |
 | `BondHolding` | Treasury bond line (series, nominal) on `BONDS` account | `accountId` |
-| `Budget` | Monthly limit (`yearMonth` `YYYY-MM`, optional `category`) | `userId` |
+| `Budget` | Monthly limit (`yearMonth` `YYYY-MM`, optional root `categoryId` / legacy `category` string) | `userId` |
 | `MarketPriceSnapshot` | Latest close per symbol (valuation) | Global |
 | `MarketPriceHistory` | Historical closes for charts | Global |
 
@@ -42,6 +42,11 @@ Valuation helpers: `backend/src/portfolioValuation.ts`, net worth: `backend/src/
 - Hierarchical via `Category.parentId`.
 - Transactions store denormalized `category` path string and optional `categoryId`.
 - Stats charts roll up amounts to root category name.
+- Budgets reference a **root** expense category via `categoryId`; progress includes all expenses whose path starts with that root (subcategories included).
+
+## Data migration
+
+- `npm run db:migrate-categories` (backend): backfill `categoryId` on transactions and budgets from legacy `category` strings; ensures „Niesklasyfikowane” nodes.
 
 ## Legacy: `PortfolioPosition`
 

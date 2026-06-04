@@ -6,6 +6,7 @@ import {
   fetchBudgets,
   updateBudget,
 } from "../api/budgetsApi";
+import { fetchCategories, type CategoryNode } from "../api/categoriesApi";
 import { SUPPORTED_CURRENCIES, useCurrency } from "../state/currency";
 
 function currentYearMonth(): string {
@@ -17,21 +18,29 @@ function currentYearMonth(): string {
 
 const emptyForm: BudgetInput = {
   yearMonth: currentYearMonth(),
-  category: "",
+  category: null,
+  categoryId: null,
   limitAmount: 0,
   currency: "PLN",
 };
 
 function budgetLabel(category: string | null): string {
-  return category ?? "Całkowity";
+  return category?.trim() ? category : "Całkowity";
 }
 
 export function BudgetTable() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [rootExpenseCategories, setRootExpenseCategories] = useState<CategoryNode[]>([]);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState<BudgetInput>(emptyForm);
   const [filterMonth, setFilterMonth] = useState(currentYearMonth());
   const { currency: displayCurrency } = useCurrency();
+
+  useEffect(() => {
+    void fetchCategories("EXPENSE")
+      .then((nodes) => setRootExpenseCategories(nodes.filter((n) => n.parentId == null)))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     void load();
@@ -49,9 +58,13 @@ export function BudgetTable() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const selected = form.categoryId
+      ? rootExpenseCategories.find((c) => c.id === form.categoryId)
+      : null;
     await createBudget({
       yearMonth: form.yearMonth,
-      category: form.category?.trim() ? form.category.trim() : null,
+      categoryId: form.categoryId ?? null,
+      category: selected?.name ?? null,
       limitAmount: form.limitAmount,
       currency: form.currency,
     });
@@ -89,12 +102,25 @@ export function BudgetTable() {
         </label>
         <label>
           Kategoria (puste = całkowity)
-          <input
-            type="text"
-            value={form.category ?? ""}
-            onChange={(e) => setForm({ ...form, category: e.target.value })}
-            placeholder="np. FOOD"
-          />
+          <select
+            value={form.categoryId ?? ""}
+            onChange={(e) => {
+              const id = e.target.value === "" ? null : Number(e.target.value);
+              const node = id ? rootExpenseCategories.find((c) => c.id === id) : null;
+              setForm({
+                ...form,
+                categoryId: id,
+                category: node?.name ?? null,
+              });
+            }}
+          >
+            <option value="">Całkowity miesiąc</option>
+            {rootExpenseCategories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
         </label>
         <label>
           Limit

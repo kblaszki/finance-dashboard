@@ -55,6 +55,7 @@ model Category {
   kind      String
 
   transactions Transaction[]
+  budgets      Budget[]
 
   @@unique([userId, parentId, name, kind])
   @@index([userId, kind])
@@ -144,15 +145,18 @@ model InvestmentPortfolio {
 }
 
 model Budget {
-  id          Int     @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   userId      Int
-  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   yearMonth   String
   category    String?
+  categoryId  Int?
+  categoryRef Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   limitAmount Decimal
   currency    String
 
   @@unique([userId, yearMonth, category])
+  @@index([userId, categoryId])
 }
 
 model MarketPriceSnapshot {

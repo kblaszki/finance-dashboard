@@ -76,12 +76,24 @@ npm run db:seed
 
 Login: `demo@finance.local` / `demo12345`
 
+## Categories
+
+Expense and income categories form a **tree** (parent → child). Each transaction should use a category from the list (`categoryId`); the API also stores the full path string (e.g. `FOOD > Restauracje`).
+
+- Manage the tree on **Kategorie** (`/categories`).
+- Charts roll up amounts to the **root** name (all `FOOD > …` expenses count as FOOD).
+- Migrate legacy string-only rows: `cd backend && npm run db:migrate-categories`.
+
+## Bank accounts
+
+On **Konta** (`/accounts`) add a `BANK` account with opening balance. Link **INCOME** and **EXPENSE** transactions to that account so balances and net worth stay correct. The dashboard shows total **Konta bankowe** from net-worth stats.
+
 ## Budgets
 
-On the **Budżety** page you can set monthly spending limits:
+On **Budżety** (`/budgets`) set monthly limits:
 
-- Leave **category** empty for an overall monthly budget.
-- Set a category name (e.g. `FOOD`) to track spending in that category only.
+- Leave category empty for an overall monthly budget.
+- Pick a **root expense category** (e.g. FOOD). Spending in subcategories (e.g. `FOOD > Restauracje`) counts toward that budget.
 
 The dashboard shows progress (spent vs limit) for the month aligned with the selected period filter.
 
@@ -96,8 +108,8 @@ The dashboard summarizes finances for a **selected period** (default: current mo
 
 ## Transactions and portfolio
 
-- **Transakcje**: add, edit, and delete income and expense entries (category, description, date, currency). Filter the list by type and date range.
-- **Portfel**: add investment positions (symbol, quantity, buy/current price, currency) without creating a cash transaction.
+- **Transakcje**: income and expenses with category from the tree and optional **bank account** (recommended when accounts exist). Filter by type, date range, and account.
+- **Portfele inwestycyjne** (`/portfolios`): brokerage accounts, trades (BUY/SELL), transfers from cashflow.
 
 ## Database migrations
 

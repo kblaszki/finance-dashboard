@@ -1,6 +1,8 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { buildCategoryPath } from "../src/categories";
+import { ensureCategoryPath } from "../src/migrateCategories";
 
 const prisma = new PrismaClient();
 
@@ -8,8 +10,8 @@ const DEMO_EMAIL = "demo@finance.local";
 const DEMO_PASSWORD = "demo12345";
 const MARKET_SOURCE = "DEMO_SEED";
 
-const EXPENSE_CATEGORIES = ["FOOD", "TRANSPORT", "HOUSING", "ENTERTAINMENT", "HEALTH", "SHOPPING"];
-const INCOME_CATEGORIES = ["SALARY", "FREELANCE", "INVESTMENT"];
+const ROOT_EXPENSE = ["FOOD", "TRANSPORT", "HOUSING", "ENTERTAINMENT", "HEALTH", "SHOPPING"];
+const ROOT_INCOME = ["SALARY", "FREELANCE", "INVESTMENT"];
 
 const EXPENSE_DESCRIPTIONS: Record<string, string[]> = {
   FOOD: ["Biedronka", "Lidl", "Restauracja", "Kawa na mieście"],
@@ -71,7 +73,48 @@ async function main() {
   await prisma.portfolioTrade.deleteMany({ where: { userId: user.id } });
   await prisma.portfolioPosition.deleteMany({ where: { userId: user.id } });
   await prisma.budget.deleteMany({ where: { userId: user.id } });
+  await prisma.bondHolding.deleteMany({
+    where: { account: { userId: user.id } },
+  });
+  await prisma.financialAccount.deleteMany({ where: { userId: user.id } });
+  await prisma.category.deleteMany({ where: { userId: user.id } });
   await prisma.investmentPortfolio.deleteMany({ where: { userId: user.id } });
+
+  const bankAccount = await prisma.financialAccount.create({
+    data: {
+      userId: user.id,
+      type: "BANK",
+      name: "Konto główne PLN",
+      currency: "PLN",
+      openingBalance: 5000,
+    },
+  });
+
+  const categoryIds: Record<string, number> = {};
+  for (const name of ROOT_EXPENSE) {
+    categoryIds[name] = await ensureCategoryPath(prisma, user.id, "EXPENSE", name);
+    if (name === "FOOD") {
+      categoryIds["FOOD > Restauracje"] = await ensureCategoryPath(
+        prisma,
+        user.id,
+        "EXPENSE",
+        "FOOD > Restauracje",
+      );
+      categoryIds["FOOD > Sklepy"] = await ensureCategoryPath(
+        prisma,
+        user.id,
+        "EXPENSE",
+        "FOOD > Sklepy",
+      );
+    }
+  }
+  for (const name of ROOT_INCOME) {
+    categoryIds[name] = await ensureCategoryPath(prisma, user.id, "INCOME", name);
+  }
+
+  async function pathFor(id: number): Promise<string> {
+    return buildCategoryPath(prisma, user.id, id);
+  }
 
   const transactions: {
     userId: number;
@@ -79,31 +122,45 @@ async function main() {
     amount: number;
     currency: string;
     category: string;
+    categoryId: number;
+    accountId: number | null;
     date: Date;
     description: string;
   }[] = [];
 
   for (let day = 0; day < 120; day++) {
     if (Math.random() < 0.35) {
-      const category = randomPick(EXPENSE_CATEGORIES);
+      const useSubcategory = Math.random() < 0.25;
+      const categoryKey = useSubcategory
+        ? randomPick(["FOOD > Restauracje", "FOOD > Sklepy"] as const)
+        : randomPick(ROOT_EXPENSE.filter((c) => c !== "FOOD"));
+      const root = categoryKey.split(" > ")[0];
+      const categoryId = categoryIds[categoryKey];
+      const categoryPath = await pathFor(categoryId);
       transactions.push({
         userId: user.id,
         type: "EXPENSE",
-        amount: randomAmount(15, category === "HOUSING" ? 2500 : 350),
+        amount: randomAmount(15, root === "HOUSING" ? 2500 : 350),
         currency: Math.random() < 0.85 ? "PLN" : "EUR",
-        category,
+        category: categoryPath,
+        categoryId,
+        accountId: bankAccount.id,
         date: daysAgo(day),
-        description: randomPick(EXPENSE_DESCRIPTIONS[category]),
+        description: randomPick(EXPENSE_DESCRIPTIONS[root] ?? ["Wydatek"]),
       });
     }
     if (day % 30 === 0) {
-      const category = randomPick(INCOME_CATEGORIES);
+      const category = randomPick(ROOT_INCOME);
+      const categoryId = categoryIds[category];
+      const categoryPath = await pathFor(categoryId);
       transactions.push({
         userId: user.id,
         type: "INCOME",
         amount: randomAmount(category === "SALARY" ? 8000 : 500, category === "SALARY" ? 12000 : 4000),
         currency: "PLN",
-        category,
+        category: categoryPath,
+        categoryId,
+        accountId: bankAccount.id,
         date: daysAgo(day),
         description: randomPick(INCOME_DESCRIPTIONS[category]),
       });
@@ -297,28 +354,33 @@ async function main() {
   const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   months.push(yearMonth(prev));
 
+  const foodRootId = categoryIds.FOOD;
   for (const ym of months) {
     await prisma.budget.create({
       data: {
         userId: user.id,
         yearMonth: ym,
         category: "",
+        categoryId: null,
         limitAmount: 8000,
         currency: "PLN",
       },
     });
-    for (const cat of ["FOOD", "TRANSPORT", "ENTERTAINMENT"]) {
-      const limits: Record<string, number> = {
-        FOOD: 1200,
-        TRANSPORT: 600,
-        ENTERTAINMENT: 400,
-      };
+    const budgetLimits: Array<{ key: string; limit: number }> = [
+      { key: "FOOD", limit: 1200 },
+      { key: "TRANSPORT", limit: 600 },
+      { key: "ENTERTAINMENT", limit: 400 },
+    ];
+    for (const { key, limit } of budgetLimits) {
+      const categoryId = categoryIds[key];
+      const categoryPath = await pathFor(categoryId);
       await prisma.budget.create({
         data: {
           userId: user.id,
           yearMonth: ym,
-          category: cat,
-          limitAmount: limits[cat],
+          category: categoryPath,
+          categoryId: key === "FOOD" ? foodRootId : categoryId,
+          limitAmount: limit,
           currency: "PLN",
         },
       });
@@ -329,7 +391,7 @@ async function main() {
   console.log(`Seed OK for user: ${DEMO_EMAIL} (password: ${DEMO_PASSWORD})`);
   // eslint-disable-next-line no-console
   console.log(
-    `  ${transactions.length + transferTransactions.length} transactions, ${trades.length} trades, ${months.length * 4} budgets`,
+    `  ${transactions.length + transferTransactions.length} transactions, ${trades.length} trades, ${months.length * 4} budgets, 1 bank account, category tree with FOOD subcategories`,
   );
 }
 

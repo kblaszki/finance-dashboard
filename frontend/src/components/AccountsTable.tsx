@@ -20,6 +20,18 @@ const ACCOUNT_TYPES: { value: AccountType; label: string }[] = [
   { value: 'BONDS', label: 'Obligacje' },
 ]
 
+const TYPE_ORDER: Record<AccountType, number> = {
+  BANK: 0,
+  BONDS: 1,
+  REAL_ESTATE: 2,
+  CRYPTO: 3,
+  LIABILITY: 4,
+}
+
+function typeLabel(type: AccountType): string {
+  return ACCOUNT_TYPES.find((t) => t.value === type)?.label ?? type
+}
+
 const emptyForm: FinancialAccountInput = {
   type: 'BANK',
   name: '',
@@ -54,6 +66,12 @@ export function AccountsTable() {
     setError(null)
     try {
       const rows = await fetchAccounts()
+      rows.sort((a, b) => {
+        const oa = TYPE_ORDER[a.type] ?? 99
+        const ob = TYPE_ORDER[b.type] ?? 99
+        if (oa !== ob) return oa - ob
+        return a.name.localeCompare(b.name, 'pl')
+      })
       setAccounts(rows)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Błąd ładowania')
@@ -193,22 +211,22 @@ export function AccountsTable() {
             {accounts.map((a) => (
               <tr key={a.id}>
                 <td>{a.name}</td>
-                <td>{a.type}</td>
+                <td>{typeLabel(a.type)}</td>
                 <td>
-                  {a.type === 'BANK'
-                    ? formatMoney(a.balance ?? 0, a.currency)
-                    : a.type === 'BONDS'
-                      ? formatMoney(a.manualValue ?? 0, a.currency)
-                      : (
-                        <input
-                          type="number"
-                          step="0.01"
-                          defaultValue={a.manualValue ?? 0}
-                          onBlur={(e) =>
-                            void handleManualValueUpdate(a.id, Number(e.target.value))
-                          }
-                        />
-                      )}
+                  {a.type === 'BANK' ? (
+                    <strong>{formatMoney(a.balance ?? 0, a.currency)}</strong>
+                  ) : a.type === 'BONDS' ? (
+                    formatMoney(a.manualValue ?? 0, a.currency)
+                  ) : (
+                    <input
+                      type="number"
+                      step="0.01"
+                      defaultValue={a.manualValue ?? 0}
+                      onBlur={(e) =>
+                        void handleManualValueUpdate(a.id, Number(e.target.value))
+                      }
+                    />
+                  )}
                 </td>
                 <td>
                   {a.type === 'BONDS' && (

@@ -245,6 +245,11 @@ export function TransactionTable() {
         {(form.type === 'INCOME' || form.type === 'EXPENSE') && (
           <label>
             Konto bankowe
+            {bankAccounts.length > 0 && !form.accountId && (
+              <span className="field-warning" title="Przypisz transakcję do konta bankowego, aby saldo było poprawne">
+                ⚠
+              </span>
+            )}
             <select
               value={form.accountId ?? ''}
               onChange={(e) =>
@@ -476,7 +481,20 @@ export function TransactionTable() {
                   <tr key={t.id}>
                     <td>{new Date(t.date).toLocaleDateString()}</td>
                     <td>{t.type === 'INCOME' ? 'Przychód' : t.type === 'EXPENSE' ? 'Wydatek' : 'Transfer do portfela'}</td>
-                    <td>{t.category}</td>
+                    <td>
+                      {t.category}
+                      {(t.type === 'INCOME' || t.type === 'EXPENSE') &&
+                        bankAccounts.length > 0 &&
+                        !t.accountId && (
+                          <span
+                            className="field-warning"
+                            title="Brak konta bankowego — saldo kont nie uwzględnia tej transakcji"
+                          >
+                            {' '}
+                            ⚠
+                          </span>
+                        )}
+                    </td>
                     <td>{formatMoney(t.amount, t.currency)}</td>
                     <td>{t.currency}</td>
                     <td>

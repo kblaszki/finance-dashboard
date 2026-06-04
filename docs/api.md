@@ -46,7 +46,7 @@ Implementation: [`backend/src/app.ts`](../backend/src/app.ts). Auth: `requireAut
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/api/transactions` | Yes | List; `from`, `to`, `type`, `portfolioId`, `accountId` |
-| POST | `/api/transactions` | Yes | Create; `categoryId` or `category`; optional `accountId` |
+| POST | `/api/transactions` | Yes | Create; `categoryId` or `category`; `accountId` must be user’s `BANK` account when set |
 | PUT | `/api/transactions/:id` | Yes | Update |
 | DELETE | `/api/transactions/:id` | Yes | Delete |
 
@@ -66,8 +66,8 @@ Implementation: [`backend/src/app.ts`](../backend/src/app.ts). Auth: `requireAut
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/api/budgets` | Yes | List; optional `yearMonth` |
-| POST | `/api/budgets` | Yes | Create budget |
-| PUT | `/api/budgets/:id` | Yes | Update |
+| POST | `/api/budgets` | Yes | Create; `categoryId` (root EXPENSE) or legacy `category` |
+| PUT | `/api/budgets/:id` | Yes | Update; `categoryId` / limit |
 | DELETE | `/api/budgets/:id` | Yes | Delete |
 
 ## Stats (dashboard)
@@ -80,7 +80,7 @@ Implementation: [`backend/src/app.ts`](../backend/src/app.ts). Auth: `requireAut
 | GET | `/api/stats/expenses-by-category` | Yes | Expense breakdown (root rollup) |
 | GET | `/api/stats/income-by-category` | Yes | Income breakdown (root rollup) |
 | GET | `/api/stats/cashflow-over-time` | Yes | Monthly cash flow series |
-| GET | `/api/stats/budget-progress` | Yes | Spent vs limit; `yearMonth`, `currency` |
+| GET | `/api/stats/budget-progress` | Yes | Spent vs limit (subcategory rollup); `yearMonth`, `currency` |
 
 ## Import
 

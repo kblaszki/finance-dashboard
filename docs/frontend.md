@@ -9,7 +9,7 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 | `/login` | Login | `pages/LoginPage.tsx` (guest only) |
 | `/register` | Register | `pages/RegisterPage.tsx` (guest only) |
 | `/` | Dashboard | `MarketDataBanner`, `NetWorthSection`, `KpiCards`, `PortfolioValueChart`, cashflow charts, `BudgetProgress` |
-| `/transactions` | Transactions | `TransactionTable` |
+| `/transactions` | Transactions | `TransactionTable` (category tree, bank account warning) |
 | `/portfolios` | All broker accounts | `AllPortfoliosTable` |
 | `/portfolio` | Single portfolio | `PortfolioTable` |
 | `/portfolio/trades` | Trade list (edit/delete) | `PortfolioTradesTable` |
@@ -17,7 +17,7 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 | `/accounts` | Financial accounts | `AccountsTable` |
 | `/categories` | Category tree | `CategoriesTable` |
 | `/import` | CSV import | `CsvImportForm` |
-| `/budgets` | Budgets | `BudgetTable` |
+| `/budgets` | Budgets | `BudgetTable` (root expense category select) |
 
 Protected shell: `ProtectedRoute` → `AppShell` (sidebar nav, `CurrencySelect`, `ThemeToggle`, logout).
 

@@ -70,6 +70,32 @@ export async function listCategoriesWithPaths(
   }));
 }
 
+export function expenseMatchesBudgetCategory(
+  expensePath: string,
+  budgetRootPath: string | null,
+): boolean {
+  if (!budgetRootPath) return true;
+  const root = budgetRootPath.split(" > ")[0]?.trim() || budgetRootPath;
+  const path = expensePath.trim();
+  return path === root || path.startsWith(`${root} > `);
+}
+
+export async function resolveExpenseCategoryPath(
+  prisma: PrismaClient,
+  userId: number,
+  expense: { category: string; categoryId: number | null },
+): Promise<string> {
+  if (expense.categoryId) {
+    const path = await buildCategoryPath(prisma, userId, expense.categoryId);
+    if (path) return path;
+  }
+  return expense.category;
+}
+
+export function listRootCategories(nodes: CategoryNode[]): CategoryNode[] {
+  return nodes.filter((n) => n.parentId == null);
+}
+
 export function rollupCategoryAmounts(
   items: Array<{ categoryPath: string; amount: number }>,
 ): Array<{ category: string; amount: number }> {

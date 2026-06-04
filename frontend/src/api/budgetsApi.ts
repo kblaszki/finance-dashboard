@@ -5,6 +5,7 @@ export type Budget = {
   userId: number;
   yearMonth: string;
   category: string | null;
+  categoryId: number | null;
   limitAmount: number;
   currency: string;
 };
@@ -12,6 +13,7 @@ export type Budget = {
 export type BudgetInput = {
   yearMonth: string;
   category?: string | null;
+  categoryId?: number | null;
   limitAmount: number;
   currency: string;
 };
@@ -20,6 +22,7 @@ export type BudgetProgress = {
   id: number;
   yearMonth: string;
   category: string | null;
+  categoryId: number | null;
   limitAmount: number;
   spent: number;
   remaining: number;

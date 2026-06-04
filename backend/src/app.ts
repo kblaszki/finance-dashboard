@@ -28,7 +28,13 @@ import {
 } from "./portfolioValuation";
 import { computeNetWorth } from "./netWorth";
 import { computeBankBalancesForUser, syncBondAccountManualValue } from "./accounts";
-import { buildCategoryPath, listCategoriesWithPaths, rollupCategoryAmounts } from "./categories";
+import {
+  buildCategoryPath,
+  expenseMatchesBudgetCategory,
+  listCategoriesWithPaths,
+  resolveExpenseCategoryPath,
+  rollupCategoryAmounts,
+} from "./categories";
 import { mapCsvRows, parseCsvText } from "./csvImport";
 
 dotenv.config();
@@ -211,6 +217,7 @@ function serializeBudget(b: {
   userId: number;
   yearMonth: string;
   category: string | null;
+  categoryId: number | null;
   limitAmount: unknown;
   currency: string;
 }) {
@@ -219,9 +226,40 @@ function serializeBudget(b: {
     userId: b.userId,
     yearMonth: b.yearMonth,
     category: budgetCategoryFromDb(b.category),
+    categoryId: b.categoryId,
     limitAmount: toNumber(b.limitAmount),
     currency: normalizeCurrency(b.currency),
   };
+}
+
+async function resolveBudgetCategoryFields(
+  userId: number,
+  category: unknown,
+  categoryId: unknown,
+): Promise<{ categoryDb: string; categoryId: number | null }> {
+  if (categoryId != null && categoryId !== "") {
+    const id = Number(categoryId);
+    const row = await prisma.category.findFirst({
+      where: { id, userId, kind: "EXPENSE", parentId: null },
+    });
+    if (!row) throw new Error("Budget category must be a root EXPENSE category");
+    return { categoryDb: row.name, categoryId: id };
+  }
+  const c = budgetCategoryToDb(category);
+  return { categoryDb: c, categoryId: null };
+}
+
+async function validateBankAccountId(
+  userId: number,
+  accountId: unknown,
+): Promise<number | null> {
+  if (accountId == null || accountId === "") return null;
+  const id = Number(accountId);
+  const bank = await prisma.financialAccount.findFirst({
+    where: { id, userId, type: "BANK" },
+  });
+  if (!bank) throw new Error("Bank account not found");
+  return id;
 }
 
 function serializePortfolio(p: {
@@ -572,12 +610,12 @@ app.post("/api/transactions", requireAuth, async (req: AuthedRequest, res) => {
     }
 
     let normalizedAccountId: number | null = null;
-    if (accountId != null && accountId !== "") {
-      normalizedAccountId = Number(accountId);
-      const bank = await prisma.financialAccount.findFirst({
-        where: { id: normalizedAccountId, userId, type: "BANK" },
-      });
-      if (!bank) return res.status(404).json({ error: "Bank account not found" });
+    if (type === "INCOME" || type === "EXPENSE") {
+      try {
+        normalizedAccountId = await validateBankAccountId(userId, accountId);
+      } catch {
+        return res.status(404).json({ error: "Bank account not found" });
+      }
     }
 
     const created = await prisma.transaction.create({
@@ -1030,17 +1068,24 @@ app.post("/api/budgets", requireAuth, async (req: AuthedRequest, res) => {
     const userId = req.userId!;
     const yearMonth = parseYearMonth(req.body.yearMonth);
     const { limitAmount, currency } = req.body;
-    const categoryDb = budgetCategoryToDb(req.body.category);
 
     if (!yearMonth || limitAmount == null || !currency) {
       return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    let categoryFields: { categoryDb: string; categoryId: number | null };
+    try {
+      categoryFields = await resolveBudgetCategoryFields(userId, req.body.category, req.body.categoryId);
+    } catch {
+      return res.status(400).json({ error: "Invalid budget category (use a root expense category)" });
     }
 
     const created = await prisma.budget.create({
       data: {
         userId,
         yearMonth,
-        category: categoryDb,
+        category: categoryFields.categoryDb,
+        categoryId: categoryFields.categoryId,
         limitAmount,
         currency: normalizeCurrency(currency),
       },
@@ -1077,19 +1122,28 @@ app.put("/api/budgets/:id", requireAuth, async (req: AuthedRequest, res) => {
       return res.status(400).json({ error: "Invalid yearMonth format (YYYY-MM)" });
     }
 
-    const categoryDb =
-      req.body.category !== undefined
-        ? budgetCategoryToDb(req.body.category)
-        : existing.category ?? "";
+    const budgetData: Record<string, unknown> = {
+      yearMonth: yearMonth ?? undefined,
+      limitAmount: req.body.limitAmount ?? undefined,
+      currency: req.body.currency ? normalizeCurrency(req.body.currency) : undefined,
+    };
+    if (req.body.category !== undefined || req.body.categoryId !== undefined) {
+      try {
+        const fields = await resolveBudgetCategoryFields(
+          userId,
+          req.body.category ?? existing.category,
+          req.body.categoryId ?? existing.categoryId,
+        );
+        budgetData.category = fields.categoryDb;
+        budgetData.categoryId = fields.categoryId;
+      } catch {
+        return res.status(400).json({ error: "Invalid budget category (use a root expense category)" });
+      }
+    }
 
     const updated = await prisma.budget.update({
       where: { id },
-      data: {
-        yearMonth: yearMonth ?? undefined,
-        category: categoryDb,
-        limitAmount: req.body.limitAmount ?? undefined,
-        currency: req.body.currency ? normalizeCurrency(req.body.currency) : undefined,
-      },
+      data: budgetData,
     });
 
     res.json(serializeBudget(updated));
@@ -1427,40 +1481,56 @@ app.get("/api/stats/budget-progress", requireAuth, async (req: AuthedRequest, re
       return;
     }
 
-    const progress = budgets.map((b) => {
-      const limitAmount = convertAmount(
-        toNumber(b.limitAmount),
-        normalizeCurrency(b.currency),
-        displayCurrency,
-        fx.plnPerUnit,
-      );
+    const expensePaths = await Promise.all(
+      expenses.map(async (e) => ({
+        expense: e,
+        path: await resolveExpenseCategoryPath(prisma, userId, e),
+      })),
+    );
 
-      const categoryFilter = budgetCategoryFromDb(b.category);
-      const relevant = categoryFilter
-        ? expenses.filter((e) => e.category === categoryFilter)
-        : expenses;
+    const progress = await Promise.all(
+      budgets.map(async (b) => {
+        const limitAmount = convertAmount(
+          toNumber(b.limitAmount),
+          normalizeCurrency(b.currency),
+          displayCurrency,
+          fx.plnPerUnit,
+        );
 
-      const spent = relevant.reduce((acc, t) => {
-        const amount = toNumber(t.amount);
-        const fromCcy = normalizeCurrency(t.currency);
-        return acc + convertAmount(amount, fromCcy, displayCurrency, fx.plnPerUnit);
-      }, 0);
+        let budgetRootPath: string | null = null;
+        if (b.categoryId) {
+          budgetRootPath = await buildCategoryPath(prisma, userId, b.categoryId);
+        } else {
+          budgetRootPath = budgetCategoryFromDb(b.category);
+        }
 
-      const remaining = limitAmount - spent;
-      const percentUsed = limitAmount > 0 ? (spent / limitAmount) * 100 : 0;
+        const relevant = expensePaths.filter(({ path }) =>
+          expenseMatchesBudgetCategory(path, budgetRootPath),
+        );
 
-      return {
-        id: b.id,
-        yearMonth: b.yearMonth,
-        category: categoryFilter,
-        limitAmount,
-        spent,
-        remaining,
-        percentUsed,
-        currency: displayCurrency,
-        fxAsOf: fx.asOf,
-      };
-    });
+        const spent = relevant.reduce((acc, { expense: t }) => {
+          const amount = toNumber(t.amount);
+          const fromCcy = normalizeCurrency(t.currency);
+          return acc + convertAmount(amount, fromCcy, displayCurrency, fx.plnPerUnit);
+        }, 0);
+
+        const remaining = limitAmount - spent;
+        const percentUsed = limitAmount > 0 ? (spent / limitAmount) * 100 : 0;
+
+        return {
+          id: b.id,
+          yearMonth: b.yearMonth,
+          category: budgetRootPath,
+          categoryId: b.categoryId,
+          limitAmount,
+          spent,
+          remaining,
+          percentUsed,
+          currency: displayCurrency,
+          fxAsOf: fx.asOf,
+        };
+      }),
+    );
 
     res.json(progress);
   } catch (error) {

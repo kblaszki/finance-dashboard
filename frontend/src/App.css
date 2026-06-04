@@ -315,6 +315,12 @@
   font-size: 0.9rem;
 }
 
+.field-warning {
+  color: var(--color-warning, #d68910);
+  margin-left: 0.35rem;
+  cursor: help;
+}
+
 .auth-switch {
   margin: var(--space-md) 0 0;
   font-size: 0.9rem;
