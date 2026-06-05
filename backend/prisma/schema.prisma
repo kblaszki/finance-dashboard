@@ -18,8 +18,7 @@ model User {
   transactions         Transaction[]
   portfolioPositions   PortfolioPosition[]
   portfolioTrades      PortfolioTrade[]
-  investmentPortfolios InvestmentPortfolio[]
-  budgets              Budget[]
+  accounts             Account[]
   financialAccounts    FinancialAccount[]
   categories           Category[]
 }
@@ -37,8 +36,8 @@ model FinancialAccount {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  transactions Transaction[]
-  bondHoldings BondHolding[]
+  legacyTransactions Transaction[]
+  bondHoldings       BondHolding[]
 
   @@unique([userId, name])
   @@index([userId, type])
@@ -55,7 +54,6 @@ model Category {
   kind      String
 
   transactions Transaction[]
-  budgets      Budget[]
 
   @@unique([userId, parentId, name, kind])
   @@index([userId, kind])
@@ -75,6 +73,84 @@ model BondHolding {
   @@index([accountId])
 }
 
+model Account {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  name      String
+  currency  String
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bankDetails      BankAccountDetails?
+  brokerageDetails BrokerageAccountDetails?
+  balanceDaily     AccountBalanceDaily[]
+  transactions     Transaction[]
+  trades           PortfolioTrade[]
+
+  @@unique([userId, name])
+  @@index([userId, type])
+}
+
+model BankAccountDetails {
+  accountId      Int     @id
+  account        Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  openingBalance Decimal @default(0)
+}
+
+model BrokerageAccountDetails {
+  accountId    Int     @id
+  account      Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  baseCurrency String
+  cashBalance  Decimal @default(0)
+}
+
+model AccountBalanceDaily {
+  id                   Int      @id @default(autoincrement())
+  accountId            Int
+  account              Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  balanceDate          DateTime
+  balance              Decimal
+  cashComponent        Decimal?
+  securitiesComponent  Decimal?
+  currency             String
+
+  @@unique([accountId, balanceDate])
+  @@index([accountId, balanceDate])
+}
+
+model Asset {
+  id        Int      @id @default(autoincrement())
+  symbol    String
+  name      String?
+  assetType String   @default("STOCK")
+  currency  String
+  exchange  String?
+  source    String   @default("twelve_data")
+  createdAt DateTime @default(now())
+
+  prices MarketPriceDaily[]
+  trades PortfolioTrade[]
+
+  @@unique([symbol, exchange, source])
+  @@index([symbol])
+}
+
+model MarketPriceDaily {
+  id        Int      @id @default(autoincrement())
+  assetId   Int
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  close     Decimal
+  priceDate DateTime
+  fetchedAt DateTime @default(now())
+  source    String
+
+  @@unique([assetId, priceDate, source])
+  @@index([assetId, priceDate])
+}
+
 model Transaction {
   id          Int      @id @default(autoincrement())
   userId      Int
@@ -87,16 +163,16 @@ model Transaction {
   categoryRef Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   date        DateTime
   description String?
-  portfolioId Int?
-  portfolio   InvestmentPortfolio? @relation(fields: [portfolioId], references: [id], onDelete: SetNull)
   accountId   Int?
-  account     FinancialAccount? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  account     Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  legacyFinancialAccountId Int?
+  legacyFinancialAccount   FinancialAccount? @relation(fields: [legacyFinancialAccountId], references: [id], onDelete: SetNull)
   importHash  String?
 
   @@unique([userId, importHash])
-  @@index([userId, portfolioId])
   @@index([userId, accountId])
   @@index([userId, categoryId])
+  @@index([userId, legacyFinancialAccountId])
 }
 
 model PortfolioPosition {
@@ -112,79 +188,22 @@ model PortfolioPosition {
 }
 
 model PortfolioTrade {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  side      String   @default("BUY")
-  symbol    String
-  quantity  Decimal
-  tradePrice Decimal
-  tradeDate DateTime
-  currency  String
-  category  String
-  createdAt DateTime @default(now())
-  portfolioId Int
-  portfolio InvestmentPortfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
-
-  @@index([userId, portfolioId, symbol])
-}
-
-model InvestmentPortfolio {
-  id           Int      @id @default(autoincrement())
-  userId       Int
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name         String
-  baseCurrency String
-  cashBalance  Decimal  @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  trades       PortfolioTrade[]
-  transactions Transaction[]
-
-  @@unique([userId, name])
-  @@index([userId, baseCurrency])
-}
-
-model Budget {
-  id          Int       @id @default(autoincrement())
-  userId      Int
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  yearMonth   String
-  category    String?
-  categoryId  Int?
-  categoryRef Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  limitAmount Decimal
-  currency    String
-
-  @@unique([userId, yearMonth, category])
-  @@index([userId, categoryId])
-}
-
-model MarketPriceSnapshot {
   id         Int      @id @default(autoincrement())
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  side       String   @default("BUY")
   symbol     String
-  exchange   String?
+  quantity   Decimal
+  tradePrice Decimal
+  tradeDate  DateTime
   currency   String
-  close      Decimal
-  priceDate  DateTime
-  fetchedAt  DateTime @default(now())
-  source     String
+  category   String
+  createdAt  DateTime @default(now())
+  accountId  Int
+  account    Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  assetId    Int?
+  asset      Asset?   @relation(fields: [assetId], references: [id], onDelete: SetNull)
 
-  @@index([symbol, priceDate])
-  @@unique([symbol, priceDate, source])
-}
-
-model MarketPriceHistory {
-  id        Int      @id @default(autoincrement())
-  symbol    String
-  exchange  String?
-  currency  String
-  close     Decimal
-  priceDate DateTime
-  fetchedAt DateTime @default(now())
-  source    String
-
-  @@index([symbol, priceDate])
-  @@unique([symbol, priceDate, source])
+  @@index([userId, accountId, symbol])
+  @@index([assetId])
 }

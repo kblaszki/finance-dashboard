@@ -4,7 +4,7 @@ import {
   deleteAccount,
   fetchAccounts,
   updateAccount,
-  type AccountType,
+  type LegacyAccountType as AccountType,
   type FinancialAccount,
   type FinancialAccountInput,
 } from '../api/accountsApi'

@@ -32,7 +32,7 @@ function tradeToForm(t: PortfolioTrade): TradeForm {
   }
 }
 
-export function PortfolioTradesTable() {
+export function PortfolioTradesTable(props: { fixedPortfolioId?: number }) {
   const [trades, setTrades] = useState<PortfolioTrade[]>([])
   const [portfolios, setPortfolios] = useState<InvestmentPortfolio[]>([])
   const [loading, setLoading] = useState(false)
@@ -41,7 +41,8 @@ export function PortfolioTradesTable() {
   const [editForm, setEditForm] = useState<TradeForm | null>(null)
   const [params] = useSearchParams()
   const { activePortfolioId, setActivePortfolioId } = useActivePortfolio()
-  const portfolioId = Number(params.get('portfolioId')) || activePortfolioId
+  const portfolioId =
+    props.fixedPortfolioId ?? (Number(params.get('portfolioId')) || activePortfolioId)
 
   const activePortfolio = portfolios.find((p) => p.id === portfolioId) ?? null
 
@@ -127,28 +128,32 @@ export function PortfolioTradesTable() {
 
   return (
     <div className="card">
-      <div className="row" style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-        <h2>Transakcje papierów wartościowych</h2>
-        {portfolioId ? (
-          <Link to="/portfolio" className="btn-secondary">
-            Pozycje i nowe transakcje
-          </Link>
-        ) : null}
-      </div>
-      <label>
-        Portfel
-        <select
-          value={portfolioId || ''}
-          onChange={(e) => setActivePortfolioId(Number(e.target.value))}
-        >
-          <option value="">Wybierz…</option>
-          {portfolios.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name} ({p.baseCurrency})
-            </option>
-          ))}
-        </select>
-      </label>
+      {!props.fixedPortfolioId && (
+        <>
+          <div className="row" style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+            <h2>Transakcje papierów wartościowych</h2>
+            {portfolioId ? (
+              <Link to="/accounts" className="btn-secondary">
+                Konta maklerskie
+              </Link>
+            ) : null}
+          </div>
+          <label>
+            Portfel
+            <select
+              value={portfolioId || ''}
+              onChange={(e) => setActivePortfolioId(Number(e.target.value))}
+            >
+              <option value="">Wybierz…</option>
+              {portfolios.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} ({p.baseCurrency})
+                </option>
+              ))}
+            </select>
+          </label>
+        </>
+      )}
       {activePortfolio && (
         <p className="loading-state">
           Saldo gotówki: {formatMoney(activePortfolio.cashBalance, activePortfolio.baseCurrency)}

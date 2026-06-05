@@ -8,18 +8,16 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 |------|------|----------------|
 | `/login` | Login | `pages/LoginPage.tsx` (guest only) |
 | `/register` | Register | `pages/RegisterPage.tsx` (guest only) |
-| `/` | Dashboard | `MarketDataBanner`, `NetWorthSection`, `KpiCards`, `PortfolioValueChart`, cashflow charts, `BudgetProgress` |
-| `/transactions` | Transactions | `TransactionTable` (category tree, bank account warning) |
-| `/portfolios` | All broker accounts | `AllPortfoliosTable` |
-| `/portfolio` | Single portfolio | `PortfolioTable` |
-| `/portfolio/trades` | Trade list (edit/delete) | `PortfolioTradesTable` |
-| `/portfolio/:symbol` | Symbol analysis | `PortfolioPositionAnalysis` |
-| `/accounts` | Financial accounts | `AccountsTable` |
-| `/categories` | Category tree | `CategoriesTable` |
-| `/import` | CSV import | `CsvImportForm`, `BrokerCsvImportForm` (bank presets + broker trades) |
-| `/budgets` | Budgets | `BudgetTable` (root expense category select) |
+| `/` | Dashboard | `pages/DashboardPage.tsx`, charts, `NetWorthSection`, `MarketDataBanner` |
+| `/accounts` | Accounts | `ManagedAccountsList` (bank + brokerage) |
+| `/accounts/:id` | Account detail | `AccountDetailPage`, `AccountBalanceChart`, trades or bank txs |
+| `/transactions` | Transactions | `TransactionsListPage` → `TransactionTable` |
+| `/transactions/categories` | Categories | `CategoriesPage` → `CategoriesTable` |
+| `/transactions/import` | CSV import | `ImportPage` → `CsvImportForm` |
 
-Protected shell: `ProtectedRoute` → `AppShell` (sidebar nav, `CurrencySelect`, `ThemeToggle`, logout).
+Legacy redirects: `/portfolios`, `/portfolio`, `/categories`, `/import`, `/budgets` → new paths.
+
+Protected shell: `ProtectedRoute` → `AppShell` (3 main nav items).
 
 ## State
 
@@ -28,7 +26,7 @@ Protected shell: `ProtectedRoute` → `AppShell` (sidebar nav, `CurrencySelect`,
 | `frontend/src/state/auth.tsx` | User session, token via `authApi` + `client.setAuthToken` |
 | `frontend/src/state/currency.tsx` | Display currency for converted amounts |
 | `frontend/src/state/period.tsx` | Dashboard date range (`PeriodProvider` on dashboard only) |
-| `frontend/src/state/portfolio.tsx` | Active brokerage portfolio id |
+| `frontend/src/state/portfolio.tsx` | Active brokerage account id (legacy portfolio picker) |
 
 ## API clients
 
@@ -38,13 +36,12 @@ All HTTP goes through [`frontend/src/api/client.ts`](../frontend/src/api/client.
 |------|----------------|
 | `authApi.ts` | `/api/auth/*` |
 | `transactionsApi.ts` | `/api/transactions` |
-| `portfoliosApi.ts` | `/api/portfolios` |
+| `portfoliosApi.ts` | `/api/portfolios` (brokerage accounts alias) |
 | `portfolioApi.ts` | `/api/portfolio`, `/api/market-data/refresh` |
-| `accountsApi.ts` | `/api/accounts` |
+| `accountsApi.ts` | `/api/accounts` (incl. `?scope=managed`, balance history) |
 | `categoriesApi.ts` | `/api/categories` |
 | `bondsApi.ts` | Bond holdings |
 | `importApi.ts` | CSV import |
-| `budgetsApi.ts` | `/api/budgets`, `/api/stats/budget-progress` |
 | `statsApi.ts` | `/api/stats/*` |
 
 ## UI conventions

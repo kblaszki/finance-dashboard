@@ -6,9 +6,15 @@ import { convertAmount, getFxRatesPlnPerUnit, getMissingCurrencies } from "./fx"
 import {
   classifyMarketDataStatus,
   getLatestSnapshotsForSymbols,
+  refreshSymbolsIncremental,
   TwelveDataProvider,
-  upsertPriceHistory,
 } from "./marketData";
+import { ensureAssetWithHistory } from "./assets";
+import {
+  backfillAccountBalanceHistory,
+  getLatestAccountBalance,
+  recomputeAccountBalancesFrom,
+} from "./accountBalance";
 import {
   AuthedRequest,
   hashPassword,
@@ -24,13 +30,13 @@ import {
   computePortfolioValueOverTime,
   sumBrokerCash,
   validateSellQuantity,
+  type PortfolioMeta,
   type TradeLot,
 } from "./portfolioValuation";
 import { computeNetWorth } from "./netWorth";
 import { computeBankBalancesForUser, syncBondAccountManualValue } from "./accounts";
 import {
   buildCategoryPath,
-  expenseMatchesBudgetCategory,
   listCategoriesWithPaths,
   resolveExpenseCategoryPath,
   rollupCategoryAmounts,
@@ -89,16 +95,6 @@ function toNumber(v: unknown): number {
     if (typeof anyV.toString === "function") return Number(anyV.toString());
   }
   return Number(v);
-}
-
-function budgetCategoryToDb(category: unknown): string {
-  const c = String(category ?? "").trim();
-  return c || "";
-}
-
-function budgetCategoryFromDb(category: string | null): string | null {
-  if (!category) return null;
-  return category;
 }
 
 function parseYearMonth(value: unknown): string | null {
@@ -219,89 +215,122 @@ function costBasisFifo(
   return queue.reduce((acc, lot) => acc + lot.qty * lot.unitCost, 0);
 }
 
-function serializeBudget(b: {
-  id: number;
-  userId: number;
-  yearMonth: string;
-  category: string | null;
-  categoryId: number | null;
-  limitAmount: unknown;
-  currency: string;
-}) {
-  return {
-    id: b.id,
-    userId: b.userId,
-    yearMonth: b.yearMonth,
-    category: budgetCategoryFromDb(b.category),
-    categoryId: b.categoryId,
-    limitAmount: toNumber(b.limitAmount),
-    currency: normalizeCurrency(b.currency),
-  };
-}
-
-async function resolveBudgetCategoryFields(
-  userId: number,
-  category: unknown,
-  categoryId: unknown,
-): Promise<{ categoryDb: string; categoryId: number | null }> {
-  if (categoryId != null && categoryId !== "") {
-    const id = Number(categoryId);
-    const row = await prisma.category.findFirst({
-      where: { id, userId, kind: "EXPENSE", parentId: null },
-    });
-    if (!row) throw new Error("Budget category must be a root EXPENSE category");
-    return { categoryDb: row.name, categoryId: id };
-  }
-  const c = budgetCategoryToDb(category);
-  return { categoryDb: c, categoryId: null };
-}
-
 async function validateBankAccountId(
   userId: number,
   accountId: unknown,
 ): Promise<number | null> {
   if (accountId == null || accountId === "") return null;
   const id = Number(accountId);
-  const bank = await prisma.financialAccount.findFirst({
+  const bank = await prisma.account.findFirst({
     where: { id, userId, type: "BANK" },
   });
   if (!bank) throw new Error("Bank account not found");
   return id;
 }
 
-function serializePortfolio(p: {
-  id: number;
-  userId: number;
-  name: string;
-  baseCurrency: string;
-  cashBalance: unknown;
-  createdAt: Date;
-  updatedAt: Date;
-}) {
+async function validateBrokerageAccountId(
+  userId: number,
+  accountId: unknown,
+): Promise<number> {
+  const id = Number(accountId);
+  const row = await prisma.account.findFirst({
+    where: { id, userId, type: "BROKERAGE" },
+  });
+  if (!row) throw new Error("Brokerage account not found");
+  return id;
+}
+
+function resolveBrokerageAccountId(body: {
+  portfolioId?: unknown;
+  accountId?: unknown;
+}): number {
+  const raw = body.accountId ?? body.portfolioId;
+  return Number(raw);
+}
+
+function toBrokerageMetas(
+  rows: Array<{
+    id: number;
+    name: string;
+    brokerageDetails: { baseCurrency: string; cashBalance: unknown } | null;
+  }>,
+): PortfolioMeta[] {
+  return rows
+    .filter((r) => r.brokerageDetails)
+    .map((r) => ({
+      id: r.id,
+      name: r.name,
+      baseCurrency: r.brokerageDetails!.baseCurrency,
+      cashBalance: r.brokerageDetails!.cashBalance,
+    }));
+}
+
+function serializeBrokerageAccount(
+  a: {
+    id: number;
+    userId: number;
+    name: string;
+    currency: string;
+    createdAt: Date;
+    updatedAt: Date;
+  },
+  details: { baseCurrency: string; cashBalance: unknown },
+) {
   return {
-    id: p.id,
-    userId: p.userId,
-    name: p.name,
-    baseCurrency: normalizeCurrency(p.baseCurrency),
-    cashBalance: toNumber(p.cashBalance),
-    createdAt: p.createdAt,
-    updatedAt: p.updatedAt,
+    id: a.id,
+    userId: a.userId,
+    name: a.name,
+    baseCurrency: normalizeCurrency(details.baseCurrency),
+    currency: normalizeCurrency(a.currency),
+    cashBalance: toNumber(details.cashBalance),
+    type: "BROKERAGE",
+    createdAt: a.createdAt,
+    updatedAt: a.updatedAt,
+  };
+}
+
+function serializeUnifiedAccount(
+  a: {
+    id: number;
+    userId: number;
+    type: string;
+    name: string;
+    currency: string;
+    notes: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  },
+  extras: { openingBalance?: number; cashBalance?: number; baseCurrency?: string; balance?: number | null },
+) {
+  return {
+    id: a.id,
+    userId: a.userId,
+    type: a.type,
+    name: a.name,
+    currency: normalizeCurrency(a.currency),
+    notes: a.notes,
+    openingBalance: extras.openingBalance,
+    cashBalance: extras.cashBalance,
+    baseCurrency: extras.baseCurrency,
+    balance: extras.balance ?? null,
+    createdAt: a.createdAt,
+    updatedAt: a.updatedAt,
   };
 }
 
 async function recomputePortfolioCashBalance(
   prismaClient: PrismaClient,
   userId: number,
-  portfolioId: number,
+  accountId: number,
 ) {
   const [transfers, trades] = await Promise.all([
     prismaClient.transaction.findMany({
-      where: { userId, portfolioId, type: "TRANSFER_TO_PORTFOLIO" },
-      select: { amount: true },
+      where: { userId, accountId, type: "TRANSFER_TO_PORTFOLIO" },
+      select: { amount: true, date: true },
     }),
     prismaClient.portfolioTrade.findMany({
-      where: { userId, portfolioId },
-      select: { side: true, quantity: true, tradePrice: true },
+      where: { userId, accountId },
+      select: { side: true, quantity: true, tradePrice: true, tradeDate: true },
     }),
   ]);
   const balance = computePortfolioCashBalance(
@@ -312,10 +341,18 @@ async function recomputePortfolioCashBalance(
       tradePrice: toNumber(t.tradePrice),
     })),
   );
-  await prismaClient.investmentPortfolio.update({
-    where: { id: portfolioId },
+  await prismaClient.brokerageAccountDetails.update({
+    where: { accountId },
     data: { cashBalance: balance },
   });
+  const minDate = [
+    ...transfers.map((t) => t.date),
+    ...trades.map((t) => t.tradeDate),
+  ].sort((a, b) => a.getTime() - b.getTime())[0];
+  if (minDate) {
+    const fx = await getFxRatesPlnPerUnit();
+    await recomputeAccountBalancesFrom(prismaClient, userId, accountId, minDate, fx.plnPerUnit);
+  }
 }
 
 app.get("/health", (_req, res) => {
@@ -406,11 +443,16 @@ app.get("/api/auth/me", requireAuth, async (req: AuthedRequest, res) => {
 app.get("/api/portfolios", requireAuth, async (req: AuthedRequest, res) => {
   try {
     const userId = req.userId!;
-    const portfolios = await prisma.investmentPortfolio.findMany({
-      where: { userId },
+    const rows = await prisma.account.findMany({
+      where: { userId, type: "BROKERAGE" },
+      include: { brokerageDetails: true },
       orderBy: { createdAt: "asc" },
     });
-    res.json(portfolios.map(serializePortfolio));
+    res.json(
+      rows
+        .filter((r) => r.brokerageDetails)
+        .map((r) => serializeBrokerageAccount(r, r.brokerageDetails!)),
+    );
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(error);
@@ -426,10 +468,19 @@ app.post("/api/portfolios", requireAuth, async (req: AuthedRequest, res) => {
     if (!name || !baseCurrency) {
       return res.status(400).json({ error: "Missing required fields" });
     }
-    const created = await prisma.investmentPortfolio.create({
-      data: { userId, name, baseCurrency, cashBalance: 0 },
+    const created = await prisma.account.create({
+      data: {
+        userId,
+        type: "BROKERAGE",
+        name,
+        currency: baseCurrency,
+        brokerageDetails: {
+          create: { baseCurrency, cashBalance: 0 },
+        },
+      },
+      include: { brokerageDetails: true },
     });
-    res.status(201).json(serializePortfolio(created));
+    res.status(201).json(serializeBrokerageAccount(created, created.brokerageDetails!));
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(error);
@@ -444,13 +495,23 @@ app.put("/api/portfolios/:id", requireAuth, async (req: AuthedRequest, res) => {
   try {
     const userId = req.userId!;
     const id = Number(req.params.id);
-    const existing = await prisma.investmentPortfolio.findFirst({ where: { id, userId } });
-    if (!existing) return res.status(404).json({ error: "Portfolio not found" });
-    const data: Record<string, unknown> = {};
-    if (req.body.name !== undefined) data.name = String(req.body.name).trim();
-    if (req.body.baseCurrency !== undefined) data.baseCurrency = normalizeCurrency(req.body.baseCurrency);
-    const updated = await prisma.investmentPortfolio.update({ where: { id }, data });
-    res.json(serializePortfolio(updated));
+    const existing = await prisma.account.findFirst({
+      where: { id, userId, type: "BROKERAGE" },
+      include: { brokerageDetails: true },
+    });
+    if (!existing?.brokerageDetails) return res.status(404).json({ error: "Portfolio not found" });
+    const updated = await prisma.account.update({
+      where: { id },
+      data: {
+        name: req.body.name != null ? String(req.body.name).trim() : undefined,
+        currency: req.body.baseCurrency ? normalizeCurrency(req.body.baseCurrency) : undefined,
+        brokerageDetails: req.body.baseCurrency
+          ? { update: { baseCurrency: normalizeCurrency(req.body.baseCurrency) } }
+          : undefined,
+      },
+      include: { brokerageDetails: true },
+    });
+    res.json(serializeBrokerageAccount(updated, updated.brokerageDetails!));
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(error);
@@ -463,13 +524,13 @@ app.delete("/api/portfolios/:id", requireAuth, async (req: AuthedRequest, res) =
     const userId = req.userId!;
     const id = Number(req.params.id);
     const [tradeCount, txCount] = await Promise.all([
-      prisma.portfolioTrade.count({ where: { userId, portfolioId: id } }),
-      prisma.transaction.count({ where: { userId, portfolioId: id } }),
+      prisma.portfolioTrade.count({ where: { userId, accountId: id } }),
+      prisma.transaction.count({ where: { userId, accountId: id } }),
     ]);
     if (tradeCount > 0 || txCount > 0) {
       return res.status(400).json({ error: "Cannot delete portfolio with related operations" });
     }
-    const result = await prisma.investmentPortfolio.deleteMany({ where: { id, userId } });
+    const result = await prisma.account.deleteMany({ where: { id, userId, type: "BROKERAGE" } });
     if (!result.count) return res.status(404).json({ error: "Portfolio not found" });
     res.status(204).send();
   } catch (error) {
@@ -490,7 +551,6 @@ app.get("/api/transactions", requireAuth, async (req: AuthedRequest, res) => {
       date?: { gte?: Date; lte?: Date };
       type?: string;
       category?: string;
-      portfolioId?: number;
       accountId?: number;
     } = { userId };
 
@@ -511,11 +571,9 @@ app.get("/api/transactions", requireAuth, async (req: AuthedRequest, res) => {
     if (category) {
       where.category = String(category);
     }
-    if (portfolioId) {
-      where.portfolioId = Number(portfolioId);
-    }
-    if (accountId) {
-      where.accountId = Number(accountId);
+    const accountFilter = accountId ?? portfolioId;
+    if (accountFilter) {
+      where.accountId = Number(accountFilter);
     }
 
     const transactions = await prisma.transaction.findMany({
@@ -607,11 +665,14 @@ app.post("/api/transactions", requireAuth, async (req: AuthedRequest, res) => {
     if (type === "TRANSFER_TO_PORTFOLIO") {
       if (!portfolioId) return res.status(400).json({ error: "portfolioId is required for transfer" });
       normalizedPortfolioId = Number(portfolioId);
-      const portfolio = await prisma.investmentPortfolio.findFirst({
-        where: { id: normalizedPortfolioId, userId },
+      const portfolio = await prisma.account.findFirst({
+        where: { id: normalizedPortfolioId, userId, type: "BROKERAGE" },
+        include: { brokerageDetails: true },
       });
-      if (!portfolio) return res.status(404).json({ error: "Portfolio not found" });
-      if (normalizeCurrency(portfolio.baseCurrency) !== normalizeCurrency(currency)) {
+      if (!portfolio?.brokerageDetails) return res.status(404).json({ error: "Portfolio not found" });
+      if (
+        normalizeCurrency(portfolio.brokerageDetails.baseCurrency) !== normalizeCurrency(currency)
+      ) {
         return res.status(400).json({ error: "Transfer currency must match portfolio base currency" });
       }
     }
@@ -635,8 +696,8 @@ app.post("/api/transactions", requireAuth, async (req: AuthedRequest, res) => {
         categoryId: categoryFields.categoryId,
         date: new Date(date),
         description: description ?? null,
-        portfolioId: normalizedPortfolioId,
-        accountId: normalizedAccountId,
+        accountId:
+          type === "TRANSFER_TO_PORTFOLIO" ? normalizedPortfolioId : normalizedAccountId,
       },
     });
 
@@ -647,6 +708,16 @@ app.post("/api/transactions", requireAuth, async (req: AuthedRequest, res) => {
     });
     if (normalizedPortfolioId) {
       await recomputePortfolioCashBalance(prisma, userId, normalizedPortfolioId);
+    }
+    if (normalizedAccountId) {
+      const fx = await getFxRatesPlnPerUnit();
+      await recomputeAccountBalancesFrom(
+        prisma,
+        userId,
+        normalizedAccountId,
+        new Date(date),
+        fx.plnPerUnit,
+      );
     }
   } catch (error) {
     // eslint-disable-next-line no-console
@@ -666,6 +737,7 @@ app.put("/api/transactions/:id", requireAuth, async (req: AuthedRequest, res) =>
 
     const { type, amount, currency, category, categoryId, date, description, portfolioId, accountId } =
       req.body;
+    const prevAccountId = existing.accountId;
 
     const data: Record<string, unknown> = {
       type,
@@ -673,7 +745,6 @@ app.put("/api/transactions/:id", requireAuth, async (req: AuthedRequest, res) =>
       currency: currency ? normalizeCurrency(currency) : undefined,
       date: date ? new Date(date) : undefined,
       description,
-      portfolioId: portfolioId != null ? Number(portfolioId) : undefined,
     };
     if (category !== undefined || categoryId !== undefined) {
       try {
@@ -684,15 +755,22 @@ app.put("/api/transactions/:id", requireAuth, async (req: AuthedRequest, res) =>
         return res.status(404).json({ error: "Category not found" });
       }
     }
-    if (accountId !== undefined) {
+    const transferAccountId = portfolioId != null ? Number(portfolioId) : undefined;
+    if (transferAccountId !== undefined) {
+      try {
+        data.accountId = await validateBrokerageAccountId(userId, transferAccountId);
+      } catch {
+        return res.status(404).json({ error: "Portfolio not found" });
+      }
+    } else if (accountId !== undefined) {
       if (accountId == null || accountId === "") {
         data.accountId = null;
       } else {
-        const bank = await prisma.financialAccount.findFirst({
-          where: { id: Number(accountId), userId, type: "BANK" },
-        });
-        if (!bank) return res.status(404).json({ error: "Bank account not found" });
-        data.accountId = Number(accountId);
+        try {
+          data.accountId = await validateBankAccountId(userId, accountId);
+        } catch {
+          return res.status(404).json({ error: "Bank account not found" });
+        }
       }
     }
 
@@ -706,9 +784,11 @@ app.put("/api/transactions/:id", requireAuth, async (req: AuthedRequest, res) =>
       amount: toNumber(updated.amount),
       currency: normalizeCurrency(updated.currency),
     });
-    if (prevPortfolioId) await recomputePortfolioCashBalance(prisma, userId, prevPortfolioId);
-    if (updated.portfolioId && updated.portfolioId !== prevPortfolioId) {
-      await recomputePortfolioCashBalance(prisma, userId, updated.portfolioId);
+    if (prevAccountId && existing.type === "TRANSFER_TO_PORTFOLIO") {
+      await recomputePortfolioCashBalance(prisma, userId, prevAccountId);
+    }
+    if (updated.accountId && updated.type === "TRANSFER_TO_PORTFOLIO" && updated.accountId !== prevAccountId) {
+      await recomputePortfolioCashBalance(prisma, userId, updated.accountId);
     }
   } catch (error) {
     // eslint-disable-next-line no-console
@@ -726,7 +806,9 @@ app.delete("/api/transactions/:id", requireAuth, async (req: AuthedRequest, res)
     if (result.count === 0) {
       return res.status(404).json({ error: "Transaction not found" });
     }
-    if (existing?.portfolioId) await recomputePortfolioCashBalance(prisma, userId, existing.portfolioId);
+    if (existing?.accountId && existing.type === "TRANSFER_TO_PORTFOLIO") {
+      await recomputePortfolioCashBalance(prisma, userId, existing.accountId);
+    }
     res.status(204).send();
   } catch (error) {
     // eslint-disable-next-line no-console
@@ -743,10 +825,10 @@ app.get("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
     if (!portfolioId) {
       return res.status(400).json({ error: "portfolioId is required" });
     }
-    const portfolio = await prisma.investmentPortfolio.findFirst({ where: { id: portfolioId, userId } });
+    const portfolio = await prisma.account.findFirst({ where: { id: portfolioId, userId, type: "BROKERAGE" }, include: { brokerageDetails: true } });
     if (!portfolio) return res.status(404).json({ error: "Portfolio not found" });
     const trades = await prisma.portfolioTrade.findMany({
-      where: { userId, portfolioId },
+      where: { userId, accountId: portfolioId },
       orderBy: [{ symbol: "asc" }, { tradeDate: "asc" }],
     });
     const symbols = [...new Set(trades.map((t) => normalizeSymbol(t.symbol)))];
@@ -813,8 +895,8 @@ app.get("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
         lastCloseDate: snapshot?.priceDate ?? null,
         marketDataStatus: status,
         marketDataCurrency: marketCurrency,
-        marketDataSource: snapshot?.source ?? MARKET_DATA_SOURCE,
-        marketDataFetchedAt: snapshot?.fetchedAt ?? null,
+        marketDataSource: MARKET_DATA_SOURCE,
+        marketDataFetchedAt: null,
         buyPriceConverted: convertAmount(weightedBuyPrice, marketCurrency, displayCurrency, plnPerUnit),
         currentPriceConverted:
           lastClose != null
@@ -847,14 +929,16 @@ app.post("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
       return res.status(400).json({ error: "Missing required fields" });
     }
     const pid = Number(portfolioId);
-    const portfolio = await prisma.investmentPortfolio.findFirst({ where: { id: pid, userId } });
-    if (!portfolio) return res.status(404).json({ error: "Portfolio not found" });
-    if (normalizeCurrency(portfolio.baseCurrency) !== normalizeCurrency(currency)) {
+    const portfolio = await prisma.account.findFirst({ where: { id: pid, userId, type: "BROKERAGE" }, include: { brokerageDetails: true } });
+    if (!portfolio?.brokerageDetails) return res.status(404).json({ error: "Portfolio not found" });
+    if (
+      normalizeCurrency(portfolio.brokerageDetails.baseCurrency) !== normalizeCurrency(currency)
+    ) {
       return res.status(400).json({ error: "Trade currency must match portfolio base currency" });
     }
     if (normalizedSide === "SELL") {
       const existingTrades = await prisma.portfolioTrade.findMany({
-        where: { userId, portfolioId: pid, symbol: normalizeSymbol(symbol) },
+        where: { userId, accountId: pid, symbol: normalizeSymbol(symbol) },
       });
       const sellCheck = validateSellQuantity(existingTrades, toNumber(quantity));
       if (!sellCheck.ok) {
@@ -864,7 +948,7 @@ app.post("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
         });
       }
     } else {
-      const cash = toNumber(portfolio.cashBalance);
+      const cash = toNumber(portfolio.brokerageDetails.cashBalance);
       const grossValue = toNumber(quantity) * toNumber(tradePrice);
       if (grossValue > cash) return res.status(400).json({ error: "Insufficient portfolio cash balance" });
     }
@@ -872,7 +956,7 @@ app.post("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
     const created = await prisma.portfolioTrade.create({
       data: {
         userId,
-        portfolioId: pid,
+        accountId: pid,
         side: normalizedSide,
         symbol: normalizeSymbol(symbol),
         quantity,
@@ -902,7 +986,9 @@ app.get("/api/portfolio/trades", requireAuth, async (req: AuthedRequest, res) =>
     const symbol = req.query.symbol ? normalizeSymbol(req.query.symbol) : undefined;
     const portfolioId = req.query.portfolioId ? Number(req.query.portfolioId) : null;
     const trades = await prisma.portfolioTrade.findMany({
-      where: symbol ? { userId, symbol, portfolioId: portfolioId ?? undefined } : { userId, portfolioId: portfolioId ?? undefined },
+      where: symbol
+        ? { userId, symbol, accountId: portfolioId ?? undefined }
+        : { userId, accountId: portfolioId ?? undefined },
       orderBy: [{ symbol: "asc" }, { tradeDate: "desc" }],
     });
     res.json(
@@ -937,14 +1023,14 @@ app.put("/api/portfolio/:id", requireAuth, async (req: AuthedRequest, res) => {
     if (req.body.tradeDate !== undefined) data.tradeDate = new Date(String(req.body.tradeDate));
     if (req.body.currency !== undefined) data.currency = normalizeCurrency(req.body.currency);
     if (req.body.category !== undefined) data.category = req.body.category;
-    const portfolioId = Number(req.body.portfolioId ?? existing.portfolioId);
-    const portfolio = await prisma.investmentPortfolio.findFirst({ where: { id: portfolioId, userId } });
+    const portfolioId = Number(req.body.portfolioId ?? existing.accountId);
+    const portfolio = await prisma.account.findFirst({ where: { id: portfolioId, userId, type: "BROKERAGE" }, include: { brokerageDetails: true } });
     if (!portfolio) return res.status(404).json({ error: "Portfolio not found" });
     const nextCurrency = normalizeCurrency(String(req.body.currency ?? existing.currency));
     if (nextCurrency !== normalizeCurrency(portfolio.baseCurrency)) {
       return res.status(400).json({ error: "Trade currency must match portfolio base currency" });
     }
-    data.portfolioId = portfolioId;
+    data.accountId = portfolioId;
 
     const nextSide = String(data.side ?? existing.side).toUpperCase();
     const nextSymbol = normalizeSymbol(data.symbol ?? existing.symbol);
@@ -977,8 +1063,8 @@ app.put("/api/portfolio/:id", requireAuth, async (req: AuthedRequest, res) => {
       tradePrice: toNumber(updated.tradePrice),
       currency: normalizeCurrency(updated.currency),
     });
-    await recomputePortfolioCashBalance(prisma, userId, existing.portfolioId);
-    if (portfolioId !== existing.portfolioId) {
+    await recomputePortfolioCashBalance(prisma, userId, existing.accountId);
+    if (portfolioId !== existing.accountId) {
       await recomputePortfolioCashBalance(prisma, userId, portfolioId);
     }
   } catch (error) {
@@ -995,7 +1081,9 @@ app.delete("/api/portfolio/:id", requireAuth, async (req: AuthedRequest, res) =>
     const existing = await prisma.portfolioTrade.findFirst({ where: { id, userId } });
     const result = await prisma.portfolioTrade.deleteMany({ where: { id, userId } });
     if (!result.count) return res.status(404).json({ error: "Portfolio trade not found" });
-    if (existing?.portfolioId) await recomputePortfolioCashBalance(prisma, userId, existing.portfolioId);
+    if (existing?.accountId && existing.type === "TRANSFER_TO_PORTFOLIO") {
+      await recomputePortfolioCashBalance(prisma, userId, existing.accountId);
+    }
     res.status(204).send();
   } catch (error) {
     // eslint-disable-next-line no-console
@@ -1013,8 +1101,20 @@ app.get("/api/portfolio/:symbol/history", requireAuth, async (req: AuthedRequest
     const portfolioId = req.query.portfolioId ? Number(req.query.portfolioId) : null;
     if (!portfolioId) return res.status(400).json({ error: "portfolioId is required" });
 
-    const trades = await prisma.portfolioTrade.findMany({ where: { userId, symbol, portfolioId }, orderBy: { tradeDate: "asc" } });
-    const history = await prisma.marketPriceHistory.findMany({ where: { symbol }, orderBy: { priceDate: "asc" } });
+    const trades = await prisma.portfolioTrade.findMany({
+      where: { userId, symbol, accountId: portfolioId },
+      orderBy: { tradeDate: "asc" },
+    });
+    const asset = await prisma.asset.findFirst({
+      where: { symbol, exchange: null, source: MARKET_DATA_SOURCE },
+    });
+    const history = asset
+      ? await prisma.marketPriceDaily.findMany({
+          where: { assetId: asset.id },
+          include: { asset: true },
+          orderBy: { priceDate: "asc" },
+        })
+      : [];
     if (!trades.length || !history.length) return res.json([]);
 
     const { plnPerUnit } = await getFxRatesPlnPerUnit();
@@ -1028,7 +1128,7 @@ app.get("/api/portfolio/:symbol/history", requireAuth, async (req: AuthedRequest
       }
       qty = Math.max(0, qty);
       const close = toNumber(h.close);
-      const closeCurrency = normalizeCurrency(h.currency);
+      const closeCurrency = normalizeCurrency(h.asset.currency);
       const positionValue = convertAmount(qty * close, closeCurrency, displayCurrency, plnPerUnit);
       const weightedCost = costBasisWeighted(activeTrades, displayCurrency, plnPerUnit);
       const fifoCost = costBasisFifo(activeTrades, displayCurrency, plnPerUnit);
@@ -1045,146 +1145,6 @@ app.get("/api/portfolio/:symbol/history", requireAuth, async (req: AuthedRequest
   }
 });
 
-app.get("/api/budgets", requireAuth, async (req: AuthedRequest, res) => {
-  try {
-    const userId = req.userId!;
-    const yearMonth = req.query.yearMonth ? String(req.query.yearMonth) : undefined;
-    const where: { userId: number; yearMonth?: string } = { userId };
-    if (yearMonth) {
-      if (!parseYearMonth(yearMonth)) {
-        return res.status(400).json({ error: "Invalid yearMonth format (YYYY-MM)" });
-      }
-      where.yearMonth = yearMonth;
-    }
-
-    const budgets = await prisma.budget.findMany({
-      where,
-      orderBy: [{ yearMonth: "desc" }, { category: "asc" }],
-    });
-
-    res.json(budgets.map(serializeBudget));
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error(error);
-    res.status(500).json({ error: "Failed to fetch budgets" });
-  }
-});
-
-app.post("/api/budgets", requireAuth, async (req: AuthedRequest, res) => {
-  try {
-    const userId = req.userId!;
-    const yearMonth = parseYearMonth(req.body.yearMonth);
-    const { limitAmount, currency } = req.body;
-
-    if (!yearMonth || limitAmount == null || !currency) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
-
-    let categoryFields: { categoryDb: string; categoryId: number | null };
-    try {
-      categoryFields = await resolveBudgetCategoryFields(userId, req.body.category, req.body.categoryId);
-    } catch {
-      return res.status(400).json({ error: "Invalid budget category (use a root expense category)" });
-    }
-
-    const created = await prisma.budget.create({
-      data: {
-        userId,
-        yearMonth,
-        category: categoryFields.categoryDb,
-        categoryId: categoryFields.categoryId,
-        limitAmount,
-        currency: normalizeCurrency(currency),
-      },
-    });
-
-    res.status(201).json(serializeBudget(created));
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error(error);
-    if (
-      error &&
-      typeof error === "object" &&
-      "code" in error &&
-      (error as { code: string }).code === "P2002"
-    ) {
-      return res.status(409).json({ error: "Budget already exists for this month and category" });
-    }
-    res.status(500).json({ error: "Failed to create budget" });
-  }
-});
-
-app.put("/api/budgets/:id", requireAuth, async (req: AuthedRequest, res) => {
-  try {
-    const userId = req.userId!;
-    const id = Number(req.params.id);
-    const existing = await prisma.budget.findFirst({ where: { id, userId } });
-    if (!existing) {
-      return res.status(404).json({ error: "Budget not found" });
-    }
-
-    const yearMonth =
-      req.body.yearMonth !== undefined ? parseYearMonth(req.body.yearMonth) : existing.yearMonth;
-    if (req.body.yearMonth !== undefined && !yearMonth) {
-      return res.status(400).json({ error: "Invalid yearMonth format (YYYY-MM)" });
-    }
-
-    const budgetData: Record<string, unknown> = {
-      yearMonth: yearMonth ?? undefined,
-      limitAmount: req.body.limitAmount ?? undefined,
-      currency: req.body.currency ? normalizeCurrency(req.body.currency) : undefined,
-    };
-    if (req.body.category !== undefined || req.body.categoryId !== undefined) {
-      try {
-        const fields = await resolveBudgetCategoryFields(
-          userId,
-          req.body.category ?? existing.category,
-          req.body.categoryId ?? existing.categoryId,
-        );
-        budgetData.category = fields.categoryDb;
-        budgetData.categoryId = fields.categoryId;
-      } catch {
-        return res.status(400).json({ error: "Invalid budget category (use a root expense category)" });
-      }
-    }
-
-    const updated = await prisma.budget.update({
-      where: { id },
-      data: budgetData,
-    });
-
-    res.json(serializeBudget(updated));
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error(error);
-    if (
-      error &&
-      typeof error === "object" &&
-      "code" in error &&
-      (error as { code: string }).code === "P2002"
-    ) {
-      return res.status(409).json({ error: "Budget already exists for this month and category" });
-    }
-    res.status(500).json({ error: "Failed to update budget" });
-  }
-});
-
-app.delete("/api/budgets/:id", requireAuth, async (req: AuthedRequest, res) => {
-  try {
-    const userId = req.userId!;
-    const id = Number(req.params.id);
-    const result = await prisma.budget.deleteMany({ where: { id, userId } });
-    if (result.count === 0) {
-      return res.status(404).json({ error: "Budget not found" });
-    }
-    res.status(204).send();
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error(error);
-    res.status(500).json({ error: "Failed to delete budget" });
-  }
-});
-
 app.get("/api/stats/summary", requireAuth, async (req: AuthedRequest, res) => {
   try {
     const userId = req.userId!;
@@ -1198,10 +1158,21 @@ app.get("/api/stats/summary", requireAuth, async (req: AuthedRequest, res) => {
       prisma.transaction.count({ where: txWhere }),
       getFxRatesPlnPerUnit(),
     ]);
-    const snapshotsBySymbol = await getLatestSnapshotsForSymbols(
+    const latestPricesSummary = await getLatestSnapshotsForSymbols(
       prisma,
       portfolioTrades.map((p) => p.symbol),
     );
+    const snapshotsBySymbol = new Map<
+      string,
+      { close: unknown; currency: string; priceDate: Date }
+    >();
+    for (const [sym, row] of latestPricesSummary) {
+      snapshotsBySymbol.set(sym, {
+        close: row.close,
+        currency: row.currency,
+        priceDate: row.priceDate,
+      });
+    }
 
     const allCurrencies = [
       ...transactions.map((t) => normalizeCurrency(t.currency)),
@@ -1236,7 +1207,7 @@ app.get("/api/stats/summary", requireAuth, async (req: AuthedRequest, res) => {
     const balance = income - expenses;
 
     const tradeLots: TradeLot[] = portfolioTrades.map((p) => ({
-      portfolioId: p.portfolioId,
+      portfolioId: p.accountId,
       side: p.side,
       symbol: p.symbol,
       quantity: p.quantity,
@@ -1249,8 +1220,19 @@ app.get("/api/stats/summary", requireAuth, async (req: AuthedRequest, res) => {
       plnPerUnit: fx.plnPerUnit,
       marketDataExpireDays: MARKET_DATA_EXPIRE_DAYS,
     });
-    const portfolios = await prisma.investmentPortfolio.findMany({ where: { userId } });
-    const brokerCash = sumBrokerCash(portfolios, displayCurrency, fx.plnPerUnit);
+    const brokerageAccounts = await prisma.account.findMany({
+      where: { userId, type: "BROKERAGE" },
+      include: { brokerageDetails: true },
+    });
+    const portfolioMetas = brokerageAccounts
+      .filter((p) => p.brokerageDetails)
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        baseCurrency: p.brokerageDetails!.baseCurrency,
+        cashBalance: p.brokerageDetails!.cashBalance,
+      }));
+    const brokerCash = sumBrokerCash(portfolioMetas, displayCurrency, fx.plnPerUnit);
     const portfolioValue = brokerVal.securitiesValue + brokerCash;
 
     res.json({
@@ -1312,16 +1294,15 @@ async function aggregateByCategory(
     };
   }
 
+  const categoryRows = await listCategoriesWithPaths(prisma, userId);
+  const pathById = new Map(categoryRows.map((c) => [c.id, c.path]));
   const pathItems: Array<{ categoryPath: string; amount: number }> = [];
   for (const t of rows) {
     const amount = toNumber(t.amount);
     const fromCcy = normalizeCurrency(t.currency);
     const converted = convertAmount(amount, fromCcy, displayCurrency, fx.plnPerUnit);
-    let path = t.category;
-    if (t.categoryId) {
-      path = await buildCategoryPath(prisma, userId, t.categoryId);
-      if (!path) path = t.category;
-    }
+    const path =
+      t.categoryId != null ? pathById.get(t.categoryId) ?? t.category : t.category;
     pathItems.push({ categoryPath: path, amount: converted });
   }
 
@@ -1446,107 +1427,6 @@ app.get("/api/stats/cashflow-over-time", requireAuth, async (req: AuthedRequest,
   }
 });
 
-app.get("/api/stats/budget-progress", requireAuth, async (req: AuthedRequest, res) => {
-  try {
-    const userId = req.userId!;
-    const displayCurrency = normalizeCurrency(req.query.currency) || "PLN";
-    const yearMonth =
-      parseYearMonth(req.query.yearMonth) ||
-      `${new Date().getUTCFullYear()}-${String(new Date().getUTCMonth() + 1).padStart(2, "0")}`;
-
-    const [budgets, fx] = await Promise.all([
-      prisma.budget.findMany({ where: { userId, yearMonth } }),
-      getFxRatesPlnPerUnit(),
-    ]);
-
-    if (budgets.length === 0) {
-      res.json([]);
-      return;
-    }
-
-    const { start, end } = monthDateRange(yearMonth);
-    const expenses = await prisma.transaction.findMany({
-      where: {
-        userId,
-        type: "EXPENSE",
-        date: { gte: start, lte: end },
-      },
-    });
-
-    const expenseCurrencies = [
-      ...expenses.map((t) => normalizeCurrency(t.currency)),
-      ...budgets.map((b) => normalizeCurrency(b.currency)),
-      displayCurrency,
-    ];
-    const missing = getMissingCurrencies(expenseCurrencies, fx.plnPerUnit);
-    if (missing.length) {
-      res.status(400).json({
-        error: "Missing FX rates for some currencies",
-        missingCurrencies: missing,
-        fxAsOf: fx.asOf,
-      });
-      return;
-    }
-
-    const expensePaths = await Promise.all(
-      expenses.map(async (e) => ({
-        expense: e,
-        path: await resolveExpenseCategoryPath(prisma, userId, e),
-      })),
-    );
-
-    const progress = await Promise.all(
-      budgets.map(async (b) => {
-        const limitAmount = convertAmount(
-          toNumber(b.limitAmount),
-          normalizeCurrency(b.currency),
-          displayCurrency,
-          fx.plnPerUnit,
-        );
-
-        let budgetRootPath: string | null = null;
-        if (b.categoryId) {
-          budgetRootPath = await buildCategoryPath(prisma, userId, b.categoryId);
-        } else {
-          budgetRootPath = budgetCategoryFromDb(b.category);
-        }
-
-        const relevant = expensePaths.filter(({ path }) =>
-          expenseMatchesBudgetCategory(path, budgetRootPath),
-        );
-
-        const spent = relevant.reduce((acc, { expense: t }) => {
-          const amount = toNumber(t.amount);
-          const fromCcy = normalizeCurrency(t.currency);
-          return acc + convertAmount(amount, fromCcy, displayCurrency, fx.plnPerUnit);
-        }, 0);
-
-        const remaining = limitAmount - spent;
-        const percentUsed = limitAmount > 0 ? (spent / limitAmount) * 100 : 0;
-
-        return {
-          id: b.id,
-          yearMonth: b.yearMonth,
-          category: budgetRootPath,
-          categoryId: b.categoryId,
-          limitAmount,
-          spent,
-          remaining,
-          percentUsed,
-          currency: displayCurrency,
-          fxAsOf: fx.asOf,
-        };
-      }),
-    );
-
-    res.json(progress);
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error(error);
-    res.status(500).json({ error: "Failed to compute budget progress" });
-  }
-});
-
 app.get("/api/stats/net-worth", requireAuth, async (req: AuthedRequest, res) => {
   try {
     const userId = req.userId!;
@@ -1555,23 +1435,35 @@ app.get("/api/stats/net-worth", requireAuth, async (req: AuthedRequest, res) => 
 
     const [portfolioTrades, portfolios, financialAccounts, bankBalances] = await Promise.all([
       prisma.portfolioTrade.findMany({ where: { userId } }),
-      prisma.investmentPortfolio.findMany({ where: { userId } }),
+      prisma.account.findMany({ where: { userId, type: "BROKERAGE" }, include: { brokerageDetails: true } }),
       prisma.financialAccount.findMany({ where: { userId } }),
       computeBankBalancesForUser(prisma, userId),
     ]);
 
-    const snapshotsBySymbol = await getLatestSnapshotsForSymbols(
+    const latestPricesNw = await getLatestSnapshotsForSymbols(
       prisma,
       portfolioTrades.map((p) => p.symbol),
     );
+    const snapshotsBySymbolNw = new Map<
+      string,
+      { close: unknown; currency: string; priceDate: Date }
+    >();
+    for (const [sym, row] of latestPricesNw) {
+      snapshotsBySymbolNw.set(sym, {
+        close: row.close,
+        currency: row.currency,
+        priceDate: row.priceDate,
+      });
+    }
+    const portfolioMetasNw = toBrokerageMetas(portfolios);
 
     const allCurrencies = [
       displayCurrency,
-      ...portfolios.map((p) => normalizeCurrency(p.baseCurrency)),
+      ...portfolioMetasNw.map((p) => normalizeCurrency(p.baseCurrency)),
       ...financialAccounts.map((a) => normalizeCurrency(a.currency)),
       ...portfolioTrades.map((p) => {
         const symbol = normalizeSymbol(p.symbol);
-        const snapshot = snapshotsBySymbol.get(symbol);
+        const snapshot = snapshotsBySymbolNw.get(symbol);
         return normalizeCurrency(snapshot?.currency ?? p.currency);
       }),
     ];
@@ -1590,14 +1482,14 @@ app.get("/api/stats/net-worth", requireAuth, async (req: AuthedRequest, res) => 
       fxAsOf: fx.asOf,
       marketDataExpireDays: MARKET_DATA_EXPIRE_DAYS,
       trades: portfolioTrades.map((p) => ({
-        portfolioId: p.portfolioId,
+        portfolioId: p.accountId,
         side: p.side,
         symbol: p.symbol,
         quantity: p.quantity,
         currency: p.currency,
       })),
-      portfolios,
-      snapshotsBySymbol,
+      portfolios: portfolioMetasNw,
+      snapshotsBySymbol: snapshotsBySymbolNw,
       financialAccounts,
       bankBalances,
     });
@@ -1626,28 +1518,32 @@ app.get("/api/stats/portfolio-value-over-time", requireAuth, async (req: AuthedR
       prisma.portfolioTrade.findMany({ where: { userId } }),
       prisma.transaction.findMany({
         where: { userId, type: "TRANSFER_TO_PORTFOLIO" },
-        select: { portfolioId: true, amount: true, date: true },
+        select: { accountId: true, amount: true, date: true },
       }),
-      prisma.investmentPortfolio.findMany({ where: { userId } }),
+      prisma.account.findMany({ where: { userId, type: "BROKERAGE" }, include: { brokerageDetails: true } }),
       getFxRatesPlnPerUnit(),
     ]);
 
     const symbols = [...new Set(trades.map((t) => normalizeSymbol(t.symbol)))];
-    const historyRows = await prisma.marketPriceHistory.findMany({
-      where: { symbol: { in: symbols } },
-      orderBy: [{ symbol: "asc" }, { priceDate: "asc" }],
+    const assets = await prisma.asset.findMany({
+      where: { symbol: { in: symbols }, exchange: null, source: MARKET_DATA_SOURCE },
+    });
+    const historyRows = await prisma.marketPriceDaily.findMany({
+      where: { assetId: { in: assets.map((a) => a.id) } },
+      include: { asset: true },
+      orderBy: [{ assetId: "asc" }, { priceDate: "asc" }],
     });
     const historyBySymbol = new Map<string, Array<{ priceDate: Date; close: unknown; currency: string }>>();
     for (const row of historyRows) {
-      const sym = normalizeSymbol(row.symbol);
+      const sym = normalizeSymbol(row.asset.symbol);
       const arr = historyBySymbol.get(sym) ?? [];
-      arr.push({ priceDate: row.priceDate, close: row.close, currency: row.currency });
+      arr.push({ priceDate: row.priceDate, close: row.close, currency: row.asset.currency });
       historyBySymbol.set(sym, arr);
     }
 
     const periods = listYearMonthsInRange(dateFilter.gte, dateFilter.lte);
     const tradeLots: TradeLot[] = trades.map((t) => ({
-      portfolioId: t.portfolioId,
+      portfolioId: t.accountId,
       side: t.side,
       symbol: t.symbol,
       quantity: t.quantity,
@@ -1659,13 +1555,13 @@ app.get("/api/stats/portfolio-value-over-time", requireAuth, async (req: AuthedR
     const series = computePortfolioValueOverTime({
       trades: tradeLots,
       transfers: transfers
-        .filter((t) => t.portfolioId != null)
+        .filter((t) => t.accountId != null)
         .map((t) => ({
-          portfolioId: t.portfolioId!,
+          portfolioId: t.accountId!,
           amount: t.amount,
           date: t.date,
         })),
-      portfolios,
+      portfolios: toBrokerageMetas(portfolios),
       historyBySymbol,
       periods,
       displayCurrency,
@@ -1716,6 +1612,40 @@ function serializeFinancialAccount(a: {
 app.get("/api/accounts", requireAuth, async (req: AuthedRequest, res) => {
   try {
     const userId = req.userId!;
+    const scope = String(req.query.scope ?? "");
+    if (scope === "managed") {
+      const types = String(req.query.types ?? "BANK,BROKERAGE")
+        .split(",")
+        .map((t) => t.trim().toUpperCase())
+        .filter(Boolean);
+      const rows = await prisma.account.findMany({
+        where: { userId, type: { in: types } },
+        include: { bankDetails: true, brokerageDetails: true },
+        orderBy: [{ type: "asc" }, { name: "asc" }],
+      });
+      const bankBalances = await computeBankBalancesForUser(prisma, userId);
+      res.json(
+        await Promise.all(
+          rows.map(async (a) => {
+            let balance: number | null = null;
+            if (a.type === "BANK") {
+              balance = bankBalances.get(a.id) ?? (await getLatestAccountBalance(prisma, a.id));
+            } else if (a.brokerageDetails) {
+              balance =
+                (await getLatestAccountBalance(prisma, a.id)) ??
+                toNumber(a.brokerageDetails.cashBalance);
+            }
+            return serializeUnifiedAccount(a, {
+              openingBalance: a.bankDetails ? toNumber(a.bankDetails.openingBalance) : undefined,
+              cashBalance: a.brokerageDetails ? toNumber(a.brokerageDetails.cashBalance) : undefined,
+              baseCurrency: a.brokerageDetails?.baseCurrency,
+              balance,
+            });
+          }),
+        ),
+      );
+      return;
+    }
     const type = req.query.type ? String(req.query.type).toUpperCase() : undefined;
     const where: { userId: number; type?: string } = { userId };
     if (type) where.type = type;
@@ -1723,13 +1653,7 @@ app.get("/api/accounts", requireAuth, async (req: AuthedRequest, res) => {
       where,
       orderBy: [{ type: "asc" }, { name: "asc" }],
     });
-    const bankBalances = await computeBankBalancesForUser(prisma, userId);
-    res.json(
-      accounts.map((a) => ({
-        ...serializeFinancialAccount(a),
-        balance: a.type === "BANK" ? bankBalances.get(a.id) ?? 0 : null,
-      })),
-    );
+    res.json(accounts.map((a) => serializeFinancialAccount(a)));
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(error);
@@ -1746,7 +1670,49 @@ app.post("/api/accounts", requireAuth, async (req: AuthedRequest, res) => {
     if (!name || !currency || !type) {
       return res.status(400).json({ error: "Missing required fields" });
     }
-    const allowed = ["BANK", "REAL_ESTATE", "CRYPTO", "LIABILITY", "BONDS"];
+    if (type === "BANK") {
+      const created = await prisma.account.create({
+        data: {
+          userId,
+          type: "BANK",
+          name,
+          currency,
+          notes: req.body.notes ?? null,
+          bankDetails: {
+            create: { openingBalance: Number(req.body.openingBalance ?? 0) },
+          },
+        },
+        include: { bankDetails: true },
+      });
+      const fx = await getFxRatesPlnPerUnit();
+      await backfillAccountBalanceHistory(prisma, userId, created.id, fx.plnPerUnit);
+      return res.status(201).json(
+        serializeUnifiedAccount(created, {
+          openingBalance: toNumber(created.bankDetails!.openingBalance),
+          balance: toNumber(created.bankDetails!.openingBalance),
+        }),
+      );
+    }
+    if (type === "BROKERAGE") {
+      const baseCurrency = normalizeCurrency(req.body.baseCurrency ?? currency);
+      const created = await prisma.account.create({
+        data: {
+          userId,
+          type: "BROKERAGE",
+          name,
+          currency: baseCurrency,
+          notes: req.body.notes ?? null,
+          brokerageDetails: {
+            create: { baseCurrency, cashBalance: 0 },
+          },
+        },
+        include: { brokerageDetails: true },
+      });
+      return res.status(201).json(
+        serializeBrokerageAccount(created, created.brokerageDetails!),
+      );
+    }
+    const allowed = ["REAL_ESTATE", "CRYPTO", "LIABILITY", "BONDS"];
     if (!allowed.includes(type)) {
       return res.status(400).json({ error: "Invalid account type" });
     }
@@ -1756,7 +1722,7 @@ app.post("/api/accounts", requireAuth, async (req: AuthedRequest, res) => {
         type,
         name,
         currency,
-        openingBalance: type === "BANK" ? Number(req.body.openingBalance ?? 0) : 0,
+        openingBalance: 0,
         manualValue:
           type !== "BANK" && req.body.manualValue != null ? Number(req.body.manualValue) : null,
         notes: req.body.notes ?? null,
@@ -1914,6 +1880,90 @@ app.delete("/api/categories/:id", requireAuth, async (req: AuthedRequest, res) =
   }
 });
 
+app.get("/api/accounts/:id/balance-history", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const id = Number(req.params.id);
+    const account = await prisma.account.findFirst({ where: { id, userId } });
+    if (!account) return res.status(404).json({ error: "Account not found" });
+    const dateFilter = transactionDateFilter(req.query.from, req.query.to);
+    const rows = await prisma.accountBalanceDaily.findMany({
+      where: {
+        accountId: id,
+        ...(dateFilter ? { balanceDate: dateFilter } : {}),
+      },
+      orderBy: { balanceDate: "asc" },
+    });
+    res.json(
+      rows.map((r) => ({
+        date: r.balanceDate,
+        balance: toNumber(r.balance),
+        cashComponent: r.cashComponent != null ? toNumber(r.cashComponent) : null,
+        securitiesComponent:
+          r.securitiesComponent != null ? toNumber(r.securitiesComponent) : null,
+        currency: normalizeCurrency(r.currency),
+      })),
+    );
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch balance history" });
+  }
+});
+
+app.get("/api/accounts/:id/transactions", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const id = Number(req.params.id);
+    const account = await prisma.account.findFirst({
+      where: { id, userId, type: "BANK" },
+    });
+    if (!account) return res.status(404).json({ error: "Bank account not found" });
+    const txs = await prisma.transaction.findMany({
+      where: { userId, accountId: id, type: { in: ["INCOME", "EXPENSE"] } },
+      orderBy: { date: "desc" },
+    });
+    res.json(
+      txs.map((t) => ({
+        ...t,
+        amount: toNumber(t.amount),
+        currency: normalizeCurrency(t.currency),
+      })),
+    );
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch account transactions" });
+  }
+});
+
+app.get("/api/accounts/:id/trades", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.userId!;
+    const id = Number(req.params.id);
+    const account = await prisma.account.findFirst({
+      where: { id, userId, type: "BROKERAGE" },
+    });
+    if (!account) return res.status(404).json({ error: "Brokerage account not found" });
+    const trades = await prisma.portfolioTrade.findMany({
+      where: { userId, accountId: id },
+      orderBy: [{ tradeDate: "desc" }, { symbol: "asc" }],
+    });
+    res.json(
+      trades.map((t) => ({
+        ...t,
+        quantity: toNumber(t.quantity),
+        tradePrice: toNumber(t.tradePrice),
+        currency: normalizeCurrency(t.currency),
+      })),
+    );
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    res.status(500).json({ error: "Failed to fetch account trades" });
+  }
+});
+
 app.get("/api/accounts/:id/bonds", requireAuth, async (req: AuthedRequest, res) => {
   try {
     const userId = req.userId!;
@@ -2030,7 +2080,7 @@ app.post("/api/import/csv", requireAuth, async (req: AuthedRequest, res) => {
     if (!csvText || !mapping || !accountId) {
       return res.status(400).json({ error: "csvText, mapping and accountId are required" });
     }
-    const bank = await prisma.financialAccount.findFirst({
+    const bank = await prisma.account.findFirst({
       where: { id: Number(accountId), userId, type: "BANK" },
     });
     if (!bank) return res.status(404).json({ error: "Bank account not found" });
@@ -2110,10 +2160,11 @@ app.post("/api/import/broker-csv", requireAuth, async (req: AuthedRequest, res) 
       return res.status(400).json({ error: "csvText, mapping and portfolioId are required" });
     }
     const pid = Number(portfolioId);
-    const portfolio = await prisma.investmentPortfolio.findFirst({
-      where: { id: pid, userId },
+    const portfolio = await prisma.account.findFirst({
+      where: { id: pid, userId, type: "BROKERAGE" },
+      include: { brokerageDetails: true },
     });
-    if (!portfolio) return res.status(404).json({ error: "Portfolio not found" });
+    if (!portfolio?.brokerageDetails) return res.status(404).json({ error: "Portfolio not found" });
 
     const { headers, rows } = parseCsvText(String(csvText));
     const parsed = mapBrokerCsvRows(headers, rows, mapping);
@@ -2122,7 +2173,7 @@ app.post("/api/import/broker-csv", requireAuth, async (req: AuthedRequest, res) 
     }
 
     const existingTrades = await prisma.portfolioTrade.findMany({
-      where: { userId, portfolioId: pid },
+      where: { userId, accountId: pid },
     });
     const holdings = new Map<string, number>();
     for (const t of existingTrades) {
@@ -2170,13 +2221,13 @@ app.post("/api/import/broker-csv", requireAuth, async (req: AuthedRequest, res) 
       await prisma.portfolioTrade.create({
         data: {
           userId,
-          portfolioId: pid,
+          accountId: pid,
           side: row.side,
           symbol: sym,
           quantity: row.quantity,
           tradePrice: row.tradePrice,
           tradeDate: new Date(row.date),
-          currency: normalizeCurrency(portfolio.baseCurrency),
+          currency: normalizeCurrency(portfolio.brokerageDetails.baseCurrency),
           category: "IMPORT",
         },
       });
@@ -2232,58 +2283,24 @@ app.post("/api/market-data/refresh", requireAuth, async (req: AuthedRequest, res
       ? req.body.symbols.map((s: unknown) => String(s))
       : [];
     const tradesForScope = await prisma.portfolioTrade.findMany({
-      select: { symbol: true, tradeDate: true },
+      select: { symbol: true },
       where: payloadSymbols.length
-        ? { symbol: { in: payloadSymbols.map((s) => normalizeSymbol(s)) } }
-        : undefined,
+        ? { userId, symbol: { in: payloadSymbols.map((s) => normalizeSymbol(s)) } }
+        : { userId },
     });
-    const tradesBySymbol = new Map<string, Date>();
-    for (const trade of tradesForScope) {
-      const symbol = normalizeSymbol(trade.symbol);
-      const currentMin = tradesBySymbol.get(symbol);
-      const tradeDate = new Date(trade.tradeDate);
-      if (!currentMin || tradeDate < currentMin) {
-        tradesBySymbol.set(symbol, tradeDate);
-      }
-    }
-    const symbols = [...tradesBySymbol.keys()];
+    const symbols = [...new Set(tradesForScope.map((t) => normalizeSymbol(t.symbol)))];
     marketRefreshInFlight = true;
-    let rowsInserted = 0;
-    let rowsUpdated = 0;
-    const errors: Array<{ symbol: string; error: string }> = [];
-    for (const symbol of symbols) {
-      try {
-        const minBuy = tradesBySymbol.get(symbol)!;
-        const startDate = startOfYear(minBuy);
-        const latest = await prisma.marketPriceHistory.findFirst({
-          where: { symbol },
-          orderBy: { priceDate: "desc" },
-        });
-        const incrementalStart =
-          latest && latest.priceDate > startDate
-            ? new Date(new Date(latest.priceDate).getTime() + 24 * 60 * 60 * 1000)
-            : startDate;
-        const endDate = new Date();
-        if (incrementalStart > endDate) continue;
-        const points = await twelveDataProvider.fetchDailyHistory(symbol, incrementalStart, endDate);
-        const upsertResult = await upsertPriceHistory(prisma, points);
-        rowsInserted += upsertResult.insertedOrUpdated;
-      } catch (error) {
-        errors.push({
-          symbol,
-          error: error instanceof Error ? error.message : "Unknown error",
-        });
-      }
-    }
+    const refreshResult = await refreshSymbolsIncremental(prisma, twelveDataProvider, symbols);
     marketRefreshInFlight = false;
     lastManualRefreshAtByUser.set(userId, now);
     res.json({
       source: twelveDataProvider.source,
-      requested: symbols.length,
-      symbolsProcessed: symbols.length - errors.length,
-      rowsInserted,
-      rowsUpdated,
-      errors,
+      requested: refreshResult.requested,
+      symbolsProcessed: refreshResult.updated,
+      rowsInserted: refreshResult.updated,
+      rowsUpdated: 0,
+      skipped: refreshResult.skipped,
+      errors: refreshResult.errors,
     });
   } catch (error) {
     marketRefreshInFlight = false;

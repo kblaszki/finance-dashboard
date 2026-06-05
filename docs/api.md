@@ -20,16 +20,19 @@ Implementation: [`backend/src/app.ts`](../backend/src/app.ts). Auth: `requireAut
 | PUT | `/api/portfolios/:id` | Yes | Update name/base currency |
 | DELETE | `/api/portfolios/:id` | Yes | Delete portfolio |
 
-## Financial accounts (bank, assets, bonds, liabilities)
+## Accounts (unified bank + brokerage)
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/api/accounts` | Yes | List; optional `type` |
-| POST | `/api/accounts` | Yes | Create (`BANK`, `REAL_ESTATE`, `CRYPTO`, `LIABILITY`, `BONDS`) |
-| PUT | `/api/accounts/:id` | Yes | Update |
-| DELETE | `/api/accounts/:id` | Yes | Delete (no linked transactions) |
-| GET | `/api/accounts/:id/bonds` | Yes | List bond holdings |
-| POST | `/api/accounts/:id/bonds` | Yes | Add bond holding; syncs account `manualValue` |
+| GET | `/api/accounts` | Yes | `?scope=managed&types=BANK,BROKERAGE` — unified list with `balance`; legacy `FinancialAccount` without scope |
+| POST | `/api/accounts` | Yes | Create `BANK` or `BROKERAGE` (unified), or legacy types (`REAL_ESTATE`, …) |
+| PUT | `/api/accounts/:id` | Yes | Update legacy financial account |
+| DELETE | `/api/accounts/:id` | Yes | Delete |
+| GET | `/api/accounts/:id/balance-history` | Yes | Daily balance series; optional `from`, `to` |
+| GET | `/api/accounts/:id/transactions` | Yes | Bank INCOME/EXPENSE on account |
+| GET | `/api/accounts/:id/trades` | Yes | Brokerage trades on account |
+| GET | `/api/accounts/:id/bonds` | Yes | List bond holdings (legacy financial account) |
+| POST | `/api/accounts/:id/bonds` | Yes | Add bond holding |
 | DELETE | `/api/bonds/:id` | Yes | Delete bond holding |
 
 ## Categories
@@ -61,15 +64,6 @@ Implementation: [`backend/src/app.ts`](../backend/src/app.ts). Auth: `requireAut
 | DELETE | `/api/portfolio/:id` | Yes | Delete trade; recalculates portfolio cash |
 | GET | `/api/portfolio/:symbol/history` | Yes | Price history for symbol analysis |
 
-## Budgets
-
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/api/budgets` | Yes | List; optional `yearMonth` |
-| POST | `/api/budgets` | Yes | Create; `categoryId` (root EXPENSE) or legacy `category` |
-| PUT | `/api/budgets/:id` | Yes | Update; `categoryId` / limit |
-| DELETE | `/api/budgets/:id` | Yes | Delete |
-
 ## Stats (dashboard)
 
 | Method | Path | Auth | Description |
@@ -80,8 +74,6 @@ Implementation: [`backend/src/app.ts`](../backend/src/app.ts). Auth: `requireAut
 | GET | `/api/stats/expenses-by-category` | Yes | Expense breakdown (root rollup) |
 | GET | `/api/stats/income-by-category` | Yes | Income breakdown (root rollup) |
 | GET | `/api/stats/cashflow-over-time` | Yes | Monthly cash flow series |
-| GET | `/api/stats/budget-progress` | Yes | Spent vs limit (subcategory rollup); `yearMonth`, `currency` |
-
 ## Import
 
 | Method | Path | Auth | Description |
@@ -111,7 +103,6 @@ Implementation: [`backend/src/app.ts`](../backend/src/app.ts). Auth: `requireAut
 | `frontend/src/api/categoriesApi.ts` | `/api/categories` |
 | `frontend/src/api/bondsApi.ts` | Bond holdings |
 | `frontend/src/api/importApi.ts` | CSV import |
-| `frontend/src/api/budgetsApi.ts` | Budgets + budget progress |
 | `frontend/src/api/statsApi.ts` | Stats routes |
 
 When adding a route, add one row here and a matching function in the appropriate `*Api.ts` file.

@@ -69,24 +69,26 @@ async function main() {
     create: { email: DEMO_EMAIL, passwordHash },
   });
 
+  await prisma.accountBalanceDaily.deleteMany({
+    where: { account: { userId: user.id } },
+  });
   await prisma.transaction.deleteMany({ where: { userId: user.id } });
   await prisma.portfolioTrade.deleteMany({ where: { userId: user.id } });
   await prisma.portfolioPosition.deleteMany({ where: { userId: user.id } });
-  await prisma.budget.deleteMany({ where: { userId: user.id } });
   await prisma.bondHolding.deleteMany({
     where: { account: { userId: user.id } },
   });
+  await prisma.account.deleteMany({ where: { userId: user.id } });
   await prisma.financialAccount.deleteMany({ where: { userId: user.id } });
   await prisma.category.deleteMany({ where: { userId: user.id } });
-  await prisma.investmentPortfolio.deleteMany({ where: { userId: user.id } });
 
-  const bankAccount = await prisma.financialAccount.create({
+  const bankAccount = await prisma.account.create({
     data: {
       userId: user.id,
       type: "BANK",
       name: "Konto główne PLN",
       currency: "PLN",
-      openingBalance: 5000,
+      bankDetails: { create: { openingBalance: 5000 } },
     },
   });
 
@@ -170,20 +172,22 @@ async function main() {
   await prisma.transaction.createMany({ data: transactions });
 
   const [usdPortfolio, eurPortfolio] = await Promise.all([
-    prisma.investmentPortfolio.create({
+    prisma.account.create({
       data: {
         userId: user.id,
+        type: "BROKERAGE",
         name: "Akcje USA",
-        baseCurrency: "USD",
-        cashBalance: 0,
+        currency: "USD",
+        brokerageDetails: { create: { baseCurrency: "USD", cashBalance: 0 } },
       },
     }),
-    prisma.investmentPortfolio.create({
+    prisma.account.create({
       data: {
         userId: user.id,
+        type: "BROKERAGE",
         name: "ETF Europa",
-        baseCurrency: "EUR",
-        cashBalance: 0,
+        currency: "EUR",
+        brokerageDetails: { create: { baseCurrency: "EUR", cashBalance: 0 } },
       },
     }),
   ]);
@@ -197,7 +201,7 @@ async function main() {
       category: "INVESTMENT",
       date: daysAgoAtHour(85, 12),
       description: "Zasilenie portfela Akcje USA",
-      portfolioId: usdPortfolio.id,
+      accountId: usdPortfolio.id,
     },
     {
       userId: user.id,
@@ -207,7 +211,7 @@ async function main() {
       category: "INVESTMENT",
       date: daysAgoAtHour(70, 12),
       description: "Zasilenie portfela ETF Europa",
-      portfolioId: eurPortfolio.id,
+      accountId: eurPortfolio.id,
     },
     {
       userId: user.id,
@@ -217,7 +221,7 @@ async function main() {
       category: "INVESTMENT",
       date: daysAgoAtHour(32, 12),
       description: "Dodatkowe zasilenie portfela Akcje USA",
-      portfolioId: usdPortfolio.id,
+      accountId: usdPortfolio.id,
     },
   ];
   await prisma.transaction.createMany({ data: transferTransactions });
@@ -225,7 +229,7 @@ async function main() {
   const trades = [
     {
       userId: user.id,
-      portfolioId: usdPortfolio.id,
+      accountId: usdPortfolio.id,
       side: "BUY",
       symbol: "AAPL",
       quantity: 6,
@@ -236,7 +240,7 @@ async function main() {
     },
     {
       userId: user.id,
-      portfolioId: usdPortfolio.id,
+      accountId: usdPortfolio.id,
       side: "BUY",
       symbol: "MSFT",
       quantity: 3,
@@ -247,7 +251,7 @@ async function main() {
     },
     {
       userId: user.id,
-      portfolioId: usdPortfolio.id,
+      accountId: usdPortfolio.id,
       side: "SELL",
       symbol: "AAPL",
       quantity: 1,
@@ -258,7 +262,7 @@ async function main() {
     },
     {
       userId: user.id,
-      portfolioId: eurPortfolio.id,
+      accountId: eurPortfolio.id,
       side: "BUY",
       symbol: "VWCE.DE",
       quantity: 10,
@@ -269,7 +273,7 @@ async function main() {
     },
     {
       userId: user.id,
-      portfolioId: eurPortfolio.id,
+      accountId: eurPortfolio.id,
       side: "BUY",
       symbol: "EUNL.DE",
       quantity: 5,
@@ -301,29 +305,40 @@ async function main() {
     "EUNL.DE": 0.14,
   };
 
-  await prisma.marketPriceSnapshot.deleteMany({
-    where: { source: MARKET_SOURCE, symbol: { in: symbols } },
-  });
-  await prisma.marketPriceHistory.deleteMany({
-    where: { source: MARKET_SOURCE, symbol: { in: symbols } },
-  });
+  const assetBySymbol = new Map<string, number>();
+  for (const symbol of symbols) {
+    let asset = await prisma.asset.findFirst({
+      where: { symbol, exchange: null, source: MARKET_SOURCE },
+    });
+    if (!asset) {
+      asset = await prisma.asset.create({
+        data: {
+          symbol,
+          assetType: symbol.includes(".") ? "ETF" : "STOCK",
+          currency: symbolCurrency[symbol],
+          exchange: null,
+          source: MARKET_SOURCE,
+        },
+      });
+    }
+    assetBySymbol.set(symbol, asset.id);
+  }
 
-  const historyRows: {
-    symbol: string;
-    currency: string;
+  const priceRows: {
+    assetId: number;
     close: number;
     priceDate: Date;
     source: string;
     fetchedAt: Date;
   }[] = [];
   for (const symbol of symbols) {
+    const assetId = assetBySymbol.get(symbol)!;
     for (let day = 75; day >= 0; day -= 1) {
       const trend = startPrice[symbol] + (75 - day) * dailyDrift[symbol];
       const noise = randomAmount(-2.2, 2.2);
       const close = Math.max(5, Math.round((trend + noise) * 100) / 100);
-      historyRows.push({
-        symbol,
-        currency: symbolCurrency[symbol],
+      priceRows.push({
+        assetId,
         close,
         priceDate: daysAgoAtHour(day, 22),
         source: MARKET_SOURCE,
@@ -331,67 +346,23 @@ async function main() {
       });
     }
   }
-  await prisma.marketPriceHistory.createMany({ data: historyRows });
-
-  const latestBySymbol = new Map<string, (typeof historyRows)[number]>();
-  for (const row of historyRows) {
-    const prev = latestBySymbol.get(row.symbol);
-    if (!prev || row.priceDate > prev.priceDate) latestBySymbol.set(row.symbol, row);
-  }
-  await prisma.marketPriceSnapshot.createMany({
-    data: Array.from(latestBySymbol.values()).map((row) => ({
-      symbol: row.symbol,
-      currency: row.currency,
-      close: row.close,
-      priceDate: row.priceDate,
-      source: row.source,
-      fetchedAt: row.fetchedAt,
-    })),
+  await prisma.marketPriceDaily.deleteMany({
+    where: { assetId: { in: [...assetBySymbol.values()] }, source: MARKET_SOURCE },
   });
+  await prisma.marketPriceDaily.createMany({ data: priceRows });
 
-  const now = new Date();
-  const months = [yearMonth(now)];
-  const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  months.push(yearMonth(prev));
-
-  const foodRootId = categoryIds.FOOD;
-  for (const ym of months) {
-    await prisma.budget.create({
-      data: {
-        userId: user.id,
-        yearMonth: ym,
-        category: "",
-        categoryId: null,
-        limitAmount: 8000,
-        currency: "PLN",
-      },
-    });
-    const budgetLimits: Array<{ key: string; limit: number }> = [
-      { key: "FOOD", limit: 1200 },
-      { key: "TRANSPORT", limit: 600 },
-      { key: "ENTERTAINMENT", limit: 400 },
-    ];
-    for (const { key, limit } of budgetLimits) {
-      const categoryId = categoryIds[key];
-      const categoryPath = await pathFor(categoryId);
-      await prisma.budget.create({
-        data: {
-          userId: user.id,
-          yearMonth: ym,
-          category: categoryPath,
-          categoryId: key === "FOOD" ? foodRootId : categoryId,
-          limitAmount: limit,
-          currency: "PLN",
-        },
-      });
-    }
+  const { backfillAccountBalanceHistory } = await import("../src/accountBalance");
+  const { getFxRatesPlnPerUnit } = await import("../src/fx");
+  const fx = await getFxRatesPlnPerUnit();
+  for (const acc of [bankAccount, usdPortfolio, eurPortfolio]) {
+    await backfillAccountBalanceHistory(prisma, user.id, acc.id, fx.plnPerUnit);
   }
 
   // eslint-disable-next-line no-console
   console.log(`Seed OK for user: ${DEMO_EMAIL} (password: ${DEMO_PASSWORD})`);
   // eslint-disable-next-line no-console
   console.log(
-    `  ${transactions.length + transferTransactions.length} transactions, ${trades.length} trades, ${months.length * 4} budgets, 1 bank account, category tree with FOOD subcategories`,
+    `  ${transactions.length + transferTransactions.length} transactions, ${trades.length} trades, 1 bank + 2 brokerage accounts`,
   );
 }
 

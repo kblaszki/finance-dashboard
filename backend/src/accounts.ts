@@ -16,10 +16,10 @@ export async function computeBankBalance(
   userId: number,
   accountId: number,
 ): Promise<number> {
-  const account = await prisma.financialAccount.findFirst({
-    where: { id: accountId, userId, type: "BANK" },
+  const details = await prisma.bankAccountDetails.findFirst({
+    where: { accountId, account: { userId, type: "BANK" } },
   });
-  if (!account) return 0;
+  if (!details) return 0;
 
   const txs = await prisma.transaction.findMany({
     where: {
@@ -29,7 +29,7 @@ export async function computeBankBalance(
     },
   });
 
-  let balance = toNumber(account.openingBalance);
+  let balance = toNumber(details.openingBalance);
   for (const t of txs) {
     const amount = toNumber(t.amount);
     if (t.type === "INCOME") balance += amount;
@@ -42,12 +42,20 @@ export async function computeBankBalancesForUser(
   prisma: PrismaClient,
   userId: number,
 ): Promise<Map<number, number>> {
-  const accounts = await prisma.financialAccount.findMany({
+  const accounts = await prisma.account.findMany({
     where: { userId, type: "BANK" },
   });
   const map = new Map<number, number>();
   for (const acc of accounts) {
-    map.set(acc.id, await computeBankBalance(prisma, userId, acc.id));
+    const snap = await prisma.accountBalanceDaily.findFirst({
+      where: { accountId: acc.id },
+      orderBy: { balanceDate: "desc" },
+    });
+    if (snap) {
+      map.set(acc.id, toNumber(snap.balance));
+    } else {
+      map.set(acc.id, await computeBankBalance(prisma, userId, acc.id));
+    }
   }
   return map;
 }
