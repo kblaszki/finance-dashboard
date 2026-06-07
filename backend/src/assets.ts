@@ -92,6 +92,32 @@ export async function getLatestPricesByAssetIds(
   return map;
 }
 
+export async function getPricesAsOf(
+  prisma: PrismaClient,
+  symbols: string[],
+  asOf: Date,
+): Promise<Map<string, { close: number; priceDate: Date; currency: string }>> {
+  const normalized = [...new Set(symbols.map(normalizeSymbol).filter(Boolean))];
+  const assets = await prisma.asset.findMany({
+    where: { symbol: { in: normalized }, exchange: null, source: DEFAULT_SOURCE },
+  });
+  const map = new Map<string, { close: number; priceDate: Date; currency: string }>();
+  for (const asset of assets) {
+    const row = await prisma.marketPriceDaily.findFirst({
+      where: { assetId: asset.id, priceDate: { lte: asOf } },
+      orderBy: { priceDate: "desc" },
+    });
+    if (row) {
+      map.set(asset.symbol, {
+        close: Number(row.close),
+        priceDate: row.priceDate,
+        currency: asset.currency,
+      });
+    }
+  }
+  return map;
+}
+
 export async function getLatestPricesBySymbols(
   prisma: PrismaClient,
   symbols: string[],

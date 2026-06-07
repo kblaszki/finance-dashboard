@@ -355,6 +355,20 @@ async function recomputePortfolioCashBalance(
   }
 }
 
+async function recomputeBankBalancesFrom(
+  prismaClient: PrismaClient,
+  userId: number,
+  accountIds: Iterable<number>,
+  fromDate: Date,
+) {
+  const ids = [...new Set(accountIds)];
+  if (!ids.length) return;
+  const fx = await getFxRatesPlnPerUnit();
+  for (const accountId of ids) {
+    await recomputeAccountBalancesFrom(prismaClient, userId, accountId, fromDate, fx.plnPerUnit);
+  }
+}
+
 app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
@@ -784,12 +798,28 @@ app.put("/api/transactions/:id", requireAuth, async (req: AuthedRequest, res) =>
       amount: toNumber(updated.amount),
       currency: normalizeCurrency(updated.currency),
     });
+    const recomputeFrom = new Date(
+      Math.min(existing.date.getTime(), (updated.date ?? existing.date).getTime()),
+    );
     if (prevAccountId && existing.type === "TRANSFER_TO_PORTFOLIO") {
       await recomputePortfolioCashBalance(prisma, userId, prevAccountId);
     }
-    if (updated.accountId && updated.type === "TRANSFER_TO_PORTFOLIO" && updated.accountId !== prevAccountId) {
-      await recomputePortfolioCashBalance(prisma, userId, updated.accountId);
+    if (updated.accountId && updated.type === "TRANSFER_TO_PORTFOLIO") {
+      if (updated.accountId !== prevAccountId) {
+        await recomputePortfolioCashBalance(prisma, userId, updated.accountId);
+      }
     }
+    const bankAccountIds: number[] = [];
+    if (prevAccountId && (existing.type === "INCOME" || existing.type === "EXPENSE")) {
+      bankAccountIds.push(prevAccountId);
+    }
+    if (
+      updated.accountId &&
+      (updated.type === "INCOME" || updated.type === "EXPENSE")
+    ) {
+      bankAccountIds.push(updated.accountId);
+    }
+    await recomputeBankBalancesFrom(prisma, userId, bankAccountIds, recomputeFrom);
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(error);
@@ -808,6 +838,12 @@ app.delete("/api/transactions/:id", requireAuth, async (req: AuthedRequest, res)
     }
     if (existing?.accountId && existing.type === "TRANSFER_TO_PORTFOLIO") {
       await recomputePortfolioCashBalance(prisma, userId, existing.accountId);
+    }
+    if (
+      existing?.accountId &&
+      (existing.type === "INCOME" || existing.type === "EXPENSE")
+    ) {
+      await recomputeBankBalancesFrom(prisma, userId, [existing.accountId], existing.date);
     }
     res.status(204).send();
   } catch (error) {
@@ -953,17 +989,25 @@ app.post("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
       if (grossValue > cash) return res.status(400).json({ error: "Insufficient portfolio cash balance" });
     }
 
+    const sym = normalizeSymbol(symbol);
+    const { assetId } = await ensureAssetWithHistory(
+      prisma,
+      twelveDataProvider,
+      sym,
+      normalizeCurrency(currency),
+    );
     const created = await prisma.portfolioTrade.create({
       data: {
         userId,
         accountId: pid,
         side: normalizedSide,
-        symbol: normalizeSymbol(symbol),
+        symbol: sym,
         quantity,
         tradePrice,
         tradeDate: new Date(String(tradeDate)),
         currency: normalizeCurrency(currency),
         category: category ?? "UNSPECIFIED",
+        assetId,
       },
     });
     res.status(201).json({
@@ -1040,7 +1084,7 @@ app.put("/api/portfolio/:id", requireAuth, async (req: AuthedRequest, res) => {
       const peerTrades = await prisma.portfolioTrade.findMany({
         where: {
           userId,
-          portfolioId,
+          accountId: portfolioId,
           symbol: nextSymbol,
           id: { not: id },
         },
@@ -1081,7 +1125,7 @@ app.delete("/api/portfolio/:id", requireAuth, async (req: AuthedRequest, res) =>
     const existing = await prisma.portfolioTrade.findFirst({ where: { id, userId } });
     const result = await prisma.portfolioTrade.deleteMany({ where: { id, userId } });
     if (!result.count) return res.status(404).json({ error: "Portfolio trade not found" });
-    if (existing?.accountId && existing.type === "TRANSFER_TO_PORTFOLIO") {
+    if (existing?.accountId) {
       await recomputePortfolioCashBalance(prisma, userId, existing.accountId);
     }
     res.status(204).send();
@@ -2131,6 +2175,16 @@ app.post("/api/import/csv", requireAuth, async (req: AuthedRequest, res) => {
     }
 
     res.status(201).json({ imported, skipped });
+    if (imported > 0) {
+      const minDate = parsed.rows.reduce(
+        (min, row) => {
+          const d = new Date(row.date);
+          return d < min ? d : min;
+        },
+        new Date(parsed.rows[0]!.date),
+      );
+      await recomputeBankBalancesFrom(prisma, userId, [bank.id], minDate);
+    }
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(error);
@@ -2189,6 +2243,7 @@ app.post("/api/import/broker-csv", requireAuth, async (req: AuthedRequest, res) 
     let imported = 0;
     let skipped = 0;
     const importErrors: string[] = [];
+    const assetIdBySymbol = new Map<string, number>();
 
     for (const row of sorted) {
       const sym = normalizeSymbol(row.symbol);
@@ -2218,6 +2273,18 @@ app.post("/api/import/broker-csv", requireAuth, async (req: AuthedRequest, res) 
         holdings.set(sym, (holdings.get(sym) ?? 0) + row.quantity);
       }
 
+      let assetId = assetIdBySymbol.get(sym);
+      if (assetId == null) {
+        const ensured = await ensureAssetWithHistory(
+          prisma,
+          twelveDataProvider,
+          sym,
+          normalizeCurrency(portfolio.brokerageDetails.baseCurrency),
+        );
+        assetId = ensured.assetId;
+        assetIdBySymbol.set(sym, assetId);
+      }
+
       await prisma.portfolioTrade.create({
         data: {
           userId,
@@ -2229,6 +2296,7 @@ app.post("/api/import/broker-csv", requireAuth, async (req: AuthedRequest, res) 
           tradeDate: new Date(row.date),
           currency: normalizeCurrency(portfolio.brokerageDetails.baseCurrency),
           category: "IMPORT",
+          assetId,
         },
       });
       imported += 1;

@@ -65,32 +65,11 @@ export async function migrateUserCategories(prisma: PrismaClient, userId: number
   return updated;
 }
 
-export async function migrateUserBudgets(prisma: PrismaClient, userId: number): Promise<number> {
-  const budgets = await prisma.budget.findMany({ where: { userId } });
-  let updated = 0;
-
-  for (const b of budgets) {
-    if (b.categoryId != null) continue;
-    const catName = String(b.category ?? "").trim();
-    if (!catName) continue;
-
-    const categoryId = await ensureCategoryPath(prisma, userId, "EXPENSE", catName);
-    await prisma.budget.update({
-      where: { id: b.id },
-      data: { categoryId },
-    });
-    updated += 1;
-  }
-
-  return updated;
-}
-
 export async function migrateAllUsers(prisma: PrismaClient): Promise<void> {
   const users = await prisma.user.findMany({ select: { id: true } });
   for (const user of users) {
     const txCount = await migrateUserCategories(prisma, user.id);
-    const budgetCount = await migrateUserBudgets(prisma, user.id);
     // eslint-disable-next-line no-console
-    console.log(`User ${user.id}: ${txCount} transactions, ${budgetCount} budgets migrated`);
+    console.log(`User ${user.id}: ${txCount} transactions migrated`);
   }
 }

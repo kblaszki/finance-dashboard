@@ -63,17 +63,10 @@ export function AllPortfoliosTable() {
                     <td>{formatMoney(r.total, currency)}</td>
                     <td>
                       <Link
-                        to="/portfolio"
+                        to={`/accounts/${r.portfolioId}`}
                         onClick={() => setActivePortfolioId(r.portfolioId)}
                       >
                         Szczegóły
-                      </Link>
-                      {' · '}
-                      <Link
-                        to={`/portfolio/trades?portfolioId=${r.portfolioId}`}
-                        onClick={() => setActivePortfolioId(r.portfolioId)}
-                      >
-                        Transakcje
                       </Link>
                     </td>
                   </tr>

@@ -7,61 +7,59 @@ Source of truth: [`backend/prisma/schema.prisma`](../backend/prisma/schema.prism
 | Model | Purpose | Scoped by |
 |-------|---------|-----------|
 | `User` | Email + `passwordHash` | — |
-| `Transaction` | Cash flows (`INCOME`, `EXPENSE`, `TRANSFER_TO_PORTFOLIO`) | `userId`; optional `portfolioId`, `accountId`, `categoryId`, `importHash` (CSV dedup) |
-| `InvestmentPortfolio` | Brokerage account (`name`, `baseCurrency`, `cashBalance`) | `userId`; unique `[userId, name]` |
-| `PortfolioTrade` | BUY/SELL lots per symbol inside a portfolio | `userId` + `portfolioId` |
-| `FinancialAccount` | Bank, real estate, crypto, liability, bonds wrapper | `userId`; `type` + unique `[userId, name]` |
+| `Account` | Unified account (`BANK`, `BROKERAGE`, …) with `name`, `currency`, `notes` | `userId`; unique `[userId, name]` |
+| `BankAccountDetails` | Opening balance for `BANK` accounts | `accountId` (1:1) |
+| `BrokerageAccountDetails` | Base currency + cash balance for `BROKERAGE` | `accountId` (1:1) |
+| `Transaction` | Cash flows (`INCOME`, `EXPENSE`, `TRANSFER_TO_PORTFOLIO`) | `userId`; `accountId`, optional `categoryId`, `importHash` |
+| `PortfolioTrade` | BUY/SELL lots per symbol inside a brokerage account | `userId` + `accountId`; optional `assetId` |
+| `FinancialAccount` | Legacy/manual wrappers (`REAL_ESTATE`, `CRYPTO`, `LIABILITY`, `BONDS`) | `userId`; `type` + unique `[userId, name]` |
 | `Category` | Income/expense tree (`parentId`, `kind`) | `userId` |
-| `BondHolding` | Treasury bond line (series, nominal) on `BONDS` account | `accountId` |
-| `Budget` | Monthly limit (`yearMonth` `YYYY-MM`, optional root `categoryId` / legacy `category` string) | `userId` |
-| `MarketPriceSnapshot` | Latest close per symbol (valuation) | Global |
-| `MarketPriceHistory` | Historical closes for charts | Global |
+| `BondHolding` | Treasury bond line on `BONDS` account | `accountId` |
+| `Asset` | Global instrument catalog (symbol, type, currency) | Global; unique per `(symbol, exchange, source)` |
+| `MarketPriceDaily` | Historical EOD closes per asset | `assetId` + `priceDate` + `source` |
+| `AccountBalanceDaily` | Materialized daily balance snapshots per account | `accountId` + `date` |
 
-## Portfolio model (brokerage)
+## Account model
 
-Investment workflow is **trade-based**:
+Managed accounts (phase 1: **BANK** + **BROKERAGE**) use `Account` with type-specific 1:1 extensions:
 
-1. User creates `InvestmentPortfolio` records (`/api/portfolios`).
-2. Trades (`PortfolioTrade`) are recorded via `POST /api/portfolio` (BUY/SELL).
-3. `GET /api/portfolio?portfolioId=&currency=` aggregates trades per symbol, applies market snapshots and FX.
+- **BANK** — balance from `BankAccountDetails.openingBalance` + INCOME − EXPENSE transactions.
+- **BROKERAGE** — cash from `BrokerageAccountDetails.cashBalance` (maintained via transfers + trades); securities from open lots valued with `MarketPriceDaily`.
 
-Cash balance on `InvestmentPortfolio` is maintained via `backend/src/portfolioCash.ts` and `TRANSFER_TO_PORTFOLIO` transactions.
+Daily history is stored in `AccountBalanceDaily` and recomputed via `backend/src/accountBalance.ts`.
+
+Manual asset types (`REAL_ESTATE`, `CRYPTO`, `LIABILITY`, `BONDS`) remain on `FinancialAccount` until a later phase.
+
+## Brokerage workflow
+
+1. User creates `Account` with `type: BROKERAGE` (`POST /api/portfolios` alias).
+2. Cash enters via `TRANSFER_TO_PORTFOLIO` transactions linked to the brokerage `accountId`.
+3. Trades (`PortfolioTrade`) are recorded via `POST /api/portfolio` or broker CSV import.
+4. `GET /api/portfolio?portfolioId=&currency=` aggregates trades per symbol (legacy alias; prefer `/api/accounts/:id`).
 
 Valuation helpers: `backend/src/portfolioValuation.ts`, net worth: `backend/src/netWorth.ts`.
-
-## Financial accounts
-
-| `type` | Balance / value |
-|--------|-----------------|
-| `BANK` | `openingBalance` + INCOME − EXPENSE on linked transactions |
-| `REAL_ESTATE`, `CRYPTO`, `LIABILITY` | `manualValue` (liabilities subtracted in net worth) |
-| `BONDS` | Sum of `BondHolding.nominal` synced to `manualValue` |
 
 ## Categories
 
 - Hierarchical via `Category.parentId`.
 - Transactions store denormalized `category` path string and optional `categoryId`.
 - Stats charts roll up amounts to root category name.
-- Budgets reference a **root** expense category via `categoryId`; progress includes all expenses whose path starts with that root (subcategories included).
 
 ## Data migration
 
-- `npm run db:migrate-categories` (backend): backfill `categoryId` on transactions and budgets from legacy `category` strings; ensures „Niesklasyfikowane” nodes.
-
-## Legacy: `PortfolioPosition`
-
-`PortfolioPosition` remains in the schema for older data but **new UI/API flows use `PortfolioTrade` + `InvestmentPortfolio`**.
+- `npm run db:migrate-categories` (backend): backfill `categoryId` on transactions from legacy `category` strings; ensures „Niesklasyfikowane” nodes.
+- Refactor migration `20260605140000_refactor_accounts_assets`: `FinancialAccount` (BANK) + `InvestmentPortfolio` → `Account`; prices → `Asset` + `MarketPriceDaily`.
 
 ## Transaction types
 
-- `INCOME` / `EXPENSE` — cashflow and bank balances.
-- `TRANSFER_TO_PORTFOLIO` — increases brokerage cash; requires `portfolioId`.
+- `INCOME` / `EXPENSE` — cashflow on a `BANK` account (`accountId`).
+- `TRANSFER_TO_PORTFOLIO` — increases brokerage cash; `accountId` points to the brokerage account.
 
 ## Market data
 
-- Snapshots keyed by `symbol`, `priceDate`, `source`.
-- Staleness/expiry logic in `marketData.ts`.
-- Manual refresh: `POST /api/market-data/refresh`.
+- Global `Asset` rows keyed by `symbol`, optional `exchange`, `source`.
+- Daily closes in `MarketPriceDaily`; staleness in `marketData.ts`.
+- Manual refresh: `POST /api/market-data/refresh` (incremental backfill per symbol).
 
 ## Related docs
 

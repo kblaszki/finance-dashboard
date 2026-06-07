@@ -39,7 +39,7 @@ Token-aware index — use `@docs/...` for domain detail; do not duplicate [READM
 
 **Portfolio / FX work**
 
-- Trades: `PortfolioTrade` + `InvestmentPortfolio` — not `PortfolioPosition`.
+- Trades: `PortfolioTrade` + `Account` (BROKERAGE) — legacy `/api/portfolio*` aliases remain.
 - FX: `backend/src/fx.ts` only.
 
 ## Do not commit

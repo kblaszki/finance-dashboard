@@ -2,7 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 import { convertAmount } from "./fx";
 import { computeBrokerSecuritiesValuation, tradesActiveOnOrBefore, type TradeLot } from "./portfolioValuation";
 import { computePortfolioCashBalance } from "./portfolioCash";
-import { getLatestPricesBySymbols } from "./assets";
+import { getPricesAsOf } from "./assets";
 
 function toNumber(v: unknown): number {
   if (typeof v === "number") return v;
@@ -93,13 +93,11 @@ export async function computeBrokerageBalanceAsOf(
     })),
     asOf,
   );
-  const symbols = [...new Set(activeTrades.map((t) => t.symbol))];
-  const latestBySymbol = await getLatestPricesBySymbols(prisma, symbols);
+  const symbols = [...new Set(activeTrades.map((t) => String(t.symbol).trim().toUpperCase()))];
+  const pricesAsOf = await getPricesAsOf(prisma, symbols, asOf);
   const snapshots = new Map<string, { priceDate: Date; close: unknown; currency: string }>();
-  for (const [sym, row] of latestBySymbol) {
-    if (new Date(row.priceDate) <= asOf) {
-      snapshots.set(sym, { priceDate: row.priceDate, close: row.close, currency: row.currency });
-    }
+  for (const [sym, row] of pricesAsOf) {
+    snapshots.set(sym, { priceDate: row.priceDate, close: row.close, currency: row.currency });
   }
   const valuation = computeBrokerSecuritiesValuation({
     trades: activeTrades,
@@ -142,7 +140,26 @@ export async function backfillAccountBalanceHistory(
     const trades = await prisma.portfolioTrade.findMany({ where: { userId, accountId } });
     for (const t of txs) pushDate(t.date);
     for (const t of trades) pushDate(t.tradeDate);
-    if (!txs.length && !trades.length) pushDate(account.createdAt);
+    if (!txs.length && !trades.length) {
+      pushDate(account.createdAt);
+    } else {
+      const symbols = [...new Set(trades.map((t) => String(t.symbol).trim().toUpperCase()))];
+      const activityDates = [...txs.map((t) => t.date), ...trades.map((t) => t.tradeDate)];
+      const minActivity = utcDateOnly(
+        activityDates.reduce((min, d) => (d < min ? d : min), activityDates[0] ?? account.createdAt),
+      );
+      const assets = await prisma.asset.findMany({
+        where: { symbol: { in: symbols } },
+        select: { id: true },
+      });
+      if (assets.length) {
+        const priceDates = await prisma.marketPriceDaily.findMany({
+          where: { assetId: { in: assets.map((a) => a.id) }, priceDate: { gte: minActivity } },
+          select: { priceDate: true },
+        });
+        for (const row of priceDates) pushDate(row.priceDate);
+      }
+    }
   }
 
   const sorted = [...dates].map((s) => new Date(s)).sort((a, b) => a.getTime() - b.getTime());

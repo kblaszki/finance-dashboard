@@ -74,7 +74,6 @@ async function main() {
   });
   await prisma.transaction.deleteMany({ where: { userId: user.id } });
   await prisma.portfolioTrade.deleteMany({ where: { userId: user.id } });
-  await prisma.portfolioPosition.deleteMany({ where: { userId: user.id } });
   await prisma.bondHolding.deleteMany({
     where: { account: { userId: user.id } },
   });

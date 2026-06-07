@@ -159,10 +159,10 @@ export function PortfolioTable() {
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           {activePortfolioId ? (
             <Link
-              to={`/portfolio/trades?portfolioId=${activePortfolioId}`}
+              to={`/accounts/${activePortfolioId}`}
               className="btn-secondary"
             >
-              Wszystkie transakcje
+              Szczegóły konta
             </Link>
           ) : null}
           <button type="button" className="btn-secondary" onClick={handleRefreshMarketData} disabled={refreshingMarket}>
@@ -309,7 +309,7 @@ export function PortfolioTable() {
                     <button
                       type="button"
                       className="btn-secondary"
-                      onClick={() => navigate(`/portfolio/${encodeURIComponent(p.symbol)}`)}
+                      onClick={() => navigate(`/accounts/${activePortfolioId}`)}
                     >
                       Analizuj
                     </button>

@@ -168,7 +168,10 @@ export function PortfolioTradesTable(props: { fixedPortfolioId?: number }) {
       ) : !trades.length ? (
         <p className="empty-state">
           Brak transakcji.{' '}
-          <Link to="/portfolio">Dodaj pierwszą transakcję na stronie portfela</Link>.
+          <Link to={portfolioId ? `/accounts/${portfolioId}` : '/accounts'}>
+            Dodaj pierwszą transakcję na stronie konta
+          </Link>
+          .
         </p>
       ) : (
         <div className="table-wrap">

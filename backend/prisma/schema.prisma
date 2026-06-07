@@ -16,7 +16,6 @@ model User {
   passwordHash         String
   createdAt            DateTime              @default(now())
   transactions         Transaction[]
-  portfolioPositions   PortfolioPosition[]
   portfolioTrades      PortfolioTrade[]
   accounts             Account[]
   financialAccounts    FinancialAccount[]
@@ -173,18 +172,6 @@ model Transaction {
   @@index([userId, accountId])
   @@index([userId, categoryId])
   @@index([userId, legacyFinancialAccountId])
-}
-
-model PortfolioPosition {
-  id           Int      @id @default(autoincrement())
-  userId       Int
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  symbol       String
-  quantity     Decimal
-  buyPrice     Decimal
-  currentPrice Decimal
-  currency     String
-  category     String
 }
 
 model PortfolioTrade {

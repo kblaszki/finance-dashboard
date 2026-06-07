@@ -61,8 +61,8 @@ export function MarketDataBanner() {
         <button type="button" className="btn-secondary" onClick={() => void handleRefresh()} disabled={refreshing}>
           {refreshing ? 'Odświeżanie…' : 'Odśwież wyceny EOD'}
         </button>
-        <Link to="/portfolio" className="btn-secondary">
-          Przejdź do portfela
+        <Link to="/accounts" className="btn-secondary">
+          Przejdź do kont
         </Link>
       </div>
       {message && <p className="loading-state">{message}</p>}

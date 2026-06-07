@@ -70,16 +70,6 @@ export async function listCategoriesWithPaths(
   }));
 }
 
-export function expenseMatchesBudgetCategory(
-  expensePath: string,
-  budgetRootPath: string | null,
-): boolean {
-  if (!budgetRootPath) return true;
-  const root = budgetRootPath.split(" > ")[0]?.trim() || budgetRootPath;
-  const path = expensePath.trim();
-  return path === root || path.startsWith(`${root} > `);
-}
-
 export async function resolveExpenseCategoryPath(
   prisma: PrismaClient,
   userId: number,
