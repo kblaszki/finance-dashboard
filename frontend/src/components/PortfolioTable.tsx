@@ -65,7 +65,7 @@ export function PortfolioTable() {
       const data = await fetchPortfolio({ currency: displayCurrency, portfolioId: activePortfolioId })
       setPositions(data)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Błąd ładowania')
+      setError(e instanceof Error ? e.message : 'Failed to load')
     } finally {
       setLoading(false)
     }
@@ -74,11 +74,11 @@ export function PortfolioTable() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!activePortfolioId) {
-      setError('Wybierz portfel')
+      setError('Select a brokerage account')
       return
     }
     if (!form.symbol.trim() || form.quantity <= 0 || form.tradePrice <= 0 || !form.tradeDate) {
-      setError('Typ, symbol, ilość, data i cena transakcji muszą być poprawne')
+      setError('Side, symbol, quantity, date, and price must be valid')
       return
     }
     setError(null)
@@ -92,7 +92,7 @@ export function PortfolioTable() {
       setForm({ ...emptyForm, portfolioId: activePortfolioId })
       await load()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Nie udało się dodać pozycji')
+      setError(err instanceof Error ? err.message : 'Failed to add position')
     }
   }
 
@@ -103,11 +103,11 @@ export function PortfolioTable() {
     try {
       const response = await refreshPortfolioMarketData()
       setRefreshInfo(
-        `Odświeżono ${response.symbolsProcessed}/${response.requested} tickerów, punkty historii: ${response.rowsInserted}${response.errors.length ? `, błędy: ${response.errors.length}` : ''}`,
+        `Refreshed ${response.symbolsProcessed}/${response.requested} tickers, history points: ${response.rowsInserted}${response.errors.length ? `, errors: ${response.errors.length}` : ''}`,
       )
       await load()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Nie udało się odświeżyć wycen')
+      setError(err instanceof Error ? err.message : 'Failed to refresh prices')
     } finally {
       setRefreshingMarket(false)
     }
@@ -129,7 +129,7 @@ export function PortfolioTable() {
     <div className="card">
       <form className="form-grid" onSubmit={handleCreatePortfolio}>
         <label>
-          Aktywny portfel
+          Active account
           <select value={activePortfolioId ?? ''} onChange={(e) => setActivePortfolioId(Number(e.target.value))}>
             {portfolios.map((p) => (
               <option key={p.id} value={p.id}>{p.name} ({p.baseCurrency})</option>
@@ -137,46 +137,46 @@ export function PortfolioTable() {
           </select>
         </label>
         <label>
-          Saldo gotówki
+          Cash balance
           <input value={activePortfolio ? formatMoney(activePortfolio.cashBalance, activePortfolio.baseCurrency) : '—'} readOnly />
         </label>
         <label>
-          Nowy portfel
-          <input value={newPortfolioName} onChange={(e) => setNewPortfolioName(e.target.value)} placeholder="np. XTB" />
+          New account
+          <input value={newPortfolioName} onChange={(e) => setNewPortfolioName(e.target.value)} placeholder="e.g. XTB" />
         </label>
         <label>
-          Waluta portfela
+          Account currency
           <select value={newPortfolioCurrency} onChange={(e) => setNewPortfolioCurrency(e.target.value)}>
             {SUPPORTED_CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </label>
         <div className="form-actions">
-          <button type="submit" className="btn-secondary">Dodaj portfel</button>
+          <button type="submit" className="btn-secondary">Add account</button>
         </div>
       </form>
       <div className="row" style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-        <h2>Portfel inwestycyjny</h2>
+        <h2>Investment portfolio</h2>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           {activePortfolioId ? (
             <Link
               to={`/accounts/${activePortfolioId}`}
               className="btn-secondary"
             >
-              Szczegóły konta
+              Account details
             </Link>
           ) : null}
           <button type="button" className="btn-secondary" onClick={handleRefreshMarketData} disabled={refreshingMarket}>
-            {refreshingMarket ? 'Odświeżanie...' : 'Odśwież wyceny EOD'}
+            {refreshingMarket ? 'Refreshing…' : 'Refresh EOD prices'}
           </button>
         </div>
       </div>
 
       <form className="form-grid" onSubmit={handleSubmit}>
         <label>
-          Typ transakcji
+          Trade side
           <select value={form.side} onChange={(e) => setForm({ ...form, side: e.target.value as 'BUY' | 'SELL' })}>
-            <option value="BUY">Zakup</option>
-            <option value="SELL">Sprzedaż</option>
+            <option value="BUY">Buy</option>
+            <option value="SELL">Sell</option>
           </select>
         </label>
         <label>
@@ -185,11 +185,11 @@ export function PortfolioTable() {
             required
             value={form.symbol}
             onChange={(e) => setForm({ ...form, symbol: e.target.value })}
-            placeholder="np. AAPL"
+            placeholder="e.g. AAPL"
           />
         </label>
         <label>
-          Ilość
+          Quantity
           <input
             type="number"
             min={0.0001}
@@ -200,7 +200,7 @@ export function PortfolioTable() {
           />
         </label>
         <label>
-          Cena transakcji
+          Trade price
           <input
             type="number"
             min={0.01}
@@ -211,7 +211,7 @@ export function PortfolioTable() {
           />
         </label>
         <label>
-          Data transakcji
+          Trade date
           <input
             type="date"
             required
@@ -220,7 +220,7 @@ export function PortfolioTable() {
           />
         </label>
         <label>
-          Waluta
+          Currency
           <select
             value={form.currency}
             onChange={(e) => setForm({ ...form, currency: e.target.value })}
@@ -231,7 +231,7 @@ export function PortfolioTable() {
           </select>
         </label>
         <label>
-          Kategoria
+          Category
           <input
             value={form.category}
             onChange={(e) => setForm({ ...form, category: e.target.value })}
@@ -239,7 +239,7 @@ export function PortfolioTable() {
         </label>
         <div className="form-actions">
           <button type="submit" className="btn-primary">
-            Dodaj aktywo
+            Add asset
           </button>
         </div>
       </form>
@@ -248,9 +248,9 @@ export function PortfolioTable() {
       {refreshInfo && <p className="loading-state">{refreshInfo}</p>}
 
       {loading ? (
-        <p className="loading-state">Ładowanie...</p>
+        <p className="loading-state">Loading…</p>
       ) : positions.length === 0 ? (
-        <p className="empty-state">Brak pozycji w portfelu.</p>
+        <p className="empty-state">No positions in the portfolio.</p>
       ) : (
         <>
         <div className="table-wrap">
@@ -258,18 +258,18 @@ export function PortfolioTable() {
             <thead>
               <tr>
                 <th>Symbol</th>
-                <th>Transakcje</th>
-                <th>Ilość</th>
-                <th>Cena zakupu</th>
-                <th>Aktualna cena</th>
-                <th>Waluta</th>
-                <th>Koszt (wybrana)</th>
-                <th>Wartość (wybrana)</th>
-                <th>Zysk (wybrana)</th>
-                <th>Status danych</th>
-                <th>Data close</th>
-                <th>Kategoria</th>
-                <th>Analiza</th>
+                <th>Trades</th>
+                <th>Quantity</th>
+                <th>Buy price</th>
+                <th>Current price</th>
+                <th>Currency</th>
+                <th>Cost (selected)</th>
+                <th>Value (selected)</th>
+                <th>Profit (selected)</th>
+                <th>Data status</th>
+                <th>Close date</th>
+                <th>Category</th>
+                <th>Analysis</th>
               </tr>
             </thead>
             <tbody>
@@ -311,7 +311,7 @@ export function PortfolioTable() {
                       className="btn-secondary"
                       onClick={() => navigate(`/accounts/${activePortfolioId}`)}
                     >
-                      Analizuj
+                      Analyze
                     </button>
                   </td>
                 </tr>

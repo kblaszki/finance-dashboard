@@ -1,4 +1,4 @@
-export function formatMoney(value: number, currency: string, locale = 'pl-PL') {
+export function formatMoney(value: number, currency: string, locale = 'en-US') {
   const n = Number(value)
   const ccy = String(currency || '').toUpperCase()
 

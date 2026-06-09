@@ -11,8 +11,8 @@ import { SUPPORTED_CURRENCIES } from '../state/currency'
 import { formatMoney } from '../utils/format'
 
 const TYPE_LABELS: Record<ManagedAccountType, string> = {
-  BANK: 'Konto walutowe',
-  BROKERAGE: 'Konto maklerskie',
+  BANK: 'Bank account',
+  BROKERAGE: 'Brokerage account',
 }
 
 export function ManagedAccountsList() {
@@ -33,7 +33,7 @@ export function ManagedAccountsList() {
       const rows = await fetchManagedAccounts()
       setAccounts(rows)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Błąd ładowania')
+      setError(e instanceof Error ? e.message : 'Failed to load')
     }
   }
 
@@ -51,17 +51,17 @@ export function ManagedAccountsList() {
       setName('')
       await load()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Błąd zapisu')
+      setError(err instanceof Error ? err.message : 'Failed to save')
     }
   }
 
   async function handleDelete(id: number) {
-    if (!confirm('Usunąć konto?')) return
+    if (!confirm('Delete this account?')) return
     try {
       await deleteAccount(id)
       await load()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Błąd usuwania')
+      setError(err instanceof Error ? err.message : 'Failed to delete')
     }
   }
 
@@ -70,15 +70,15 @@ export function ManagedAccountsList() {
 
   function renderSection(_title: string, rows: ManagedAccount[]) {
     if (!rows.length) {
-      return <p className="muted">Brak kont w tej sekcji.</p>
+      return <p className="muted">No accounts in this section.</p>
     }
     return (
       <table className="data-table">
         <thead>
           <tr>
-            <th>Nazwa</th>
-            <th>Waluta</th>
-            <th>Saldo</th>
+            <th>Name</th>
+            <th>Currency</th>
+            <th>Balance</th>
             <th />
           </tr>
         </thead>
@@ -96,7 +96,7 @@ export function ManagedAccountsList() {
               </td>
               <td className="table-actions">
                 <button type="button" className="btn-link danger" onClick={() => void handleDelete(a.id)}>
-                  Usuń
+                  Delete
                 </button>
               </td>
             </tr>
@@ -111,13 +111,13 @@ export function ManagedAccountsList() {
       {error && <p className="error-banner">{error}</p>}
 
       <section className="card">
-        <h2>Nowe konto</h2>
+        <h2>New account</h2>
         <form className="inline-form" onSubmit={(e) => void handleCreate(e)}>
           <select value={formType} onChange={(e) => setFormType(e.target.value as ManagedAccountType)}>
-            <option value="BANK">Konto walutowe</option>
-            <option value="BROKERAGE">Konto maklerskie</option>
+            <option value="BANK">Bank account</option>
+            <option value="BROKERAGE">Brokerage account</option>
           </select>
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nazwa" required />
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" required />
           <select value={currency} onChange={(e) => setCurrency(e.target.value)}>
             {SUPPORTED_CURRENCIES.map((c) => (
               <option key={c} value={c}>
@@ -131,10 +131,10 @@ export function ManagedAccountsList() {
               step="0.01"
               value={openingBalance}
               onChange={(e) => setOpeningBalance(Number(e.target.value))}
-              placeholder="Saldo początkowe"
+              placeholder="Opening balance"
             />
           )}
-          <button type="submit">Dodaj</button>
+          <button type="submit">Add</button>
         </form>
       </section>
 

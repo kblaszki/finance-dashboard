@@ -25,7 +25,7 @@ export function AllPortfoliosTable() {
       const data = await fetchNetWorth(currency)
       setRows(data.portfolios)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Błąd ładowania')
+      setError(e instanceof Error ? e.message : 'Failed to load')
     } finally {
       setLoading(false)
     }
@@ -35,22 +35,22 @@ export function AllPortfoliosTable() {
 
   return (
     <div className="card">
-      <h2>Wszystkie konta maklerskie</h2>
+      <h2>All brokerage accounts</h2>
       {error && <p className="auth-error">{error}</p>}
       {loading ? (
-        <p className="loading-state">Ładowanie…</p>
+        <p className="loading-state">Loading…</p>
       ) : !rows.length ? (
-        <p className="empty-state">Brak portfeli. Dodaj konto na stronie Portfel.</p>
+        <p className="empty-state">No brokerage accounts. Add one on the Accounts page.</p>
       ) : (
         <>
           <div className="table-wrap">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Nazwa</th>
-                  <th>Gotówka</th>
-                  <th>Papiery</th>
-                  <th>Razem</th>
+                  <th>Name</th>
+                  <th>Cash</th>
+                  <th>Securities</th>
+                  <th>Total</th>
                   <th></th>
                 </tr>
               </thead>
@@ -66,7 +66,7 @@ export function AllPortfoliosTable() {
                         to={`/accounts/${r.portfolioId}`}
                         onClick={() => setActivePortfolioId(r.portfolioId)}
                       >
-                        Szczegóły
+                        Details
                       </Link>
                     </td>
                   </tr>
@@ -74,7 +74,7 @@ export function AllPortfoliosTable() {
               </tbody>
               <tfoot>
                 <tr>
-                  <th>Suma</th>
+                  <th>Total</th>
                   <th colSpan={2}></th>
                   <th>{formatMoney(total, currency)}</th>
                   <th></th>

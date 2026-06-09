@@ -37,7 +37,7 @@ export function PortfolioPositionAnalysis() {
       setData(rows)
       setTrades(symbolTrades)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Błąd ładowania danych')
+      setError(e instanceof Error ? e.message : 'Failed to load data')
     } finally {
       setLoading(false)
     }
@@ -48,7 +48,7 @@ export function PortfolioPositionAnalysis() {
   return (
     <div className="card">
       <div className="row" style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
-        <h2>Analiza pozycji: {symbol}</h2>
+        <h2>Position analysis: {symbol}</h2>
         <select value={method} onChange={(e) => setMethod(e.target.value as 'weighted' | 'fifo')}>
           <option value="weighted">Weighted Avg</option>
           <option value="fifo">FIFO</option>
@@ -57,15 +57,15 @@ export function PortfolioPositionAnalysis() {
 
       {latest && (
         <p className="loading-state">
-          Ostatni zysk: {formatMoney(latest.profitAbs, latest.currency)} ({latest.profitPct.toFixed(2)}%)
+          Latest profit: {formatMoney(latest.profitAbs, latest.currency)} ({latest.profitPct.toFixed(2)}%)
         </p>
       )}
 
       {error && <p className="auth-error">{error}</p>}
       {loading ? (
-        <p className="loading-state">Ładowanie...</p>
+        <p className="loading-state">Loading…</p>
       ) : !data.length ? (
-        <p className="empty-state">Brak danych historycznych.</p>
+        <p className="empty-state">No historical data.</p>
       ) : (
         <>
           <ResponsiveContainer width="100%" height={360}>
@@ -76,34 +76,34 @@ export function PortfolioPositionAnalysis() {
                 labelFormatter={(v) => new Date(String(v)).toLocaleDateString()}
                 formatter={(value: number | string | undefined, name: string | undefined) => {
                   const n = Number(value ?? 0)
-                  if (name === 'profitPct') return [`${n.toFixed(2)}%`, 'Zysk %']
-                  return [formatMoney(n, currency), name ?? 'Wartość']
+                  if (name === 'profitPct') return [`${n.toFixed(2)}%`, 'Profit %']
+                  return [formatMoney(n, currency), name ?? 'Value']
                 }}
               />
-              <Line type="monotone" dataKey="close" name="Cena close" dot={false} />
-              <Line type="monotone" dataKey="positionValue" name="Wartość pozycji" dot={false} />
-              <Line type="monotone" dataKey="costBasis" name="Koszt bazowy" dot={false} />
-              <Line type="monotone" dataKey="profitAbs" name="Zysk" dot={false} />
+              <Line type="monotone" dataKey="close" name="Close price" dot={false} />
+              <Line type="monotone" dataKey="positionValue" name="Position value" dot={false} />
+              <Line type="monotone" dataKey="costBasis" name="Cost basis" dot={false} />
+              <Line type="monotone" dataKey="profitAbs" name="Profit" dot={false} />
             </LineChart>
           </ResponsiveContainer>
-          <h3>Transakcje pozycji</h3>
+          <h3>Position trades</h3>
           <div className="table-wrap">
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Data</th>
-                  <th>Typ</th>
-                  <th>Ilość</th>
-                  <th>Cena</th>
-                  <th>Waluta</th>
-                  <th>Kategoria</th>
+                  <th>Date</th>
+                  <th>Side</th>
+                  <th>Quantity</th>
+                  <th>Price</th>
+                  <th>Currency</th>
+                  <th>Category</th>
                 </tr>
               </thead>
               <tbody>
                 {trades.map((t) => (
                   <tr key={t.id}>
                     <td>{new Date(t.tradeDate).toLocaleDateString()}</td>
-                    <td>{t.side === 'BUY' ? 'Zakup' : 'Sprzedaż'}</td>
+                    <td>{t.side === 'BUY' ? 'Buy' : 'Sell'}</td>
                     <td>{t.quantity}</td>
                     <td>{formatMoney(t.tradePrice, t.currency)}</td>
                     <td>{t.currency}</td>
@@ -118,4 +118,3 @@ export function PortfolioPositionAnalysis() {
     </div>
   )
 }
-

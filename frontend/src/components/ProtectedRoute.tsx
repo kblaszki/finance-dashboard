@@ -7,7 +7,7 @@ export function ProtectedRoute() {
   if (loading) {
     return (
       <div className="auth-page">
-        <p className="loading-state">Ładowanie…</p>
+        <p className="loading-state">Loading…</p>
       </div>
     );
   }

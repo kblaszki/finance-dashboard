@@ -17,7 +17,7 @@ export function DashboardPage() {
         <MarketDataBanner />
         <NetWorthSection />
         <section className="card">
-          <h2>Przepływy pieniężne (okres)</h2>
+          <h2>Cash flows (period)</h2>
           <KpiCards />
         </section>
         <PortfolioValueChart />

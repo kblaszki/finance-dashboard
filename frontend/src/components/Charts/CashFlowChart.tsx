@@ -50,15 +50,15 @@ export function CashFlowChart() {
   if (!data.length) {
     return (
       <div className="card">
-        <h2>Przepływy w czasie</h2>
-        <p className="empty-state">Brak danych w wybranym okresie.</p>
+        <h2>Cash flow over time</h2>
+        <p className="empty-state">No data in the selected period.</p>
       </div>
     )
   }
 
   return (
     <div className="card">
-      <h2>Przepływy w czasie</h2>
+      <h2>Cash flow over time</h2>
       <ResponsiveContainer width="100%" height={280}>
         <BarChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -69,8 +69,8 @@ export function CashFlowChart() {
             contentStyle={tooltipStyle}
           />
           <Legend />
-          <Bar dataKey="income" name="Przychody" fill="var(--chart-2)" />
-          <Bar dataKey="expenses" name="Wydatki" fill="var(--chart-1)" />
+          <Bar dataKey="income" name="Income" fill="var(--chart-2)" />
+          <Bar dataKey="expenses" name="Expenses" fill="var(--chart-1)" />
         </BarChart>
       </ResponsiveContainer>
     </div>

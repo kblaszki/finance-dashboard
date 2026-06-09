@@ -19,7 +19,7 @@ export function AppShell() {
             {user?.email}
           </span>
           <button type="button" className="theme-toggle" onClick={logout}>
-            Wyloguj
+            Log out
           </button>
         </div>
         <div className="sidebar-controls">
@@ -31,10 +31,10 @@ export function AppShell() {
             Dashboard
           </NavLink>
           <NavLink to="/accounts" className={navLinkClass}>
-            Konta
+            Accounts
           </NavLink>
           <NavLink to="/transactions" className={navLinkClass}>
-            Transakcje
+            Transactions
           </NavLink>
         </nav>
       </aside>

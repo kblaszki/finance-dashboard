@@ -6,12 +6,12 @@ function subNavClass({ isActive }: { isActive: boolean }) {
 
 export function TransactionsSubNav() {
   return (
-    <nav className="transactions-subnav" aria-label="Sekcje transakcji">
+    <nav className="transactions-subnav" aria-label="Transaction sections">
       <NavLink to="/transactions" end className={subNavClass}>
-        Lista
+        List
       </NavLink>
       <NavLink to="/transactions/categories" className={subNavClass}>
-        Kategorie
+        Categories
       </NavLink>
       <NavLink to="/transactions/import" className={subNavClass}>
         Import CSV

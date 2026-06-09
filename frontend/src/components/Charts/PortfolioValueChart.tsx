@@ -49,17 +49,17 @@ export function PortfolioValueChart() {
   if (!data.length) {
     return (
       <div className="card">
-        <h2>Majątek maklerski w czasie</h2>
-        <p className="empty-state">Brak danych w wybranym okresie.</p>
+        <h2>Brokerage value over time</h2>
+        <p className="empty-state">No data in the selected period.</p>
       </div>
     )
   }
 
   return (
     <div className="card">
-      <h2>Majątek maklerski w czasie</h2>
+      <h2>Brokerage value over time</h2>
       <p className="loading-state" style={{ marginBottom: '0.75rem' }}>
-        Suma wszystkich kont maklerskich (gotówka + wycena papierów wg historii cen).
+        Sum of all brokerage accounts (cash + securities valued from price history).
       </p>
       <ResponsiveContainer width="100%" height={280}>
         <AreaChart data={data}>
@@ -75,7 +75,7 @@ export function PortfolioValueChart() {
             type="monotone"
             dataKey="securitiesValue"
             stackId="1"
-            name="Papiery"
+            name="Securities"
             fill="var(--chart-2)"
             stroke="var(--chart-2)"
           />
@@ -83,7 +83,7 @@ export function PortfolioValueChart() {
             type="monotone"
             dataKey="cashValue"
             stackId="1"
-            name="Gotówka"
+            name="Cash"
             fill="var(--chart-3)"
             stroke="var(--chart-3)"
           />

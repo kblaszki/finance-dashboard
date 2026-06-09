@@ -48,15 +48,15 @@ export function AccountDetailPage() {
         setBankTxs(txs as typeof bankTxs)
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Błąd ładowania')
+      setError(e instanceof Error ? e.message : 'Failed to load')
     }
   }
 
   if (!account) {
     return (
       <div className="page">
-        <p className="muted">{error ?? 'Ładowanie…'}</p>
-        <Link to="/accounts">← Konta</Link>
+        <p className="muted">{error ?? 'Loading…'}</p>
+        <Link to="/accounts">← Accounts</Link>
       </div>
     )
   }
@@ -64,37 +64,37 @@ export function AccountDetailPage() {
   return (
     <div className="page">
       <p>
-        <Link to="/accounts">← Konta</Link>
+        <Link to="/accounts">← Accounts</Link>
       </p>
       <h1 className="page-title">{account.name}</h1>
       <p className="muted">
-        {account.type === 'BANK' ? 'Konto walutowe' : 'Konto maklerskie'} ·{' '}
+        {account.type === 'BANK' ? 'Bank account' : 'Brokerage account'} ·{' '}
         {account.balance != null ? formatMoney(account.balance, account.currency) : '—'}
       </p>
       {error && <p className="error-banner">{error}</p>}
 
       <section className="card">
-        <h2>Historia salda</h2>
+        <h2>Balance history</h2>
         <AccountBalanceChart points={history} currency={account.currency} />
       </section>
 
       <section className="card">
-        <h2>Operacje</h2>
+        <h2>Activity</h2>
         {account.type === 'BANK' ? (
           <table className="data-table">
             <thead>
               <tr>
-                <th>Data</th>
-                <th>Typ</th>
-                <th>Kategoria</th>
-                <th>Opis</th>
-                <th>Kwota</th>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Category</th>
+                <th>Description</th>
+                <th>Amount</th>
               </tr>
             </thead>
             <tbody>
               {bankTxs.map((t) => (
                 <tr key={t.id}>
-                  <td>{new Date(t.date).toLocaleDateString('pl-PL')}</td>
+                  <td>{new Date(t.date).toLocaleDateString('en-US')}</td>
                   <td>{t.type}</td>
                   <td>{t.category}</td>
                   <td>{t.description ?? '—'}</td>

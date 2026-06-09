@@ -3,7 +3,7 @@ import { CategoriesTable } from '../components/CategoriesTable'
 export function CategoriesPage() {
   return (
     <>
-      <h2 className="section-title">Kategorie</h2>
+      <h2 className="section-title">Categories</h2>
       <CategoriesTable />
     </>
   )

@@ -82,7 +82,7 @@ export function TransactionTable() {
       })
       setTransactions(data)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Błąd ładowania')
+      setError(e instanceof Error ? e.message : 'Failed to load')
     } finally {
       setLoading(false)
     }
@@ -91,15 +91,15 @@ export function TransactionTable() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (form.amount <= 0) {
-      setError('Kwota musi być > 0')
+      setError('Amount must be > 0')
       return
     }
     if (form.type === 'TRANSFER_TO_PORTFOLIO' && !form.portfolioId) {
-      setError('Dla transferu wybierz portfel docelowy')
+      setError('Select a target brokerage account for the transfer')
       return
     }
     if (form.type !== 'TRANSFER_TO_PORTFOLIO' && !form.categoryId && !form.category.trim()) {
-      setError('Wybierz kategorię')
+      setError('Select a category')
       return
     }
     setError(null)
@@ -114,7 +114,7 @@ export function TransactionTable() {
       setForm(emptyForm)
       await load()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Nie udało się dodać')
+      setError(err instanceof Error ? err.message : 'Failed to add')
     }
   }
 
@@ -132,7 +132,7 @@ export function TransactionTable() {
     e.preventDefault()
     if (editingId == null) return
     if (editForm.amount <= 0) {
-      setError('Kwota musi być > 0')
+      setError('Amount must be > 0')
       return
     }
     setError(null)
@@ -147,19 +147,19 @@ export function TransactionTable() {
       setEditingId(null)
       await load()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Nie udało się zapisać')
+      setError(err instanceof Error ? err.message : 'Failed to save')
     }
   }
 
   async function handleDelete(id: number) {
-    if (!window.confirm('Usunąć tę transakcję?')) return
+    if (!window.confirm('Delete this transaction?')) return
     setError(null)
     try {
       await deleteTransaction(id)
       if (editingId === id) setEditingId(null)
       await load()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Nie udało się usunąć')
+      setError(err instanceof Error ? err.message : 'Failed to delete')
     }
   }
 
@@ -167,20 +167,20 @@ export function TransactionTable() {
     <div className="card">
       <div className="transaction-filters">
         <label>
-          Typ
+          Type
           <select
             value={filterType}
             onChange={(e) => setFilterType(e.target.value as '' | TransactionType)}
           >
-            <option value="">Wszystkie</option>
-            <option value="INCOME">Przychód</option>
-            <option value="EXPENSE">Wydatek</option>
-            <option value="TRANSFER_TO_PORTFOLIO">Transfer do portfela</option>
+            <option value="">All</option>
+            <option value="INCOME">Income</option>
+            <option value="EXPENSE">Expense</option>
+            <option value="TRANSFER_TO_PORTFOLIO">Transfer to brokerage</option>
           </select>
         </label>
         {form.type === 'TRANSFER_TO_PORTFOLIO' && (
           <label>
-            Portfel docelowy
+            Target brokerage
             <select
               value={form.portfolioId ?? ''}
               onChange={(e) => {
@@ -189,7 +189,7 @@ export function TransactionTable() {
                 setForm({ ...form, portfolioId: id, currency: selected?.baseCurrency ?? form.currency })
               }}
             >
-              <option value="">Wybierz…</option>
+              <option value="">Select…</option>
               {portfolios.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
@@ -197,7 +197,7 @@ export function TransactionTable() {
           </label>
         )}
         <label>
-          Od
+          From
           <input
             type="date"
             value={filterFrom}
@@ -205,7 +205,7 @@ export function TransactionTable() {
           />
         </label>
         <label>
-          Do
+          To
           <input
             type="date"
             value={filterTo}
@@ -213,12 +213,12 @@ export function TransactionTable() {
           />
         </label>
         <label>
-          Konto bankowe
+          Bank account
           <select
             value={filterAccountId}
             onChange={(e) => setFilterAccountId(e.target.value)}
           >
-            <option value="">Wszystkie</option>
+            <option value="">All</option>
             {bankAccounts.map((a) => (
               <option key={a.id} value={a.id}>
                 {a.name}
@@ -230,23 +230,23 @@ export function TransactionTable() {
 
       <form className="form-grid" onSubmit={handleSubmit}>
         <label>
-          Typ
+          Type
           <select
             value={form.type}
             onChange={(e) =>
               setForm({ ...form, type: e.target.value as TransactionType })
             }
           >
-            <option value="INCOME">Przychód</option>
-            <option value="EXPENSE">Wydatek</option>
-            <option value="TRANSFER_TO_PORTFOLIO">Transfer do portfela</option>
+            <option value="INCOME">Income</option>
+            <option value="EXPENSE">Expense</option>
+            <option value="TRANSFER_TO_PORTFOLIO">Transfer to brokerage</option>
           </select>
         </label>
         {(form.type === 'INCOME' || form.type === 'EXPENSE') && (
           <label>
-            Konto bankowe
+            Bank account
             {bankAccounts.length > 0 && !form.accountId && (
-              <span className="field-warning" title="Przypisz transakcję do konta bankowego, aby saldo było poprawne">
+              <span className="field-warning" title="Assign the transaction to a bank account for correct balance">
                 ⚠
               </span>
             )}
@@ -259,7 +259,7 @@ export function TransactionTable() {
                 })
               }
             >
-              <option value="">— brak —</option>
+              <option value="">— none —</option>
               {bankAccounts.map((a) => (
                 <option key={a.id} value={a.id}>
                   {a.name}
@@ -270,7 +270,7 @@ export function TransactionTable() {
         )}
         {form.type === 'TRANSFER_TO_PORTFOLIO' && (
           <label>
-            Portfel docelowy
+            Target brokerage
             <select
               value={form.portfolioId ?? ''}
               onChange={(e) => {
@@ -283,7 +283,7 @@ export function TransactionTable() {
                 })
               }}
             >
-              <option value="">Wybierz…</option>
+              <option value="">Select…</option>
               {portfolios.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
@@ -293,7 +293,7 @@ export function TransactionTable() {
           </label>
         )}
         <label>
-          Kwota
+          Amount
           <input
             type="number"
             min={0.01}
@@ -304,7 +304,7 @@ export function TransactionTable() {
           />
         </label>
         <label>
-          Waluta
+          Currency
           <select
             value={form.currency}
             onChange={(e) => setForm({ ...form, currency: e.target.value })}
@@ -318,7 +318,7 @@ export function TransactionTable() {
         </label>
         {form.type !== 'TRANSFER_TO_PORTFOLIO' && (
           <label>
-            Kategoria
+            Category
             <select
               required
               value={form.categoryId ?? ''}
@@ -333,7 +333,7 @@ export function TransactionTable() {
                 })
               }}
             >
-              <option value="">Wybierz…</option>
+              <option value="">Select…</option>
               {(form.type === 'INCOME' ? incomeCategories : expenseCategories).map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.path}
@@ -343,7 +343,7 @@ export function TransactionTable() {
           </label>
         )}
         <label>
-          Data
+          Date
           <input
             type="date"
             required
@@ -352,7 +352,7 @@ export function TransactionTable() {
           />
         </label>
         <label className="form-full-width">
-          Opis
+          Description
           <input
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -360,7 +360,7 @@ export function TransactionTable() {
         </label>
         <div className="form-actions">
           <button type="submit" className="btn-primary">
-            Dodaj transakcję
+            Add transaction
           </button>
         </div>
       </form>
@@ -368,19 +368,19 @@ export function TransactionTable() {
       {error && <p className="auth-error">{error}</p>}
 
       {loading ? (
-        <p className="loading-state">Ładowanie...</p>
+        <p className="loading-state">Loading…</p>
       ) : (
         <div className="table-wrap">
           <table className="data-table">
             <thead>
               <tr>
-                <th>Data</th>
-                <th>Typ</th>
-                <th>Kategoria</th>
-                <th>Kwota</th>
-                <th>Waluta</th>
-                <th>Kwota (wybrana)</th>
-                <th>Opis</th>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Category</th>
+                <th>Amount</th>
+                <th>Currency</th>
+                <th>Amount (selected)</th>
+                <th>Description</th>
                 <th></th>
               </tr>
             </thead>
@@ -391,7 +391,7 @@ export function TransactionTable() {
                     <td colSpan={8}>
                       <form className="form-grid" onSubmit={saveEdit}>
                         <label>
-                          Typ
+                          Type
                           <select
                             value={editForm.type}
                             onChange={(e) =>
@@ -401,12 +401,12 @@ export function TransactionTable() {
                               })
                             }
                           >
-                            <option value="INCOME">Przychód</option>
-                            <option value="EXPENSE">Wydatek</option>
+                            <option value="INCOME">Income</option>
+                            <option value="EXPENSE">Expense</option>
                           </select>
                         </label>
                         <label>
-                          Kwota
+                          Amount
                           <input
                             type="number"
                             min={0.01}
@@ -422,7 +422,7 @@ export function TransactionTable() {
                           />
                         </label>
                         <label>
-                          Waluta
+                          Currency
                           <select
                             value={editForm.currency}
                             onChange={(e) =>
@@ -437,7 +437,7 @@ export function TransactionTable() {
                           </select>
                         </label>
                         <label>
-                          Kategoria
+                          Category
                           <input
                             required
                             value={editForm.category}
@@ -447,7 +447,7 @@ export function TransactionTable() {
                           />
                         </label>
                         <label>
-                          Data
+                          Date
                           <input
                             type="date"
                             required
@@ -458,7 +458,7 @@ export function TransactionTable() {
                           />
                         </label>
                         <label className="form-full-width">
-                          Opis
+                          Description
                           <input
                             value={editForm.description}
                             onChange={(e) =>
@@ -468,10 +468,10 @@ export function TransactionTable() {
                         </label>
                         <div className="form-actions">
                           <button type="button" className="btn-secondary" onClick={cancelEdit}>
-                            Anuluj
+                            Cancel
                           </button>
                           <button type="submit" className="btn-primary">
-                            Zapisz
+                            Save
                           </button>
                         </div>
                       </form>
@@ -480,7 +480,7 @@ export function TransactionTable() {
                 ) : (
                   <tr key={t.id}>
                     <td>{new Date(t.date).toLocaleDateString()}</td>
-                    <td>{t.type === 'INCOME' ? 'Przychód' : t.type === 'EXPENSE' ? 'Wydatek' : 'Transfer do portfela'}</td>
+                    <td>{t.type === 'INCOME' ? 'Income' : t.type === 'EXPENSE' ? 'Expense' : 'Transfer to brokerage'}</td>
                     <td>
                       {t.category}
                       {(t.type === 'INCOME' || t.type === 'EXPENSE') &&
@@ -488,7 +488,7 @@ export function TransactionTable() {
                         !t.accountId && (
                           <span
                             className="field-warning"
-                            title="Brak konta bankowego — saldo kont nie uwzględnia tej transakcji"
+                            title="No bank account — account balances exclude this transaction"
                           >
                             {' '}
                             ⚠
@@ -509,14 +509,14 @@ export function TransactionTable() {
                         className="btn-secondary"
                         onClick={() => startEdit(t)}
                       >
-                        Edytuj
+                        Edit
                       </button>{' '}
                       <button
                         type="button"
                         className="btn-danger"
                         onClick={() => void handleDelete(t.id)}
                       >
-                        Usuń
+                        Delete
                       </button>
                     </td>
                   </tr>

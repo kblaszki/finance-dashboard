@@ -16,7 +16,7 @@ export function LoginPage() {
     try {
       await login(email, password);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Logowanie nie powiodło się");
+      setError(err instanceof Error ? err.message : "Login failed");
     } finally {
       setSubmitting(false);
     }
@@ -25,7 +25,7 @@ export function LoginPage() {
   return (
     <div className="auth-page">
       <div className="auth-card card">
-        <h1 className="page-title">Logowanie</h1>
+        <h1 className="page-title">Log in</h1>
         <form className="auth-form" onSubmit={handleSubmit}>
           <label>
             Email
@@ -38,7 +38,7 @@ export function LoginPage() {
             />
           </label>
           <label>
-            Hasło
+            Password
             <input
               type="password"
               autoComplete="current-password"
@@ -50,11 +50,11 @@ export function LoginPage() {
           </label>
           {error && <p className="auth-error">{error}</p>}
           <button type="submit" className="btn-primary" disabled={submitting}>
-            {submitting ? "Logowanie…" : "Zaloguj się"}
+            {submitting ? "Logging in…" : "Log in"}
           </button>
         </form>
         <p className="auth-switch">
-          Nie masz konta? <Link to="/register">Zarejestruj się</Link>
+          Don&apos;t have an account? <Link to="/register">Sign up</Link>
         </p>
       </div>
     </div>

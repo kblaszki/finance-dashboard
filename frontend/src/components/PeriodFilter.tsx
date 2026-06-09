@@ -2,11 +2,11 @@ import type { PeriodPreset } from "../state/period";
 import { usePeriod } from "../state/period";
 
 const PRESET_LABELS: { value: PeriodPreset; label: string }[] = [
-  { value: "current_month", label: "Bieżący miesiąc" },
-  { value: "prev_month", label: "Poprzedni miesiąc" },
-  { value: "current_quarter", label: "Bieżący kwartał" },
-  { value: "current_year", label: "Bieżący rok" },
-  { value: "custom", label: "Własny zakres" },
+  { value: "current_month", label: "Current month" },
+  { value: "prev_month", label: "Previous month" },
+  { value: "current_quarter", label: "Current quarter" },
+  { value: "current_year", label: "Current year" },
+  { value: "custom", label: "Custom range" },
 ];
 
 export function PeriodFilter() {
@@ -14,7 +14,7 @@ export function PeriodFilter() {
 
   return (
     <div className="card period-filter">
-      <h2>Okres</h2>
+      <h2>Period</h2>
       <div className="period-filter-row">
         <label>
           Preset
@@ -32,7 +32,7 @@ export function PeriodFilter() {
         {preset === "custom" && (
           <>
             <label>
-              Od
+              From
               <input
                 type="date"
                 value={range.from}
@@ -42,7 +42,7 @@ export function PeriodFilter() {
               />
             </label>
             <label>
-              Do
+              To
               <input
                 type="date"
                 value={range.to}

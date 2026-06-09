@@ -17,11 +17,11 @@ type Props = {
 
 export function AccountBalanceChart({ points, currency }: Props) {
   if (!points.length) {
-    return <p className="muted">Brak historii salda do wyświetlenia.</p>
+    return <p className="muted">No balance history to display.</p>
   }
 
   const data = points.map((p) => ({
-    date: new Date(p.date).toLocaleDateString('pl-PL'),
+    date: new Date(p.date).toLocaleDateString('en-US'),
     balance: p.balance,
   }))
 

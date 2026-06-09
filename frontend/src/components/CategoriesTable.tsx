@@ -23,7 +23,7 @@ export function CategoriesTable() {
     try {
       setCategories(await fetchCategories(kind))
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Błąd ładowania')
+      setError(e instanceof Error ? e.message : 'Failed to load')
     }
   }
 
@@ -44,28 +44,28 @@ export function CategoriesTable() {
     <div className="card">
       <div className="transaction-filters">
         <label>
-          Rodzaj
+          Kind
           <select value={kind} onChange={(e) => setKind(e.target.value as CategoryKind)}>
-            <option value="EXPENSE">Wydatki</option>
-            <option value="INCOME">Przychody</option>
+            <option value="EXPENSE">Expenses</option>
+            <option value="INCOME">Income</option>
           </select>
         </label>
       </div>
 
       <form className="form-grid" onSubmit={handleSubmit}>
         <label>
-          Nazwa
+          Name
           <input required value={name} onChange={(e) => setName(e.target.value)} />
         </label>
         <label>
-          Kategoria nadrzędna
+          Parent category
           <select
             value={parentId}
             onChange={(e) =>
               setParentId(e.target.value === '' ? '' : Number(e.target.value))
             }
           >
-            <option value="">— brak —</option>
+            <option value="">— none —</option>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.path}
@@ -75,7 +75,7 @@ export function CategoriesTable() {
         </label>
         <div className="form-actions">
           <button type="submit" className="btn-primary">
-            Dodaj kategorię
+            Add category
           </button>
         </div>
       </form>
@@ -92,7 +92,7 @@ export function CategoriesTable() {
                 void deleteCategory(c.id).then(load)
               }}
             >
-              Usuń
+              Delete
             </button>
           </li>
         ))}

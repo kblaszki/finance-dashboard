@@ -60,15 +60,15 @@ export function ExpensesByCategoryChart() {
   if (!data.length) {
     return (
       <div className="card">
-        <h2>Wydatki według kategorii</h2>
-        <p className="empty-state">Brak danych o wydatkach w wybranym okresie.</p>
+        <h2>Expenses by category</h2>
+        <p className="empty-state">No expense data in the selected period.</p>
       </div>
     )
   }
 
   return (
     <div className="card">
-      <h2>Wydatki według kategorii</h2>
+      <h2>Expenses by category</h2>
       <ResponsiveContainer width="100%" height={260}>
         <PieChart>
           <Pie

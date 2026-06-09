@@ -13,11 +13,11 @@ import { SUPPORTED_CURRENCIES } from '../state/currency'
 import { formatMoney } from '../utils/format'
 
 const ACCOUNT_TYPES: { value: AccountType; label: string }[] = [
-  { value: 'BANK', label: 'Konto bankowe' },
-  { value: 'REAL_ESTATE', label: 'Nieruchomość' },
-  { value: 'CRYPTO', label: 'Kryptowaluty' },
-  { value: 'LIABILITY', label: 'Zobowiązanie' },
-  { value: 'BONDS', label: 'Obligacje' },
+  { value: 'BANK', label: 'Bank account' },
+  { value: 'REAL_ESTATE', label: 'Real estate' },
+  { value: 'CRYPTO', label: 'Crypto' },
+  { value: 'LIABILITY', label: 'Liability' },
+  { value: 'BONDS', label: 'Bonds' },
 ]
 
 const TYPE_ORDER: Record<AccountType, number> = {
@@ -70,11 +70,11 @@ export function AccountsTable() {
         const oa = TYPE_ORDER[a.type] ?? 99
         const ob = TYPE_ORDER[b.type] ?? 99
         if (oa !== ob) return oa - ob
-        return a.name.localeCompare(b.name, 'pl')
+        return a.name.localeCompare(b.name, 'en')
       })
       setAccounts(rows)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Błąd ładowania')
+      setError(e instanceof Error ? e.message : 'Failed to load')
     }
   }
 
@@ -100,7 +100,7 @@ export function AccountsTable() {
       setForm(emptyForm)
       await load()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Nie udało się dodać konta')
+      setError(err instanceof Error ? err.message : 'Failed to add account')
     }
   }
 
@@ -114,7 +114,7 @@ export function AccountsTable() {
   }
 
   async function handleDelete(id: number) {
-    if (!window.confirm('Usunąć konto?')) return
+    if (!window.confirm('Delete this account?')) return
     await deleteAccount(id)
     await load()
   }
@@ -128,7 +128,7 @@ export function AccountsTable() {
     <div className="card">
       <form className="form-grid" onSubmit={handleSubmit}>
         <label>
-          Typ
+          Type
           <select
             value={form.type}
             onChange={(e) =>
@@ -143,7 +143,7 @@ export function AccountsTable() {
           </select>
         </label>
         <label>
-          Nazwa
+          Name
           <input
             required
             value={form.name}
@@ -151,7 +151,7 @@ export function AccountsTable() {
           />
         </label>
         <label>
-          Waluta
+          Currency
           <select
             value={form.currency}
             onChange={(e) => setForm({ ...form, currency: e.target.value })}
@@ -165,7 +165,7 @@ export function AccountsTable() {
         </label>
         {form.type === 'BANK' ? (
           <label>
-            Saldo początkowe
+            Opening balance
             <input
               type="number"
               step="0.01"
@@ -177,7 +177,7 @@ export function AccountsTable() {
           </label>
         ) : form.type !== 'BONDS' ? (
           <label>
-            Wartość / saldo
+            Value / balance
             <input
               type="number"
               step="0.01"
@@ -190,7 +190,7 @@ export function AccountsTable() {
         ) : null}
         <div className="form-actions">
           <button type="submit" className="btn-primary">
-            Dodaj konto
+            Add account
           </button>
         </div>
       </form>
@@ -201,9 +201,9 @@ export function AccountsTable() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Nazwa</th>
-              <th>Typ</th>
-              <th>Wartość / saldo</th>
+              <th>Name</th>
+              <th>Type</th>
+              <th>Value / balance</th>
               <th></th>
             </tr>
           </thead>
@@ -231,11 +231,11 @@ export function AccountsTable() {
                 <td>
                   {a.type === 'BONDS' && (
                     <button type="button" onClick={() => setBondAccountId(a.id)}>
-                      Obligacje
+                      Bonds
                     </button>
                   )}
                   <button type="button" onClick={() => void handleDelete(a.id)}>
-                    Usuń
+                    Delete
                   </button>
                 </td>
               </tr>
@@ -246,17 +246,17 @@ export function AccountsTable() {
 
       {bondAccountId && (
         <section style={{ marginTop: '1.5rem' }}>
-          <h3>Pozycje obligacji</h3>
+          <h3>Bond holdings</h3>
           <form className="form-grid" onSubmit={handleBondSubmit}>
             <label>
-              Seria
+              Series
               <input
                 value={bondForm.series}
                 onChange={(e) => setBondForm({ ...bondForm, series: e.target.value })}
               />
             </label>
             <label>
-              Nominał
+              Nominal
               <input
                 type="number"
                 min={0.01}
@@ -267,7 +267,7 @@ export function AccountsTable() {
               />
             </label>
             <label>
-              Data zakupu
+              Purchase date
               <input
                 type="date"
                 value={bondForm.purchaseDate}
@@ -278,7 +278,7 @@ export function AccountsTable() {
             </label>
             <div className="form-actions">
               <button type="submit" className="btn-primary">
-                Dodaj obligację
+                Add bond
               </button>
             </div>
           </form>
@@ -294,7 +294,7 @@ export function AccountsTable() {
                     void load()
                   }}
                 >
-                  Usuń
+                  Delete
                 </button>
               </li>
             ))}

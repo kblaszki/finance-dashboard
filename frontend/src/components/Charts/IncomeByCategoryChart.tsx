@@ -60,15 +60,15 @@ export function IncomeByCategoryChart() {
   if (!data.length) {
     return (
       <div className="card">
-        <h2>Przychody według kategorii</h2>
-        <p className="empty-state">Brak danych o przychodach w wybranym okresie.</p>
+        <h2>Income by category</h2>
+        <p className="empty-state">No income data in the selected period.</p>
       </div>
     )
   }
 
   return (
     <div className="card">
-      <h2>Przychody według kategorii</h2>
+      <h2>Income by category</h2>
       <ResponsiveContainer width="100%" height={260}>
         <PieChart>
           <Pie

@@ -79,7 +79,7 @@ export function CsvImportForm() {
 
   async function handleImport() {
     if (!accountId) {
-      setMessage('Wybierz konto bankowe')
+      setMessage('Select a bank account')
       return
     }
     setMessage(null)
@@ -96,20 +96,20 @@ export function CsvImportForm() {
         categoryId: categoryId === '' ? undefined : Number(categoryId),
       })
       const skippedPart =
-        result.skipped > 0 ? `, pominięto ${result.skipped} duplikatów` : ''
-      setMessage(`Zaimportowano ${result.imported} transakcji${skippedPart}`)
+        result.skipped > 0 ? `, skipped ${result.skipped} duplicates` : ''
+      setMessage(`Imported ${result.imported} transactions${skippedPart}`)
       setPreview([])
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : 'Import nie powiódł się')
+      setMessage(e instanceof Error ? e.message : 'Import failed')
     }
   }
 
   return (
     <>
       <div className="card">
-        <h2>Import bankowy (CSV)</h2>
+        <h2>Bank import (CSV)</h2>
         <label className="form-full-width">
-          Plik CSV (wklej zawartość)
+          CSV file (paste contents)
           <textarea
             rows={8}
             value={csvText}
@@ -120,12 +120,12 @@ export function CsvImportForm() {
 
         <div className="form-grid">
           <label>
-            Szablon
+            Template
             <select
               value={presetId}
               onChange={(e) => handlePresetChange(e.target.value)}
             >
-              <option value="">Własne mapowanie</option>
+              <option value="">Custom mapping</option>
               {presets.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.label}
@@ -134,12 +134,12 @@ export function CsvImportForm() {
             </select>
           </label>
           <label>
-            Konto bankowe
+            Bank account
             <select
               value={accountId}
               onChange={(e) => setAccountId(e.target.value === '' ? '' : Number(e.target.value))}
             >
-              <option value="">Wybierz…</option>
+              <option value="">Select…</option>
               {accounts.map((a) => (
                 <option key={a.id} value={a.id}>
                   {a.name}
@@ -148,14 +148,14 @@ export function CsvImportForm() {
             </select>
           </label>
           <label>
-            Kategoria (opcjonalnie)
+            Category (optional)
             <select
               value={categoryId}
               onChange={(e) =>
                 setCategoryId(e.target.value === '' ? '' : Number(e.target.value))
               }
             >
-              <option value="">— domyślna —</option>
+              <option value="">— default —</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.path}
@@ -164,43 +164,43 @@ export function CsvImportForm() {
             </select>
           </label>
           <label>
-            Kolumna daty
+            Date column
             <input value={dateColumn} onChange={(e) => setDateColumn(e.target.value)} />
           </label>
           <label>
-            Kolumna kwoty
+            Amount column
             <input value={amountColumn} onChange={(e) => setAmountColumn(e.target.value)} />
           </label>
           <label>
-            Kolumna opisu
+            Description column
             <input
               value={descriptionColumn}
               onChange={(e) => setDescriptionColumn(e.target.value)}
             />
           </label>
           <label>
-            Kolumna typu (opcjonalnie)
+            Type column (optional)
             <input value={typeColumn} onChange={(e) => setTypeColumn(e.target.value)} />
           </label>
         </div>
 
         <div className="form-actions">
           <button type="button" className="btn-primary" onClick={() => void handlePreview()}>
-            Podgląd
+            Preview
           </button>
           <button type="button" onClick={() => void handleImport()}>
-            Importuj
+            Import
           </button>
         </div>
 
         {headers.length > 0 && (
-          <p className="loading-state">Kolumny w pliku: {headers.join(', ')}</p>
+          <p className="loading-state">Columns in file: {headers.join(', ')}</p>
         )}
         {totalRows > 0 && (
           <p className="loading-state">
-            Wierszy: {totalRows} · przychody: {incomeSum.toFixed(2)} · wydatki:{' '}
+            Rows: {totalRows} · income: {incomeSum.toFixed(2)} · expenses:{' '}
             {expenseSum.toFixed(2)}
-            {totalRows > preview.length && ` (podgląd: ${preview.length})`}
+            {totalRows > preview.length && ` (preview: ${preview.length})`}
           </p>
         )}
         {errors.length > 0 && (
@@ -217,11 +217,11 @@ export function CsvImportForm() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Linia</th>
-                  <th>Data</th>
-                  <th>Typ</th>
-                  <th>Kwota</th>
-                  <th>Opis</th>
+                  <th>Line</th>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Description</th>
                 </tr>
               </thead>
               <tbody>

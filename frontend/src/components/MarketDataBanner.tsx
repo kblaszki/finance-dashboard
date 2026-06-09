@@ -33,13 +33,13 @@ export function MarketDataBanner() {
     try {
       const result = await refreshPortfolioMarketData()
       setMessage(
-        `Odświeżono ${result.symbolsProcessed}/${result.requested} symboli${
-          result.errors.length ? ` (${result.errors.length} błędów)` : ''
+        `Refreshed ${result.symbolsProcessed}/${result.requested} symbols${
+          result.errors.length ? ` (${result.errors.length} errors)` : ''
         }`,
       )
       await load()
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : 'Nie udało się odświeżyć danych')
+      setMessage(e instanceof Error ? e.message : 'Failed to refresh market data')
     } finally {
       setRefreshing(false)
     }
@@ -52,17 +52,17 @@ export function MarketDataBanner() {
     <div className="market-data-banner" role="status">
       <p>
         {staleCount > 0
-          ? `Część pozycji ma nieświeże dane rynkowe (${staleCount}${
-              totalCount ? ` z ${totalCount}` : ''
-            }). Wycena portfela może być niedokładna.`
-          : `Brak wyceny dla części pozycji (${pricedCount}/${totalCount} wycenionych).`}
+          ? `Some positions have stale market data (${staleCount}${
+              totalCount ? ` of ${totalCount}` : ''
+            }). Portfolio valuation may be inaccurate.`
+          : `Some positions are not priced (${pricedCount}/${totalCount} priced).`}
       </p>
       <div className="market-data-banner-actions">
         <button type="button" className="btn-secondary" onClick={() => void handleRefresh()} disabled={refreshing}>
-          {refreshing ? 'Odświeżanie…' : 'Odśwież wyceny EOD'}
+          {refreshing ? 'Refreshing…' : 'Refresh EOD prices'}
         </button>
         <Link to="/accounts" className="btn-secondary">
-          Przejdź do kont
+          Go to accounts
         </Link>
       </div>
       {message && <p className="loading-state">{message}</p>}

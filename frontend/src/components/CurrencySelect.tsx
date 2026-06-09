@@ -6,7 +6,7 @@ export function CurrencySelect() {
   return (
     <div className="currency-select">
       <label>
-        Waluta
+        Currency
         <select
           value={currency}
           onChange={(e) => setCurrency(e.target.value as (typeof SUPPORTED_CURRENCIES)[number])}

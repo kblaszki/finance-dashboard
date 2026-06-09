@@ -69,7 +69,7 @@ export function PortfolioTradesTable(props: { fixedPortfolioId?: number }) {
       const rows = await fetchPortfolios()
       setPortfolios(rows)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Błąd ładowania')
+      setError(e instanceof Error ? e.message : 'Failed to load')
     } finally {
       setLoading(false)
     }
@@ -90,7 +90,7 @@ export function PortfolioTradesTable(props: { fixedPortfolioId?: number }) {
     e.preventDefault()
     if (editingId == null || !editForm || !portfolioId) return
     if (editForm.quantity <= 0 || editForm.tradePrice <= 0 || !editForm.symbol.trim()) {
-      setError('Symbol, ilość i cena muszą być poprawne')
+      setError('Symbol, quantity, and price must be valid')
       return
     }
     setError(null)
@@ -109,12 +109,12 @@ export function PortfolioTradesTable(props: { fixedPortfolioId?: number }) {
       cancelEdit()
       await load(portfolioId)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Nie udało się zapisać')
+      setError(err instanceof Error ? err.message : 'Failed to save')
     }
   }
 
   async function handleDelete(id: number) {
-    if (!window.confirm('Usunąć tę transakcję? Saldo gotówki portfela zostanie przeliczone.')) return
+    if (!window.confirm('Delete this trade? Portfolio cash balance will be recalculated.')) return
     if (!portfolioId) return
     setError(null)
     try {
@@ -122,7 +122,7 @@ export function PortfolioTradesTable(props: { fixedPortfolioId?: number }) {
       if (editingId === id) cancelEdit()
       await load(portfolioId)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Nie udało się usunąć')
+      setError(err instanceof Error ? err.message : 'Failed to delete')
     }
   }
 
@@ -131,20 +131,20 @@ export function PortfolioTradesTable(props: { fixedPortfolioId?: number }) {
       {!props.fixedPortfolioId && (
         <>
           <div className="row" style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-            <h2>Transakcje papierów wartościowych</h2>
+            <h2>Securities trades</h2>
             {portfolioId ? (
               <Link to="/accounts" className="btn-secondary">
-                Konta maklerskie
+                Brokerage accounts
               </Link>
             ) : null}
           </div>
           <label>
-            Portfel
+            Brokerage account
             <select
               value={portfolioId || ''}
               onChange={(e) => setActivePortfolioId(Number(e.target.value))}
             >
-              <option value="">Wybierz…</option>
+              <option value="">Select…</option>
               {portfolios.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name} ({p.baseCurrency})
@@ -156,20 +156,20 @@ export function PortfolioTradesTable(props: { fixedPortfolioId?: number }) {
       )}
       {activePortfolio && (
         <p className="loading-state">
-          Saldo gotówki: {formatMoney(activePortfolio.cashBalance, activePortfolio.baseCurrency)}
+          Cash balance: {formatMoney(activePortfolio.cashBalance, activePortfolio.baseCurrency)}
         </p>
       )}
 
       {error && <p className="auth-error">{error}</p>}
       {loading ? (
-        <p className="loading-state">Ładowanie…</p>
+        <p className="loading-state">Loading…</p>
       ) : !portfolioId ? (
-        <p className="empty-state">Wybierz portfel.</p>
+        <p className="empty-state">Select a brokerage account.</p>
       ) : !trades.length ? (
         <p className="empty-state">
-          Brak transakcji.{' '}
+          No trades.{' '}
           <Link to={portfolioId ? `/accounts/${portfolioId}` : '/accounts'}>
-            Dodaj pierwszą transakcję na stronie konta
+            Add the first trade on the account page
           </Link>
           .
         </p>
@@ -178,13 +178,13 @@ export function PortfolioTradesTable(props: { fixedPortfolioId?: number }) {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Data</th>
-                <th>Strona</th>
+                <th>Date</th>
+                <th>Side</th>
                 <th>Symbol</th>
-                <th>Ilość</th>
-                <th>Cena</th>
-                <th>Wartość</th>
-                <th>Kategoria</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Value</th>
+                <th>Category</th>
                 <th></th>
               </tr>
             </thead>
@@ -195,7 +195,7 @@ export function PortfolioTradesTable(props: { fixedPortfolioId?: number }) {
                     <td colSpan={8}>
                       <form className="form-grid" onSubmit={saveEdit}>
                         <label>
-                          Data
+                          Date
                           <input
                             type="date"
                             required
@@ -204,7 +204,7 @@ export function PortfolioTradesTable(props: { fixedPortfolioId?: number }) {
                           />
                         </label>
                         <label>
-                          Strona
+                          Side
                           <select
                             value={editForm.side}
                             onChange={(e) =>
@@ -224,7 +224,7 @@ export function PortfolioTradesTable(props: { fixedPortfolioId?: number }) {
                           />
                         </label>
                         <label>
-                          Ilość
+                          Quantity
                           <input
                             type="number"
                             min={0.0001}
@@ -237,7 +237,7 @@ export function PortfolioTradesTable(props: { fixedPortfolioId?: number }) {
                           />
                         </label>
                         <label>
-                          Cena
+                          Price
                           <input
                             type="number"
                             min={0.01}
@@ -250,15 +250,15 @@ export function PortfolioTradesTable(props: { fixedPortfolioId?: number }) {
                           />
                         </label>
                         <label>
-                          Waluta
+                          Currency
                           <input
                             value={editForm.currency}
                             readOnly
-                            title="Waluta musi odpowiadać walucie portfela"
+                            title="Currency must match the brokerage account"
                           />
                         </label>
                         <label>
-                          Kategoria
+                          Category
                           <input
                             value={editForm.category}
                             onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
@@ -266,10 +266,10 @@ export function PortfolioTradesTable(props: { fixedPortfolioId?: number }) {
                         </label>
                         <div className="form-actions form-full-width">
                           <button type="submit" className="btn-primary">
-                            Zapisz
+                            Save
                           </button>
                           <button type="button" onClick={cancelEdit}>
-                            Anuluj
+                            Cancel
                           </button>
                         </div>
                       </form>
@@ -286,10 +286,10 @@ export function PortfolioTradesTable(props: { fixedPortfolioId?: number }) {
                     <td>{t.category}</td>
                     <td>
                       <button type="button" className="btn-secondary" onClick={() => startEdit(t)}>
-                        Edytuj
+                        Edit
                       </button>{' '}
                       <button type="button" onClick={() => void handleDelete(t.id)}>
-                        Usuń
+                        Delete
                       </button>
                     </td>
                   </tr>

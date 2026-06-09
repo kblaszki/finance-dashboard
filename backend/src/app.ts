@@ -979,7 +979,7 @@ app.post("/api/portfolio", requireAuth, async (req: AuthedRequest, res) => {
       const sellCheck = validateSellQuantity(existingTrades, toNumber(quantity));
       if (!sellCheck.ok) {
         return res.status(400).json({
-          error: `Sprzedaż przekracza posiadaną ilość (dostępne: ${sellCheck.available})`,
+          error: `Sell quantity exceeds holdings (available: ${sellCheck.available})`,
           availableQuantity: sellCheck.available,
         });
       }
@@ -1092,7 +1092,7 @@ app.put("/api/portfolio/:id", requireAuth, async (req: AuthedRequest, res) => {
       const sellCheck = validateSellQuantity(peerTrades, nextQuantity);
       if (!sellCheck.ok) {
         return res.status(400).json({
-          error: `Sprzedaż przekracza posiadaną ilość (dostępne: ${sellCheck.available})`,
+          error: `Sell quantity exceeds holdings (available: ${sellCheck.available})`,
           availableQuantity: sellCheck.available,
         });
       }

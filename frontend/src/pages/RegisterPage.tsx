@@ -16,7 +16,7 @@ export function RegisterPage() {
     try {
       await register(email, password);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Rejestracja nie powiodła się");
+      setError(err instanceof Error ? err.message : "Registration failed");
     } finally {
       setSubmitting(false);
     }
@@ -25,7 +25,7 @@ export function RegisterPage() {
   return (
     <div className="auth-page">
       <div className="auth-card card">
-        <h1 className="page-title">Rejestracja</h1>
+        <h1 className="page-title">Sign up</h1>
         <form className="auth-form" onSubmit={handleSubmit}>
           <label>
             Email
@@ -38,7 +38,7 @@ export function RegisterPage() {
             />
           </label>
           <label>
-            Hasło (min. 8 znaków)
+            Password (min. 8 characters)
             <input
               type="password"
               autoComplete="new-password"
@@ -50,11 +50,11 @@ export function RegisterPage() {
           </label>
           {error && <p className="auth-error">{error}</p>}
           <button type="submit" className="btn-primary" disabled={submitting}>
-            {submitting ? "Tworzenie konta…" : "Utwórz konto"}
+            {submitting ? "Creating account…" : "Create account"}
           </button>
         </form>
         <p className="auth-switch">
-          Masz już konto? <Link to="/login">Zaloguj się</Link>
+          Already have an account? <Link to="/login">Log in</Link>
         </p>
       </div>
     </div>

@@ -10,11 +10,11 @@ export function BrokerCsvImportForm() {
   const [portfolios, setPortfolios] = useState<InvestmentPortfolio[]>([])
   const [portfolioId, setPortfolioId] = useState<number | ''>('')
   const [csvText, setCsvText] = useState('')
-  const [dateColumn, setDateColumn] = useState('Data')
+  const [dateColumn, setDateColumn] = useState('Date')
   const [symbolColumn, setSymbolColumn] = useState('Symbol')
-  const [quantityColumn, setQuantityColumn] = useState('Ilość')
-  const [priceColumn, setPriceColumn] = useState('Cena')
-  const [sideColumn, setSideColumn] = useState('Strona')
+  const [quantityColumn, setQuantityColumn] = useState('Quantity')
+  const [priceColumn, setPriceColumn] = useState('Price')
+  const [sideColumn, setSideColumn] = useState('Side')
   const [preview, setPreview] = useState<BrokerCsvPreviewRow[]>([])
   const [headers, setHeaders] = useState<string[]>([])
   const [errors, setErrors] = useState<string[]>([])
@@ -45,7 +45,7 @@ export function BrokerCsvImportForm() {
 
   async function handleImport() {
     if (!portfolioId) {
-      setMessage('Wybierz portfel')
+      setMessage('Select a brokerage account')
       return
     }
     setMessage(null)
@@ -62,28 +62,28 @@ export function BrokerCsvImportForm() {
         portfolioId: Number(portfolioId),
       })
       const skippedPart =
-        result.skipped > 0 ? `, pominięto ${result.skipped} duplikatów` : ''
+        result.skipped > 0 ? `, skipped ${result.skipped} duplicates` : ''
       const errPart =
-        result.errors.length > 0 ? ` (${result.errors.length} błędów wierszy)` : ''
+        result.errors.length > 0 ? ` (${result.errors.length} row errors)` : ''
       setMessage(
-        `Zaimportowano ${result.imported} transakcji maklerskich${skippedPart}${errPart}`,
+        `Imported ${result.imported} brokerage trades${skippedPart}${errPart}`,
       )
       if (result.errors.length > 0) setErrors(result.errors)
       setPreview([])
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : 'Import nie powiódł się')
+      setMessage(e instanceof Error ? e.message : 'Import failed')
     }
   }
 
   return (
     <div className="card" style={{ marginTop: '1.5rem' }}>
-      <h2>Import maklerski (CSV)</h2>
+      <h2>Brokerage import (CSV)</h2>
       <p className="loading-state">
-        Historia transakcji BUY/SELL do wybranego portfela. Bez automatycznego transferu gotówki.
+        BUY/SELL trade history for the selected account. Cash transfers are not created automatically.
       </p>
 
       <label className="form-full-width">
-        Plik CSV (wklej zawartość)
+        CSV file (paste contents)
         <textarea
           rows={6}
           value={csvText}
@@ -94,14 +94,14 @@ export function BrokerCsvImportForm() {
 
       <div className="form-grid">
         <label>
-          Portfel
+          Brokerage account
           <select
             value={portfolioId}
             onChange={(e) =>
               setPortfolioId(e.target.value === '' ? '' : Number(e.target.value))
             }
           >
-            <option value="">Wybierz…</option>
+            <option value="">Select…</option>
             {portfolios.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name} ({p.baseCurrency})
@@ -110,43 +110,43 @@ export function BrokerCsvImportForm() {
           </select>
         </label>
         <label>
-          Kolumna daty
+          Date column
           <input value={dateColumn} onChange={(e) => setDateColumn(e.target.value)} />
         </label>
         <label>
-          Kolumna symbolu
+          Symbol column
           <input value={symbolColumn} onChange={(e) => setSymbolColumn(e.target.value)} />
         </label>
         <label>
-          Kolumna ilości
+          Quantity column
           <input value={quantityColumn} onChange={(e) => setQuantityColumn(e.target.value)} />
         </label>
         <label>
-          Kolumna ceny
+          Price column
           <input value={priceColumn} onChange={(e) => setPriceColumn(e.target.value)} />
         </label>
         <label>
-          Kolumna strony (opcjonalnie)
+          Side column (optional)
           <input value={sideColumn} onChange={(e) => setSideColumn(e.target.value)} />
         </label>
       </div>
 
       <div className="form-actions">
         <button type="button" className="btn-primary" onClick={() => void handlePreview()}>
-          Podgląd
+          Preview
         </button>
         <button type="button" onClick={() => void handleImport()}>
-          Importuj transakcje
+          Import trades
         </button>
       </div>
 
       {headers.length > 0 && (
-        <p className="loading-state">Kolumny w pliku: {headers.join(', ')}</p>
+        <p className="loading-state">Columns in file: {headers.join(', ')}</p>
       )}
       {totalRows > 0 && (
         <p className="loading-state">
-          Wierszy: {totalRows}
-          {totalRows > preview.length && ` (podgląd: ${preview.length})`}
+          Rows: {totalRows}
+          {totalRows > preview.length && ` (preview: ${preview.length})`}
         </p>
       )}
       {errors.length > 0 && (
@@ -163,12 +163,12 @@ export function BrokerCsvImportForm() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Linia</th>
-                <th>Data</th>
+                <th>Line</th>
+                <th>Date</th>
                 <th>Symbol</th>
-                <th>Strona</th>
-                <th>Ilość</th>
-                <th>Cena</th>
+                <th>Side</th>
+                <th>Quantity</th>
+                <th>Price</th>
               </tr>
             </thead>
             <tbody>

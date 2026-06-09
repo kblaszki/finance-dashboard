@@ -23,7 +23,7 @@ export function KpiCards() {
   }
 
   if (!stats) {
-    return <p className="loading-state">Ładowanie KPI...</p>
+    return <p className="loading-state">Loading KPIs…</p>
   }
 
   const income = Number(stats.income ?? 0)
@@ -34,23 +34,23 @@ export function KpiCards() {
   return (
     <div className="kpi-grid">
       <div className="kpi-card">
-        <h3>Przychody (okres)</h3>
+        <h3>Income (period)</h3>
         <p>{formatMoney(income, currency)}</p>
       </div>
       <div className="kpi-card">
-        <h3>Wydatki (okres)</h3>
+        <h3>Expenses (period)</h3>
         <p>{formatMoney(expenses, currency)}</p>
       </div>
       <div className="kpi-card">
-        <h3>Przepływ netto (okres)</h3>
+        <h3>Net flow (period)</h3>
         <p>{formatMoney(balance, currency)}</p>
-        <small>Przychody − wydatki (transakcje globalne)</small>
+        <small>Income − expenses (all transactions)</small>
       </div>
       <div className="kpi-card">
-        <h3>Makler — razem (dziś)</h3>
+        <h3>Brokerage — total (today)</h3>
         <p>{formatMoney(portfolioValue, currency)}</p>
         <small>
-          Papiery: {formatMoney(Number(stats.brokerSecurities ?? 0), currency)} · Gotówka:{' '}
+          Securities: {formatMoney(Number(stats.brokerSecurities ?? 0), currency)} · Cash:{' '}
           {formatMoney(Number(stats.brokerCash ?? 0), currency)}
           {stats.portfolioValueMarketDataAsOf
             ? ` · EOD: ${new Date(stats.portfolioValueMarketDataAsOf).toLocaleDateString()}`
@@ -58,13 +58,13 @@ export function KpiCards() {
         </small>
       </div>
       <div className="kpi-card">
-        <h3>Transakcje (okres)</h3>
+        <h3>Transactions (period)</h3>
         <p>{stats.transactionsCount}</p>
         <small>
           {typeof stats.pricedPositionsCount === 'number' &&
           typeof stats.totalPositionsCount === 'number'
-            ? `Wycenione pozycje: ${stats.pricedPositionsCount}/${stats.totalPositionsCount}${
-                stats.stalePositionsCount ? `, nieświeże: ${stats.stalePositionsCount}` : ''
+            ? `Priced positions: ${stats.pricedPositionsCount}/${stats.totalPositionsCount}${
+                stats.stalePositionsCount ? `, stale: ${stats.stalePositionsCount}` : ''
               }`
             : null}
         </small>

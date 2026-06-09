@@ -48,7 +48,7 @@ All HTTP goes through [`frontend/src/api/client.ts`](../frontend/src/api/client.
 
 - Format money/dates: `frontend/src/utils/format.ts`.
 - Reuse layout classes from `App.css` / `index.css`.
-- Product copy in UI is often Polish; project **documentation** is English.
+- UI copy is **English** (`en-US` for `formatMoney` and date display). CSV bank presets (mBank, ING) still use Polish column headers matching export formats.
 
 ## Related docs
 
