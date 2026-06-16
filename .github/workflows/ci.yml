@@ -31,4 +31,7 @@ jobs:
         run: npx prisma generate
 
       - name: Run tests
-        run: npm test
+        shell: bash
+        run: |
+          shopt -s globstar
+          npx tsx --test src/**/*.test.ts test/**/*.test.ts
