@@ -35,7 +35,7 @@
     // Recommended Options
     "strict": true,
     "jsx": "react-jsx",
-    "verbatimModuleSyntax": true,
+    "verbatimModuleSyntax": false,
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
@@ -45,5 +45,5 @@
     "resolveJsonModule": true,
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["dist", "node_modules", "prisma", "prisma.config.ts"]
+  "exclude": ["dist", "node_modules", "prisma", "prisma.config.ts", "src/**/*.test.ts"]
 }

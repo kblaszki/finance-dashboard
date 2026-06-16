@@ -1,11 +1,4 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useCallback, useContext, useEffect, useMemo, useState, createContext } from "react";
 import { useNavigate } from "react-router-dom";
 import type { AuthUser } from "../api/authApi";
 import { fetchMe, login as apiLogin, logoutLocal, register as apiRegister } from "../api/authApi";
@@ -15,7 +8,7 @@ type AuthContextValue = {
   user: AuthUser | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  register: (email: string, username: string, password: string) => Promise<void>;
   logout: () => void;
 };
 
@@ -67,8 +60,8 @@ export function AuthProvider(props: { children: React.ReactNode }) {
     navigate("/", { replace: true });
   }, [navigate]);
 
-  const register = useCallback(async (email: string, password: string) => {
-    const { user: registered } = await apiRegister(email, password);
+  const register = useCallback(async (email: string, username: string, password: string) => {
+    const { user: registered } = await apiRegister(email, username, password);
     setUser(registered);
     navigate("/", { replace: true });
   }, [navigate]);

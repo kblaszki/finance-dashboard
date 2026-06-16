@@ -7,22 +7,25 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import type { BalanceHistoryPoint } from '../api/accountsApi'
+import type { AccountValuationPoint } from '../api/accountsApi'
 import { formatMoney } from '../utils/format'
 
 type Props = {
-  points: BalanceHistoryPoint[]
+  points: AccountValuationPoint[]
   currency: string
+  showComponents?: boolean
 }
 
-export function AccountBalanceChart({ points, currency }: Props) {
+export function AccountBalanceChart({ points, currency, showComponents }: Props) {
   if (!points.length) {
     return <p className="muted">No balance history to display.</p>
   }
 
   const data = points.map((p) => ({
-    date: new Date(p.date).toLocaleDateString('en-US'),
-    balance: p.balance,
+    date: new Date(p.valuationDate).toLocaleDateString('en-US'),
+    totalValue: p.totalValue,
+    cashValue: p.cashValue,
+    securitiesValue: p.securitiesValue,
   }))
 
   return (
@@ -36,7 +39,13 @@ export function AccountBalanceChart({ points, currency }: Props) {
             formatter={(value) => formatMoney(Number(value ?? 0), currency)}
             labelFormatter={(label) => String(label)}
           />
-          <Line type="monotone" dataKey="balance" stroke="var(--accent, #60a5fa)" dot={false} />
+          <Line type="monotone" dataKey="totalValue" name="Total" stroke="var(--accent, #60a5fa)" dot={false} />
+          {showComponents && (
+            <>
+              <Line type="monotone" dataKey="cashValue" name="Cash" stroke="#34d399" dot={false} />
+              <Line type="monotone" dataKey="securitiesValue" name="Securities" stroke="#fbbf24" dot={false} />
+            </>
+          )}
         </LineChart>
       </ResponsiveContainer>
     </div>

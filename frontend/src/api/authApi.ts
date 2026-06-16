@@ -3,6 +3,7 @@ import { apiClient, setAuthToken } from "./client";
 export type AuthUser = {
   id: number;
   email: string;
+  username: string;
 };
 
 type AuthResponse = {
@@ -10,8 +11,16 @@ type AuthResponse = {
   user: AuthUser;
 };
 
-export async function register(email: string, password: string): Promise<AuthResponse> {
-  const data = await apiClient.post<AuthResponse>("/api/auth/register", { email, password });
+export async function register(
+  email: string,
+  username: string,
+  password: string,
+): Promise<AuthResponse> {
+  const data = await apiClient.post<AuthResponse>("/api/auth/register", {
+    email,
+    username,
+    password,
+  });
   setAuthToken(data.token);
   return data;
 }

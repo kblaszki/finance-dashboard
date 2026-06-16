@@ -6,51 +6,36 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 
 | Path | Page | Key components |
 |------|------|----------------|
-| `/login` | Login | `pages/LoginPage.tsx` (guest only) |
-| `/register` | Register | `pages/RegisterPage.tsx` (guest only) |
-| `/` | Dashboard | `pages/DashboardPage.tsx`, charts, `NetWorthSection`, `MarketDataBanner` |
-| `/accounts` | Accounts | `ManagedAccountsList` (bank + brokerage) |
-| `/accounts/:id` | Account detail | `AccountDetailPage`, `AccountBalanceChart`, trades or bank txs |
+| `/login` | Login | `pages/LoginPage.tsx` |
+| `/register` | Register | `pages/RegisterPage.tsx` (username) |
+| `/` | Dashboard | `DashboardPage`, `NetWorthSection`, charts |
+| `/accounts` | Accounts | `ManagedAccountsList` |
+| `/accounts/:id` | Account detail | `AccountDetailPage`, `AccountBalanceChart`, `HoldingLotsTable` |
 | `/transactions` | Transactions | `TransactionsListPage` → `TransactionTable` |
-| `/transactions/categories` | Categories | `CategoriesPage` → `CategoriesTable` |
-| `/transactions/import` | CSV import | `ImportPage` → `CsvImportForm` |
 
-Legacy redirects: `/portfolios`, `/portfolio`, `/categories`, `/import`, `/budgets` → new paths.
-
-Protected shell: `ProtectedRoute` → `AppShell` (3 main nav items).
+Protected shell: `ProtectedRoute` → `AppShell`.
 
 ## State
 
 | Module | Role |
 |--------|------|
-| `frontend/src/state/auth.tsx` | User session, token via `authApi` + `client.setAuthToken` |
-| `frontend/src/state/currency.tsx` | Display currency for converted amounts |
-| `frontend/src/state/period.tsx` | Dashboard date range (`PeriodProvider` on dashboard only) |
-| `frontend/src/state/portfolio.tsx` | Active brokerage account id (legacy portfolio picker) |
+| `frontend/src/state/auth.tsx` | Session + `username` on register |
+| `frontend/src/state/currency.tsx` | Display currency |
+| `frontend/src/state/period.tsx` | Dashboard date range |
 
 ## API clients
-
-All HTTP goes through [`frontend/src/api/client.ts`](../frontend/src/api/client.ts).
 
 | File | Backend prefix |
 |------|----------------|
 | `authApi.ts` | `/api/auth/*` |
+| `accountsApi.ts` | `/api/accounts` |
 | `transactionsApi.ts` | `/api/transactions` |
-| `portfoliosApi.ts` | `/api/portfolios` (brokerage accounts alias) |
-| `portfolioApi.ts` | `/api/portfolio`, `/api/market-data/refresh` |
-| `accountsApi.ts` | `/api/accounts` (incl. `?scope=managed`, balance history) |
-| `categoriesApi.ts` | `/api/categories` |
-| `bondsApi.ts` | Bond holdings |
-| `importApi.ts` | CSV import |
+| `instrumentsApi.ts` | `/api/instruments` |
+| `holdingLotsApi.ts` | `/api/accounts/:id/holding-lots` |
+| `valuationsApi.ts` | holding valuations |
 | `statsApi.ts` | `/api/stats/*` |
-
-## UI conventions
-
-- Format money/dates: `frontend/src/utils/format.ts`.
-- Reuse layout classes from `App.css` / `index.css`.
-- UI copy is **English** (`en-US` for `formatMoney` and date display). CSV bank presets (mBank, ING) still use Polish column headers matching export formats.
 
 ## Related docs
 
 - [api.md](api.md) — REST catalog
-- [architecture.md](architecture.md) — auth and data flow
+- [plans/baza_danych/06-frontend-mvp.md](../plans/baza_danych/06-frontend-mvp.md) — MVP migration checklist

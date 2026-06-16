@@ -38,7 +38,6 @@ export function IncomeByCategoryChart() {
 
   async function load() {
     const response = await fetchIncomeByCategory({
-      currency,
       from: range.from,
       to: range.to,
     })

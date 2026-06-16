@@ -7,10 +7,7 @@ import { RegisterPage } from './pages/RegisterPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { AccountsPage } from './pages/AccountsPage'
 import { AccountDetailPage } from './pages/AccountDetailPage'
-import { TransactionsLayout } from './pages/TransactionsLayout'
 import { TransactionsListPage } from './pages/TransactionsListPage'
-import { CategoriesPage } from './pages/CategoriesPage'
-import { ImportPage } from './pages/ImportPage'
 import { useAuth } from './state/auth'
 
 function App() {
@@ -23,18 +20,7 @@ function App() {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/accounts/:id" element={<AccountDetailPage />} />
-          <Route path="/transactions" element={<TransactionsLayout />}>
-            <Route index element={<TransactionsListPage />} />
-            <Route path="categories" element={<CategoriesPage />} />
-            <Route path="import" element={<ImportPage />} />
-          </Route>
-          <Route path="/portfolios" element={<Navigate to="/accounts" replace />} />
-          <Route path="/portfolio" element={<Navigate to="/accounts" replace />} />
-          <Route path="/portfolio/trades" element={<Navigate to="/accounts" replace />} />
-          <Route path="/portfolio/:symbol" element={<Navigate to="/accounts" replace />} />
-          <Route path="/categories" element={<Navigate to="/transactions/categories" replace />} />
-          <Route path="/import" element={<Navigate to="/transactions/import" replace />} />
-          <Route path="/budgets" element={<Navigate to="/" replace />} />
+          <Route path="/transactions" element={<TransactionsListPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

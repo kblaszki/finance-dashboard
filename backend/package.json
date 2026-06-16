@@ -8,7 +8,6 @@
     "build": "tsc",
     "start": "node dist/app.js",
     "db:seed": "prisma db seed",
-    "db:migrate-categories": "ts-node --transpile-only prisma/migrate-categories.ts",
     "test": "tsx --test src/**/*.test.ts"
   },
   "prisma": {

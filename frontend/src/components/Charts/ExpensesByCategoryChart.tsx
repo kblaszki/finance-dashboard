@@ -38,7 +38,6 @@ export function ExpensesByCategoryChart() {
 
   async function load() {
     const response = await fetchExpensesByCategory({
-      currency,
       from: range.from,
       to: range.to,
     })

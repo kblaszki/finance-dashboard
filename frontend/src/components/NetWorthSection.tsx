@@ -15,8 +15,7 @@ export function NetWorthSection() {
   async function load() {
     setError(null)
     try {
-      const data = await fetchNetWorth(currency)
-      setStats(data)
+      setStats(await fetchNetWorth(currency))
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load net worth')
       setStats(null)
@@ -44,32 +43,14 @@ export function NetWorthSection() {
   return (
     <section className="card">
       <h2>Net worth</h2>
-      <p className="kpi-highlight">{formatMoney(stats.netWorth, currency)}</p>
+      <p className="kpi-highlight">{formatMoney(stats.total, currency)}</p>
       <div className="kpi-grid" style={{ marginTop: '1rem' }}>
-        <div className="kpi-card">
-          <h3>Brokerage — securities</h3>
-          <p>{formatMoney(stats.brokerSecurities, currency)}</p>
-        </div>
-        <div className="kpi-card">
-          <h3>Brokerage — cash</h3>
-          <p>{formatMoney(stats.brokerCash, currency)}</p>
-        </div>
-        <div className="kpi-card">
-          <h3>Bank accounts</h3>
-          <p>{formatMoney(stats.bankCash, currency)}</p>
-        </div>
-        <div className="kpi-card">
-          <h3>Real estate / crypto</h3>
-          <p>{formatMoney(stats.manualAssets, currency)}</p>
-        </div>
-        <div className="kpi-card">
-          <h3>Bonds</h3>
-          <p>{formatMoney(stats.bonds, currency)}</p>
-        </div>
-        <div className="kpi-card">
-          <h3>Liabilities</h3>
-          <p>−{formatMoney(stats.liabilities, currency)}</p>
-        </div>
+        {Object.entries(stats.byAccountType).map(([type, value]) => (
+          <div className="kpi-card" key={type}>
+            <h3>{type}</h3>
+            <p>{formatMoney(value, currency)}</p>
+          </div>
+        ))}
       </div>
       {stats.accounts.length > 0 && (
         <div className="table-wrap" style={{ marginTop: '1rem' }}>
@@ -83,9 +64,9 @@ export function NetWorthSection() {
             </thead>
             <tbody>
               {stats.accounts.map((a) => (
-                <tr key={a.accountId}>
+                <tr key={a.id}>
                   <td>{a.name}</td>
-                  <td>{a.type}</td>
+                  <td>{a.accountType}</td>
                   <td>{formatMoney(a.value, currency)}</td>
                 </tr>
               ))}
