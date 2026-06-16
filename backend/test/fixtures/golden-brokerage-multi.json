@@ -1,0 +1,51 @@
+{
+  "_comment": "Golden: transfer + 2 instruments, BUY/SELL, EOD prices.",
+  "user": {
+    "email": "golden-broker@test.local",
+    "username": "golden-broker",
+    "password": "test12345"
+  },
+  "accounts": [
+    {
+      "key": "broker",
+      "accountType": "BROKERAGE",
+      "name": "Golden Broker",
+      "currency": "USD",
+      "openingBalance": 0,
+      "createdAt": "2025-01-01T12:00:00.000Z"
+    }
+  ],
+  "instruments": [
+    { "key": "aapl", "instrumentType": "STOCK", "symbol": "AAPL", "name": "Apple", "exchange": "NASDAQ", "currency": "USD" },
+    { "key": "msft", "instrumentType": "STOCK", "symbol": "MSFT", "name": "Microsoft", "exchange": "NASDAQ", "currency": "USD" }
+  ],
+  "instrumentValuations": [
+    { "instrumentKey": "aapl", "valuationDate": "2025-01-01T12:00:00.000Z", "price": 100, "currency": "USD" },
+    { "instrumentKey": "aapl", "valuationDate": "2025-01-10T12:00:00.000Z", "price": 110, "currency": "USD" },
+    { "instrumentKey": "aapl", "valuationDate": "2025-01-20T12:00:00.000Z", "price": 115, "currency": "USD" },
+    { "instrumentKey": "msft", "valuationDate": "2025-01-01T12:00:00.000Z", "price": 200, "currency": "USD" },
+    { "instrumentKey": "msft", "valuationDate": "2025-01-15T12:00:00.000Z", "price": 210, "currency": "USD" }
+  ],
+  "transactions": [
+    { "accountKey": "broker", "transactionType": "TRANSFER_IN", "amount": 10000, "category": "FUNDING", "date": "2025-01-02T12:00:00.000Z" }
+  ],
+  "holdingLots": [
+    { "accountKey": "broker", "instrumentKey": "aapl", "side": "BUY", "quantity": 10, "pricePerUnit": 100, "tradeDate": "2025-01-03T12:00:00.000Z" },
+    { "accountKey": "broker", "instrumentKey": "msft", "side": "BUY", "quantity": 5, "pricePerUnit": 200, "tradeDate": "2025-01-05T12:00:00.000Z" },
+    { "accountKey": "broker", "instrumentKey": "aapl", "side": "SELL", "quantity": 3, "pricePerUnit": 110, "tradeDate": "2025-01-12T12:00:00.000Z" }
+  ],
+  "expected": {
+    "accounts": {
+      "broker": { "cashBalance": 8330 }
+    },
+    "quantityAfter": {
+      "aapl": 7,
+      "msft": 5
+    },
+    "snapshots": {
+      "broker": {
+        "2025-01-20": { "cashValue": 10000, "securitiesValue": 1855, "totalValue": 11855 }
+      }
+    }
+  }
+}

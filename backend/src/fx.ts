@@ -5,7 +5,7 @@ type FxRatesPlnPerUnit = {
 
 let cached: { value: FxRatesPlnPerUnit; fetchedAtMs: number } | null = null
 
-function normalizeCurrency(code: string): string {
+export function normalizeCurrency(code: string): string {
   return String(code || "").trim().toUpperCase()
 }
 

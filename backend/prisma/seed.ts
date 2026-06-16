@@ -3,8 +3,15 @@ import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { backfillAccountValuations } from "../src/accountValuation";
 import { getFxRatesPlnPerUnit } from "../src/fx";
-import { computeBalanceAfter } from "../src/transactionBalance";
-import { computeQuantityAfter } from "../src/holdingLot";
+import {
+  buildBankMonthTemplates,
+  daysAgo,
+  seedBankTransactions,
+  seedHoldingLots,
+  seedInstrumentValuations,
+  seedTransferIn,
+  upsertInstrument,
+} from "./seedBuilders";
 
 const prisma = new PrismaClient();
 
@@ -12,11 +19,16 @@ const DEMO_EMAIL = "demo@finance.local";
 const DEMO_USERNAME = "demo";
 const DEMO_PASSWORD = "demo12345";
 
-function daysAgo(days: number): Date {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  d.setHours(12, 0, 0, 0);
-  return d;
+async function clearUserData(userId: number): Promise<void> {
+  await prisma.accountValuationDaily.deleteMany({
+    where: { account: { userId } },
+  });
+  await prisma.holdingValuationDaily.deleteMany({
+    where: { account: { userId } },
+  });
+  await prisma.holdingLot.deleteMany({ where: { account: { userId } } });
+  await prisma.transaction.deleteMany({ where: { account: { userId } } });
+  await prisma.account.deleteMany({ where: { userId } });
 }
 
 async function main() {
@@ -28,15 +40,7 @@ async function main() {
     create: { email: DEMO_EMAIL, username: DEMO_USERNAME, passwordHash },
   });
 
-  await prisma.accountValuationDaily.deleteMany({
-    where: { account: { userId: user.id } },
-  });
-  await prisma.holdingValuationDaily.deleteMany({
-    where: { account: { userId: user.id } },
-  });
-  await prisma.holdingLot.deleteMany({ where: { account: { userId: user.id } } });
-  await prisma.transaction.deleteMany({ where: { account: { userId: user.id } } });
-  await prisma.account.deleteMany({ where: { userId: user.id } });
+  await clearUserData(user.id);
 
   const bank = await prisma.account.create({
     data: {
@@ -46,119 +50,119 @@ async function main() {
       currency: "PLN",
       openingBalance: 5000,
       cashBalance: 5000,
+      createdAt: daysAgo(90),
     },
   });
+  await seedBankTransactions(prisma, bank.id, "PLN", 5000, buildBankMonthTemplates());
 
-  let cash = 5000;
-  const txData = [
-    { transactionType: "INCOME", amount: 8000, category: "SALARY", days: 60 },
-    { transactionType: "EXPENSE", amount: 120, category: "FOOD", days: 45 },
-    { transactionType: "EXPENSE", amount: 80, category: "TRANSPORT", days: 30 },
-    { transactionType: "INCOME", amount: 8000, category: "SALARY", days: 15 },
-    { transactionType: "EXPENSE", amount: 200, category: "SHOPPING", days: 5 },
-  ] as const;
-
-  for (const tx of txData) {
-    cash = computeBalanceAfter(cash, tx.transactionType, tx.amount);
-    await prisma.transaction.create({
-      data: {
-        accountId: bank.id,
-        transactionType: tx.transactionType,
-        amount: tx.amount,
-        balanceAfter: cash,
-        currency: "PLN",
-        category: tx.category,
-        date: daysAgo(tx.days),
-        description: tx.category,
-      },
-    });
-  }
-  await prisma.account.update({ where: { id: bank.id }, data: { cashBalance: cash } });
-
-  const brokerage = await prisma.account.create({
+  const usBroker = await prisma.account.create({
     data: {
       userId: user.id,
       accountType: "BROKERAGE",
       name: "US Stocks",
       currency: "USD",
       openingBalance: 0,
-      cashBalance: 10000,
+      cashBalance: 0,
+      createdAt: daysAgo(75),
     },
   });
+  await seedTransferIn(prisma, usBroker.id, 25000, "USD", 70);
 
-  await prisma.transaction.create({
+  const aapl = await upsertInstrument(prisma, {
+    instrumentType: "STOCK",
+    symbol: "AAPL",
+    name: "Apple Inc.",
+    exchange: "NASDAQ",
+    currency: "USD",
+  });
+  const vt = await upsertInstrument(prisma, {
+    instrumentType: "ETF",
+    symbol: "VT",
+    name: "Vanguard Total World Stock ETF",
+    exchange: "NYSE",
+    currency: "USD",
+  });
+
+  await seedInstrumentValuations(prisma, aapl.id, "USD", 65, 0, 2, (day) => 170 + (65 - day) * 0.3);
+  await seedInstrumentValuations(prisma, vt.id, "USD", 60, 0, 3, (day) => 95 + (60 - day) * 0.1);
+
+  let usCash = 25000;
+  usCash = await seedHoldingLots(
+    prisma,
+    usBroker.id,
+    aapl.id,
+    "USD",
+    [
+      { side: "BUY", quantity: 10, pricePerUnit: 175, days: 60 },
+      { side: "SELL", quantity: 3, pricePerUnit: 190, days: 35 },
+    ],
+    usCash,
+  );
+  await seedHoldingLots(
+    prisma,
+    usBroker.id,
+    vt.id,
+    "USD",
+    [{ side: "BUY", quantity: 20, pricePerUnit: 98, days: 45 }],
+    usCash,
+  );
+
+  const euBroker = await prisma.account.create({
     data: {
-      accountId: brokerage.id,
-      transactionType: "TRANSFER_IN",
-      amount: 10000,
-      balanceAfter: 10000,
-      currency: "USD",
-      category: "INVESTMENT",
-      date: daysAgo(50),
-      description: "Initial funding",
+      userId: user.id,
+      accountType: "BROKERAGE",
+      name: "EU ETF",
+      currency: "EUR",
+      openingBalance: 0,
+      cashBalance: 0,
+      createdAt: daysAgo(50),
     },
   });
+  await seedTransferIn(prisma, euBroker.id, 15000, "EUR", 48);
 
-  const aapl = await prisma.instrument.upsert({
-    where: { symbol_exchange_source: { symbol: "AAPL", exchange: "NASDAQ", source: "manual" } },
-    update: {},
-    create: {
-      instrumentType: "STOCK",
-      symbol: "AAPL",
-      name: "Apple Inc.",
-      exchange: "NASDAQ",
-      currency: "USD",
-      source: "manual",
-    },
+  const iwda = await upsertInstrument(prisma, {
+    instrumentType: "ETF",
+    symbol: "IWDA",
+    name: "iShares MSCI World",
+    exchange: "LSE",
+    currency: "EUR",
   });
+  await seedInstrumentValuations(prisma, iwda.id, "EUR", 45, 0, 2, (day) => 78 + (45 - day) * 0.15);
+  await seedHoldingLots(
+    prisma,
+    euBroker.id,
+    iwda.id,
+    "EUR",
+    [{ side: "BUY", quantity: 80, pricePerUnit: 80, days: 40 }],
+    15000,
+  );
 
-  for (let day = 40; day >= 0; day -= 5) {
-    await prisma.instrumentValuation.upsert({
-      where: {
-        instrumentId_valuationDate_source: {
-          instrumentId: aapl.id,
-          valuationDate: daysAgo(day),
-          source: "manual",
-        },
-      },
-      update: { price: 170 + (40 - day) * 0.5 },
-      create: {
-        instrumentId: aapl.id,
-        valuationDate: daysAgo(day),
-        price: 170 + (40 - day) * 0.5,
-        currency: "USD",
-        source: "manual",
-      },
-    });
-  }
-
-  const buyQty = 10;
-  const buyPrice = 175;
-  const total = buyQty * buyPrice;
-  let brokerCash = 10000 - total;
-  const qtyAfter = computeQuantityAfter(0, "BUY", buyQty);
-
-  await prisma.holdingLot.create({
+  const manual = await prisma.account.create({
     data: {
-      accountId: brokerage.id,
-      instrumentId: aapl.id,
-      side: "BUY",
-      quantity: buyQty,
-      quantityAfter: qtyAfter,
-      totalPrice: total,
-      pricePerUnit: buyPrice,
-      currency: "USD",
-      tradeDate: daysAgo(35),
+      userId: user.id,
+      accountType: "MANUAL",
+      name: "Apartment Warsaw",
+      currency: "PLN",
+      openingBalance: 850000,
+      cashBalance: 850000,
+      description: "Estimated market value — manual tracking",
+      createdAt: daysAgo(120),
     },
   });
-  await prisma.account.update({ where: { id: brokerage.id }, data: { cashBalance: brokerCash } });
 
   const { plnPerUnit } = await getFxRatesPlnPerUnit();
-  await backfillAccountValuations(prisma, bank.id, plnPerUnit);
-  await backfillAccountValuations(prisma, brokerage.id, plnPerUnit);
+  for (const accountId of [bank.id, usBroker.id, euBroker.id, manual.id]) {
+    await backfillAccountValuations(prisma, accountId, plnPerUnit);
+  }
 
+  const accounts = await prisma.account.findMany({ where: { userId: user.id } });
   // eslint-disable-next-line no-console
   console.log(`Seed OK: ${DEMO_EMAIL} / ${DEMO_PASSWORD} (username: ${DEMO_USERNAME})`);
+  for (const a of accounts) {
+    // eslint-disable-next-line no-console
+    console.log(`  ${a.accountType} ${a.name}: cash=${Number(a.cashBalance)} ${a.currency}`);
+  }
+  void manual;
 }
 
 main()

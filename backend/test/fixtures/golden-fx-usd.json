@@ -1,0 +1,40 @@
+{
+  "_comment": "Golden: EUR brokerage with mock FX conversion in snapshots.",
+  "user": {
+    "email": "golden-fx@test.local",
+    "username": "golden-fx",
+    "password": "test12345"
+  },
+  "accounts": [
+    {
+      "key": "eurBroker",
+      "accountType": "BROKERAGE",
+      "name": "EU Broker",
+      "currency": "EUR",
+      "openingBalance": 0,
+      "createdAt": "2025-01-01T12:00:00.000Z"
+    }
+  ],
+  "instruments": [
+    { "key": "iwda", "instrumentType": "ETF", "symbol": "IWDA", "name": "iShares MSCI World", "exchange": "LSE", "currency": "EUR" }
+  ],
+  "instrumentValuations": [
+    { "instrumentKey": "iwda", "valuationDate": "2025-01-10T12:00:00.000Z", "price": 80, "currency": "EUR" }
+  ],
+  "transactions": [
+    { "accountKey": "eurBroker", "transactionType": "TRANSFER_IN", "amount": 10000, "category": "FUNDING", "date": "2025-01-02T12:00:00.000Z" }
+  ],
+  "holdingLots": [
+    { "accountKey": "eurBroker", "instrumentKey": "iwda", "side": "BUY", "quantity": 50, "pricePerUnit": 80, "tradeDate": "2025-01-05T12:00:00.000Z" }
+  ],
+  "expected": {
+    "accounts": {
+      "eurBroker": { "cashBalance": 6000 }
+    },
+    "snapshots": {
+      "eurBroker": {
+        "2025-01-10": { "cashValue": 10000, "securitiesValue": 4000, "totalValue": 14000 }
+      }
+    }
+  }
+}

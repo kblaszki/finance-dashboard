@@ -1,0 +1,33 @@
+{
+  "_comment": "Golden: MANUAL account (real estate), no lots, value from cash/opening.",
+  "user": {
+    "email": "golden-manual@test.local",
+    "username": "golden-manual",
+    "password": "test12345"
+  },
+  "accounts": [
+    {
+      "key": "property",
+      "accountType": "MANUAL",
+      "name": "Apartment",
+      "currency": "PLN",
+      "openingBalance": 850000,
+      "description": "Warsaw flat estimate",
+      "createdAt": "2025-01-01T12:00:00.000Z"
+    }
+  ],
+  "instruments": [],
+  "instrumentValuations": [],
+  "transactions": [],
+  "holdingLots": [],
+  "expected": {
+    "accounts": {
+      "property": { "cashBalance": 850000 }
+    },
+    "snapshots": {
+      "property": {
+        "2025-01-01": { "cashValue": 850000, "totalValue": 850000, "securitiesValue": 0 }
+      }
+    }
+  }
+}

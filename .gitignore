@@ -24,6 +24,7 @@ frontend/.vite/
 
 ## Backend outputs
 backend/dist/
+backend/test/tmp/
 
 ## OS / IDE
 .DS_Store

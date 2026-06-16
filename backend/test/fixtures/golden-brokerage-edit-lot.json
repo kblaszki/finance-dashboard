@@ -1,0 +1,42 @@
+{
+  "_comment": "Golden: 3 lots; middle lot omitted from seed simulates delete — chain recalc expected.",
+  "user": {
+    "email": "golden-edit@test.local",
+    "username": "golden-edit",
+    "password": "test12345"
+  },
+  "accounts": [
+    {
+      "key": "broker",
+      "accountType": "BROKERAGE",
+      "name": "Edit Lot Broker",
+      "currency": "USD",
+      "openingBalance": 0,
+      "createdAt": "2025-01-01T12:00:00.000Z"
+    }
+  ],
+  "instruments": [
+    { "key": "vt", "instrumentType": "ETF", "symbol": "VT", "name": "Vanguard Total", "exchange": "NYSE", "currency": "USD" }
+  ],
+  "instrumentValuations": [
+    { "instrumentKey": "vt", "valuationDate": "2025-01-01T12:00:00.000Z", "price": 90, "currency": "USD" }
+  ],
+  "transactions": [
+    { "accountKey": "broker", "transactionType": "TRANSFER_IN", "amount": 5000, "category": "FUNDING", "date": "2025-01-02T12:00:00.000Z" }
+  ],
+  "holdingLots": [
+    { "accountKey": "broker", "instrumentKey": "vt", "side": "BUY", "quantity": 10, "pricePerUnit": 90, "tradeDate": "2025-01-03T12:00:00.000Z" },
+    { "accountKey": "broker", "instrumentKey": "vt", "side": "BUY", "quantity": 3, "pricePerUnit": 92, "tradeDate": "2025-01-08T12:00:00.000Z" }
+  ],
+  "expected": {
+    "accounts": {
+      "broker": { "cashBalance": 3824 }
+    },
+    "quantityAfterChain": [10, 13],
+    "snapshots": {
+      "broker": {
+        "2025-01-08": { "cashValue": 5000, "totalValue": 6170, "securitiesValue": 1170 }
+      }
+    }
+  }
+}
