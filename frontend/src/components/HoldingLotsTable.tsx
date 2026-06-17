@@ -72,7 +72,7 @@ export function HoldingLotsTable({ accountId, currency, onLotsChange }: Props) {
   return (
     <div>
       {error && <p className="error-banner">{error}</p>}
-      <form className="card inline-form" onSubmit={(e) => void handleSubmit(e)} style={{ marginBottom: '1rem' }}>
+      <form className="card inline-form form-section-gap" onSubmit={(e) => void handleSubmit(e)}>
         <InstrumentPicker value={instrumentId} onChange={setInstrumentId} />
         <select value={side} onChange={(e) => setSide(e.target.value as 'BUY' | 'SELL')}>
           <option value="BUY">BUY</option>
@@ -81,9 +81,10 @@ export function HoldingLotsTable({ accountId, currency, onLotsChange }: Props) {
         <input type="number" step="any" min="0" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} />
         <input type="number" step="any" min="0" value={pricePerUnit} onChange={(e) => setPricePerUnit(Number(e.target.value))} placeholder="Price per unit" />
         <input type="date" value={tradeDate} onChange={(e) => setTradeDate(e.target.value)} />
-        <button type="submit">Add lot</button>
+        <button type="submit" className="btn-primary">Add lot</button>
       </form>
-      <table className="data-table">
+      <div className="table-wrap">
+        <table className="data-table">
         <thead>
           <tr>
             <th>Date</th>
@@ -112,7 +113,8 @@ export function HoldingLotsTable({ accountId, currency, onLotsChange }: Props) {
             </tr>
           ))}
         </tbody>
-      </table>
+        </table>
+      </div>
     </div>
   )
 }

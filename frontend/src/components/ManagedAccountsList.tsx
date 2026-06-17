@@ -96,7 +96,7 @@ export function ManagedAccountsList() {
             onChange={(e) => setOpeningBalance(Number(e.target.value))}
             placeholder="Opening balance"
           />
-          <button type="submit">Add</button>
+          <button type="submit" className="btn-primary">Add</button>
         </form>
       </section>
 
@@ -106,7 +106,8 @@ export function ManagedAccountsList() {
           {!rows.length ? (
             <p className="muted">No accounts in this section.</p>
           ) : (
-            <table className="data-table">
+            <div className="table-wrap">
+              <table className="data-table">
               <thead>
                 <tr>
                   <th>Name</th>
@@ -131,7 +132,8 @@ export function ManagedAccountsList() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
           )}
         </section>
       ))}

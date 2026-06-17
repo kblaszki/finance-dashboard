@@ -44,7 +44,7 @@ export function NetWorthSection() {
     <section className="card">
       <h2>Net worth</h2>
       <p className="kpi-highlight">{formatMoney(stats.total, currency)}</p>
-      <div className="kpi-grid" style={{ marginTop: '1rem' }}>
+      <div className="kpi-grid stack-md">
         {Object.entries(stats.byAccountType).map(([type, value]) => (
           <div className="kpi-card" key={type}>
             <h3>{type}</h3>
@@ -53,7 +53,7 @@ export function NetWorthSection() {
         ))}
       </div>
       {stats.accounts.length > 0 && (
-        <div className="table-wrap" style={{ marginTop: '1rem' }}>
+        <div className="table-wrap stack-md">
           <table className="data-table">
             <thead>
               <tr>

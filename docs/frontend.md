@@ -40,3 +40,27 @@ Protected shell: `ProtectedRoute` → `AppShell`.
 
 - [api.md](api.md) — REST catalog
 - [README.md](../README.md) — setup and demo login
+
+## Styling
+
+Global CSS only — no CSS modules or utility framework.
+
+| File | Role |
+|------|------|
+| `frontend/src/index.css` | Design tokens (`--color-*`, `--space-*`, `--chart-*`), light/dark via `[data-theme='dark']` |
+| `frontend/src/App.css` | Layout shell, cards, tables, forms, buttons, charts, breakpoints |
+
+**Breakpoints:** 480px, 768px, 900px, 1024px (mobile-first overrides in `App.css`).
+
+**Class conventions:**
+
+| Class | Use |
+|-------|-----|
+| `btn-primary` | Primary actions (submit, add) |
+| `btn-link` / `btn-link danger` | Text actions (delete) |
+| `inline-form` | Horizontal wrap forms with themed inputs |
+| `table-wrap` | Horizontal scroll wrapper for wide tables on mobile |
+| `card` | Elevated content panel |
+| `muted` | Secondary text |
+| `error-banner` | Form/page-level errors |
+| `stack-md` / `form-section-gap` | Vertical spacing utilities |

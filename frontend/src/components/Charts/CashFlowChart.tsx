@@ -22,19 +22,22 @@ export function CashFlowChart() {
     )
   }
 
-  const data = [
-    { name: 'Income', value: stats.income },
-    { name: 'Expenses', value: stats.expense },
-    { name: 'Net', value: stats.net },
+  const rows = [
+    { name: 'Income', value: stats.income, valueClass: 'positive' as const },
+    { name: 'Expenses', value: stats.expense, valueClass: 'negative' as const },
+    { name: 'Net', value: stats.net, valueClass: stats.net >= 0 ? ('positive' as const) : ('negative' as const) },
   ]
 
   return (
     <div className="card">
       <h2>Cash flow (period)</h2>
-      <ul>
-        {data.map((row) => (
-          <li key={row.name}>
-            {row.name}: {formatMoney(row.value, currency)}
+      <ul className="stat-list">
+        {rows.map((row) => (
+          <li key={row.name} className="stat-row">
+            <span className="stat-row-label">{row.name}</span>
+            <span className={`stat-row-value ${row.valueClass}`}>
+              {formatMoney(row.value, currency)}
+            </span>
           </li>
         ))}
       </ul>

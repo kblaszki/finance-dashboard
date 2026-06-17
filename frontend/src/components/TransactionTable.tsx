@@ -126,7 +126,7 @@ export function TransactionTable() {
           <input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Category" />
           <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
           <input value={form.description ?? ''} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Description" />
-          <button type="submit">Add</button>
+          <button type="submit" className="btn-primary">Add</button>
         </form>
       </section>
 
@@ -148,7 +148,8 @@ export function TransactionTable() {
 
       <section className="card">
         <h2>Transactions {loading ? '…' : `(${transactions.length})`}</h2>
-        <table className="data-table">
+        <div className="table-wrap">
+          <table className="data-table">
           <thead>
             <tr>
               <th>Date</th>
@@ -177,7 +178,8 @@ export function TransactionTable() {
               </tr>
             ))}
           </tbody>
-        </table>
+          </table>
+        </div>
       </section>
     </div>
   )

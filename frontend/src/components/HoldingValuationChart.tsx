@@ -41,7 +41,7 @@ export function HoldingValuationChart({ points, currency }: Props) {
             }
             labelFormatter={(label) => String(label)}
           />
-          <Line type="monotone" dataKey="marketValue" name="Market value" stroke="var(--accent, #60a5fa)" dot={false} />
+          <Line type="monotone" dataKey="marketValue" name="Market value" stroke="var(--color-accent)" dot={false} />
         </LineChart>
       </ResponsiveContainer>
     </div>

@@ -93,7 +93,7 @@ export function AccountDetailPage() {
     return (
       <div className="page">
         <p className="muted">{error ?? 'Loading…'}</p>
-        <Link to="/accounts">← Accounts</Link>
+        <Link to="/accounts" className="page-back-link">← Accounts</Link>
       </div>
     )
   }
@@ -103,7 +103,7 @@ export function AccountDetailPage() {
   return (
     <div className="page">
       <p>
-        <Link to="/accounts">← Accounts</Link>
+        <Link to="/accounts" className="page-back-link">← Accounts</Link>
       </p>
       <h1 className="page-title">{account.name}</h1>
       <p className="muted">
@@ -123,7 +123,7 @@ export function AccountDetailPage() {
       {account.accountType === 'BROKERAGE' && openPositions.length > 0 && (
         <section className="card">
           <h2>Position value history</h2>
-          <label className="inline-form" style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <label className="inline-form form-section-gap">
             <span>Instrument</span>
             <select
               value={selectedInstrumentId ?? ''}
@@ -145,7 +145,8 @@ export function AccountDetailPage() {
       <section className="card">
         <h2>Activity</h2>
         {account.accountType === 'BANK' ? (
-          <table className="data-table">
+          <div className="table-wrap">
+            <table className="data-table">
             <thead>
               <tr>
                 <th>Date</th>
@@ -166,7 +167,8 @@ export function AccountDetailPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          </div>
         ) : (
           <HoldingLotsTable accountId={accountId} currency={account.currency} onLotsChange={load} />
         )}

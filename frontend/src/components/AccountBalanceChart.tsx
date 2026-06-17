@@ -39,11 +39,11 @@ export function AccountBalanceChart({ points, currency, showComponents }: Props)
             formatter={(value) => formatMoney(Number(value ?? 0), currency)}
             labelFormatter={(label) => String(label)}
           />
-          <Line type="monotone" dataKey="totalValue" name="Total" stroke="var(--accent, #60a5fa)" dot={false} />
+          <Line type="monotone" dataKey="totalValue" name="Total" stroke="var(--color-accent)" dot={false} />
           {showComponents && (
             <>
-              <Line type="monotone" dataKey="cashValue" name="Cash" stroke="#34d399" dot={false} />
-              <Line type="monotone" dataKey="securitiesValue" name="Securities" stroke="#fbbf24" dot={false} />
+              <Line type="monotone" dataKey="cashValue" name="Cash" stroke="var(--chart-2)" dot={false} />
+              <Line type="monotone" dataKey="securitiesValue" name="Securities" stroke="var(--chart-3)" dot={false} />
             </>
           )}
         </LineChart>

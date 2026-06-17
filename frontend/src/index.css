@@ -10,6 +10,10 @@
   --color-accent: #2563eb;
   --color-accent-subtle: #eff6ff;
   --color-accent-hover: #1d4ed8;
+  --color-negative: #c0392b;
+  --color-negative-subtle: #fef2f2;
+  --color-positive: #16a34a;
+  --accent: var(--color-accent);
 
   --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.08), 0 4px 12px rgba(15, 23, 42, 0.06);
   --radius-sm: 0.5rem;
@@ -52,6 +56,9 @@
   --color-accent: #3b82f6;
   --color-accent-subtle: rgba(59, 130, 246, 0.15);
   --color-accent-hover: #60a5fa;
+  --color-negative: #f87171;
+  --color-negative-subtle: rgba(248, 113, 113, 0.12);
+  --color-positive: #4ade80;
 
   --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.35);
 }
@@ -72,4 +79,14 @@ body {
 #root {
   min-height: 100vh;
   width: 100%;
+}
+
+a {
+  color: var(--color-accent);
+}
+
+img,
+svg {
+  max-width: 100%;
+  height: auto;
 }

@@ -35,7 +35,7 @@ export function InstrumentPicker({ value, onChange }: Props) {
   }
 
   return (
-    <div className="inline-form" style={{ flexWrap: 'wrap', gap: '0.5rem' }}>
+    <div className="inline-form">
       <input
         placeholder="Search symbol"
         value={query}
@@ -55,7 +55,7 @@ export function InstrumentPicker({ value, onChange }: Props) {
       </select>
       <input placeholder="New symbol" value={symbol} onChange={(e) => setSymbol(e.target.value)} />
       <input placeholder="Name (optional)" value={name} onChange={(e) => setName(e.target.value)} />
-      <button type="button" onClick={() => void handleCreate()} disabled={!symbol.trim()}>
+      <button type="button" className="btn-primary" onClick={() => void handleCreate()} disabled={!symbol.trim()}>
         Add instrument
       </button>
       {error && <p className="auth-error">{error}</p>}
