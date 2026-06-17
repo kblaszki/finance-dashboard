@@ -5,8 +5,8 @@ type FxRatesPlnPerUnit = {
 
 let cached: { value: FxRatesPlnPerUnit; fetchedAtMs: number } | null = null
 
-export function normalizeCurrency(code: string): string {
-  return String(code || "").trim().toUpperCase()
+export function normalizeCurrency(code: unknown): string {
+  return String(code ?? "").trim().toUpperCase()
 }
 
 function isFiniteNumber(n: unknown): n is number {

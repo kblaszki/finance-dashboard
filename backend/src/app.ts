@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
-import { getFxRatesPlnPerUnit } from "./fx";
+import { getFxRatesPlnPerUnit, normalizeCurrency } from "./fx";
 import {
   AuthedRequest,
   hashPassword,
@@ -24,7 +24,6 @@ import {
   toNumber,
 } from "./accountValuation";
 import {
-  cashDelta,
   computeBalanceAfter,
   isValidTransactionType,
   type TransactionType,
@@ -42,10 +41,6 @@ const PORT = process.env.PORT || 4000;
 
 function uid(req: AuthedRequest): number {
   return req.userId!;
-}
-
-function normalizeCurrency(code: unknown): string {
-  return String(code ?? "").trim().toUpperCase();
 }
 
 function parseDateBody(value: unknown): Date {

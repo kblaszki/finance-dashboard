@@ -18,7 +18,7 @@
 
 - [AGENTS.md](../AGENTS.md) — short router for agents (recipes, links).
 - [docs/](../docs/) — deep reference; **not** loaded every session. Attach when needed:
-  - `@docs/domain.md` — portfolios, trades, budgets
+  - `@docs/domain.md` — accounts, lots, valuations
   - `@docs/api.md` — endpoint list
   - `@docs/architecture.md` — auth, FX, file layout
   - `@docs/frontend.md` — routes and API clients

@@ -19,7 +19,7 @@ Source of truth: [`backend/prisma/schema.prisma`](../backend/prisma/schema.prism
 
 - **BANK** — transactions update `cashBalance` and `balanceAfter`; valuations backfilled for charts.
 - **BROKERAGE** — cash via transactions; securities via `HoldingLot`; total value in `AccountValuationDaily`.
-- **MANUAL** — manual instruments and valuations.
+- **MANUAL** — tracked account value (`openingBalance` / `cashBalance`); no holding lots.
 
 ## Categories
 

@@ -7,7 +7,7 @@ Token-aware index — use `@docs/...` for domain detail; do not duplicate [READM
 | Doc | Use when |
 |-----|----------|
 | [docs/architecture.md](docs/architecture.md) | Auth, FX, request flow, where code lives |
-| [docs/domain.md](docs/domain.md) | Prisma models, portfolios vs legacy positions |
+| [docs/domain.md](docs/domain.md) | Prisma models (Account, HoldingLot, valuations) |
 | [docs/api.md](docs/api.md) | REST route catalog |
 | [docs/frontend.md](docs/frontend.md) | Routes, API clients, UI patterns |
 
@@ -21,7 +21,7 @@ Token-aware index — use `@docs/...` for domain detail; do not duplicate [READM
 
 **New API endpoint**
 
-1. Handler in `backend/src/app.ts` (match existing patterns: `requireAuth`, `userId`, `toNumber`, `normalizeCurrency`).
+1. Handler in `backend/src/app.ts` (match existing patterns: `requireAuth`, `userId`, `toNumber`, `normalizeCurrency` from `fx.ts`).
 2. Client in `frontend/src/api/<area>Api.ts`.
 3. One row in `docs/api.md`.
 
@@ -37,10 +37,15 @@ Token-aware index — use `@docs/...` for domain detail; do not duplicate [READM
 2. Component under `frontend/src/components/` or `pages/`.
 3. Row in `docs/frontend.md`.
 
-**Portfolio / FX work**
+**Brokerage / FX work**
 
-- Trades: `PortfolioTrade` + `Account` (BROKERAGE) — legacy `/api/portfolio*` aliases remain.
+- Positions: `HoldingLot` on `Account` (`BROKERAGE`); charts from `AccountValuationDaily` / `HoldingValuationDaily`.
 - FX: `backend/src/fx.ts` only.
+
+**Tests**
+
+- `npm test` from repo root.
+- Unit: `backend/src/*.test.ts`; integration/golden/HTTP: `backend/test/`.
 
 ## Do not commit
 

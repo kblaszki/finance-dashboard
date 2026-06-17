@@ -17,12 +17,6 @@ function utcDateOnly(d: Date): Date {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
 }
 
-function addDays(d: Date, n: number): Date {
-  const x = new Date(d);
-  x.setUTCDate(x.getUTCDate() + n);
-  return x;
-}
-
 export async function computeCashAsOf(
   prisma: PrismaClient,
   accountId: number,
@@ -39,7 +33,7 @@ export async function computeCashAsOf(
   return toNumber(account.openingBalance);
 }
 
-export async function netQuantityAsOf(
+async function netQuantityAsOf(
   prisma: PrismaClient,
   accountId: number,
   instrumentId: number,
@@ -213,4 +207,4 @@ export async function getLatestAccountTotalValue(
   return row ? toNumber(row.totalValue) : null;
 }
 
-export { utcDateOnly, addDays, toNumber };
+export { utcDateOnly, toNumber };

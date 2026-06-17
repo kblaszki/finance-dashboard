@@ -10,7 +10,7 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 | `/register` | Register | `pages/RegisterPage.tsx` (username) |
 | `/` | Dashboard | `DashboardPage`, `NetWorthSection`, charts |
 | `/accounts` | Accounts | `ManagedAccountsList` |
-| `/accounts/:id` | Account detail | `AccountDetailPage`, `AccountBalanceChart`, `HoldingLotsTable` |
+| `/accounts/:id` | Account detail | `AccountDetailPage`, `AccountBalanceChart`, `HoldingValuationChart`, `HoldingLotsTable` |
 | `/transactions` | Transactions | `TransactionsListPage` → `TransactionTable` |
 
 Protected shell: `ProtectedRoute` → `AppShell`.
@@ -21,7 +21,8 @@ Protected shell: `ProtectedRoute` → `AppShell`.
 |--------|------|
 | `frontend/src/state/auth.tsx` | Session + `username` on register |
 | `frontend/src/state/currency.tsx` | Display currency |
-| `frontend/src/state/period.tsx` | Dashboard date range |
+| `frontend/src/state/theme.tsx` | Light/dark theme |
+| `frontend/src/state/period.tsx` | Dashboard date range (`PeriodProvider` on dashboard only) |
 
 ## API clients
 
@@ -32,10 +33,10 @@ Protected shell: `ProtectedRoute` → `AppShell`.
 | `transactionsApi.ts` | `/api/transactions` |
 | `instrumentsApi.ts` | `/api/instruments` |
 | `holdingLotsApi.ts` | `/api/accounts/:id/holding-lots` |
-| `valuationsApi.ts` | holding valuations |
+| `valuationsApi.ts` | `/api/accounts/:id/holdings/:instrumentId/valuations` — used by `HoldingValuationChart` on brokerage account detail |
 | `statsApi.ts` | `/api/stats/*` |
 
 ## Related docs
 
 - [api.md](api.md) — REST catalog
-- [plans/baza_danych/06-frontend-mvp.md](../plans/baza_danych/06-frontend-mvp.md) — MVP migration checklist
+- [README.md](../README.md) — setup and demo login

@@ -25,23 +25,26 @@ sequenceDiagram
 | Auth | `backend/src/auth.ts` | Register/login, `requireAuth` middleware |
 | HTTP | `backend/src/app.ts` | All REST routes (~single file) |
 | FX | `backend/src/fx.ts` | NBP rates, PLN hub, in-memory TTL cache |
-| Market prices | `backend/src/marketData.ts` | Twelve Data snapshots/history (optional `TWELVE_DATA_API_KEY`) |
-| Portfolio cash | `backend/src/portfolioCash.ts` | Cash balance helpers for `InvestmentPortfolio` |
+| Holdings | `backend/src/holdingLot.ts` | `quantityAfter`, lot price resolution |
+| Cash ledger | `backend/src/transactionBalance.ts` | `balanceAfter`, transaction types |
+| Valuations | `backend/src/accountValuation.ts` | Daily snapshots, backfill |
+| Net worth | `backend/src/netWorth.ts` | Aggregated stats for dashboard |
 
 ## Auth
 
 - Register/login return JWT (`signToken`, 7-day expiry).
 - Protected routes use `requireAuth`: header `Authorization: Bearer <token>`.
-- `AuthedRequest.userId` is set on success; queries must filter `where: { userId }`.
-- Public: `GET /health`, `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/fx/rates`.
+- `AuthedRequest.userId` is set on success; queries must filter by `userId`.
+- Public (no JWT): `POST /api/auth/register`, `POST /api/auth/login`.
 
 Env (see [README.md](../README.md)): `DATABASE_URL`, `JWT_SECRET` (≥32 chars). Do not commit `.env` or `*.db`.
 
 ## Multi-currency
 
 - Amounts stored in original `currency` on models.
-- Display currency comes from query `?currency=PLN` (or similar) on stats/portfolio endpoints.
+- Display currency comes from query `?currency=PLN` on stats endpoints.
 - Conversion uses `getFxRatesPlnPerUnit()` + `convertAmount()` — never reimplement in handlers.
+- FX is fetched from NBP inside handlers; there is no public `/api/fx/rates` endpoint.
 
 ## Where to add features
 

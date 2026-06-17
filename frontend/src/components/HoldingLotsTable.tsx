@@ -11,9 +11,10 @@ import { formatMoney } from '../utils/format'
 type Props = {
   accountId: number
   currency: string
+  onLotsChange?: () => void
 }
 
-export function HoldingLotsTable({ accountId, currency }: Props) {
+export function HoldingLotsTable({ accountId, currency, onLotsChange }: Props) {
   const [lots, setLots] = useState<HoldingLot[]>([])
   const [error, setError] = useState<string | null>(null)
   const [instrumentId, setInstrumentId] = useState<number | null>(null)
@@ -30,6 +31,7 @@ export function HoldingLotsTable({ accountId, currency }: Props) {
     setError(null)
     try {
       setLots(await fetchHoldingLots(accountId))
+      onLotsChange?.()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load lots')
     }
