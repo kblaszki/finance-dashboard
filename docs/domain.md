@@ -18,7 +18,7 @@ Source of truth: [`backend/prisma/schema.prisma`](../backend/prisma/schema.prism
 ## Account workflow
 
 - **BANK** — transactions update `cashBalance` and `balanceAfter`; valuations backfilled for charts.
-- **BROKERAGE** — cash via transactions; securities via `HoldingLot`; total value in `AccountValuationDaily`.
+- **BROKERAGE** — cash via transactions; securities via `HoldingLot`; `AccountValuationDaily.cashValue` replays transactions **and** lot trade cash impact (BUY/SELL).
 - **MANUAL** — tracked account value (`openingBalance` / `cashBalance`); no holding lots.
 
 ## Categories

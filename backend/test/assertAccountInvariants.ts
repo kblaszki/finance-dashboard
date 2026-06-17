@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import assert from "node:assert/strict";
-import { toNumber } from "../src/accountValuation";
+import { computeCashAsOf, toNumber } from "../src/accountValuation";
 
 const TOLERANCE = 0.02;
 
@@ -27,19 +27,12 @@ export async function assertAccountInvariants(
       `Account ${accountId} cashBalance vs last transaction`,
     );
   } else if (account.accountType === "BROKERAGE") {
-    const lotCount = await prisma.holdingLot.count({ where: { accountId } });
-    if (lotCount === 0) {
-      const lastTx = await prisma.transaction.findFirst({
-        where: { accountId },
-        orderBy: [{ date: "desc" }, { id: "desc" }],
-      });
-      const expectedCash = lastTx ? toNumber(lastTx.balanceAfter) : toNumber(account.openingBalance);
-      approxEqual(
-        toNumber(account.cashBalance),
-        expectedCash,
-        `Account ${accountId} cashBalance vs last transaction`,
-      );
-    }
+    const replayCash = await computeCashAsOf(prisma, accountId, new Date());
+    approxEqual(
+      toNumber(account.cashBalance),
+      replayCash,
+      `Account ${accountId} cashBalance vs replay`,
+    );
   }
 
   const instrumentIds = [
@@ -96,6 +89,18 @@ export async function assertAccountInvariants(
       securities,
       sumMarket,
       `Snapshot ${snap.valuationDate.toISOString()} securitiesValue`,
+    );
+  }
+
+  const lastSnap = await prisma.accountValuationDaily.findFirst({
+    where: { accountId },
+    orderBy: { valuationDate: "desc" },
+  });
+  if (lastSnap && (account.accountType === "BANK" || account.accountType === "BROKERAGE")) {
+    approxEqual(
+      toNumber(lastSnap.cashValue),
+      toNumber(account.cashBalance),
+      `Account ${accountId} latest snapshot cashValue vs cashBalance`,
     );
   }
 }

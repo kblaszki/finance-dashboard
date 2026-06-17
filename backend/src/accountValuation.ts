@@ -1,6 +1,11 @@
 import type { PrismaClient } from "@prisma/client";
 import { convertAmount } from "./fx";
 import { priceAsOf } from "./holdingLot";
+import {
+  computeBalanceAfter,
+  isValidTransactionType,
+  type TransactionType,
+} from "./transactionBalance";
 
 function toNumber(v: unknown): number {
   if (typeof v === "number") return v;
@@ -17,6 +22,55 @@ function utcDateOnly(d: Date): Date {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
 }
 
+export type CashReplayTx = {
+  kind: "tx";
+  at: Date;
+  id: number;
+  transactionType: TransactionType;
+  amount: number;
+};
+
+export type CashReplayLot = {
+  kind: "lot";
+  at: Date;
+  id: number;
+  side: "BUY" | "SELL";
+  totalPrice: number;
+};
+
+export type CashReplayEvent = CashReplayTx | CashReplayLot;
+
+export function replayCashBalance(
+  openingBalance: number,
+  events: CashReplayEvent[],
+  asOf: Date,
+): number {
+  const asOfMs = asOf.getTime();
+  const sorted = [...events]
+    .filter((e) => e.at.getTime() <= asOfMs)
+    .sort((a, b) => {
+      const t = a.at.getTime() - b.at.getTime();
+      if (t !== 0) return t;
+      const kindOrder = (e: CashReplayEvent) => (e.kind === "tx" ? 0 : 1);
+      const k = kindOrder(a) - kindOrder(b);
+      if (k !== 0) return k;
+      return a.id - b.id;
+    });
+
+  let cash = openingBalance;
+  for (const e of sorted) {
+    if (e.kind === "tx") {
+      if (!isValidTransactionType(e.transactionType)) continue;
+      cash = computeBalanceAfter(cash, e.transactionType, e.amount, true);
+    } else if (e.side === "BUY") {
+      cash -= e.totalPrice;
+    } else {
+      cash += e.totalPrice;
+    }
+  }
+  return cash;
+}
+
 export async function computeCashAsOf(
   prisma: PrismaClient,
   accountId: number,
@@ -25,12 +79,35 @@ export async function computeCashAsOf(
   const account = await prisma.account.findUnique({ where: { id: accountId } });
   if (!account) return 0;
 
-  const lastTx = await prisma.transaction.findFirst({
-    where: { accountId, date: { lte: asOf } },
-    orderBy: [{ date: "desc" }, { id: "desc" }],
-  });
-  if (lastTx) return toNumber(lastTx.balanceAfter);
-  return toNumber(account.openingBalance);
+  const [txs, lots] = await Promise.all([
+    prisma.transaction.findMany({
+      where: { accountId, date: { lte: asOf } },
+      orderBy: [{ date: "asc" }, { id: "asc" }],
+    }),
+    prisma.holdingLot.findMany({
+      where: { accountId, tradeDate: { lte: asOf } },
+      orderBy: [{ tradeDate: "asc" }, { id: "asc" }],
+    }),
+  ]);
+
+  const events: CashReplayEvent[] = [
+    ...txs.map((t) => ({
+      kind: "tx" as const,
+      at: t.date,
+      id: t.id,
+      transactionType: t.transactionType as TransactionType,
+      amount: toNumber(t.amount),
+    })),
+    ...lots.map((l) => ({
+      kind: "lot" as const,
+      at: l.tradeDate,
+      id: l.id,
+      side: l.side as "BUY" | "SELL",
+      totalPrice: toNumber(l.totalPrice ?? 0),
+    })),
+  ];
+
+  return replayCashBalance(toNumber(account.openingBalance), events, asOf);
 }
 
 async function netQuantityAsOf(

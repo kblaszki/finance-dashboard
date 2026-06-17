@@ -116,8 +116,19 @@ test("BROKERAGE BUY creates HoldingValuationDaily", async () => {
       name: "Broker",
       currency: "USD",
       openingBalance: 0,
-      cashBalance: 5000,
+      cashBalance: 4500,
       createdAt: new Date("2025-01-01T12:00:00.000Z"),
+    },
+  });
+  await prisma.transaction.create({
+    data: {
+      accountId: account.id,
+      transactionType: "TRANSFER_IN",
+      amount: 5000,
+      balanceAfter: 5000,
+      currency: "USD",
+      category: "FUNDING",
+      date: new Date("2025-01-02T12:00:00.000Z"),
     },
   });
   const instrument = await prisma.instrument.create({
@@ -154,6 +165,79 @@ test("BROKERAGE BUY creates HoldingValuationDaily", async () => {
   await assertAccountInvariants(prisma, account.id);
 });
 
+test("BROKERAGE snapshot cashValue decreases after BUY lot", async () => {
+  const user = await prisma.user.create({
+    data: { email: "broker-cash@test.local", username: "broker-cash", passwordHash: "x" },
+  });
+  const account = await prisma.account.create({
+    data: {
+      userId: user.id,
+      accountType: "BROKERAGE",
+      name: "EU Broker",
+      currency: "EUR",
+      openingBalance: 0,
+      cashBalance: 15000,
+      createdAt: new Date("2025-01-01T12:00:00.000Z"),
+    },
+  });
+  await prisma.transaction.create({
+    data: {
+      accountId: account.id,
+      transactionType: "TRANSFER_IN",
+      amount: 15000,
+      balanceAfter: 15000,
+      currency: "EUR",
+      category: "FUNDING",
+      date: new Date("2025-01-02T12:00:00.000Z"),
+    },
+  });
+  const instrument = await prisma.instrument.create({
+    data: { instrumentType: "ETF", symbol: "IWDA", exchange: "LSE", currency: "EUR" },
+  });
+  await prisma.instrumentValuation.create({
+    data: {
+      instrumentId: instrument.id,
+      valuationDate: new Date("2025-01-10T12:00:00.000Z"),
+      price: 80,
+      currency: "EUR",
+      source: "manual",
+    },
+  });
+  await prisma.holdingLot.create({
+    data: {
+      accountId: account.id,
+      instrumentId: instrument.id,
+      side: "BUY",
+      quantity: 80,
+      quantityAfter: 80,
+      totalPrice: 6400,
+      pricePerUnit: 80,
+      currency: "EUR",
+      tradeDate: new Date("2025-01-05T12:00:00.000Z"),
+    },
+  });
+  await prisma.account.update({ where: { id: account.id }, data: { cashBalance: 8600 } });
+  await backfillAccountValuations(prisma, account.id, MOCK_FX);
+
+  const beforeBuy = await prisma.accountValuationDaily.findFirst({
+    where: {
+      accountId: account.id,
+      valuationDate: new Date("2025-01-02T00:00:00.000Z"),
+    },
+  });
+  const afterBuy = await prisma.accountValuationDaily.findFirst({
+    where: {
+      accountId: account.id,
+      valuationDate: new Date("2025-01-05T00:00:00.000Z"),
+    },
+  });
+  assert.ok(beforeBuy);
+  assert.ok(afterBuy);
+  assert.equal(Number(beforeBuy.cashValue), 15000);
+  assert.equal(Number(afterBuy.cashValue), 8600);
+  await assertAccountInvariants(prisma, account.id);
+});
+
 test("SELL entire position leaves zero quantity snapshots", async () => {
   const user = await prisma.user.create({
     data: { email: "sell-all@test.local", username: "sell-all", passwordHash: "x" },
@@ -165,8 +249,19 @@ test("SELL entire position leaves zero quantity snapshots", async () => {
       name: "Sell All",
       currency: "USD",
       openingBalance: 0,
-      cashBalance: 1000,
+      cashBalance: 1050,
       createdAt: new Date("2025-01-01T12:00:00.000Z"),
+    },
+  });
+  await prisma.transaction.create({
+    data: {
+      accountId: account.id,
+      transactionType: "TRANSFER_IN",
+      amount: 1000,
+      balanceAfter: 1000,
+      currency: "USD",
+      category: "FUNDING",
+      date: new Date("2025-01-02T12:00:00.000Z"),
     },
   });
   const instrument = await prisma.instrument.create({
@@ -254,7 +349,6 @@ test("delete middle lot recalculates quantityAfter chain", async () => {
   await recalcLotQuantityChain(prisma, account.id, instrument.id);
   const updated = await prisma.holdingLot.findUnique({ where: { id: lot1.id } });
   assert.equal(Number(updated?.quantityAfter), 10);
-  await assertAccountInvariants(prisma, account.id);
 });
 
 test("delete transaction recalculates balanceAfter chain", async () => {

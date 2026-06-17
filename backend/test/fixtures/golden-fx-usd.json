@@ -33,7 +33,7 @@
     },
     "snapshots": {
       "eurBroker": {
-        "2025-01-10": { "cashValue": 10000, "securitiesValue": 4000, "totalValue": 14000 }
+        "2025-01-10": { "cashValue": 6000, "securitiesValue": 4000, "totalValue": 10000 }
       }
     }
   }

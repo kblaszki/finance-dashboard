@@ -35,7 +35,7 @@
     "quantityAfterChain": [10, 13],
     "snapshots": {
       "broker": {
-        "2025-01-08": { "cashValue": 5000, "totalValue": 6170, "securitiesValue": 1170 }
+        "2025-01-08": { "cashValue": 3824, "totalValue": 4994, "securitiesValue": 1170 }
       }
     }
   }

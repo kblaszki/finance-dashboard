@@ -44,7 +44,7 @@
     },
     "snapshots": {
       "broker": {
-        "2025-01-20": { "cashValue": 10000, "securitiesValue": 1855, "totalValue": 11855 }
+        "2025-01-20": { "cashValue": 8330, "securitiesValue": 1855, "totalValue": 10185 }
       }
     }
   }
