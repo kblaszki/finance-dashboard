@@ -35,19 +35,15 @@ export async function assertAccountInvariants(
     );
   }
 
-  const instrumentIds = [
-    ...new Set(
-      (await prisma.holdingLot.findMany({ where: { accountId }, select: { instrumentId: true } })).map(
-        (r) => r.instrumentId,
-      ),
-    ),
-  ];
+  const holdings = await prisma.holding.findMany({
+    where: { accountId },
+    include: {
+      lots: { orderBy: [{ tradeDate: "asc" }, { id: "asc" }] },
+    },
+  });
 
-  for (const instrumentId of instrumentIds) {
-    const lots = await prisma.holdingLot.findMany({
-      where: { accountId, instrumentId },
-      orderBy: [{ tradeDate: "asc" }, { id: "asc" }],
-    });
+  for (const holding of holdings) {
+    const lots = holding.lots;
     let net = 0;
     for (const lot of lots) {
       const qty = toNumber(lot.quantityAfter);
@@ -65,7 +61,18 @@ export async function assertAccountInvariants(
       approxEqual(
         toNumber(lastLot.quantityAfter),
         sumBuy - sumSell,
-        `Account ${accountId} instrument ${instrumentId} quantity chain`,
+        `Account ${accountId} holding ${holding.id} quantity chain`,
+      );
+      approxEqual(
+        toNumber(holding.quantity),
+        toNumber(lastLot.quantityAfter),
+        `Account ${accountId} holding ${holding.id} quantity vs last lot`,
+      );
+    } else {
+      approxEqual(
+        toNumber(holding.quantity),
+        0,
+        `Account ${accountId} holding ${holding.id} empty lots quantity`,
       );
     }
   }

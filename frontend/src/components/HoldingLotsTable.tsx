@@ -5,19 +5,17 @@ import {
   fetchHoldingLots,
   type HoldingLot,
 } from '../api/holdingLotsApi'
-import { InstrumentPicker } from './InstrumentPicker'
 import { formatMoney } from '../utils/format'
 
 type Props = {
-  accountId: number
+  holdingId: number
   currency: string
   onLotsChange?: () => void
 }
 
-export function HoldingLotsTable({ accountId, currency, onLotsChange }: Props) {
+export function HoldingLotsTable({ holdingId, currency, onLotsChange }: Props) {
   const [lots, setLots] = useState<HoldingLot[]>([])
   const [error, setError] = useState<string | null>(null)
-  const [instrumentId, setInstrumentId] = useState<number | null>(null)
   const [side, setSide] = useState<'BUY' | 'SELL'>('BUY')
   const [quantity, setQuantity] = useState(1)
   const [pricePerUnit, setPricePerUnit] = useState(0)
@@ -25,12 +23,12 @@ export function HoldingLotsTable({ accountId, currency, onLotsChange }: Props) {
 
   useEffect(() => {
     void load()
-  }, [accountId])
+  }, [holdingId])
 
   async function load() {
     setError(null)
     try {
-      setLots(await fetchHoldingLots(accountId))
+      setLots(await fetchHoldingLots(holdingId))
       onLotsChange?.()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load lots')
@@ -39,14 +37,9 @@ export function HoldingLotsTable({ accountId, currency, onLotsChange }: Props) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!instrumentId) {
-      setError('Select an instrument')
-      return
-    }
     setError(null)
     try {
-      await createHoldingLot(accountId, {
-        instrumentId,
+      await createHoldingLot(holdingId, {
         side,
         quantity,
         pricePerUnit,
@@ -73,7 +66,6 @@ export function HoldingLotsTable({ accountId, currency, onLotsChange }: Props) {
     <div>
       {error && <p className="error-banner">{error}</p>}
       <form className="card inline-form form-section-gap" onSubmit={(e) => void handleSubmit(e)}>
-        <InstrumentPicker value={instrumentId} onChange={setInstrumentId} />
         <select value={side} onChange={(e) => setSide(e.target.value as 'BUY' | 'SELL')}>
           <option value="BUY">BUY</option>
           <option value="SELL">SELL</option>
@@ -88,7 +80,6 @@ export function HoldingLotsTable({ accountId, currency, onLotsChange }: Props) {
         <thead>
           <tr>
             <th>Date</th>
-            <th>Instrument</th>
             <th>Side</th>
             <th>Qty</th>
             <th>After</th>
@@ -100,7 +91,6 @@ export function HoldingLotsTable({ accountId, currency, onLotsChange }: Props) {
           {lots.map((l) => (
             <tr key={l.id}>
               <td>{new Date(l.tradeDate).toLocaleDateString('en-US')}</td>
-              <td>{l.instrument?.symbol ?? l.instrumentId}</td>
               <td>{l.side}</td>
               <td>{l.quantity}</td>
               <td>{l.quantityAfter}</td>

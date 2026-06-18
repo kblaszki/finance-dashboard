@@ -16,13 +16,20 @@ import {
   computeQuantityAfter,
   isValidLotSide,
   resolveLotPrice,
-  recomputeQuantityAfterChain,
 } from "./holdingLot";
 import {
   backfillAccountValuations,
   recomputeAccountValuationsFrom,
   toNumber,
 } from "./accountValuation";
+import {
+  buildHoldingSummary,
+  findOrCreateHolding,
+  getAccountHoldings,
+  getHoldingForUser,
+  recalcLotQuantityChain,
+  syncHoldingQuantity,
+} from "./holdings";
 import {
   computeBalanceAfter,
   isValidTransactionType,
@@ -124,8 +131,7 @@ function serializeTransaction(t: {
 
 function serializeHoldingLot(l: {
   id: number;
-  accountId: number;
-  instrumentId: number;
+  holdingId: number;
   side: string;
   quantity: unknown;
   quantityAfter: unknown;
@@ -134,19 +140,25 @@ function serializeHoldingLot(l: {
   currency: string;
   tradeDate: Date;
   createdAt: Date;
-  instrument?: {
+  holding?: {
     id: number;
-    symbol: string;
-    name: string | null;
-    instrumentType: string;
-    exchange: string | null;
-    currency: string;
+    accountId: number;
+    instrumentId: number;
+    instrument?: {
+      id: number;
+      symbol: string;
+      name: string | null;
+      instrumentType: string;
+      exchange: string | null;
+      currency: string;
+    };
   };
 }) {
   return {
     id: l.id,
-    accountId: l.accountId,
-    instrumentId: l.instrumentId,
+    holdingId: l.holdingId,
+    accountId: l.holding?.accountId,
+    instrumentId: l.holding?.instrumentId,
     side: l.side,
     quantity: toNumber(l.quantity),
     quantityAfter: toNumber(l.quantityAfter),
@@ -155,17 +167,21 @@ function serializeHoldingLot(l: {
     currency: l.currency,
     tradeDate: l.tradeDate.toISOString(),
     createdAt: l.createdAt.toISOString(),
-    instrument: l.instrument
+    instrument: l.holding?.instrument
       ? {
-          id: l.instrument.id,
-          symbol: l.instrument.symbol,
-          name: l.instrument.name,
-          instrumentType: l.instrument.instrumentType,
-          exchange: l.instrument.exchange,
-          currency: l.instrument.currency,
+          id: l.holding.instrument.id,
+          symbol: l.holding.instrument.symbol,
+          name: l.holding.instrument.name,
+          instrumentType: l.holding.instrument.instrumentType,
+          exchange: l.holding.instrument.exchange,
+          currency: l.holding.instrument.currency,
         }
       : undefined,
   };
+}
+
+function serializeHoldingSummary(summary: Awaited<ReturnType<typeof buildHoldingSummary>>) {
+  return summary;
 }
 
 async function getAccountForUser(userId: number, accountId: number) {
@@ -199,22 +215,6 @@ async function recalcTransactionBalances(accountId: number, fromDate?: Date): Pr
     });
   }
   await prisma.account.update({ where: { id: accountId }, data: { cashBalance: running } });
-}
-
-async function recalcLotQuantityChain(accountId: number, instrumentId: number): Promise<void> {
-  const lots = await prisma.holdingLot.findMany({
-    where: { accountId, instrumentId },
-    orderBy: [{ tradeDate: "asc" }, { id: "asc" }],
-  });
-  const chain = recomputeQuantityAfterChain(
-    lots.map((l) => ({ id: l.id, side: l.side, quantity: toNumber(l.quantity) })),
-  );
-  for (const lot of lots) {
-    const qa = chain.get(lot.id);
-    if (qa != null) {
-      await prisma.holdingLot.update({ where: { id: lot.id }, data: { quantityAfter: qa } });
-    }
-  }
 }
 
 // --- Auth ---
@@ -511,7 +511,7 @@ app.post("/api/instruments/:id/valuations", requireAuth, async (req: AuthedReque
     const row = await prisma.instrumentValuation.create({
       data: { instrumentId, valuationDate, price, currency, source },
     });
-    const accounts = await prisma.holdingLot.findMany({
+    const accounts = await prisma.holding.findMany({
       where: { instrumentId },
       select: { accountId: true },
       distinct: ["accountId"],
@@ -530,35 +530,95 @@ app.post("/api/instruments/:id/valuations", requireAuth, async (req: AuthedReque
   }
 });
 
-// --- Holding lots ---
+// --- Holdings ---
 
-app.get("/api/accounts/:accountId/holding-lots", requireAuth, async (req: AuthedRequest, res) => {
+app.get("/api/accounts/:accountId/holdings", requireAuth, async (req: AuthedRequest, res) => {
   const accountId = Number(req.params.accountId);
   const account = await getAccountForUser(uid(req), accountId);
   if (!account) return res.status(404).json({ error: "Account not found" });
+  if (account.accountType !== "BROKERAGE") {
+    return res.json({ open: [], closed: [] });
+  }
+  const { plnPerUnit } = await getFxRatesPlnPerUnit();
+  const holdings = await getAccountHoldings(prisma, accountId, account.currency, plnPerUnit);
+  res.json(holdings);
+});
+
+app.post("/api/accounts/:accountId/holdings", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const accountId = Number(req.params.accountId);
+    const account = await getAccountForUser(uid(req), accountId);
+    if (!account) return res.status(404).json({ error: "Account not found" });
+    if (account.accountType !== "BROKERAGE") {
+      return res.status(400).json({ error: "Holdings are only for brokerage accounts" });
+    }
+
+    const instrumentId = Number(req.body?.instrumentId);
+    const instrument = await prisma.instrument.findUnique({ where: { id: instrumentId } });
+    if (!instrument) return res.status(404).json({ error: "Instrument not found" });
+
+    const holding = await findOrCreateHolding(prisma, accountId, instrumentId);
+    const row = await prisma.holding.findUnique({
+      where: { id: holding.id },
+      include: {
+        instrument: true,
+        lots: { orderBy: [{ tradeDate: "asc" }, { id: "asc" }] },
+      },
+    });
+    if (!row) return res.status(404).json({ error: "Holding not found" });
+
+    const { plnPerUnit } = await getFxRatesPlnPerUnit();
+    const summary = await buildHoldingSummary(prisma, row, account.currency, plnPerUnit);
+    res.status(201).json(serializeHoldingSummary(summary));
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "Failed to create holding";
+    res.status(400).json({ error: msg });
+  }
+});
+
+app.get("/api/holdings/:holdingId", requireAuth, async (req: AuthedRequest, res) => {
+  const holdingId = Number(req.params.holdingId);
+  const holding = await getHoldingForUser(prisma, uid(req), holdingId);
+  if (!holding) return res.status(404).json({ error: "Holding not found" });
+
+  const { plnPerUnit } = await getFxRatesPlnPerUnit();
+  const summary = await buildHoldingSummary(
+    prisma,
+    holding,
+    holding.account.currency,
+    plnPerUnit,
+  );
+  res.json(serializeHoldingSummary(summary));
+});
+
+app.get("/api/holdings/:holdingId/lots", requireAuth, async (req: AuthedRequest, res) => {
+  const holdingId = Number(req.params.holdingId);
+  const holding = await getHoldingForUser(prisma, uid(req), holdingId);
+  if (!holding) return res.status(404).json({ error: "Holding not found" });
+
   const rows = await prisma.holdingLot.findMany({
-    where: { accountId },
-    include: { instrument: true },
+    where: { holdingId },
+    include: {
+      holding: { include: { instrument: true } },
+    },
     orderBy: [{ tradeDate: "desc" }, { id: "desc" }],
   });
   res.json(rows.map(serializeHoldingLot));
 });
 
-app.post("/api/accounts/:accountId/holding-lots", requireAuth, async (req: AuthedRequest, res) => {
+app.post("/api/holdings/:holdingId/lots", requireAuth, async (req: AuthedRequest, res) => {
   try {
-    const accountId = Number(req.params.accountId);
-    const account = await getAccountForUser(uid(req), accountId);
-    if (!account) return res.status(404).json({ error: "Account not found" });
+    const holdingId = Number(req.params.holdingId);
+    const holding = await getHoldingForUser(prisma, uid(req), holdingId);
+    if (!holding) return res.status(404).json({ error: "Holding not found" });
 
-    const instrumentId = Number(req.body?.instrumentId);
+    const account = holding.account;
     const side = String(req.body?.side ?? "").trim().toUpperCase();
     const quantity = Number(req.body?.quantity);
     const currency = normalizeCurrency(req.body?.currency ?? account.currency);
     const tradeDate = parseDateBody(req.body?.tradeDate);
 
     if (!isValidLotSide(side)) return res.status(400).json({ error: "Invalid side" });
-    const instrument = await prisma.instrument.findUnique({ where: { id: instrumentId } });
-    if (!instrument) return res.status(404).json({ error: "Instrument not found" });
 
     const prices = resolveLotPrice({
       quantity,
@@ -567,7 +627,7 @@ app.post("/api/accounts/:accountId/holding-lots", requireAuth, async (req: Authe
     });
 
     const lastLot = await prisma.holdingLot.findFirst({
-      where: { accountId, instrumentId },
+      where: { holdingId },
       orderBy: [{ tradeDate: "desc" }, { id: "desc" }],
     });
     const prevQty = lastLot ? toNumber(lastLot.quantityAfter) : 0;
@@ -582,8 +642,7 @@ app.post("/api/accounts/:accountId/holding-lots", requireAuth, async (req: Authe
 
     const row = await prisma.holdingLot.create({
       data: {
-        accountId,
-        instrumentId,
+        holdingId,
         side,
         quantity,
         quantityAfter,
@@ -592,14 +651,17 @@ app.post("/api/accounts/:accountId/holding-lots", requireAuth, async (req: Authe
         currency,
         tradeDate,
       },
-      include: { instrument: true },
+      include: {
+        holding: { include: { instrument: true } },
+      },
     });
 
-    await prisma.account.update({ where: { id: accountId }, data: { cashBalance } });
-    await recalcLotQuantityChain(accountId, instrumentId);
+    await prisma.account.update({ where: { id: account.id }, data: { cashBalance } });
+    await recalcLotQuantityChain(prisma, holdingId);
+    await syncHoldingQuantity(prisma, holdingId);
 
     const { plnPerUnit } = await getFxRatesPlnPerUnit();
-    await recomputeAccountValuationsFrom(prisma, accountId, tradeDate, plnPerUnit);
+    await recomputeAccountValuationsFrom(prisma, account.id, tradeDate, plnPerUnit);
     res.status(201).json(serializeHoldingLot(row));
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Failed to create holding lot";
@@ -610,13 +672,21 @@ app.post("/api/accounts/:accountId/holding-lots", requireAuth, async (req: Authe
 app.delete("/api/holding-lots/:id", requireAuth, async (req: AuthedRequest, res) => {
   const id = Number(req.params.id);
   const existing = await prisma.holdingLot.findFirst({
-    where: { id, account: { userId: uid(req) } },
+    where: { id, holding: { account: { userId: uid(req) } } },
+    include: { holding: true },
   });
   if (!existing) return res.status(404).json({ error: "Holding lot not found" });
+
+  const accountId = existing.holding.accountId;
+  const holdingId = existing.holdingId;
+  const tradeDate = existing.tradeDate;
+
   await prisma.holdingLot.delete({ where: { id } });
-  await recalcLotQuantityChain(existing.accountId, existing.instrumentId);
+  await recalcLotQuantityChain(prisma, holdingId);
+  await syncHoldingQuantity(prisma, holdingId);
+
   const { plnPerUnit } = await getFxRatesPlnPerUnit();
-  await recomputeAccountValuationsFrom(prisma, existing.accountId, existing.tradeDate, plnPerUnit);
+  await recomputeAccountValuationsFrom(prisma, accountId, tradeDate, plnPerUnit);
   res.status(204).send();
 });
 

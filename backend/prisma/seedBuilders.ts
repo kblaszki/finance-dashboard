@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { computeBalanceAfter, type TransactionType } from "../src/transactionBalance";
 import { computeQuantityAfter, resolveLotPrice } from "../src/holdingLot";
+import { findOrCreateHolding, syncHoldingQuantity } from "../src/holdings";
 
 export function daysAgo(days: number): Date {
   const d = new Date();
@@ -127,6 +128,8 @@ export async function seedHoldingLots(
   let prevQty = 0;
   let cash = initialCash;
 
+  const holding = await findOrCreateHolding(prisma, accountId, instrumentId);
+
   for (const lot of sorted) {
     const prices = resolveLotPrice({
       quantity: lot.quantity,
@@ -143,8 +146,7 @@ export async function seedHoldingLots(
 
     await prisma.holdingLot.create({
       data: {
-        accountId,
-        instrumentId,
+        holdingId: holding.id,
         side: lot.side,
         quantity: lot.quantity,
         quantityAfter,
@@ -155,6 +157,8 @@ export async function seedHoldingLots(
       },
     });
   }
+
+  await syncHoldingQuantity(prisma, holding.id);
 
   await prisma.account.update({ where: { id: accountId }, data: { cashBalance: cash } });
   return cash;

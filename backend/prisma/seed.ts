@@ -26,7 +26,8 @@ async function clearUserData(userId: number): Promise<void> {
   await prisma.holdingValuationDaily.deleteMany({
     where: { account: { userId } },
   });
-  await prisma.holdingLot.deleteMany({ where: { account: { userId } } });
+  await prisma.holdingLot.deleteMany({ where: { holding: { account: { userId } } } });
+  await prisma.holding.deleteMany({ where: { account: { userId } } });
   await prisma.transaction.deleteMany({ where: { account: { userId } } });
   await prisma.account.deleteMany({ where: { userId } });
 }

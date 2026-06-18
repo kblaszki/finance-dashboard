@@ -7,6 +7,7 @@ import { RegisterPage } from './pages/RegisterPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { AccountsPage } from './pages/AccountsPage'
 import { AccountDetailPage } from './pages/AccountDetailPage'
+import { HoldingDetailPage } from './pages/HoldingDetailPage'
 import { TransactionsListPage } from './pages/TransactionsListPage'
 import { useAuth } from './state/auth'
 
@@ -20,6 +21,7 @@ function App() {
           <Route path="/" element={<DashboardPage />} />
           <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/accounts/:id" element={<AccountDetailPage />} />
+          <Route path="/accounts/:id/holdings/:holdingId" element={<HoldingDetailPage />} />
           <Route path="/transactions" element={<TransactionsListPage />} />
         </Route>
       </Route>

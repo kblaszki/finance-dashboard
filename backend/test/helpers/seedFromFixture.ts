@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import type { PrismaClient } from "@prisma/client";
 import { backfillAccountValuations } from "../../src/accountValuation";
 import { computeQuantityAfter, resolveLotPrice } from "../../src/holdingLot";
+import { findOrCreateHolding, syncHoldingQuantity } from "../../src/holdings";
 import { computeBalanceAfter, type TransactionType } from "../../src/transactionBalance";
 
 export const MOCK_FX: Record<string, number> = { PLN: 1, USD: 4, EUR: 4.3 };
@@ -195,6 +196,8 @@ export async function seedFromFixture(
     let prevQty = 0;
     let cash = accountCash.get(accountKey) ?? 0;
 
+    const holding = await findOrCreateHolding(prisma, accountId, instrumentId);
+
     for (const lot of sorted) {
       const prices = resolveLotPrice({
         quantity: lot.quantity,
@@ -212,8 +215,7 @@ export async function seedFromFixture(
 
       await prisma.holdingLot.create({
         data: {
-          accountId,
-          instrumentId,
+          holdingId: holding.id,
           side: lot.side,
           quantity: lot.quantity,
           quantityAfter,
@@ -224,6 +226,7 @@ export async function seedFromFixture(
         },
       });
     }
+    await syncHoldingQuantity(prisma, holding.id);
     accountCash.set(accountKey, cash);
     await prisma.account.update({ where: { id: accountId }, data: { cashBalance: cash } });
   }

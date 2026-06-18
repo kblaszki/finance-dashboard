@@ -7,7 +7,7 @@ import {
   utcDateOnly,
 } from "../src/accountValuation";
 import { computeBalanceAfter } from "../src/transactionBalance";
-import { computeQuantityAfter, recomputeQuantityAfterChain } from "../src/holdingLot";
+import { findOrCreateHolding, recalcLotQuantityChain, syncHoldingQuantity } from "../src/holdings";
 import { assertAccountInvariants } from "./assertAccountInvariants";
 import { MOCK_FX } from "./helpers/seedFromFixture";
 import { createTestPrisma, disconnectTestPrisma, resetDatabase } from "./prismaTestClient";
@@ -26,24 +26,29 @@ test.beforeEach(async () => {
   await resetDatabase(prisma);
 });
 
-async function recalcLotQuantityChain(
+async function createHoldingLot(
   p: PrismaClient,
   accountId: number,
   instrumentId: number,
-): Promise<void> {
-  const lots = await p.holdingLot.findMany({
-    where: { accountId, instrumentId },
-    orderBy: [{ tradeDate: "asc" }, { id: "asc" }],
+  data: {
+    side: "BUY" | "SELL";
+    quantity: number;
+    quantityAfter: number;
+    totalPrice: number;
+    pricePerUnit: number;
+    currency: string;
+    tradeDate: Date;
+  },
+) {
+  const holding = await findOrCreateHolding(p, accountId, instrumentId);
+  const lot = await p.holdingLot.create({
+    data: {
+      holdingId: holding.id,
+      ...data,
+    },
   });
-  const chain = recomputeQuantityAfterChain(
-    lots.map((l) => ({ id: l.id, side: l.side, quantity: Number(l.quantity) })),
-  );
-  for (const lot of lots) {
-    const qa = chain.get(lot.id);
-    if (qa != null) {
-      await p.holdingLot.update({ where: { id: lot.id }, data: { quantityAfter: qa } });
-    }
-  }
+  await syncHoldingQuantity(p, holding.id);
+  return { holding, lot };
 }
 
 test("BANK without transactions backfills opening balance", async () => {
@@ -143,18 +148,14 @@ test("BROKERAGE BUY creates HoldingValuationDaily", async () => {
       source: "manual",
     },
   });
-  await prisma.holdingLot.create({
-    data: {
-      accountId: account.id,
-      instrumentId: instrument.id,
-      side: "BUY",
-      quantity: 10,
-      quantityAfter: 10,
-      totalPrice: 500,
-      pricePerUnit: 50,
-      currency: "USD",
-      tradeDate: new Date("2025-01-05T12:00:00.000Z"),
-    },
+  await createHoldingLot(prisma, account.id, instrument.id, {
+    side: "BUY",
+    quantity: 10,
+    quantityAfter: 10,
+    totalPrice: 500,
+    pricePerUnit: 50,
+    currency: "USD",
+    tradeDate: new Date("2025-01-05T12:00:00.000Z"),
   });
   await backfillAccountValuations(prisma, account.id, MOCK_FX);
   const holdingSnap = await prisma.holdingValuationDaily.findFirst({
@@ -203,18 +204,14 @@ test("BROKERAGE snapshot cashValue decreases after BUY lot", async () => {
       source: "manual",
     },
   });
-  await prisma.holdingLot.create({
-    data: {
-      accountId: account.id,
-      instrumentId: instrument.id,
-      side: "BUY",
-      quantity: 80,
-      quantityAfter: 80,
-      totalPrice: 6400,
-      pricePerUnit: 80,
-      currency: "EUR",
-      tradeDate: new Date("2025-01-05T12:00:00.000Z"),
-    },
+  await createHoldingLot(prisma, account.id, instrument.id, {
+    side: "BUY",
+    quantity: 80,
+    quantityAfter: 80,
+    totalPrice: 6400,
+    pricePerUnit: 80,
+    currency: "EUR",
+    tradeDate: new Date("2025-01-05T12:00:00.000Z"),
   });
   await prisma.account.update({ where: { id: account.id }, data: { cashBalance: 8600 } });
   await backfillAccountValuations(prisma, account.id, MOCK_FX);
@@ -267,34 +264,31 @@ test("SELL entire position leaves zero quantity snapshots", async () => {
   const instrument = await prisma.instrument.create({
     data: { instrumentType: "STOCK", symbol: "SEL", exchange: "TEST", currency: "USD" },
   });
-  await prisma.holdingLot.create({
-    data: {
-      accountId: account.id,
-      instrumentId: instrument.id,
-      side: "BUY",
-      quantity: 5,
-      quantityAfter: 5,
-      totalPrice: 500,
-      pricePerUnit: 100,
-      currency: "USD",
-      tradeDate: new Date("2025-01-03T12:00:00.000Z"),
-    },
+  await createHoldingLot(prisma, account.id, instrument.id, {
+    side: "BUY",
+    quantity: 5,
+    quantityAfter: 5,
+    totalPrice: 500,
+    pricePerUnit: 100,
+    currency: "USD",
+    tradeDate: new Date("2025-01-03T12:00:00.000Z"),
   });
-  await prisma.holdingLot.create({
-    data: {
-      accountId: account.id,
-      instrumentId: instrument.id,
-      side: "SELL",
-      quantity: 5,
-      quantityAfter: 0,
-      totalPrice: 550,
-      pricePerUnit: 110,
-      currency: "USD",
-      tradeDate: new Date("2025-01-08T12:00:00.000Z"),
-    },
+  await createHoldingLot(prisma, account.id, instrument.id, {
+    side: "SELL",
+    quantity: 5,
+    quantityAfter: 0,
+    totalPrice: 550,
+    pricePerUnit: 110,
+    currency: "USD",
+    tradeDate: new Date("2025-01-08T12:00:00.000Z"),
   });
   await backfillAccountValuations(prisma, account.id, MOCK_FX);
-  const lots = await prisma.holdingLot.findMany({ where: { accountId: account.id } });
+  const holding = await prisma.holding.findUnique({
+    where: { accountId_instrumentId: { accountId: account.id, instrumentId: instrument.id } },
+  });
+  assert.ok(holding);
+  assert.equal(Number(holding.quantity), 0);
+  const lots = await prisma.holdingLot.findMany({ where: { holdingId: holding.id } });
   for (const lot of lots) {
     assert.ok(Number(lot.quantityAfter) >= 0);
   }
@@ -319,34 +313,27 @@ test("delete middle lot recalculates quantityAfter chain", async () => {
   const instrument = await prisma.instrument.create({
     data: { instrumentType: "ETF", symbol: "DEL", exchange: "TEST", currency: "USD" },
   });
-  const lot1 = await prisma.holdingLot.create({
-    data: {
-      accountId: account.id,
-      instrumentId: instrument.id,
-      side: "BUY",
-      quantity: 10,
-      quantityAfter: 10,
-      totalPrice: 1000,
-      pricePerUnit: 100,
-      currency: "USD",
-      tradeDate: new Date("2025-01-03T12:00:00.000Z"),
-    },
+  const { holding, lot: lot1 } = await createHoldingLot(prisma, account.id, instrument.id, {
+    side: "BUY",
+    quantity: 10,
+    quantityAfter: 10,
+    totalPrice: 1000,
+    pricePerUnit: 100,
+    currency: "USD",
+    tradeDate: new Date("2025-01-03T12:00:00.000Z"),
   });
-  const lot2 = await prisma.holdingLot.create({
-    data: {
-      accountId: account.id,
-      instrumentId: instrument.id,
-      side: "BUY",
-      quantity: 5,
-      quantityAfter: 15,
-      totalPrice: 500,
-      pricePerUnit: 100,
-      currency: "USD",
-      tradeDate: new Date("2025-01-05T12:00:00.000Z"),
-    },
+  const { lot: lot2 } = await createHoldingLot(prisma, account.id, instrument.id, {
+    side: "BUY",
+    quantity: 5,
+    quantityAfter: 15,
+    totalPrice: 500,
+    pricePerUnit: 100,
+    currency: "USD",
+    tradeDate: new Date("2025-01-05T12:00:00.000Z"),
   });
   await prisma.holdingLot.delete({ where: { id: lot2.id } });
-  await recalcLotQuantityChain(prisma, account.id, instrument.id);
+  await recalcLotQuantityChain(prisma, holding.id);
+  await syncHoldingQuantity(prisma, holding.id);
   const updated = await prisma.holdingLot.findUnique({ where: { id: lot1.id } });
   assert.equal(Number(updated?.quantityAfter), 10);
 });

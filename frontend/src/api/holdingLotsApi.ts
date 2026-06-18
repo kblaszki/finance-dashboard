@@ -1,10 +1,11 @@
 import { apiClient } from "./client";
-import type { Instrument } from "./instrumentsApi";
+import type { HoldingInstrument } from "./holdingsApi";
 
 export type HoldingLot = {
   id: number;
-  accountId: number;
-  instrumentId: number;
+  holdingId: number;
+  accountId?: number;
+  instrumentId?: number;
   side: "BUY" | "SELL";
   quantity: number;
   quantityAfter: number;
@@ -13,11 +14,10 @@ export type HoldingLot = {
   currency: string;
   tradeDate: string;
   createdAt: string;
-  instrument?: Pick<Instrument, "id" | "symbol" | "name" | "instrumentType" | "exchange" | "currency">;
+  instrument?: HoldingInstrument;
 };
 
 export type HoldingLotInput = {
-  instrumentId: number;
   side: "BUY" | "SELL";
   quantity: number;
   totalPrice?: number;
@@ -26,15 +26,15 @@ export type HoldingLotInput = {
   tradeDate: string;
 };
 
-export async function fetchHoldingLots(accountId: number): Promise<HoldingLot[]> {
-  return apiClient.get<HoldingLot[]>(`/api/accounts/${accountId}/holding-lots`);
+export async function fetchHoldingLots(holdingId: number): Promise<HoldingLot[]> {
+  return apiClient.get<HoldingLot[]>(`/api/holdings/${holdingId}/lots`);
 }
 
 export async function createHoldingLot(
-  accountId: number,
+  holdingId: number,
   input: HoldingLotInput,
 ): Promise<HoldingLot> {
-  return apiClient.post<HoldingLot>(`/api/accounts/${accountId}/holding-lots`, input);
+  return apiClient.post<HoldingLot>(`/api/holdings/${holdingId}/lots`, input);
 }
 
 export async function deleteHoldingLot(id: number): Promise<void> {

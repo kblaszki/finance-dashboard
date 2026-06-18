@@ -10,7 +10,8 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 | `/register` | Register | `pages/RegisterPage.tsx` (username) |
 | `/` | Dashboard | `DashboardPage`, `NetWorthSection`, charts |
 | `/accounts` | Accounts | `ManagedAccountsList` |
-| `/accounts/:id` | Account detail | `AccountDetailPage`, `AccountBalanceChart`, `HoldingValuationChart`, `HoldingLotsTable` |
+| `/accounts/:id` | Account detail | `AccountDetailPage`, `AccountBalanceChart`, `AccountHoldingsTable` |
+| `/accounts/:id/holdings/:holdingId` | Holding detail | `HoldingDetailPage`, `HoldingValuationChart`, `HoldingLotsTable` |
 | `/transactions` | Transactions | `TransactionsListPage` → `TransactionTable` |
 
 Protected shell: `ProtectedRoute` → `AppShell`.
@@ -32,8 +33,9 @@ Protected shell: `ProtectedRoute` → `AppShell`.
 | `accountsApi.ts` | `/api/accounts` |
 | `transactionsApi.ts` | `/api/transactions` |
 | `instrumentsApi.ts` | `/api/instruments` |
-| `holdingLotsApi.ts` | `/api/accounts/:id/holding-lots` |
-| `valuationsApi.ts` | `/api/accounts/:id/holdings/:instrumentId/valuations` — used by `HoldingValuationChart` on brokerage account detail |
+| `holdingsApi.ts` | `/api/accounts/:id/holdings`, `/api/holdings/:holdingId` |
+| `holdingLotsApi.ts` | `/api/holdings/:holdingId/lots` |
+| `valuationsApi.ts` | `/api/accounts/:id/holdings/:instrumentId/valuations` — used by `HoldingValuationChart` on holding detail |
 | `statsApi.ts` | `/api/stats/*` |
 
 ## Related docs

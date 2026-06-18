@@ -91,7 +91,7 @@ test("POST /api/transactions updates balanceAfter", async () => {
   assert.equal(txRes.body.balanceAfter, 700);
 });
 
-test("POST holding-lot rejects oversell", async () => {
+test("POST holding lot rejects oversell", async () => {
   const { token } = await createUserAndToken();
   const accountRes = await request(app)
     .post("/api/accounts")
@@ -108,11 +108,17 @@ test("POST holding-lot rejects oversell", async () => {
     data: { instrumentType: "STOCK", symbol: "HTTP", exchange: "TEST", currency: "USD" },
   });
 
+  const holdingRes = await request(app)
+    .post(`/api/accounts/${accountId}/holdings`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ instrumentId: instrument.id });
+  assert.equal(holdingRes.status, 201);
+  const holdingId = holdingRes.body.id;
+
   await request(app)
-    .post(`/api/accounts/${accountId}/holding-lots`)
+    .post(`/api/holdings/${holdingId}/lots`)
     .set("Authorization", `Bearer ${token}`)
     .send({
-      instrumentId: instrument.id,
       side: "BUY",
       quantity: 5,
       pricePerUnit: 100,
@@ -121,10 +127,9 @@ test("POST holding-lot rejects oversell", async () => {
     });
 
   const sellRes = await request(app)
-    .post(`/api/accounts/${accountId}/holding-lots`)
+    .post(`/api/holdings/${holdingId}/lots`)
     .set("Authorization", `Bearer ${token}`)
     .send({
-      instrumentId: instrument.id,
       side: "SELL",
       quantity: 10,
       pricePerUnit: 110,

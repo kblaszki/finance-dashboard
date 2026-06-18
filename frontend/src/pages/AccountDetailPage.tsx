@@ -6,48 +6,17 @@ import {
   type Account,
   type AccountValuationPoint,
 } from '../api/accountsApi'
-import { fetchHoldingLots, type HoldingLot } from '../api/holdingLotsApi'
-import { fetchTransactions, type Transaction } from '../api/transactionsApi'
-import { fetchHoldingValuations } from '../api/valuationsApi'
+import { fetchAccountHoldings, type AccountHoldings } from '../api/holdingsApi'
 import { AccountBalanceChart } from '../components/AccountBalanceChart'
-import { HoldingLotsTable } from '../components/HoldingLotsTable'
-import { HoldingValuationChart } from '../components/HoldingValuationChart'
+import { AccountHoldingsTable } from '../components/AccountHoldingsTable'
 import { formatMoney } from '../utils/format'
-
-type OpenPosition = {
-  instrumentId: number
-  label: string
-}
-
-function openPositionsFromLots(lots: HoldingLot[]): OpenPosition[] {
-  const byInstrument = new Map<number, { symbol: string; name: string | null; qty: number }>()
-  for (const lot of lots) {
-    const symbol = lot.instrument?.symbol ?? `#${lot.instrumentId}`
-    const name = lot.instrument?.name ?? null
-    byInstrument.set(lot.instrumentId, {
-      symbol,
-      name,
-      qty: lot.quantityAfter,
-    })
-  }
-  return [...byInstrument.entries()]
-    .filter(([, v]) => v.qty > 0)
-    .map(([instrumentId, v]) => ({
-      instrumentId,
-      label: v.name ? `${v.symbol} — ${v.name}` : v.symbol,
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label))
-}
 
 export function AccountDetailPage() {
   const { id } = useParams()
   const accountId = Number(id)
   const [account, setAccount] = useState<Account | null>(null)
   const [history, setHistory] = useState<AccountValuationPoint[]>([])
-  const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [openPositions, setOpenPositions] = useState<OpenPosition[]>([])
-  const [selectedInstrumentId, setSelectedInstrumentId] = useState<number | null>(null)
-  const [positionHistory, setPositionHistory] = useState<Awaited<ReturnType<typeof fetchHoldingValuations>>>([])
+  const [holdings, setHoldings] = useState<AccountHoldings>({ open: [], closed: [] })
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -55,34 +24,16 @@ export function AccountDetailPage() {
     void load()
   }, [accountId])
 
-  useEffect(() => {
-    if (!accountId || selectedInstrumentId == null) {
-      setPositionHistory([])
-      return
-    }
-    void fetchHoldingValuations(accountId, selectedInstrumentId)
-      .then(setPositionHistory)
-      .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load position history'))
-  }, [accountId, selectedInstrumentId])
-
   async function load() {
     setError(null)
     try {
       const acc = await fetchAccount(accountId)
       setAccount(acc)
       setHistory(await fetchAccountValuations(accountId))
-      if (acc.accountType === 'BANK') {
-        setTransactions(await fetchTransactions({ accountId }))
-        setOpenPositions([])
-        setSelectedInstrumentId(null)
-      } else if (acc.accountType === 'BROKERAGE') {
-        const lots = await fetchHoldingLots(accountId)
-        const positions = openPositionsFromLots(lots)
-        setOpenPositions(positions)
-        setSelectedInstrumentId((current) => {
-          if (current != null && positions.some((p) => p.instrumentId === current)) return current
-          return positions[0]?.instrumentId ?? null
-        })
+      if (acc.accountType === 'BROKERAGE') {
+        setHoldings(await fetchAccountHoldings(accountId))
+      } else {
+        setHoldings({ open: [], closed: [] })
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load')
@@ -97,8 +48,6 @@ export function AccountDetailPage() {
       </div>
     )
   }
-
-  const selectedPosition = openPositions.find((p) => p.instrumentId === selectedInstrumentId)
 
   return (
     <div className="page">
@@ -120,59 +69,17 @@ export function AccountDetailPage() {
         />
       </section>
 
-      {account.accountType === 'BROKERAGE' && openPositions.length > 0 && (
+      {account.accountType === 'BROKERAGE' && (
         <section className="card">
-          <h2>Position value history</h2>
-          <label className="inline-form form-section-gap">
-            <span>Instrument</span>
-            <select
-              value={selectedInstrumentId ?? ''}
-              onChange={(e) => setSelectedInstrumentId(Number(e.target.value))}
-            >
-              {openPositions.map((p) => (
-                <option key={p.instrumentId} value={p.instrumentId}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          {selectedPosition && (
-            <HoldingValuationChart points={positionHistory} currency={account.currency} />
-          )}
+          <h2>Holdings</h2>
+          <AccountHoldingsTable
+            accountId={accountId}
+            currency={account.currency}
+            open={holdings.open}
+            closed={holdings.closed}
+          />
         </section>
       )}
-
-      <section className="card">
-        <h2>Activity</h2>
-        {account.accountType === 'BANK' ? (
-          <div className="table-wrap">
-            <table className="data-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Type</th>
-                <th>Category</th>
-                <th>Amount</th>
-                <th>Balance after</th>
-              </tr>
-            </thead>
-            <tbody>
-              {transactions.map((t) => (
-                <tr key={t.id}>
-                  <td>{new Date(t.date).toLocaleDateString('en-US')}</td>
-                  <td>{t.transactionType}</td>
-                  <td>{t.category}</td>
-                  <td>{formatMoney(t.amount, t.currency)}</td>
-                  <td>{formatMoney(t.balanceAfter, t.currency)}</td>
-                </tr>
-              ))}
-            </tbody>
-            </table>
-          </div>
-        ) : (
-          <HoldingLotsTable accountId={accountId} currency={account.currency} onLotsChange={load} />
-        )}
-      </section>
     </div>
   )
 }

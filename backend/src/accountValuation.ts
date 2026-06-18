@@ -85,7 +85,7 @@ export async function computeCashAsOf(
       orderBy: [{ date: "asc" }, { id: "asc" }],
     }),
     prisma.holdingLot.findMany({
-      where: { accountId, tradeDate: { lte: asOf } },
+      where: { holding: { accountId }, tradeDate: { lte: asOf } },
       orderBy: [{ tradeDate: "asc" }, { id: "asc" }],
     }),
   ]);
@@ -116,8 +116,13 @@ async function netQuantityAsOf(
   instrumentId: number,
   asOf: Date,
 ): Promise<number> {
+  const holding = await prisma.holding.findUnique({
+    where: { accountId_instrumentId: { accountId, instrumentId } },
+  });
+  if (!holding) return 0;
+
   const lastLot = await prisma.holdingLot.findFirst({
-    where: { accountId, instrumentId, tradeDate: { lte: asOf } },
+    where: { holdingId: holding.id, tradeDate: { lte: asOf } },
     orderBy: [{ tradeDate: "desc" }, { id: "desc" }],
   });
   return lastLot ? toNumber(lastLot.quantityAfter) : 0;
@@ -165,20 +170,16 @@ export async function recomputeAccountValuationsFrom(
   for (const t of txs) pushDate(t.date);
 
   const lots = await prisma.holdingLot.findMany({
-    where: { accountId, tradeDate: { gte: from } },
+    where: { holding: { accountId }, tradeDate: { gte: from } },
   });
   for (const l of lots) pushDate(l.tradeDate);
 
-  const instrumentIds = [
-    ...new Set(
-      (
-        await prisma.holdingLot.findMany({
-          where: { accountId },
-          select: { instrumentId: true },
-        })
-      ).map((r) => r.instrumentId),
-    ),
-  ];
+  const instrumentIds = (
+    await prisma.holding.findMany({
+      where: { accountId },
+      select: { instrumentId: true },
+    })
+  ).map((r) => r.instrumentId);
 
   for (const instrumentId of instrumentIds) {
     const valuations = await prisma.instrumentValuation.findMany({
@@ -200,16 +201,13 @@ export async function recomputeAccountValuationsFrom(
 
     const cashValue = await computeCashAsOf(prisma, accountId, end);
     let securitiesValue = 0;
-    const heldIds = [
-      ...new Set(
-        (
-          await prisma.holdingLot.findMany({
-            where: { accountId, tradeDate: { lte: end } },
-            select: { instrumentId: true },
-          })
-        ).map((r) => r.instrumentId),
-      ),
-    ];
+
+    const heldIds = (
+      await prisma.holding.findMany({
+        where: { accountId },
+        select: { instrumentId: true },
+      })
+    ).map((r) => r.instrumentId);
 
     for (const instrumentId of heldIds) {
       const qty = await netQuantityAsOf(prisma, accountId, instrumentId, end);

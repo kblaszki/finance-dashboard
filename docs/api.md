@@ -39,13 +39,16 @@ Implementation: [`backend/src/app.ts`](../backend/src/app.ts). Auth: `requireAut
 | GET | `/api/instruments/:id/valuations` | Yes | Price history |
 | POST | `/api/instruments/:id/valuations` | Yes | Add manual valuation |
 
-## Holding lots
+## Holdings (brokerage)
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/api/accounts/:accountId/holding-lots` | Yes | List lots with instrument |
-| POST | `/api/accounts/:accountId/holding-lots` | Yes | BUY/SELL lot |
-| DELETE | `/api/holding-lots/:id` | Yes | Delete lot |
+| GET | `/api/accounts/:accountId/holdings` | Yes | Open/closed holdings with metrics (`{ open, closed }`) |
+| POST | `/api/accounts/:accountId/holdings` | Yes | Find-or-create holding for `instrumentId` |
+| GET | `/api/holdings/:holdingId` | Yes | Single holding summary |
+| GET | `/api/holdings/:holdingId/lots` | Yes | Trade history for holding |
+| POST | `/api/holdings/:holdingId/lots` | Yes | BUY/SELL lot |
+| DELETE | `/api/holding-lots/:id` | Yes | Delete lot; syncs holding quantity |
 | GET | `/api/accounts/:accountId/holdings/:instrumentId/valuations` | Yes | Position value history |
 
 ## Stats
