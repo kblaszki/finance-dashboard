@@ -2,6 +2,7 @@ import { Router } from "express";
 import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
+import { handleRouteError, parseRequiredString } from "./httpSupport";
 
 type AccountsDeps = {
   prisma: PrismaClient;
@@ -45,12 +46,11 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
 
   router.post("/api/accounts", requireAuth, async (req: AuthedRequest, res) => {
     try {
-      const accountType = String(req.body?.accountType ?? "").trim().toUpperCase();
-      const name = String(req.body?.name ?? "").trim();
+      const accountType = parseRequiredString(req.body?.accountType, "accountType").toUpperCase();
+      const name = parseRequiredString(req.body?.name, "name");
       const currency = normalizeCurrency(req.body?.currency ?? "PLN");
       const openingBalance = Number(req.body?.openingBalance ?? 0);
       const description = req.body?.description != null ? String(req.body.description) : null;
-      if (!name || !accountType) return res.status(400).json({ error: "name and accountType required" });
       const row = await prisma.account.create({
         data: {
           userId: uid(req),
@@ -66,8 +66,7 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
       await backfillAccountValuations(prisma, row.id, plnPerUnit);
       res.status(201).json(serializeAccount(row));
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Failed to create account";
-      res.status(400).json({ error: msg });
+      handleRouteError(res, e, "Failed to create account");
     }
   });
 

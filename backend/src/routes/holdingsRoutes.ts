@@ -3,6 +3,7 @@ import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import { recomputeQuantityAfterChain } from "../holdingLot";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
+import { handleRouteError } from "./httpSupport";
 
 type HoldingsDeps = {
   prisma: PrismaClient;
@@ -112,8 +113,7 @@ export function createHoldingsRouter(deps: HoldingsDeps): Router {
       const summary = await buildHoldingSummary(prisma, row, account.currency, plnPerUnit);
       res.status(201).json(serializeHoldingSummary(summary));
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Failed to create holding";
-      res.status(400).json({ error: msg });
+      handleRouteError(res, e, "Failed to create holding");
     }
   });
 
@@ -212,8 +212,7 @@ export function createHoldingsRouter(deps: HoldingsDeps): Router {
       });
       res.status(201).json(serializeHoldingLot(row));
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Failed to create holding lot";
-      res.status(400).json({ error: msg });
+      handleRouteError(res, e, "Failed to create holding lot");
     }
   });
 

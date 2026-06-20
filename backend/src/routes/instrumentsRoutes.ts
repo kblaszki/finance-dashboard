@@ -2,6 +2,7 @@ import { Router } from "express";
 import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
+import { handleRouteError, parseRequiredString } from "./httpSupport";
 
 type InstrumentsDeps = {
   prisma: PrismaClient;
@@ -55,19 +56,17 @@ export function createInstrumentsRouter(deps: InstrumentsDeps): Router {
   router.post("/api/instruments", requireAuth, async (req: AuthedRequest, res) => {
     try {
       const instrumentType = String(req.body?.instrumentType ?? "STOCK").trim().toUpperCase();
-      const symbol = String(req.body?.symbol ?? "").trim().toUpperCase();
+      const symbol = parseRequiredString(req.body?.symbol, "symbol").toUpperCase();
       const name = req.body?.name != null ? String(req.body.name) : null;
       const exchange = req.body?.exchange != null ? String(req.body.exchange) : null;
       const currency = normalizeCurrency(req.body?.currency ?? "USD");
       const source = String(req.body?.source ?? "manual");
-      if (!symbol) return res.status(400).json({ error: "symbol required" });
       const row = await prisma.instrument.create({
         data: { instrumentType, symbol, name, exchange, currency, source },
       });
       res.status(201).json(row);
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Failed to create instrument";
-      res.status(400).json({ error: msg });
+      handleRouteError(res, e, "Failed to create instrument");
     }
   });
 
@@ -114,8 +113,7 @@ export function createInstrumentsRouter(deps: InstrumentsDeps): Router {
       }
       res.status(201).json(row);
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Failed to add valuation";
-      res.status(400).json({ error: msg });
+      handleRouteError(res, e, "Failed to add valuation");
     }
   });
 

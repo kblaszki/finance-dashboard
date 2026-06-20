@@ -45,6 +45,7 @@ import { createAuthRouter } from "./routes/authRoutes";
 import { createAccountsRouter } from "./routes/accountsRoutes";
 import { createInstrumentsRouter } from "./routes/instrumentsRoutes";
 import { createHoldingsRouter } from "./routes/holdingsRoutes";
+import { handleRouteError } from "./routes/httpSupport";
 
 dotenv.config();
 
@@ -155,6 +156,10 @@ app.use(
     computeNetWorth,
   }),
 );
+
+app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  handleRouteError(res, err, "Internal server error");
+});
 
 if (require.main === module) {
   app.listen(PORT, () => {

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
+import { handleRouteError, parseRequiredString } from "./httpSupport";
 
 type AuthDeps = {
   prisma: PrismaClient;
@@ -39,8 +40,7 @@ export function createAuthRouter(deps: AuthDeps): Router {
       const token = signToken(user.id);
       res.status(201).json({ token, user: { id: user.id, email: user.email, username: user.username } });
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Registration failed";
-      res.status(400).json({ error: msg });
+      handleRouteError(res, e, "Registration failed");
     }
   });
 

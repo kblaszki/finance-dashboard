@@ -3,6 +3,7 @@ import type { AuthedRequest } from "../auth";
 import { computeCashAsOf, toNumber } from "../accountValuation";
 import { buildHoldingSummary } from "../holdings";
 import { computeBalanceAfter, isValidTransactionType, type TransactionType } from "../transactionBalance";
+import { badRequest } from "./httpSupport";
 
 export type DbClient = PrismaClient | Prisma.TransactionClient;
 
@@ -17,7 +18,7 @@ export function uid(req: AuthedRequest): number {
 
 export function parseDateBody(value: unknown): Date {
   const d = new Date(String(value ?? ""));
-  if (Number.isNaN(d.getTime())) throw new Error("Invalid date");
+  if (Number.isNaN(d.getTime())) throw badRequest("Invalid date");
   return d;
 }
 

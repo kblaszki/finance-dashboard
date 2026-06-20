@@ -3,6 +3,7 @@ import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import type { TransactionType } from "../transactionBalance";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
+import { handleRouteError } from "./httpSupport";
 
 type TransactionsDeps = {
   prisma: PrismaClient;
@@ -131,8 +132,7 @@ export function createTransactionsRouter(deps: TransactionsDeps): Router {
       });
       res.status(201).json(serializeTransaction(row));
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Failed to create transaction";
-      res.status(400).json({ error: msg });
+      handleRouteError(res, e, "Failed to create transaction");
     }
   });
 
@@ -168,8 +168,7 @@ export function createTransactionsRouter(deps: TransactionsDeps): Router {
       });
       res.json(serializeTransaction(updated));
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Failed to update transaction";
-      res.status(400).json({ error: msg });
+      handleRouteError(res, e, "Failed to update transaction");
     }
   });
 
