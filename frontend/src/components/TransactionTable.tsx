@@ -81,7 +81,7 @@ export function TransactionTable() {
   }
 
   return (
-    <div>
+    <div className="page-stack">
       {error && <p className="error-banner">{error}</p>}
 
       <section className="card">
