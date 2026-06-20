@@ -57,6 +57,7 @@ Env (see [README.md](../README.md)): `DATABASE_URL`, `JWT_SECRET` (≥32 chars).
 
 ## Related docs
 
+- [fullstack-architecture-practices.md](fullstack-architecture-practices.md) - general fullstack architecture principles with repo examples
 - [domain.md](domain.md) — data model
 - [api.md](api.md) — route catalog
 - [frontend.md](frontend.md) — UI routes and API clients

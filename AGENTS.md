@@ -7,6 +7,7 @@ Token-aware index — use `@docs/...` for domain detail; do not duplicate [READM
 | Doc | Use when |
 |-----|----------|
 | [docs/architecture.md](docs/architecture.md) | Auth, FX, request flow, where code lives |
+| [docs/fullstack-architecture-practices.md](docs/fullstack-architecture-practices.md) | Principles for structuring fullstack apps; patterns illustrated with this repo |
 | [docs/domain.md](docs/domain.md) | Prisma models (Account, HoldingLot, valuations) |
 | [docs/api.md](docs/api.md) | REST route catalog |
 | [docs/frontend.md](docs/frontend.md) | Routes, API clients, UI patterns |
