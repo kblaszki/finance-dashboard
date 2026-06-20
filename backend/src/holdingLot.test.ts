@@ -71,6 +71,17 @@ test("recomputeQuantityAfterChain with SELL", () => {
   assert.equal(chain.get(3), 8);
 });
 
+test("recomputeQuantityAfterChain respects tradeDate before id", () => {
+  const chain = recomputeQuantityAfterChain([
+    { id: 10, side: "BUY", quantity: 10, tradeDate: new Date("2025-01-10T12:00:00.000Z") },
+    { id: 2, side: "BUY", quantity: 3, tradeDate: new Date("2025-01-05T12:00:00.000Z") },
+    { id: 3, side: "SELL", quantity: 4, tradeDate: new Date("2025-01-12T12:00:00.000Z") },
+  ]);
+  assert.equal(chain.get(2), 3);
+  assert.equal(chain.get(10), 13);
+  assert.equal(chain.get(3), 9);
+});
+
 test("recomputeQuantityAfterChain rejects invalid side", () => {
   assert.throws(() =>
     recomputeQuantityAfterChain([{ id: 1, side: "SHORT", quantity: 1 }]),

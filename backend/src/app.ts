@@ -1,8 +1,8 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import { PrismaClient } from "@prisma/client";
-import { getFxRatesPlnPerUnit, normalizeCurrency } from "./fx";
+import { PrismaClient, type Prisma } from "@prisma/client";
+import { convertAmount, getFxRatesPlnPerUnit, normalizeCurrency } from "./fx";
 import {
   AuthedRequest,
   hashPassword,
@@ -13,12 +13,13 @@ import {
   verifyPassword,
 } from "./auth";
 import {
-  computeQuantityAfter,
   isValidLotSide,
+  recomputeQuantityAfterChain,
   resolveLotPrice,
 } from "./holdingLot";
 import {
   backfillAccountValuations,
+  computeCashAsOf,
   recomputeAccountValuationsFrom,
   toNumber,
 } from "./accountValuation";
@@ -45,6 +46,7 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 4000;
+type DbClient = PrismaClient | Prisma.TransactionClient;
 
 function uid(req: AuthedRequest): number {
   return req.userId!;
@@ -184,22 +186,26 @@ function serializeHoldingSummary(summary: Awaited<ReturnType<typeof buildHolding
   return summary;
 }
 
-async function getAccountForUser(userId: number, accountId: number) {
-  return prisma.account.findFirst({ where: { id: accountId, userId } });
+async function getAccountForUser(userId: number, accountId: number, db: DbClient = prisma) {
+  return db.account.findFirst({ where: { id: accountId, userId } });
 }
 
-async function recalcTransactionBalances(accountId: number, fromDate?: Date): Promise<void> {
-  const account = await prisma.account.findUnique({ where: { id: accountId } });
+async function recalcTransactionBalances(
+  db: DbClient,
+  accountId: number,
+  fromDate?: Date,
+): Promise<void> {
+  const account = await db.account.findUnique({ where: { id: accountId } });
   if (!account) return;
 
-  const txs = await prisma.transaction.findMany({
+  const txs = await db.transaction.findMany({
     where: fromDate ? { accountId, date: { gte: fromDate } } : { accountId },
     orderBy: [{ date: "asc" }, { id: "asc" }],
   });
 
   let running = toNumber(account.openingBalance);
   if (fromDate) {
-    const prior = await prisma.transaction.findFirst({
+    const prior = await db.transaction.findFirst({
       where: { accountId, date: { lt: fromDate } },
       orderBy: [{ date: "desc" }, { id: "desc" }],
     });
@@ -209,12 +215,18 @@ async function recalcTransactionBalances(accountId: number, fromDate?: Date): Pr
   for (const tx of txs) {
     if (!isValidTransactionType(tx.transactionType)) continue;
     running = computeBalanceAfter(running, tx.transactionType as TransactionType, toNumber(tx.amount));
-    await prisma.transaction.update({
+    await db.transaction.update({
       where: { id: tx.id },
       data: { balanceAfter: running },
     });
   }
-  await prisma.account.update({ where: { id: accountId }, data: { cashBalance: running } });
+  await db.account.update({ where: { id: accountId }, data: { cashBalance: running } });
+}
+
+async function syncBrokerageCashBalance(db: DbClient, accountId: number): Promise<number> {
+  const cashBalance = await computeCashAsOf(db, accountId, new Date());
+  await db.account.update({ where: { id: accountId }, data: { cashBalance } });
+  return cashBalance;
 }
 
 // --- Auth ---
@@ -371,27 +383,31 @@ app.post("/api/transactions", requireAuth, async (req: AuthedRequest, res) => {
     }
     const account = await getAccountForUser(uid(req), accountId);
     if (!account) return res.status(404).json({ error: "Account not found" });
-
-    const previous = toNumber(account.cashBalance);
-    const balanceAfter = computeBalanceAfter(previous, transactionType, amount);
-    const row = await prisma.transaction.create({
-      data: {
-        accountId,
-        transactionType,
-        amount,
-        balanceAfter,
-        currency,
-        category,
-        date,
-        description,
-      },
-    });
-    await prisma.account.update({
-      where: { id: accountId },
-      data: { cashBalance: balanceAfter },
-    });
     const { plnPerUnit } = await getFxRatesPlnPerUnit();
-    await recomputeAccountValuationsFrom(prisma, accountId, date, plnPerUnit);
+    const row = await prisma.$transaction(async (tx) => {
+      const freshAccount = await getAccountForUser(uid(req), accountId, tx);
+      if (!freshAccount) throw new Error("Account not found");
+      const previous = toNumber(freshAccount.cashBalance);
+      const balanceAfter = computeBalanceAfter(previous, transactionType, amount);
+      const created = await tx.transaction.create({
+        data: {
+          accountId,
+          transactionType,
+          amount,
+          balanceAfter,
+          currency,
+          category,
+          date,
+          description,
+        },
+      });
+      await tx.account.update({
+        where: { id: accountId },
+        data: { cashBalance: balanceAfter },
+      });
+      await recomputeAccountValuationsFrom(tx, accountId, date, plnPerUnit);
+      return created;
+    });
     res.status(201).json(serializeTransaction(row));
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Failed to create transaction";
@@ -420,11 +436,16 @@ app.put("/api/transactions/:id", requireAuth, async (req: AuthedRequest, res) =>
     if (req.body?.description !== undefined) {
       data.description = req.body.description != null ? String(req.body.description) : null;
     }
-
-    const updated = await prisma.transaction.update({ where: { id }, data });
-    await recalcTransactionBalances(existing.accountId, existing.date);
     const { plnPerUnit } = await getFxRatesPlnPerUnit();
-    await recomputeAccountValuationsFrom(prisma, existing.accountId, existing.date, plnPerUnit);
+    const updated = await prisma.$transaction(async (tx) => {
+      const row = await tx.transaction.update({ where: { id }, data });
+      const rowDate = row.date;
+      const recalcFrom =
+        rowDate.getTime() < existing.date.getTime() ? rowDate : existing.date;
+      await recalcTransactionBalances(tx, existing.accountId, recalcFrom);
+      await recomputeAccountValuationsFrom(tx, existing.accountId, recalcFrom, plnPerUnit);
+      return row;
+    });
     res.json(serializeTransaction(updated));
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Failed to update transaction";
@@ -438,10 +459,12 @@ app.delete("/api/transactions/:id", requireAuth, async (req: AuthedRequest, res)
     where: { id, account: { userId: uid(req) } },
   });
   if (!existing) return res.status(404).json({ error: "Transaction not found" });
-  await prisma.transaction.delete({ where: { id } });
-  await recalcTransactionBalances(existing.accountId);
   const { plnPerUnit } = await getFxRatesPlnPerUnit();
-  await recomputeAccountValuationsFrom(prisma, existing.accountId, existing.date, plnPerUnit);
+  await prisma.$transaction(async (tx) => {
+    await tx.transaction.delete({ where: { id } });
+    await recalcTransactionBalances(tx, existing.accountId, existing.date);
+    await recomputeAccountValuationsFrom(tx, existing.accountId, existing.date, plnPerUnit);
+  });
   res.status(204).send();
 });
 
@@ -625,43 +648,50 @@ app.post("/api/holdings/:holdingId/lots", requireAuth, async (req: AuthedRequest
       totalPrice: req.body?.totalPrice,
       pricePerUnit: req.body?.pricePerUnit,
     });
-
-    const lastLot = await prisma.holdingLot.findFirst({
-      where: { holdingId },
-      orderBy: [{ tradeDate: "desc" }, { id: "desc" }],
-    });
-    const prevQty = lastLot ? toNumber(lastLot.quantityAfter) : 0;
-    const quantityAfter = computeQuantityAfter(prevQty, side, quantity);
-
-    let cashBalance = toNumber(account.cashBalance);
-    if (side === "BUY") {
-      cashBalance = computeBalanceAfter(cashBalance, "EXPENSE", prices.totalPrice);
-    } else {
-      cashBalance = computeBalanceAfter(cashBalance, "INCOME", prices.totalPrice);
-    }
-
-    const row = await prisma.holdingLot.create({
-      data: {
-        holdingId,
-        side,
-        quantity,
-        quantityAfter,
-        totalPrice: prices.totalPrice,
-        pricePerUnit: prices.pricePerUnit,
-        currency,
-        tradeDate,
-      },
-      include: {
-        holding: { include: { instrument: true } },
-      },
-    });
-
-    await prisma.account.update({ where: { id: account.id }, data: { cashBalance } });
-    await recalcLotQuantityChain(prisma, holdingId);
-    await syncHoldingQuantity(prisma, holdingId);
-
     const { plnPerUnit } = await getFxRatesPlnPerUnit();
-    await recomputeAccountValuationsFrom(prisma, account.id, tradeDate, plnPerUnit);
+    const row = await prisma.$transaction(async (tx) => {
+      const existingLots = await tx.holdingLot.findMany({
+        where: { holdingId },
+        orderBy: [{ tradeDate: "asc" }, { id: "asc" }],
+      });
+      recomputeQuantityAfterChain([
+        ...existingLots.map((lot) => ({
+          id: lot.id,
+          side: lot.side,
+          quantity: toNumber(lot.quantity),
+          tradeDate: lot.tradeDate,
+        })),
+        { id: -1, side, quantity, tradeDate },
+      ]);
+
+      const created = await tx.holdingLot.create({
+        data: {
+          holdingId,
+          side,
+          quantity,
+          quantityAfter: 0,
+          totalPrice: prices.totalPrice,
+          pricePerUnit: prices.pricePerUnit,
+          currency,
+          tradeDate,
+        },
+        include: {
+          holding: { include: { instrument: true } },
+        },
+      });
+
+      await recalcLotQuantityChain(tx, holdingId);
+      await syncHoldingQuantity(tx, holdingId);
+      await syncBrokerageCashBalance(tx, account.id);
+      await recomputeAccountValuationsFrom(tx, account.id, tradeDate, plnPerUnit);
+
+      return tx.holdingLot.findUniqueOrThrow({
+        where: { id: created.id },
+        include: {
+          holding: { include: { instrument: true } },
+        },
+      });
+    });
     res.status(201).json(serializeHoldingLot(row));
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Failed to create holding lot";
@@ -681,12 +711,14 @@ app.delete("/api/holding-lots/:id", requireAuth, async (req: AuthedRequest, res)
   const holdingId = existing.holdingId;
   const tradeDate = existing.tradeDate;
 
-  await prisma.holdingLot.delete({ where: { id } });
-  await recalcLotQuantityChain(prisma, holdingId);
-  await syncHoldingQuantity(prisma, holdingId);
-
   const { plnPerUnit } = await getFxRatesPlnPerUnit();
-  await recomputeAccountValuationsFrom(prisma, accountId, tradeDate, plnPerUnit);
+  await prisma.$transaction(async (tx) => {
+    await tx.holdingLot.delete({ where: { id } });
+    await recalcLotQuantityChain(tx, holdingId);
+    await syncHoldingQuantity(tx, holdingId);
+    await syncBrokerageCashBalance(tx, accountId);
+    await recomputeAccountValuationsFrom(tx, accountId, tradeDate, plnPerUnit);
+  });
   res.status(204).send();
 });
 
@@ -728,21 +760,25 @@ app.get("/api/stats/net-worth", requireAuth, async (req: AuthedRequest, res) => 
 
 app.get("/api/stats/cashflow", requireAuth, async (req: AuthedRequest, res) => {
   const date = transactionDateFilter(req.query.from, req.query.to);
+  const currency = normalizeCurrency(req.query.currency ?? "PLN");
+  const { plnPerUnit } = await getFxRatesPlnPerUnit();
   const rows = await prisma.transaction.findMany({
     where: { account: { userId: uid(req) }, ...(date ? { date } : {}) },
   });
   let income = 0;
   let expense = 0;
   for (const t of rows) {
-    const amt = toNumber(t.amount);
+    const amt = convertAmount(toNumber(t.amount), t.currency, currency, plnPerUnit);
     if (t.transactionType === "INCOME" || t.transactionType === "TRANSFER_IN") income += amt;
     if (t.transactionType === "EXPENSE" || t.transactionType === "TRANSFER_OUT") expense += amt;
   }
-  res.json({ income, expense, net: income - expense });
+  res.json({ income, expense, net: income - expense, currency });
 });
 
 app.get("/api/stats/expenses-by-category", requireAuth, async (req: AuthedRequest, res) => {
   const date = transactionDateFilter(req.query.from, req.query.to);
+  const currency = normalizeCurrency(req.query.currency ?? "PLN");
+  const { plnPerUnit } = await getFxRatesPlnPerUnit();
   const rows = await prisma.transaction.findMany({
     where: {
       account: { userId: uid(req) },
@@ -752,13 +788,16 @@ app.get("/api/stats/expenses-by-category", requireAuth, async (req: AuthedReques
   });
   const map = new Map<string, number>();
   for (const t of rows) {
-    map.set(t.category, (map.get(t.category) ?? 0) + toNumber(t.amount));
+    const amount = convertAmount(toNumber(t.amount), t.currency, currency, plnPerUnit);
+    map.set(t.category, (map.get(t.category) ?? 0) + amount);
   }
   res.json([...map.entries()].map(([category, amount]) => ({ category, amount })));
 });
 
 app.get("/api/stats/income-by-category", requireAuth, async (req: AuthedRequest, res) => {
   const date = transactionDateFilter(req.query.from, req.query.to);
+  const currency = normalizeCurrency(req.query.currency ?? "PLN");
+  const { plnPerUnit } = await getFxRatesPlnPerUnit();
   const rows = await prisma.transaction.findMany({
     where: {
       account: { userId: uid(req) },
@@ -768,7 +807,8 @@ app.get("/api/stats/income-by-category", requireAuth, async (req: AuthedRequest,
   });
   const map = new Map<string, number>();
   for (const t of rows) {
-    map.set(t.category, (map.get(t.category) ?? 0) + toNumber(t.amount));
+    const amount = convertAmount(toNumber(t.amount), t.currency, currency, plnPerUnit);
+    map.set(t.category, (map.get(t.category) ?? 0) + amount);
   }
   res.json([...map.entries()].map(([category, amount]) => ({ category, amount })));
 });

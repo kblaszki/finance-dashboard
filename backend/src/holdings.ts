@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { convertAmount } from "./fx";
 import { priceAsOf, recomputeQuantityAfterChain } from "./holdingLot";
 import { toNumber } from "./accountValuation";
@@ -40,8 +40,10 @@ export type AccountHoldingsResponse = {
   closed: HoldingSummary[];
 };
 
+type DbClient = PrismaClient | Prisma.TransactionClient;
+
 export async function findOrCreateHolding(
-  prisma: PrismaClient,
+  prisma: DbClient,
   accountId: number,
   instrumentId: number,
 ) {
@@ -56,7 +58,7 @@ export async function findOrCreateHolding(
 }
 
 export async function recalcLotQuantityChain(
-  prisma: PrismaClient,
+  prisma: DbClient,
   holdingId: number,
 ): Promise<void> {
   const lots = await prisma.holdingLot.findMany({
@@ -64,7 +66,12 @@ export async function recalcLotQuantityChain(
     orderBy: [{ tradeDate: "asc" }, { id: "asc" }],
   });
   const chain = recomputeQuantityAfterChain(
-    lots.map((l) => ({ id: l.id, side: l.side, quantity: toNumber(l.quantity) })),
+    lots.map((l) => ({
+      id: l.id,
+      side: l.side,
+      quantity: toNumber(l.quantity),
+      tradeDate: l.tradeDate,
+    })),
   );
   for (const lot of lots) {
     const qa = chain.get(lot.id);
@@ -74,7 +81,7 @@ export async function recalcLotQuantityChain(
   }
 }
 
-export async function syncHoldingQuantity(prisma: PrismaClient, holdingId: number): Promise<number> {
+export async function syncHoldingQuantity(prisma: DbClient, holdingId: number): Promise<number> {
   const lastLot = await prisma.holdingLot.findFirst({
     where: { holdingId },
     orderBy: [{ tradeDate: "desc" }, { id: "desc" }],
@@ -104,7 +111,7 @@ export function computeRealizedPnl(
 }
 
 async function getInstrumentPriceAsOf(
-  prisma: PrismaClient,
+  prisma: DbClient,
   instrumentId: number,
   asOf: Date,
 ): Promise<number | null> {
@@ -120,7 +127,7 @@ async function getInstrumentPriceAsOf(
 }
 
 export async function computeMarketValue(
-  prisma: PrismaClient,
+  prisma: DbClient,
   quantity: number,
   instrumentId: number,
   instrumentCurrency: string,
@@ -155,7 +162,7 @@ function serializeInstrument(instrument: HoldingInstrument): HoldingInstrument {
 }
 
 export async function buildHoldingSummary(
-  prisma: PrismaClient,
+  prisma: DbClient,
   holding: {
     id: number;
     accountId: number;
@@ -195,7 +202,7 @@ export async function buildHoldingSummary(
 }
 
 export async function getAccountHoldings(
-  prisma: PrismaClient,
+  prisma: DbClient,
   accountId: number,
   accountCurrency: string,
   plnPerUnit: Record<string, number>,
@@ -227,7 +234,7 @@ export async function getAccountHoldings(
 }
 
 export async function getHoldingForUser(
-  prisma: PrismaClient,
+  prisma: DbClient,
   userId: number,
   holdingId: number,
 ) {

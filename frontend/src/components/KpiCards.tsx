@@ -10,8 +10,8 @@ export function KpiCards() {
   const { range } = usePeriod()
 
   useEffect(() => {
-    void fetchCashflow({ from: range.from, to: range.to }).then(setStats)
-  }, [range.from, range.to])
+    void fetchCashflow({ from: range.from, to: range.to, currency }).then(setStats)
+  }, [currency, range.from, range.to])
 
   if (!stats) {
     return <p className="loading-state">Loading KPIs…</p>

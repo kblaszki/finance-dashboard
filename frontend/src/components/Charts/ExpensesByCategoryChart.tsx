@@ -40,6 +40,7 @@ export function ExpensesByCategoryChart() {
     const response = await fetchExpensesByCategory({
       from: range.from,
       to: range.to,
+      currency,
     })
     setData(response)
   }

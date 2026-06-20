@@ -1,4 +1,6 @@
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
+type DbClient = PrismaClient | Prisma.TransactionClient;
+
 import { convertAmount } from "./fx";
 import { priceAsOf } from "./holdingLot";
 import {
@@ -72,7 +74,7 @@ export function replayCashBalance(
 }
 
 export async function computeCashAsOf(
-  prisma: PrismaClient,
+  prisma: DbClient,
   accountId: number,
   asOf: Date,
 ): Promise<number> {
@@ -111,7 +113,7 @@ export async function computeCashAsOf(
 }
 
 async function netQuantityAsOf(
-  prisma: PrismaClient,
+  prisma: DbClient,
   accountId: number,
   instrumentId: number,
   asOf: Date,
@@ -129,7 +131,7 @@ async function netQuantityAsOf(
 }
 
 async function getInstrumentPriceAsOf(
-  prisma: PrismaClient,
+  prisma: DbClient,
   instrumentId: number,
   asOf: Date,
 ): Promise<number | null> {
@@ -145,7 +147,7 @@ async function getInstrumentPriceAsOf(
 }
 
 export async function recomputeAccountValuationsFrom(
-  prisma: PrismaClient,
+  prisma: DbClient,
   accountId: number,
   fromDate: Date,
   plnPerUnit: Record<string, number>,
@@ -262,7 +264,7 @@ export async function recomputeAccountValuationsFrom(
 }
 
 export async function backfillAccountValuations(
-  prisma: PrismaClient,
+  prisma: DbClient,
   accountId: number,
   plnPerUnit: Record<string, number>,
 ): Promise<void> {
@@ -272,7 +274,7 @@ export async function backfillAccountValuations(
 }
 
 export async function getLatestAccountTotalValue(
-  prisma: PrismaClient,
+  prisma: DbClient,
   accountId: number,
 ): Promise<number | null> {
   const row = await prisma.accountValuationDaily.findFirst({

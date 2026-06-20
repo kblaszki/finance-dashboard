@@ -54,10 +54,15 @@ export type LotChainRow = {
   id: number;
   side: string;
   quantity: number;
+  tradeDate?: Date;
 };
 
 export function recomputeQuantityAfterChain(lots: LotChainRow[]): Map<number, number> {
-  const sorted = [...lots].sort((a, b) => a.id - b.id);
+  const sorted = [...lots].sort((a, b) => {
+    const byTradeDate = (a.tradeDate?.getTime() ?? 0) - (b.tradeDate?.getTime() ?? 0);
+    if (byTradeDate !== 0) return byTradeDate;
+    return a.id - b.id;
+  });
   const result = new Map<number, number>();
   let running = 0;
   for (const lot of sorted) {

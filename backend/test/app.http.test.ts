@@ -159,3 +159,125 @@ test("GET /api/accounts/:id/valuations returns snapshots", async () => {
   assert.ok(Array.isArray(res.body));
   assert.ok(res.body.length >= 1);
 });
+
+test("PUT /api/transactions recalculates balances when moving a transaction earlier", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BANK",
+      name: "Move Tx Bank",
+      currency: "PLN",
+      openingBalance: 1000,
+    });
+  const accountId = accountRes.body.id;
+
+  const tx1 = await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      transactionType: "INCOME",
+      amount: 100,
+      currency: "PLN",
+      category: "SALARY",
+      date: "2025-01-10T12:00:00.000Z",
+    });
+  assert.equal(tx1.status, 201);
+
+  const tx2 = await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      transactionType: "EXPENSE",
+      amount: 50,
+      currency: "PLN",
+      category: "FOOD",
+      date: "2025-01-12T12:00:00.000Z",
+    });
+  assert.equal(tx2.status, 201);
+  assert.equal(tx2.body.balanceAfter, 1050);
+
+  const moved = await request(app)
+    .put(`/api/transactions/${tx2.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ date: "2025-01-05T12:00:00.000Z" });
+  assert.equal(moved.status, 200);
+
+  const rows = await prisma.transaction.findMany({
+    where: { accountId },
+    orderBy: [{ date: "asc" }, { id: "asc" }],
+  });
+  assert.equal(rows.length, 2);
+  assert.equal(Number(rows[0].balanceAfter), 950);
+  assert.equal(Number(rows[1].balanceAfter), 1050);
+
+  const account = await prisma.account.findUnique({ where: { id: accountId } });
+  assert.ok(account);
+  assert.equal(Number(account.cashBalance), 1050);
+});
+
+test("DELETE /api/holding-lots/:id restores brokerage cash balance", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BROKERAGE",
+      name: "Delete Lot Broker",
+      currency: "USD",
+      openingBalance: 0,
+    });
+  const accountId = accountRes.body.id;
+
+  const funding = await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      transactionType: "TRANSFER_IN",
+      amount: 1000,
+      currency: "USD",
+      category: "FUNDING",
+      date: "2025-01-02T12:00:00.000Z",
+    });
+  assert.equal(funding.status, 201);
+
+  const instrument = await prisma.instrument.create({
+    data: { instrumentType: "STOCK", symbol: "DELHTTP", exchange: "TEST", currency: "USD" },
+  });
+
+  const holdingRes = await request(app)
+    .post(`/api/accounts/${accountId}/holdings`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ instrumentId: instrument.id });
+  assert.equal(holdingRes.status, 201);
+  const holdingId = holdingRes.body.id;
+
+  const buyRes = await request(app)
+    .post(`/api/holdings/${holdingId}/lots`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      side: "BUY",
+      quantity: 5,
+      pricePerUnit: 100,
+      currency: "USD",
+      tradeDate: "2025-01-10T12:00:00.000Z",
+    });
+  assert.equal(buyRes.status, 201);
+
+  let account = await prisma.account.findUnique({ where: { id: accountId } });
+  assert.ok(account);
+  assert.equal(Number(account.cashBalance), 500);
+
+  const deleted = await request(app)
+    .delete(`/api/holding-lots/${buyRes.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(deleted.status, 204);
+
+  account = await prisma.account.findUnique({ where: { id: accountId } });
+  assert.ok(account);
+  assert.equal(Number(account.cashBalance), 1000);
+});

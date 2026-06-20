@@ -56,6 +56,6 @@ Implementation: [`backend/src/app.ts`](../backend/src/app.ts). Auth: `requireAut
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/api/stats/net-worth` | Yes | Net worth by account type; `currency` query converts each account value from its native currency via NBP rates (PLN base) |
-| GET | `/api/stats/cashflow` | Yes | Period income/expense/net; `from`, `to` |
-| GET | `/api/stats/expenses-by-category` | Yes | Expense breakdown by category string |
-| GET | `/api/stats/income-by-category` | Yes | Income breakdown by category string |
+| GET | `/api/stats/cashflow` | Yes | Period income/expense/net; `from`, `to`, optional `currency` converts transaction amounts from native account currency |
+| GET | `/api/stats/expenses-by-category` | Yes | Expense breakdown by category string; optional `currency` converts amounts |
+| GET | `/api/stats/income-by-category` | Yes | Income breakdown by category string; optional `currency` converts amounts |

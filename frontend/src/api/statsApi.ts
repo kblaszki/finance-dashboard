@@ -26,6 +26,7 @@ export type CashflowStats = {
 type PeriodQuery = {
   from?: string;
   to?: string;
+  currency?: string;
 };
 
 function periodQuery(params?: PeriodQuery): string {
@@ -33,6 +34,7 @@ function periodQuery(params?: PeriodQuery): string {
   const q = new URLSearchParams();
   if (params.from) q.set("from", params.from);
   if (params.to) q.set("to", params.to);
+  if (params.currency) q.set("currency", params.currency);
   const s = q.toString();
   return s ? `?${s}` : "";
 }
