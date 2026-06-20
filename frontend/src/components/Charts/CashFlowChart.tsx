@@ -1,23 +1,25 @@
-import { useEffect, useState } from 'react'
-import { fetchCashflow } from '../../api/statsApi'
-import { usePeriod } from '../../state/period'
+import { useCashFlow } from '../../state/cashflow'
 import { useCurrency } from '../../state/currency'
 import { formatMoney } from '../../utils/format'
 
 export function CashFlowChart() {
-  const [stats, setStats] = useState<Awaited<ReturnType<typeof fetchCashflow>> | null>(null)
+  const { stats, loading, error } = useCashFlow()
   const { currency } = useCurrency()
-  const { range } = usePeriod()
 
-  useEffect(() => {
-    void fetchCashflow({ from: range.from, to: range.to, currency }).then(setStats)
-  }, [currency, range.from, range.to])
-
-  if (!stats) {
+  if (loading) {
     return (
       <div className="card">
         <h2>Cash flow (period)</h2>
         <p className="empty-state">Loading…</p>
+      </div>
+    )
+  }
+
+  if (error || !stats) {
+    return (
+      <div className="card">
+        <h2>Cash flow (period)</h2>
+        <p className="error-banner">{error ?? 'Failed to load cash flow'}</p>
       </div>
     )
   }

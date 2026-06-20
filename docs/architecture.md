@@ -23,7 +23,7 @@ sequenceDiagram
 |-------|--------|------|
 | Frontend | `frontend/src/api/client.ts` | `fetch` + `Authorization: Bearer` from `localStorage` |
 | Auth | `backend/src/auth.ts` | Register/login, `requireAuth` middleware |
-| HTTP | `backend/src/app.ts` | All REST routes (~single file) |
+| HTTP | `backend/src/app.ts` + `backend/src/routes/*` | Router wiring; domain handlers in route modules |
 | FX | `backend/src/fx.ts` | NBP rates, PLN hub, in-memory TTL cache |
 | Holdings | `backend/src/holdingLot.ts` | `quantityAfter`, lot price resolution |
 | Cash ledger | `backend/src/transactionBalance.ts` | `balanceAfter`, transaction types |
@@ -50,10 +50,14 @@ Env (see [README.md](../README.md)): `DATABASE_URL`, `JWT_SECRET` (≥32 chars).
 
 | Change | Primary files | Also update |
 |--------|---------------|-------------|
-| New REST route | `backend/src/app.ts` | `frontend/src/api/*`, [api.md](api.md) |
+| New REST route | `backend/src/routes/<area>Routes.ts` (wire in `app.ts`) | `frontend/src/api/*`, [api.md](api.md) |
 | New Prisma model/field | `backend/prisma/schema.prisma` + migration | [domain.md](domain.md) |
 | New page/route | `frontend/src/App.tsx` + component | [frontend.md](frontend.md) |
-| New chart/KPI | `backend/src/app.ts` stats routes + `statsApi.ts` | [api.md](api.md) |
+| New chart/KPI | `backend/src/routes/statsRoutes.ts` + `statsApi.ts` | [api.md](api.md) |
+
+## Persistence and scaling
+
+SQLite fits local/MVP usage (single writer, simple backup). Valuation recompute and holdings summaries preload related rows in memory to avoid per-day/per-instrument query loops. If the product moves to multi-user hosted production, consider Postgres for write concurrency and background valuation jobs.
 
 ## Related docs
 

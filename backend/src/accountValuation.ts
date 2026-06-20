@@ -112,38 +112,48 @@ export async function computeCashAsOf(
   return replayCashBalance(toNumber(account.openingBalance), events, asOf);
 }
 
-async function netQuantityAsOf(
-  prisma: DbClient,
-  accountId: number,
+type PreloadedLot = {
+  id: number;
+  instrumentId: number;
+  quantityAfter: number;
+  tradeDate: Date;
+};
+
+function netQuantityAsOfFromPreloaded(
+  lots: PreloadedLot[],
   instrumentId: number,
   asOf: Date,
-): Promise<number> {
-  const holding = await prisma.holding.findUnique({
-    where: { accountId_instrumentId: { accountId, instrumentId } },
-  });
-  if (!holding) return 0;
-
-  const lastLot = await prisma.holdingLot.findFirst({
-    where: { holdingId: holding.id, tradeDate: { lte: asOf } },
-    orderBy: [{ tradeDate: "desc" }, { id: "desc" }],
-  });
-  return lastLot ? toNumber(lastLot.quantityAfter) : 0;
+): number {
+  let best: PreloadedLot | null = null;
+  for (const lot of lots) {
+    if (lot.instrumentId !== instrumentId) continue;
+    if (lot.tradeDate.getTime() > asOf.getTime()) continue;
+    if (
+      !best ||
+      lot.tradeDate.getTime() > best.tradeDate.getTime() ||
+      (lot.tradeDate.getTime() === best.tradeDate.getTime() && lot.id > best.id)
+    ) {
+      best = lot;
+    }
+  }
+  return best ? toNumber(best.quantityAfter) : 0;
 }
 
-async function getInstrumentPriceAsOf(
-  prisma: DbClient,
-  instrumentId: number,
-  asOf: Date,
-): Promise<number | null> {
-  const rows = await prisma.instrumentValuation.findMany({
-    where: { instrumentId, valuationDate: { lte: asOf } },
-    orderBy: { valuationDate: "desc" },
-    take: 50,
-  });
-  return priceAsOf(
-    rows.map((r) => ({ valuationDate: r.valuationDate, price: toNumber(r.price) })),
-    asOf,
-  );
+type ValuationPoint = { valuationDate: Date; price: number };
+
+function groupValuationsByInstrument(
+  rows: Array<{ instrumentId: number; valuationDate: Date; price: unknown }>,
+): Map<number, ValuationPoint[]> {
+  const map = new Map<number, ValuationPoint[]>();
+  for (const row of rows) {
+    const points = map.get(row.instrumentId) ?? [];
+    points.push({ valuationDate: row.valuationDate, price: toNumber(row.price) });
+    map.set(row.instrumentId, points);
+  }
+  for (const points of map.values()) {
+    points.sort((a, b) => a.valuationDate.getTime() - b.valuationDate.getTime());
+  }
+  return map;
 }
 
 export async function recomputeAccountValuationsFrom(
@@ -196,29 +206,71 @@ export async function recomputeAccountValuationsFrom(
 
   const sorted = [...dates].map((s) => new Date(s)).sort((a, b) => a.getTime() - b.getTime());
   const displayCurrency = account.currency;
+  const openingBalance = toNumber(account.openingBalance);
+
+  const [holdings, allTxs, allLots, allInstrumentValuations] = await Promise.all([
+    prisma.holding.findMany({
+      where: { accountId },
+      include: { instrument: true },
+    }),
+    prisma.transaction.findMany({
+      where: { accountId },
+      orderBy: [{ date: "asc" }, { id: "asc" }],
+    }),
+    prisma.holdingLot.findMany({
+      where: { holding: { accountId } },
+      include: { holding: { select: { instrumentId: true } } },
+      orderBy: [{ tradeDate: "asc" }, { id: "asc" }],
+    }),
+    instrumentIds.length
+      ? prisma.instrumentValuation.findMany({
+          where: { instrumentId: { in: instrumentIds } },
+          orderBy: { valuationDate: "asc" },
+        })
+      : Promise.resolve([]),
+  ]);
+
+  const cashEvents: CashReplayEvent[] = [
+    ...allTxs.map((t) => ({
+      kind: "tx" as const,
+      at: t.date,
+      id: t.id,
+      transactionType: t.transactionType as TransactionType,
+      amount: toNumber(t.amount),
+    })),
+    ...allLots.map((l) => ({
+      kind: "lot" as const,
+      at: l.tradeDate,
+      id: l.id,
+      side: l.side as "BUY" | "SELL",
+      totalPrice: toNumber(l.totalPrice ?? 0),
+    })),
+  ];
+  const preloadedLots: PreloadedLot[] = allLots.map((lot) => ({
+    id: lot.id,
+    instrumentId: lot.holding.instrumentId,
+    quantityAfter: toNumber(lot.quantityAfter),
+    tradeDate: lot.tradeDate,
+  }));
+  const valuationsByInstrument = groupValuationsByInstrument(allInstrumentValuations);
+  const heldInstrumentIds = holdings.map((holding) => holding.instrumentId);
+  const instrumentsById = new Map(holdings.map((holding) => [holding.instrumentId, holding.instrument]));
 
   for (const day of sorted) {
     const end = new Date(day);
     end.setUTCHours(23, 59, 59, 999);
 
-    const cashValue = await computeCashAsOf(prisma, accountId, end);
+    const cashValue = replayCashBalance(openingBalance, cashEvents, end);
     let securitiesValue = 0;
 
-    const heldIds = (
-      await prisma.holding.findMany({
-        where: { accountId },
-        select: { instrumentId: true },
-      })
-    ).map((r) => r.instrumentId);
-
-    for (const instrumentId of heldIds) {
-      const qty = await netQuantityAsOf(prisma, accountId, instrumentId, end);
+    for (const instrumentId of heldInstrumentIds) {
+      const qty = netQuantityAsOfFromPreloaded(preloadedLots, instrumentId, end);
       if (qty <= 0) continue;
 
-      const instrument = await prisma.instrument.findUnique({ where: { id: instrumentId } });
+      const instrument = instrumentsById.get(instrumentId);
       if (!instrument) continue;
 
-      const rawPrice = await getInstrumentPriceAsOf(prisma, instrumentId, end);
+      const rawPrice = priceAsOf(valuationsByInstrument.get(instrumentId) ?? [], end);
       let marketValue = 0;
       if (rawPrice != null) {
         const inInstrumentCcy = qty * rawPrice;
@@ -277,11 +329,27 @@ export async function getLatestAccountTotalValue(
   prisma: DbClient,
   accountId: number,
 ): Promise<number | null> {
-  const row = await prisma.accountValuationDaily.findFirst({
-    where: { accountId },
-    orderBy: { valuationDate: "desc" },
+  const values = await getLatestAccountTotalValues(prisma, [accountId]);
+  return values.get(accountId) ?? null;
+}
+
+export async function getLatestAccountTotalValues(
+  prisma: DbClient,
+  accountIds: number[],
+): Promise<Map<number, number>> {
+  const result = new Map<number, number>();
+  if (!accountIds.length) return result;
+
+  const rows = await prisma.accountValuationDaily.findMany({
+    where: { accountId: { in: accountIds } },
+    orderBy: [{ accountId: "asc" }, { valuationDate: "desc" }],
   });
-  return row ? toNumber(row.totalValue) : null;
+  for (const row of rows) {
+    if (!result.has(row.accountId)) {
+      result.set(row.accountId, toNumber(row.totalValue));
+    }
+  }
+  return result;
 }
 
 export { utcDateOnly, toNumber };

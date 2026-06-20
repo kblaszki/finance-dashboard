@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { convertAmount, getFxRatesPlnPerUnit } from "./fx";
-import { getLatestAccountTotalValue, toNumber } from "./accountValuation";
+import { getLatestAccountTotalValues, toNumber } from "./accountValuation";
 
 export type NetWorthAccountInput = {
   id: number;
@@ -62,19 +62,18 @@ export async function computeNetWorth(
 }> {
   const { plnPerUnit } = await getFxRatesPlnPerUnit();
   const accounts = await prisma.account.findMany({ where: { userId } });
-  const inputs: NetWorthAccountInput[] = [];
-
-  for (const account of accounts) {
-    const latest = await getLatestAccountTotalValue(prisma, account.id);
-    inputs.push({
-      id: account.id,
-      name: account.name,
-      accountType: account.accountType,
-      currency: account.currency,
-      cashBalance: account.cashBalance,
-      valueNative: latest ?? toNumber(account.cashBalance),
-    });
-  }
+  const latestValues = await getLatestAccountTotalValues(
+    prisma,
+    accounts.map((account) => account.id),
+  );
+  const inputs: NetWorthAccountInput[] = accounts.map((account) => ({
+    id: account.id,
+    name: account.name,
+    accountType: account.accountType,
+    currency: account.currency,
+    cashBalance: account.cashBalance,
+    valueNative: latestValues.get(account.id) ?? toNumber(account.cashBalance),
+  }));
 
   return sumAccountsInDisplayCurrency(inputs, displayCurrency, plnPerUnit);
 }

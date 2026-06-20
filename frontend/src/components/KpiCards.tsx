@@ -1,20 +1,17 @@
-import { useEffect, useState } from 'react'
-import { fetchCashflow } from '../api/statsApi'
-import { usePeriod } from '../state/period'
+import { useCashFlow } from '../state/cashflow'
 import { useCurrency } from '../state/currency'
 import { formatMoney } from '../utils/format'
 
 export function KpiCards() {
-  const [stats, setStats] = useState<Awaited<ReturnType<typeof fetchCashflow>> | null>(null)
+  const { stats, loading, error } = useCashFlow()
   const { currency } = useCurrency()
-  const { range } = usePeriod()
 
-  useEffect(() => {
-    void fetchCashflow({ from: range.from, to: range.to, currency }).then(setStats)
-  }, [currency, range.from, range.to])
-
-  if (!stats) {
+  if (loading) {
     return <p className="loading-state">Loading KPIs…</p>
+  }
+
+  if (error || !stats) {
+    return <p className="error-banner">{error ?? 'Failed to load KPIs'}</p>
   }
 
   return (

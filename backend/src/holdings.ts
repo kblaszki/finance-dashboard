@@ -126,6 +126,39 @@ async function getInstrumentPriceAsOf(
   );
 }
 
+type InstrumentValuationIndex = Map<number, Array<{ valuationDate: Date; price: number }>>;
+
+function buildInstrumentValuationIndex(
+  rows: Array<{ instrumentId: number; valuationDate: Date; price: unknown }>,
+): InstrumentValuationIndex {
+  const map: InstrumentValuationIndex = new Map();
+  for (const row of rows) {
+    const points = map.get(row.instrumentId) ?? [];
+    points.push({ valuationDate: row.valuationDate, price: toNumber(row.price) });
+    map.set(row.instrumentId, points);
+  }
+  for (const points of map.values()) {
+    points.sort((a, b) => a.valuationDate.getTime() - b.valuationDate.getTime());
+  }
+  return map;
+}
+
+function computeMarketValueFromIndex(
+  index: InstrumentValuationIndex,
+  quantity: number,
+  instrumentId: number,
+  instrumentCurrency: string,
+  accountCurrency: string,
+  plnPerUnit: Record<string, number>,
+  asOf: Date = new Date(),
+): number | null {
+  if (quantity <= 0) return null;
+  const rawPrice = priceAsOf(index.get(instrumentId) ?? [], asOf);
+  if (rawPrice == null) return null;
+  const inInstrumentCcy = quantity * rawPrice;
+  return convertAmount(inInstrumentCcy, instrumentCurrency, accountCurrency, plnPerUnit);
+}
+
 export async function computeMarketValue(
   prisma: DbClient,
   quantity: number,
@@ -173,19 +206,23 @@ export async function buildHoldingSummary(
   },
   accountCurrency: string,
   plnPerUnit: Record<string, number>,
+  valuationIndex?: InstrumentValuationIndex,
 ): Promise<HoldingSummary> {
   const quantity = toNumber(holding.quantity);
   const lastTradeDate = lastTradeDateFromLots(holding.lots);
   const isOpen = quantity > 0;
 
-  return {
-    id: holding.id,
-    accountId: holding.accountId,
-    instrumentId: holding.instrumentId,
-    quantity,
-    instrument: serializeInstrument(holding.instrument),
-    marketValue: isOpen
-      ? await computeMarketValue(
+  const marketValue = isOpen
+    ? valuationIndex
+      ? computeMarketValueFromIndex(
+          valuationIndex,
+          quantity,
+          holding.instrumentId,
+          holding.instrument.currency,
+          accountCurrency,
+          plnPerUnit,
+        )
+      : await computeMarketValue(
           prisma,
           quantity,
           holding.instrumentId,
@@ -193,7 +230,15 @@ export async function buildHoldingSummary(
           accountCurrency,
           plnPerUnit,
         )
-      : null,
+    : null;
+
+  return {
+    id: holding.id,
+    accountId: holding.accountId,
+    instrumentId: holding.instrumentId,
+    quantity,
+    instrument: serializeInstrument(holding.instrument),
+    marketValue,
     realizedPnl: !isOpen
       ? computeRealizedPnl(holding.lots, accountCurrency, plnPerUnit)
       : null,
@@ -216,6 +261,15 @@ export async function getAccountHoldings(
     orderBy: { instrument: { symbol: "asc" } },
   });
 
+  const instrumentIds = rows.map((holding) => holding.instrumentId);
+  const valuationRows = instrumentIds.length
+    ? await prisma.instrumentValuation.findMany({
+        where: { instrumentId: { in: instrumentIds } },
+        orderBy: { valuationDate: "asc" },
+      })
+    : [];
+  const valuationIndex = buildInstrumentValuationIndex(valuationRows);
+
   const open: HoldingSummary[] = [];
   const closed: HoldingSummary[] = [];
 
@@ -225,6 +279,7 @@ export async function getAccountHoldings(
       holding,
       accountCurrency,
       plnPerUnit,
+      valuationIndex,
     );
     if (summary.quantity > 0) open.push(summary);
     else closed.push(summary);
