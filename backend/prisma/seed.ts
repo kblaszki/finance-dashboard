@@ -4,13 +4,13 @@ import bcrypt from "bcryptjs";
 import { backfillAccountValuations } from "../src/accountValuation";
 import { getFxRatesPlnPerUnit } from "../src/fx";
 import {
+  BROKERAGE_HISTORY_DAYS,
   buildBankMonthTemplates,
   daysAgo,
+  EU_BROKERAGE_INSTRUMENTS,
   seedBankTransactions,
-  seedHoldingLots,
-  seedInstrumentValuations,
-  seedTransferIn,
-  upsertInstrument,
+  seedBrokerageDemo,
+  US_BROKERAGE_INSTRUMENTS,
 } from "./seedBuilders";
 
 const prisma = new PrismaClient();
@@ -64,48 +64,16 @@ async function main() {
       currency: "USD",
       openingBalance: 0,
       cashBalance: 0,
-      createdAt: daysAgo(75),
+      createdAt: daysAgo(BROKERAGE_HISTORY_DAYS + 20),
     },
   });
-  await seedTransferIn(prisma, usBroker.id, 25000, "USD", 70);
-
-  const aapl = await upsertInstrument(prisma, {
-    instrumentType: "STOCK",
-    symbol: "AAPL",
-    name: "Apple Inc.",
-    exchange: "NASDAQ",
-    currency: "USD",
-  });
-  const vt = await upsertInstrument(prisma, {
-    instrumentType: "ETF",
-    symbol: "VT",
-    name: "Vanguard Total World Stock ETF",
-    exchange: "NYSE",
-    currency: "USD",
-  });
-
-  await seedInstrumentValuations(prisma, aapl.id, "USD", 65, 0, 2, (day) => 170 + (65 - day) * 0.3);
-  await seedInstrumentValuations(prisma, vt.id, "USD", 60, 0, 3, (day) => 95 + (60 - day) * 0.1);
-
-  let usCash = 25000;
-  usCash = await seedHoldingLots(
+  await seedBrokerageDemo(
     prisma,
     usBroker.id,
-    aapl.id,
+    150_000,
     "USD",
-    [
-      { side: "BUY", quantity: 10, pricePerUnit: 175, days: 60 },
-      { side: "SELL", quantity: 3, pricePerUnit: 190, days: 35 },
-    ],
-    usCash,
-  );
-  await seedHoldingLots(
-    prisma,
-    usBroker.id,
-    vt.id,
-    "USD",
-    [{ side: "BUY", quantity: 20, pricePerUnit: 98, days: 45 }],
-    usCash,
+    BROKERAGE_HISTORY_DAYS + 10,
+    US_BROKERAGE_INSTRUMENTS,
   );
 
   const euBroker = await prisma.account.create({
@@ -116,26 +84,16 @@ async function main() {
       currency: "EUR",
       openingBalance: 0,
       cashBalance: 0,
-      createdAt: daysAgo(50),
+      createdAt: daysAgo(BROKERAGE_HISTORY_DAYS + 20),
     },
   });
-  await seedTransferIn(prisma, euBroker.id, 15000, "EUR", 48);
-
-  const iwda = await upsertInstrument(prisma, {
-    instrumentType: "ETF",
-    symbol: "IWDA",
-    name: "iShares MSCI World",
-    exchange: "LSE",
-    currency: "EUR",
-  });
-  await seedInstrumentValuations(prisma, iwda.id, "EUR", 45, 0, 2, (day) => 78 + (45 - day) * 0.15);
-  await seedHoldingLots(
+  await seedBrokerageDemo(
     prisma,
     euBroker.id,
-    iwda.id,
+    100_000,
     "EUR",
-    [{ side: "BUY", quantity: 80, pricePerUnit: 80, days: 40 }],
-    15000,
+    BROKERAGE_HISTORY_DAYS + 10,
+    EU_BROKERAGE_INSTRUMENTS,
   );
 
   const manual = await prisma.account.create({

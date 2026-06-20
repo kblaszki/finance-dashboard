@@ -116,6 +116,243 @@ export type LotTemplate = {
   days: number;
 };
 
+export type DemoInstrumentSpec = {
+  instrumentType: string;
+  symbol: string;
+  name: string;
+  exchange: string;
+  currency: string;
+  basePrice: number;
+  priceDriftPerDay: number;
+};
+
+export const BROKERAGE_HISTORY_DAYS = 400;
+export const BROKERAGE_TRADES_PER_INSTRUMENT = 12;
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+/** Deterministic buy/sell sequence over at least one year; never oversells. */
+export function buildBrokerageLotTemplates(
+  basePrice: number,
+  daysSpan: number,
+  tradeCount: number,
+  instrumentIndex: number,
+): LotTemplate[] {
+  if (tradeCount < 10) {
+    throw new Error("tradeCount must be at least 10");
+  }
+  if (daysSpan < 365) {
+    throw new Error("daysSpan must be at least 365");
+  }
+
+  const lots: LotTemplate[] = [];
+  let qty = 0;
+  const minDay = 5;
+  const step = (daysSpan - minDay) / (tradeCount - 1);
+  const buyUnit = basePrice > 200 ? 1 : basePrice > 80 ? 2 : 5;
+
+  for (let i = 0; i < tradeCount; i++) {
+    const day = Math.round(daysSpan - i * step);
+    const pricePerUnit = round2(
+      basePrice + (daysSpan - day) * (0.03 + instrumentIndex * 0.004),
+    );
+    const isSell = i >= 3 && i % 4 === 3 && qty > 0;
+
+    if (isSell) {
+      const sellQty = Math.min(qty, Math.max(1, Math.floor(qty * (0.25 + (i % 3) * 0.1))));
+      lots.push({
+        side: "SELL",
+        quantity: sellQty,
+        pricePerUnit: round2(pricePerUnit * (1.01 + (i % 5) * 0.005)),
+        days: day,
+      });
+      qty -= sellQty;
+    } else {
+      const buyQty = buyUnit + (instrumentIndex % 2) + (i % 2);
+      lots.push({ side: "BUY", quantity: buyQty, pricePerUnit, days: day });
+      qty += buyQty;
+    }
+  }
+
+  return lots;
+}
+
+export const US_BROKERAGE_INSTRUMENTS: DemoInstrumentSpec[] = [
+  {
+    instrumentType: "STOCK",
+    symbol: "AAPL",
+    name: "Apple Inc.",
+    exchange: "NASDAQ",
+    currency: "USD",
+    basePrice: 168,
+    priceDriftPerDay: 0.04,
+  },
+  {
+    instrumentType: "STOCK",
+    symbol: "MSFT",
+    name: "Microsoft Corp.",
+    exchange: "NASDAQ",
+    currency: "USD",
+    basePrice: 395,
+    priceDriftPerDay: 0.08,
+  },
+  {
+    instrumentType: "STOCK",
+    symbol: "GOOGL",
+    name: "Alphabet Inc.",
+    exchange: "NASDAQ",
+    currency: "USD",
+    basePrice: 162,
+    priceDriftPerDay: 0.05,
+  },
+  {
+    instrumentType: "STOCK",
+    symbol: "NVDA",
+    name: "NVIDIA Corp.",
+    exchange: "NASDAQ",
+    currency: "USD",
+    basePrice: 118,
+    priceDriftPerDay: 0.12,
+  },
+  {
+    instrumentType: "ETF",
+    symbol: "VT",
+    name: "Vanguard Total World Stock ETF",
+    exchange: "NYSE",
+    currency: "USD",
+    basePrice: 92,
+    priceDriftPerDay: 0.02,
+  },
+  {
+    instrumentType: "ETF",
+    symbol: "VOO",
+    name: "Vanguard S&P 500 ETF",
+    exchange: "NYSE",
+    currency: "USD",
+    basePrice: 465,
+    priceDriftPerDay: 0.06,
+  },
+  {
+    instrumentType: "ETF",
+    symbol: "QQQ",
+    name: "Invesco QQQ Trust",
+    exchange: "NASDAQ",
+    currency: "USD",
+    basePrice: 435,
+    priceDriftPerDay: 0.07,
+  },
+  {
+    instrumentType: "ETF",
+    symbol: "SCHD",
+    name: "Schwab US Dividend Equity ETF",
+    exchange: "NYSE",
+    currency: "USD",
+    basePrice: 26,
+    priceDriftPerDay: 0.01,
+  },
+];
+
+export const EU_BROKERAGE_INSTRUMENTS: DemoInstrumentSpec[] = [
+  {
+    instrumentType: "ETF",
+    symbol: "IWDA",
+    name: "iShares MSCI World",
+    exchange: "LSE",
+    currency: "EUR",
+    basePrice: 76,
+    priceDriftPerDay: 0.03,
+  },
+  {
+    instrumentType: "ETF",
+    symbol: "EUNL",
+    name: "iShares Core MSCI World",
+    exchange: "XETRA",
+    currency: "EUR",
+    basePrice: 93,
+    priceDriftPerDay: 0.03,
+  },
+  {
+    instrumentType: "STOCK",
+    symbol: "ASML",
+    name: "ASML Holding",
+    exchange: "AEX",
+    currency: "EUR",
+    basePrice: 660,
+    priceDriftPerDay: 0.15,
+  },
+  {
+    instrumentType: "STOCK",
+    symbol: "SAP",
+    name: "SAP SE",
+    exchange: "XETRA",
+    currency: "EUR",
+    basePrice: 175,
+    priceDriftPerDay: 0.05,
+  },
+  {
+    instrumentType: "ETF",
+    symbol: "SXR8",
+    name: "iShares Core S&P 500",
+    exchange: "XETRA",
+    currency: "EUR",
+    basePrice: 505,
+    priceDriftPerDay: 0.06,
+  },
+  {
+    instrumentType: "ETF",
+    symbol: "VUSA",
+    name: "Vanguard S&P 500 UCITS ETF",
+    exchange: "LSE",
+    currency: "EUR",
+    basePrice: 83,
+    priceDriftPerDay: 0.02,
+  },
+  {
+    instrumentType: "STOCK",
+    symbol: "ENEL",
+    name: "Enel SpA",
+    exchange: "MIL",
+    currency: "EUR",
+    basePrice: 6.8,
+    priceDriftPerDay: 0.002,
+  },
+];
+
+export async function seedBrokerageDemo(
+  prisma: PrismaClient,
+  accountId: number,
+  funding: number,
+  currency: string,
+  fundingDays: number,
+  instruments: DemoInstrumentSpec[],
+): Promise<void> {
+  await seedTransferIn(prisma, accountId, funding, currency, fundingDays);
+  let cash = funding;
+
+  for (let i = 0; i < instruments.length; i++) {
+    const spec = instruments[i];
+    const instrument = await upsertInstrument(prisma, spec);
+    await seedInstrumentValuations(
+      prisma,
+      instrument.id,
+      spec.currency,
+      BROKERAGE_HISTORY_DAYS,
+      0,
+      3,
+      (day) => round2(spec.basePrice + (BROKERAGE_HISTORY_DAYS - day) * spec.priceDriftPerDay),
+    );
+    const lots = buildBrokerageLotTemplates(
+      spec.basePrice,
+      BROKERAGE_HISTORY_DAYS,
+      BROKERAGE_TRADES_PER_INSTRUMENT,
+      i,
+    );
+    cash = await seedHoldingLots(prisma, accountId, instrument.id, spec.currency, lots, cash);
+  }
+}
+
 export async function seedHoldingLots(
   prisma: PrismaClient,
   accountId: number,
