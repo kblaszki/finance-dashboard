@@ -14,9 +14,15 @@
 
 `golden-rule.mdc` — behavioral guidelines. `project-context.mdc` — minimal repo map (points to README and `docs/`). Scoped rules add conventions without duplicating full docs.
 
+## Project skills (`.cursor/skills/`)
+
+| Skill | Trigger |
+|-------|---------|
+| [fullstack-architecture-review](skills/fullstack-architecture-review/SKILL.md) | Manual only — fullstack practices audit and remediation plan |
+
 ## Agent index and docs
 
-- [AGENTS.md](../AGENTS.md) — short router for agents (recipes, links).
+- [AGENTS.md](../AGENTS.md) — short router for agents (recipes, links, skills).
 - [docs/](../docs/) — deep reference; **not** loaded every session. Attach when needed:
   - `@docs/domain.md` — accounts, lots, valuations
   - `@docs/api.md` — endpoint list
@@ -39,4 +45,4 @@ Human onboarding (install, env, seed): [README.md](../README.md).
 
 ## Version control
 
-Commit `.cursor/rules/`, `AGENTS.md`, and `docs/` so the team shares the same AI instructions and catalogs.
+Commit `.cursor/rules/`, `.cursor/skills/`, `AGENTS.md`, and `docs/` so the team shares the same AI instructions and catalogs.

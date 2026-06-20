@@ -18,11 +18,17 @@ Token-aware index — use `@docs/...` for domain detail; do not duplicate [READM
 - On file match: `backend.mdc`, `frontend.mdc`, `docs-maintenance.mdc`, `markdown.mdc`
 - Human setup: [README.md](README.md)
 
+## Skills (manual)
+
+| Skill | Use when |
+|-------|----------|
+| [.cursor/skills/fullstack-architecture-review/SKILL.md](.cursor/skills/fullstack-architecture-review/SKILL.md) | Periodic fullstack architecture / practices audit; output is a prioritized remediation plan for delegation |
+
 ## Recipes
 
 **New API endpoint**
 
-1. Handler in `backend/src/app.ts` (match existing patterns: `requireAuth`, `userId`, `toNumber`, `normalizeCurrency` from `fx.ts`).
+1. Handler in `backend/src/routes/<area>Routes.ts` (wire in `backend/src/app.ts`; match existing patterns: `requireAuth`, `userId`, `toNumber`, `normalizeCurrency` from `fx.ts`).
 2. Client in `frontend/src/api/<area>Api.ts`.
 3. One row in `docs/api.md`.
 
