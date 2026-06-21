@@ -1,0 +1,22 @@
+name: Question
+description: Ask about setup, usage, or development
+title: "[Question]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ask a question about running or developing this project. Do not include secrets or vulnerability details.
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What you tried, relevant README section, commands run, errors seen
+      placeholder: I followed README > Development and ran npm run dev, then...
+    validations:
+      required: false
