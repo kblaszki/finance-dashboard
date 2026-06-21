@@ -162,11 +162,13 @@ app.use((err: unknown, _req: express.Request, res: express.Response, _next: expr
   handleRouteError(res, err, "Internal server error");
 });
 
+/* c8 ignore start */
 if (require.main === module) {
   app.listen(PORT, () => {
     // eslint-disable-next-line no-console
     console.log(`Backend listening on http://localhost:${PORT}`);
   });
 }
+/* c8 ignore end */
 
 export { app, prisma };

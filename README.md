@@ -100,6 +100,8 @@ npm run test:coverage
 
 Open `backend/coverage/index.html` and `frontend/coverage/index.html` in a browser.
 
+Coverage thresholds are enforced in [`backend/.c8rc.json`](backend/.c8rc.json) and [`frontend/vitest.config.ts`](frontend/vitest.config.ts) (CI job `coverage`). Frontend metrics include only testable logic (`src/api/`, `src/hooks/`, `src/utils/`, `src/state/period.tsx`); UI pages and components are intentionally excluded.
+
 ## Account types
 
 | Type | Purpose |

@@ -1,6 +1,6 @@
 import type { Account } from '../accountsApi'
 import type { Transaction } from '../transactionsApi'
-import type { CashflowStats } from '../statsApi'
+import type { CashflowStats, CategoryAmount, NetWorthStats } from '../statsApi'
 
 /** Sample shapes produced by backend serializers in routeSupport.ts / statsRoutes.ts */
 export const accountFixture: Account = {
@@ -34,6 +34,21 @@ export const cashflowFixture: CashflowStats = {
   currency: 'PLN',
 }
 
+export const netWorthFixture: NetWorthStats = {
+  total: 12000,
+  currency: 'PLN',
+  byAccountType: { BANK: 5000, BROKERAGE: 7000 },
+  accounts: [
+    { id: 1, name: 'Bank', accountType: 'BANK', value: 5000 },
+    { id: 2, name: 'Broker', accountType: 'BROKERAGE', value: 7000 },
+  ],
+}
+
+export const categoryAmountFixture: CategoryAmount[] = [
+  { category: 'FOOD', amount: 120.5 },
+  { category: 'TRAVEL', amount: 80 },
+]
+
 function assertAccountShape(value: Account): void {
   if (typeof value.id !== 'number') throw new Error('account.id')
   if (!['BANK', 'BROKERAGE', 'MANUAL'].includes(value.accountType)) throw new Error('account.accountType')
@@ -52,8 +67,23 @@ function assertCashflowShape(value: CashflowStats): void {
   if (value.net !== value.income - value.expense) throw new Error('cashflow arithmetic')
 }
 
+function assertNetWorthShape(value: NetWorthStats): void {
+  if (typeof value.total !== 'number') throw new Error('netWorth.total')
+  if (typeof value.byAccountType !== 'object') throw new Error('netWorth.byAccountType')
+  if (!Array.isArray(value.accounts)) throw new Error('netWorth.accounts')
+}
+
+function assertCategoryAmountsShape(value: CategoryAmount[]): void {
+  for (const row of value) {
+    if (typeof row.category !== 'string') throw new Error('categoryAmount.category')
+    if (typeof row.amount !== 'number') throw new Error('categoryAmount.amount')
+  }
+}
+
 export function validateApiContractFixtures(): void {
   assertAccountShape(accountFixture)
   assertTransactionShape(transactionFixture)
   assertCashflowShape(cashflowFixture)
+  assertNetWorthShape(netWorthFixture)
+  assertCategoryAmountsShape(categoryAmountFixture)
 }

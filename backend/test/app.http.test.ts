@@ -700,3 +700,292 @@ test("cross-user holdings access returns 404", async () => {
     404,
   );
 });
+
+test("POST /api/auth/register creates user", async () => {
+  const res = await request(app).post("/api/auth/register").send({
+    email: "newuser@test.local",
+    username: "newuser",
+    password: "password123",
+  });
+  assert.equal(res.status, 201);
+  assert.ok(res.body.token);
+  assert.equal(res.body.user.email, "newuser@test.local");
+});
+
+test("POST /api/auth/register rejects short password", async () => {
+  const res = await request(app).post("/api/auth/register").send({
+    email: "short@test.local",
+    username: "short",
+    password: "abc",
+  });
+  assert.equal(res.status, 400);
+  assert.match(res.body.error, /8 characters/);
+});
+
+test("POST /api/auth/register rejects duplicate email", async () => {
+  await request(app).post("/api/auth/register").send({
+    email: "dup@test.local",
+    username: "dup1",
+    password: "password123",
+  });
+  const res = await request(app).post("/api/auth/register").send({
+    email: "dup@test.local",
+    username: "dup2",
+    password: "password123",
+  });
+  assert.equal(res.status, 500);
+});
+
+test("POST /api/auth/login rejects wrong password", async () => {
+  await request(app).post("/api/auth/register").send({
+    email: "loginfail@test.local",
+    username: "loginfail",
+    password: "password123",
+  });
+  const res = await request(app).post("/api/auth/login").send({
+    email: "loginfail@test.local",
+    password: "wrongpassword",
+  });
+  assert.equal(res.status, 401);
+});
+
+test("GET /api/auth/me returns current user", async () => {
+  const { token } = await createUserAndToken();
+  const res = await request(app).get("/api/auth/me").set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  assert.equal(res.body.email, "http@test.local");
+});
+
+test("GET /api/instruments lists and searches", async () => {
+  const { token } = await createUserAndToken();
+  await prisma.instrument.create({
+    data: { instrumentType: "STOCK", symbol: "AAPL", name: "Apple Inc", exchange: "NASDAQ", currency: "USD" },
+  });
+  await prisma.instrument.create({
+    data: { instrumentType: "STOCK", symbol: "MSFT", name: "Microsoft", exchange: "NASDAQ", currency: "USD" },
+  });
+
+  const all = await request(app).get("/api/instruments").set("Authorization", `Bearer ${token}`);
+  assert.equal(all.status, 200);
+  assert.ok(all.body.length >= 2);
+
+  const search = await request(app)
+    .get("/api/instruments?q=AAPL")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(search.status, 200);
+  assert.equal(search.body.length, 1);
+  assert.equal(search.body[0].symbol, "AAPL");
+});
+
+test("POST /api/instruments creates instrument and rejects missing symbol", async () => {
+  const { token } = await createUserAndToken();
+
+  const created = await request(app)
+    .post("/api/instruments")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ symbol: "VT", currency: "USD", instrumentType: "ETF" });
+  assert.equal(created.status, 201);
+  assert.equal(created.body.symbol, "VT");
+
+  const bad = await request(app)
+    .post("/api/instruments")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ currency: "USD" });
+  assert.equal(bad.status, 400);
+});
+
+test("GET and POST /api/instruments/:id/valuations", async () => {
+  const { token } = await createUserAndToken();
+  const instrument = await prisma.instrument.create({
+    data: { instrumentType: "STOCK", symbol: "VALHTTP", exchange: "TEST", currency: "USD" },
+  });
+
+  const empty = await request(app)
+    .get(`/api/instruments/${instrument.id}/valuations?from=2025-01-01&to=2025-01-31`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(empty.status, 200);
+  assert.deepEqual(empty.body, []);
+
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BROKERAGE",
+      name: "Val Broker",
+      currency: "USD",
+      openingBalance: 0,
+    });
+  const accountId = accountRes.body.id;
+
+  await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      transactionType: "TRANSFER_IN",
+      amount: 5000,
+      currency: "USD",
+      category: "FUNDING",
+      date: "2025-01-01T12:00:00.000Z",
+    });
+
+  const holdingRes = await request(app)
+    .post(`/api/accounts/${accountId}/holdings`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ instrumentId: instrument.id });
+  const holdingId = holdingRes.body.id;
+
+  await request(app)
+    .post(`/api/holdings/${holdingId}/lots`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      side: "BUY",
+      quantity: 10,
+      pricePerUnit: 100,
+      currency: "USD",
+      tradeDate: "2025-01-05T12:00:00.000Z",
+    });
+
+  const valRes = await request(app)
+    .post(`/api/instruments/${instrument.id}/valuations`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      valuationDate: "2025-01-10T12:00:00.000Z",
+      price: 110,
+      currency: "USD",
+    });
+  assert.equal(valRes.status, 201);
+  assert.equal(valRes.body.price, 110);
+
+  const listed = await request(app)
+    .get(`/api/instruments/${instrument.id}/valuations?from=2025-01-01&to=2025-01-31`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(listed.status, 200);
+  assert.equal(listed.body.length, 1);
+
+  const snapshots = await request(app)
+    .get(`/api/accounts/${accountId}/valuations?from=2025-01-01&to=2025-01-31`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(snapshots.status, 200);
+  assert.ok(snapshots.body.length >= 1);
+});
+
+test("GET /api/stats/net-worth sums account values", async () => {
+  const { token } = await createUserAndToken();
+  await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BANK",
+      name: "NW Bank",
+      currency: "PLN",
+      openingBalance: 2500,
+    });
+
+  const res = await request(app)
+    .get("/api/stats/net-worth?currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  assert.equal(res.body.currency, "PLN");
+  assert.ok(res.body.total >= 2500);
+  assert.ok(res.body.byAccountType.BANK >= 2500);
+});
+
+test("GET /api/stats/cashflow requires date range", async () => {
+  const { token } = await createUserAndToken();
+  const missing = await request(app)
+    .get("/api/stats/cashflow?currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(missing.status, 400);
+
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BANK",
+      name: "CF Bank",
+      currency: "PLN",
+      openingBalance: 1000,
+    });
+  const accountId = accountRes.body.id;
+
+  await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      transactionType: "INCOME",
+      amount: 300,
+      currency: "PLN",
+      category: "SALARY",
+      date: "2025-01-15T12:00:00.000Z",
+    });
+  await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      transactionType: "EXPENSE",
+      amount: 100,
+      currency: "PLN",
+      category: "FOOD",
+      date: "2025-01-16T12:00:00.000Z",
+    });
+
+  const res = await request(app)
+    .get("/api/stats/cashflow?from=2025-01-01&to=2025-01-31&currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  assert.equal(res.body.income, 300);
+  assert.equal(res.body.expense, 100);
+  assert.equal(res.body.net, 200);
+});
+
+test("GET /api/stats category breakdowns", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BANK",
+      name: "Cat Bank",
+      currency: "PLN",
+      openingBalance: 1000,
+    });
+  const accountId = accountRes.body.id;
+
+  await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      transactionType: "EXPENSE",
+      amount: 40,
+      currency: "PLN",
+      category: "FOOD",
+      date: "2025-02-01T12:00:00.000Z",
+    });
+  await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      transactionType: "INCOME",
+      amount: 500,
+      currency: "PLN",
+      category: "SALARY",
+      date: "2025-02-05T12:00:00.000Z",
+    });
+
+  const expenses = await request(app)
+    .get("/api/stats/expenses-by-category?from=2025-02-01&to=2025-02-28&currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(expenses.status, 200);
+  assert.deepEqual(expenses.body, [{ category: "FOOD", amount: 40 }]);
+
+  const income = await request(app)
+    .get("/api/stats/income-by-category?from=2025-02-01&to=2025-02-28&currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(income.status, 200);
+  assert.deepEqual(income.body, [{ category: "SALARY", amount: 500 }]);
+});

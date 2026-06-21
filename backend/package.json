@@ -9,7 +9,7 @@
     "start": "node dist/app.js",
     "db:seed": "prisma db seed",
     "test": "tsx --test \"src/**/*.test.ts\" \"test/**/*.test.ts\"",
-    "test:coverage": "c8 --reporter=text --reporter=html --reporter=lcov --include=src/**/*.ts --exclude=**/*.test.ts tsx --test \"src/**/*.test.ts\" \"test/**/*.test.ts\""
+    "test:coverage": "c8 tsx --test \"src/**/*.test.ts\" \"test/**/*.test.ts\""
   },
   "prisma": {
     "seed": "ts-node --transpile-only prisma/seed.ts"
