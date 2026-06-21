@@ -92,6 +92,14 @@ npm test
 
 Runs backend unit, integration, and HTTP tests (`backend/src/**/*.test.ts`, `backend/test/**/*.test.ts`).
 
+Coverage reports (HTML + terminal summary):
+
+```bash
+npm run test:coverage
+```
+
+Open `backend/coverage/index.html` and `frontend/coverage/index.html` in a browser.
+
 ## Account types
 
 | Type | Purpose |
