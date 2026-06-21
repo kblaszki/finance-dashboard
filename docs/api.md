@@ -1,6 +1,8 @@
 # API catalog
 
-Implementation: [`backend/src/app.ts`](../backend/src/app.ts). Auth: `requireAuth` = Bearer JWT unless noted.
+Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`backend/src/app.ts`](../backend/src/app.ts)). Auth: `requireAuth` = Bearer JWT unless noted.
+
+**Tenancy:** Account, transaction, and holding endpoints are scoped to the authenticated user. Instrument list/create and instrument valuations are a **shared global catalog** (any authenticated user can read/write); valuation recompute only affects the caller's brokerage accounts that hold the instrument.
 
 ## Auth
 

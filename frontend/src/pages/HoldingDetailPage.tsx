@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { fetchAccount } from '../api/accountsApi'
 import { fetchHolding, type HoldingSummary } from '../api/holdingsApi'
@@ -16,22 +16,7 @@ export function HoldingDetailPage() {
   const [positionHistory, setPositionHistory] = useState<Awaited<ReturnType<typeof fetchHoldingValuations>>>([])
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!holdingId) return
-    void loadHolding()
-  }, [holdingId])
-
-  useEffect(() => {
-    if (!accountId || !holding?.instrumentId) {
-      setPositionHistory([])
-      return
-    }
-    void fetchHoldingValuations(accountId, holding.instrumentId)
-      .then(setPositionHistory)
-      .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load position history'))
-  }, [accountId, holding?.instrumentId])
-
-  async function loadHolding() {
+  const loadHolding = useCallback(async () => {
     setError(null)
     try {
       const [h, account] = await Promise.all([
@@ -43,7 +28,22 @@ export function HoldingDetailPage() {
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load holding')
     }
-  }
+  }, [accountId, holdingId])
+
+  useEffect(() => {
+    if (!holdingId) return
+    void loadHolding()
+  }, [holdingId, loadHolding])
+
+  useEffect(() => {
+    if (!accountId || !holding?.instrumentId) {
+      setPositionHistory([])
+      return
+    }
+    void fetchHoldingValuations(accountId, holding.instrumentId)
+      .then(setPositionHistory)
+      .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load position history'))
+  }, [accountId, holding?.instrumentId])
 
   if (!holding) {
     return (

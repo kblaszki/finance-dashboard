@@ -42,3 +42,22 @@ test("handleRouteError maps HttpError status", () => {
   assert.equal(response.statusCode, 400);
   assert.deepEqual(response.body, { error: "Invalid date" });
 });
+
+test("handleRouteError maps unknown errors to 500", () => {
+  const response = {
+    statusCode: 200,
+    body: null as unknown,
+    status(code: number) {
+      this.statusCode = code;
+      return this;
+    },
+    json(payload: unknown) {
+      this.body = payload;
+      return this;
+    },
+  };
+
+  handleRouteError(response as never, new Error("Database down"), "Internal server error");
+  assert.equal(response.statusCode, 500);
+  assert.deepEqual(response.body, { error: "Database down" });
+});

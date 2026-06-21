@@ -24,6 +24,9 @@ Protected shell: `ProtectedRoute` → `AppShell`.
 | `frontend/src/state/currency.tsx` | Display currency |
 | `frontend/src/state/theme.tsx` | Light/dark theme |
 | `frontend/src/state/period.tsx` | Dashboard date range (`PeriodProvider` on dashboard only) |
+| `frontend/src/state/cashflow.tsx` | Dashboard cashflow stats (`CashFlowProvider`; uses `useAsyncData`) |
+
+Preferred async pattern for page/widget data: [`frontend/src/hooks/useAsyncData.ts`](../frontend/src/hooks/useAsyncData.ts).
 
 ## API clients
 
@@ -32,7 +35,7 @@ Protected shell: `ProtectedRoute` → `AppShell`.
 | `authApi.ts` | `/api/auth/*` |
 | `accountsApi.ts` | `/api/accounts` |
 | `transactionsApi.ts` | `/api/transactions` |
-| `instrumentsApi.ts` | `/api/instruments` |
+| `instrumentsApi.ts` | `/api/instruments`, `/api/instruments/:id/valuations` |
 | `holdingsApi.ts` | `/api/accounts/:id/holdings`, `/api/holdings/:holdingId` |
 | `holdingLotsApi.ts` | `/api/holdings/:holdingId/lots` |
 | `valuationsApi.ts` | `/api/accounts/:id/holdings/:instrumentId/valuations` — used by `HoldingValuationChart` on holding detail |

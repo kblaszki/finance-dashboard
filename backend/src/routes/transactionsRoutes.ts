@@ -3,7 +3,7 @@ import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import type { TransactionType } from "../transactionBalance";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
-import { handleRouteError } from "./httpSupport";
+import { handleRouteError, notFound, parseFiniteNumber, parsePositiveNumber } from "./httpSupport";
 
 type TransactionsDeps = {
   prisma: PrismaClient;
@@ -92,9 +92,9 @@ export function createTransactionsRouter(deps: TransactionsDeps): Router {
 
   router.post("/api/transactions", requireAuth, async (req: AuthedRequest, res) => {
     try {
-      const accountId = Number(req.body?.accountId);
+      const accountId = parseFiniteNumber(req.body?.accountId, "accountId", { min: 1 });
       const transactionType = String(req.body?.transactionType ?? "").trim().toUpperCase();
-      const amount = Number(req.body?.amount);
+      const amount = parsePositiveNumber(req.body?.amount, "amount");
       const currency = normalizeCurrency(req.body?.currency);
       const category = String(req.body?.category ?? "Uncategorized").trim() || "Uncategorized";
       const date = parseDateBody(req.body?.date);
@@ -108,7 +108,7 @@ export function createTransactionsRouter(deps: TransactionsDeps): Router {
       const { plnPerUnit } = await getFxRatesPlnPerUnit();
       const row = await prisma.$transaction(async (tx) => {
         const freshAccount = await getAccountForUser(tx, uid(req), accountId);
-        if (!freshAccount) throw new Error("Account not found");
+        if (!freshAccount) throw notFound("Account not found");
         const previous = toNumber(freshAccount.cashBalance);
         const balanceAfter = computeBalanceAfter(previous, transactionType, amount);
         const created = await tx.transaction.create({
@@ -150,7 +150,7 @@ export function createTransactionsRouter(deps: TransactionsDeps): Router {
         if (!isValidTransactionType(t)) return res.status(400).json({ error: "Invalid transactionType" });
         data.transactionType = t;
       }
-      if (req.body?.amount != null) data.amount = Number(req.body.amount);
+      if (req.body?.amount != null) data.amount = parsePositiveNumber(req.body.amount, "amount");
       if (req.body?.currency != null) data.currency = normalizeCurrency(req.body.currency);
       if (req.body?.category != null) data.category = String(req.body.category);
       if (req.body?.date != null) data.date = parseDateBody(req.body.date);

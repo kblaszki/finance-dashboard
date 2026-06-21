@@ -30,7 +30,11 @@ export function TransactionTable() {
   const [filterAccountId, setFilterAccountId] = useState('')
 
   useEffect(() => {
-    void fetchAccounts().then(setAccounts).catch(() => {})
+    void fetchAccounts()
+      .then(setAccounts)
+      .catch((e: unknown) => {
+        setError(e instanceof Error ? e.message : 'Failed to load accounts')
+      })
   }, [])
 
   useEffect(() => {

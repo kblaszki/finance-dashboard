@@ -3,7 +3,7 @@ import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import { recomputeQuantityAfterChain } from "../holdingLot";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
-import { handleRouteError } from "./httpSupport";
+import { handleRouteError, badRequest, parsePositiveNumber } from "./httpSupport";
 
 type HoldingsDeps = {
   prisma: PrismaClient;
@@ -155,7 +155,7 @@ export function createHoldingsRouter(deps: HoldingsDeps): Router {
 
       const account = holding.account;
       const side = String(req.body?.side ?? "").trim().toUpperCase();
-      const quantity = Number(req.body?.quantity);
+      const quantity = parsePositiveNumber(req.body?.quantity, "quantity");
       const currency = normalizeCurrency(req.body?.currency ?? account.currency);
       const tradeDate = parseDateBody(req.body?.tradeDate);
 
@@ -212,6 +212,14 @@ export function createHoldingsRouter(deps: HoldingsDeps): Router {
       });
       res.status(201).json(serializeHoldingLot(row));
     } catch (e: unknown) {
+      if (
+        e instanceof Error &&
+        (e.message === "Cannot sell more than current position" ||
+          e.message === "Quantity must be a positive number")
+      ) {
+        handleRouteError(res, badRequest(e.message), "Failed to create holding lot");
+        return;
+      }
       handleRouteError(res, e, "Failed to create holding lot");
     }
   });

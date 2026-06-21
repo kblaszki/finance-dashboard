@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
 import { fetchExpensesByCategory } from '../../api/statsApi'
-import type { CategoryAmount } from '../../api/statsApi'
 import { Pie, PieChart, ResponsiveContainer, Tooltip, Cell } from 'recharts'
+import { useAsyncData } from '../../hooks/useAsyncData'
 import { useCurrency } from '../../state/currency'
 import { usePeriod } from '../../state/period'
 import { useTheme } from '../../state/theme'
@@ -22,40 +21,37 @@ function getChartColors(): string[] {
 }
 
 export function ExpensesByCategoryChart() {
-  const [data, setData] = useState<CategoryAmount[]>([])
   const { currency } = useCurrency()
   const { range } = usePeriod()
-  const { theme } = useTheme()
-  const [colors, setColors] = useState(getChartColors)
+  useTheme()
+  const { data, error, loading } = useAsyncData(
+    () =>
+      fetchExpensesByCategory({
+        from: range.from,
+        to: range.to,
+        currency,
+      }),
+    [currency, range.from, range.to],
+  )
+  const colors = getChartColors()
 
-  useEffect(() => {
-    void load()
-  }, [currency, range.from, range.to])
-
-  useEffect(() => {
-    setColors(getChartColors())
-  }, [theme])
-
-  async function load() {
-    const response = await fetchExpensesByCategory({
-      from: range.from,
-      to: range.to,
-      currency,
-    })
-    setData(response)
+  if (error) {
+    return (
+      <div className="card">
+        <h2>Expenses by category</h2>
+        <p className="auth-error">{error}</p>
+      </div>
+    )
   }
 
-  const tooltipStyle = useMemo(
-    () => ({
-      backgroundColor: getComputedStyle(document.documentElement)
-        .getPropertyValue('--color-surface')
-        .trim(),
-      border: `1px solid ${getComputedStyle(document.documentElement).getPropertyValue('--color-border').trim()}`,
-      borderRadius: '0.5rem',
-      color: getComputedStyle(document.documentElement).getPropertyValue('--color-text').trim(),
-    }),
-    [theme],
-  )
+  if (loading || !data) {
+    return (
+      <div className="card">
+        <h2>Expenses by category</h2>
+        <p className="loading-state">Loading…</p>
+      </div>
+    )
+  }
 
   if (!data.length) {
     return (
@@ -64,6 +60,15 @@ export function ExpensesByCategoryChart() {
         <p className="empty-state">No expense data in the selected period.</p>
       </div>
     )
+  }
+
+  const tooltipStyle = {
+    backgroundColor: getComputedStyle(document.documentElement)
+      .getPropertyValue('--color-surface')
+      .trim(),
+    border: `1px solid ${getComputedStyle(document.documentElement).getPropertyValue('--color-border').trim()}`,
+    borderRadius: '0.5rem',
+    color: getComputedStyle(document.documentElement).getPropertyValue('--color-text').trim(),
   }
 
   return (

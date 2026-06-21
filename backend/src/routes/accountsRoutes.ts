@@ -2,7 +2,9 @@ import { Router } from "express";
 import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
-import { handleRouteError, parseRequiredString } from "./httpSupport";
+import { handleRouteError, badRequest, parseRequiredString } from "./httpSupport";
+
+const VALID_ACCOUNT_TYPES = new Set(["BANK", "BROKERAGE", "MANUAL"]);
 
 type AccountsDeps = {
   prisma: PrismaClient;
@@ -47,6 +49,9 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
   router.post("/api/accounts", requireAuth, async (req: AuthedRequest, res) => {
     try {
       const accountType = parseRequiredString(req.body?.accountType, "accountType").toUpperCase();
+      if (!VALID_ACCOUNT_TYPES.has(accountType)) {
+        throw badRequest("Invalid accountType");
+      }
       const name = parseRequiredString(req.body?.name, "name");
       const currency = normalizeCurrency(req.body?.currency ?? "PLN");
       const openingBalance = Number(req.body?.openingBalance ?? 0);

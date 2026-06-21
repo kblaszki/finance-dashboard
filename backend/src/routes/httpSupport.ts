@@ -27,7 +27,7 @@ export function handleRouteError(res: Response, error: unknown, fallback: string
     return;
   }
   const msg = error instanceof Error ? error.message : fallback;
-  res.status(400).json({ error: msg });
+  res.status(500).json({ error: msg });
 }
 
 export function parseRequiredString(value: unknown, field: string): string {

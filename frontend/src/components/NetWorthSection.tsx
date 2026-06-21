@@ -1,26 +1,11 @@
-import { useEffect, useState } from 'react'
-import { fetchNetWorth, type NetWorthStats } from '../api/statsApi'
+import { fetchNetWorth } from '../api/statsApi'
+import { useAsyncData } from '../hooks/useAsyncData'
 import { useCurrency } from '../state/currency'
 import { formatMoney } from '../utils/format'
 
 export function NetWorthSection() {
-  const [stats, setStats] = useState<NetWorthStats | null>(null)
-  const [error, setError] = useState<string | null>(null)
   const { currency } = useCurrency()
-
-  useEffect(() => {
-    void load()
-  }, [currency])
-
-  async function load() {
-    setError(null)
-    try {
-      setStats(await fetchNetWorth(currency))
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load net worth')
-      setStats(null)
-    }
-  }
+  const { data: stats, error, loading } = useAsyncData(() => fetchNetWorth(currency), [currency])
 
   if (error) {
     return (
@@ -31,7 +16,7 @@ export function NetWorthSection() {
     )
   }
 
-  if (!stats) {
+  if (loading || !stats) {
     return (
       <section className="card">
         <h2>Net worth</h2>

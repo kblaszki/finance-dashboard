@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   createAccount,
@@ -24,18 +24,18 @@ export function ManagedAccountsList() {
   const [currency, setCurrency] = useState('PLN')
   const [openingBalance, setOpeningBalance] = useState(0)
 
-  useEffect(() => {
-    void load()
-  }, [])
-
-  async function load() {
+  const load = useCallback(async () => {
     setError(null)
     try {
       setAccounts(await fetchAccounts())
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load')
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    void load()
+  }, [load])
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()

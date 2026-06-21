@@ -1,8 +1,7 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
-import { computeCashAsOf, toNumber } from "../accountValuation";
+import { toNumber } from "../accountValuation";
 import { buildHoldingSummary } from "../holdings";
-import { computeBalanceAfter, isValidTransactionType, type TransactionType } from "../transactionBalance";
 import { badRequest } from "./httpSupport";
 
 export type DbClient = PrismaClient | Prisma.TransactionClient;
@@ -153,49 +152,50 @@ export function serializeHoldingSummary(summary: Awaited<ReturnType<typeof build
   return summary;
 }
 
+export function serializeInstrument(i: {
+  id: number;
+  instrumentType: string;
+  symbol: string;
+  name: string | null;
+  exchange: string | null;
+  currency: string;
+  source: string;
+  createdAt: Date;
+}) {
+  return {
+    id: i.id,
+    instrumentType: i.instrumentType,
+    symbol: i.symbol,
+    name: i.name,
+    exchange: i.exchange,
+    currency: i.currency,
+    source: i.source,
+    createdAt: i.createdAt.toISOString(),
+  };
+}
+
+export function serializeInstrumentValuation(r: {
+  id: number;
+  instrumentId: number;
+  valuationDate: Date;
+  price: unknown;
+  currency: string;
+  source: string;
+}) {
+  return {
+    id: r.id,
+    instrumentId: r.instrumentId,
+    valuationDate: r.valuationDate.toISOString(),
+    price: toNumber(r.price),
+    currency: r.currency,
+    source: r.source,
+  };
+}
+
 export async function getAccountForUser(
   db: DbClient,
   userId: number,
   accountId: number,
 ) {
   return db.account.findFirst({ where: { id: accountId, userId } });
-}
-
-export async function recalcTransactionBalances(
-  db: DbClient,
-  accountId: number,
-  fromDate?: Date,
-): Promise<void> {
-  const account = await db.account.findUnique({ where: { id: accountId } });
-  if (!account) return;
-
-  const txs = await db.transaction.findMany({
-    where: fromDate ? { accountId, date: { gte: fromDate } } : { accountId },
-    orderBy: [{ date: "asc" }, { id: "asc" }],
-  });
-
-  let running = toNumber(account.openingBalance);
-  if (fromDate) {
-    const prior = await db.transaction.findFirst({
-      where: { accountId, date: { lt: fromDate } },
-      orderBy: [{ date: "desc" }, { id: "desc" }],
-    });
-    if (prior) running = toNumber(prior.balanceAfter);
-  }
-
-  for (const tx of txs) {
-    if (!isValidTransactionType(tx.transactionType)) continue;
-    running = computeBalanceAfter(running, tx.transactionType as TransactionType, toNumber(tx.amount));
-    await db.transaction.update({
-      where: { id: tx.id },
-      data: { balanceAfter: running },
-    });
-  }
-  await db.account.update({ where: { id: accountId }, data: { cashBalance: running } });
-}
-
-export async function syncBrokerageCashBalance(db: DbClient, accountId: number): Promise<number> {
-  const cashBalance = await computeCashAsOf(db, accountId, new Date());
-  await db.account.update({ where: { id: accountId }, data: { cashBalance } });
-  return cashBalance;
 }

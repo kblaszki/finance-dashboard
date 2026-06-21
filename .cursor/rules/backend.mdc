@@ -6,8 +6,8 @@ alwaysApply: false
 
 # Backend
 
-- Models and migrations: `backend/prisma/`; HTTP logic in `backend/src/app.ts`.
-- When serializing amounts and currencies, follow patterns in `app.ts` (`toNumber`, `normalizeCurrency`).
+- Models and migrations: `backend/prisma/`; HTTP handlers in `backend/src/routes/*` (wired in `backend/src/app.ts`).
+- When serializing amounts and currencies, follow patterns in `routeSupport.ts` and domain modules (`toNumber`, `normalizeCurrency`).
 - FX rates: `backend/src/fx.ts` — do not duplicate FX logic in route handlers.
 - REST endpoints under `/api/...`; JSON responses; appropriate HTTP status codes on errors.
 - Secrets only in `.env` (do not commit); `dotenv` loads configuration at startup.

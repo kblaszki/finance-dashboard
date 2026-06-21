@@ -1,6 +1,6 @@
 # Architecture
 
-Monorepo: Express API (`backend/`) + Vite React SPA (`frontend/`). SQLite via Prisma. All user data is scoped by `userId` from JWT.
+Monorepo: Express API (`backend/`) + Vite React SPA (`frontend/`). SQLite via Prisma. User-owned data (accounts, transactions, holdings) is scoped by `userId` from JWT. The `Instrument` catalog and `InstrumentValuation` price history are **shared globally** across authenticated users (see [domain.md](domain.md)).
 
 ## Request flow
 

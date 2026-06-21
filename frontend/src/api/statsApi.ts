@@ -21,6 +21,7 @@ export type CashflowStats = {
   income: number;
   expense: number;
   net: number;
+  currency: string;
 };
 
 type PeriodQuery = {

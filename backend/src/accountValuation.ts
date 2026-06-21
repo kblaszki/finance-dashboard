@@ -352,4 +352,48 @@ export async function getLatestAccountTotalValues(
   return result;
 }
 
+export async function recalcTransactionBalances(
+  db: DbClient,
+  accountId: number,
+  fromDate?: Date,
+): Promise<void> {
+  const account = await db.account.findUnique({ where: { id: accountId } });
+  if (!account) return;
+
+  const txs = await db.transaction.findMany({
+    where: fromDate ? { accountId, date: { gte: fromDate } } : { accountId },
+    orderBy: [{ date: "asc" }, { id: "asc" }],
+  });
+
+  let running = toNumber(account.openingBalance);
+  if (fromDate) {
+    const prior = await db.transaction.findFirst({
+      where: { accountId, date: { lt: fromDate } },
+      orderBy: [{ date: "desc" }, { id: "desc" }],
+    });
+    if (prior) running = toNumber(prior.balanceAfter);
+  }
+
+  for (const tx of txs) {
+    if (!isValidTransactionType(tx.transactionType)) continue;
+    running = computeBalanceAfter(running, tx.transactionType as TransactionType, toNumber(tx.amount));
+    await db.transaction.update({
+      where: { id: tx.id },
+      data: { balanceAfter: running },
+    });
+  }
+
+  if (account.accountType === "BROKERAGE") {
+    await syncBrokerageCashBalance(db, accountId);
+  } else {
+    await db.account.update({ where: { id: accountId }, data: { cashBalance: running } });
+  }
+}
+
+export async function syncBrokerageCashBalance(db: DbClient, accountId: number): Promise<number> {
+  const cashBalance = await computeCashAsOf(db, accountId, new Date());
+  await db.account.update({ where: { id: accountId }, data: { cashBalance } });
+  return cashBalance;
+}
+
 export { utcDateOnly, toNumber };

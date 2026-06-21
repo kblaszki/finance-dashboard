@@ -281,3 +281,156 @@ test("DELETE /api/holding-lots/:id restores brokerage cash balance", async () =>
   assert.ok(account);
   assert.equal(Number(account.cashBalance), 1000);
 });
+
+test("PUT /api/transactions on brokerage with lots syncs cash via replay", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BROKERAGE",
+      name: "Tx Lot Broker",
+      currency: "USD",
+      openingBalance: 0,
+    });
+  const accountId = accountRes.body.id;
+
+  const funding = await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      transactionType: "TRANSFER_IN",
+      amount: 1000,
+      currency: "USD",
+      category: "FUNDING",
+      date: "2025-01-02T12:00:00.000Z",
+    });
+  assert.equal(funding.status, 201);
+
+  const instrument = await prisma.instrument.create({
+    data: { instrumentType: "STOCK", symbol: "PUTHTTP", exchange: "TEST", currency: "USD" },
+  });
+
+  const holdingRes = await request(app)
+    .post(`/api/accounts/${accountId}/holdings`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ instrumentId: instrument.id });
+  assert.equal(holdingRes.status, 201);
+  const holdingId = holdingRes.body.id;
+
+  const buyRes = await request(app)
+    .post(`/api/holdings/${holdingId}/lots`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      side: "BUY",
+      quantity: 5,
+      pricePerUnit: 100,
+      currency: "USD",
+      tradeDate: "2025-01-10T12:00:00.000Z",
+    });
+  assert.equal(buyRes.status, 201);
+
+  let account = await prisma.account.findUnique({ where: { id: accountId } });
+  assert.ok(account);
+  assert.equal(Number(account.cashBalance), 500);
+
+  const expense = await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      transactionType: "EXPENSE",
+      amount: 50,
+      currency: "USD",
+      category: "FEE",
+      date: "2025-01-15T12:00:00.000Z",
+    });
+  assert.equal(expense.status, 201);
+
+  const moved = await request(app)
+    .put(`/api/transactions/${expense.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ date: "2025-01-08T12:00:00.000Z" });
+  assert.equal(moved.status, 200);
+
+  account = await prisma.account.findUnique({ where: { id: accountId } });
+  assert.ok(account);
+  assert.equal(Number(account.cashBalance), 450);
+});
+
+async function createSecondUser(): Promise<{ token: string; userId: number }> {
+  const passwordHash = await hashPassword("otherpass123");
+  const user = await prisma.user.create({
+    data: {
+      email: "other@test.local",
+      username: "otheruser",
+      passwordHash,
+    },
+  });
+  const res = await request(app)
+    .post("/api/auth/login")
+    .send({ email: "other@test.local", password: "otherpass123" });
+  assert.equal(res.status, 200);
+  return { token: res.body.token, userId: user.id };
+}
+
+test("cross-user account access returns 404", async () => {
+  const { token: tokenA } = await createUserAndToken();
+  const { token: tokenB } = await createSecondUser();
+
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${tokenA}`)
+    .send({
+      accountType: "BANK",
+      name: "User A Bank",
+      currency: "PLN",
+      openingBalance: 100,
+    });
+  const accountId = accountRes.body.id;
+
+  const getRes = await request(app)
+    .get(`/api/accounts/${accountId}`)
+    .set("Authorization", `Bearer ${tokenB}`);
+  assert.equal(getRes.status, 404);
+
+  const deleteRes = await request(app)
+    .delete(`/api/accounts/${accountId}`)
+    .set("Authorization", `Bearer ${tokenB}`);
+  assert.equal(deleteRes.status, 404);
+});
+
+test("cross-user transaction access returns 404", async () => {
+  const { token: tokenA } = await createUserAndToken();
+  const { token: tokenB } = await createSecondUser();
+
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${tokenA}`)
+    .send({
+      accountType: "BANK",
+      name: "User A Tx Bank",
+      currency: "PLN",
+      openingBalance: 500,
+    });
+  const accountId = accountRes.body.id;
+
+  const txRes = await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${tokenA}`)
+    .send({
+      accountId,
+      transactionType: "INCOME",
+      amount: 100,
+      currency: "PLN",
+      category: "SALARY",
+      date: "2025-01-10T12:00:00.000Z",
+    });
+  const txId = txRes.body.id;
+
+  const deleteRes = await request(app)
+    .delete(`/api/transactions/${txId}`)
+    .set("Authorization", `Bearer ${tokenB}`);
+  assert.equal(deleteRes.status, 404);
+});

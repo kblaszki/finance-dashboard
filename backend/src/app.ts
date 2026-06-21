@@ -14,7 +14,9 @@ import {
 import { isValidLotSide, resolveLotPrice } from "./holdingLot";
 import {
   backfillAccountValuations,
+  recalcTransactionBalances,
   recomputeAccountValuationsFrom,
+  syncBrokerageCashBalance,
   toNumber,
 } from "./accountValuation";
 import {
@@ -32,12 +34,12 @@ import { createTransactionsRouter } from "./routes/transactionsRoutes";
 import {
   getAccountForUser,
   parseDateBody,
-  recalcTransactionBalances,
   serializeAccount,
   serializeHoldingLot,
   serializeHoldingSummary,
+  serializeInstrument,
+  serializeInstrumentValuation,
   serializeTransaction,
-  syncBrokerageCashBalance,
   transactionDateFilter,
   uid,
 } from "./routes/routeSupport";
@@ -113,7 +115,8 @@ app.use(
     getAccountForUser,
     recomputeAccountValuationsFrom,
     transactionDateFilter,
-    toNumber,
+    serializeInstrument,
+    serializeInstrumentValuation,
   }),
 );
 

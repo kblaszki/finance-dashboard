@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   createHoldingLot,
   deleteHoldingLot,
@@ -21,11 +21,7 @@ export function HoldingLotsTable({ holdingId, currency, onLotsChange }: Props) {
   const [pricePerUnit, setPricePerUnit] = useState(0)
   const [tradeDate, setTradeDate] = useState(new Date().toISOString().slice(0, 10))
 
-  useEffect(() => {
-    void load()
-  }, [holdingId])
-
-  async function load() {
+  const load = useCallback(async () => {
     setError(null)
     try {
       setLots(await fetchHoldingLots(holdingId))
@@ -33,7 +29,11 @@ export function HoldingLotsTable({ holdingId, currency, onLotsChange }: Props) {
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load lots')
     }
-  }
+  }, [holdingId, onLotsChange])
+
+  useEffect(() => {
+    void load()
+  }, [load])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
