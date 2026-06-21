@@ -25,7 +25,7 @@ Do **not** auto-invoke for normal feature work.
 
 ## Primary rubric
 
-Use [docs/fullstack-architecture-practices.md](../../../docs/fullstack-architecture-practices.md) as the main standard. Map every finding to one or more of its 11 sections.
+Use [docs/fullstack-architecture-practices.md](../../../docs/fullstack-architecture-practices.md) as the main standard. Map every finding to one or more of its **13 sections**.
 
 Treat these as supporting evidence, not substitutes for reading code:
 - [docs/architecture.md](../../../docs/architecture.md)
@@ -68,9 +68,10 @@ For deeper checklist items, read [checklist.md](checklist.md).
 
 Focus on:
 - route boundaries vs domain logic (`backend/src/routes/*`, `backend/src/*.ts`)
-- auth and tenancy (`backend/src/auth.ts`, `userId` scoping in queries)
-- financial correctness and atomicity (transactions, ledger invariants, valuation recompute)
-- API contract consistency (serialization, validation, status codes)
+- `routeSupport.ts` vs domain modules (serialization/tenancy only; financial rules in `accountValuation.ts` and peers)
+- auth and tenancy (`backend/src/auth.ts`, `userId` scoping; shared instruments catalog)
+- financial correctness and atomicity (transactions, ledger invariants, valuation recompute, brokerage cash replay)
+- API contract consistency (serializers, validation, status codes via `httpSupport.ts`)
 - cross-cutting rules centralized once (`backend/src/fx.ts`, balance/lot helpers)
 - scalability risks (N+1 queries, synchronous heavy recompute, global/shared mutable data)
 
@@ -83,9 +84,9 @@ Focus on:
 - centralized API client (`frontend/src/api/client.ts`)
 - handwritten contracts vs backend responses (`frontend/src/api/*.ts`)
 - route/state boundaries (`frontend/src/App.tsx`, `frontend/src/state/`)
-- duplicated fetching, inconsistent loading/error handling
+- `useAsyncData` vs ad-hoc `useEffect` fetching; loading/error/empty UX
 - display semantics vs backend contract (especially currency/stats formatting)
-- absence or weakness of frontend verification
+- frontend verification (`client.test.ts`, hook tests; gaps in component/E2E coverage)
 
 Run when useful:
 - `cd frontend && npm run build`
@@ -94,8 +95,8 @@ Run when useful:
 ### Step 4: Repo / docs / CI review
 
 Focus on:
-- whether CI covers backend, frontend, and critical workflows
-- whether docs index matches reality (`AGENTS.md`, `docs/*`)
+- whether CI covers backend tests and frontend build/test/lint
+- whether docs index matches reality (`AGENTS.md`, `docs/*`, practices doc vs `routes/*`)
 - whether change discipline is clear (where to add routes, clients, docs)
 - monorepo ergonomics (install/build/test from root vs split packages)
 
@@ -111,7 +112,7 @@ Use these severities:
 | Low | Polish, consistency, or future-proofing |
 
 Also tag each finding with:
-- **Practice area** (section from `fullstack-architecture-practices.md`)
+- **Practice area** (section 1–13 from `fullstack-architecture-practices.md`)
 - **Layer** (`backend`, `frontend`, `data`, `docs`, `ci`, `cross-cutting`)
 - **Evidence** (file paths, tests, observed behavior)
 
@@ -140,7 +141,18 @@ Use this structure exactly:
 | Practice (from fullstack-architecture-practices.md) | Status | Notes |
 |---|---|---|
 | 1. Clear boundaries | Pass / Partial / Fail | ... |
-| ... | ... | ... |
+| 2. Boring request flow | Pass / Partial / Fail | ... |
+| 3. Stable API contracts | Pass / Partial / Fail | ... |
+| 4. Data model as source of truth | Pass / Partial / Fail | ... |
+| 5. Domain rules in one place | Pass / Partial / Fail | ... |
+| 6. Auth and tenancy | Pass / Partial / Fail | ... |
+| 7. Centralized frontend data access | Pass / Partial / Fail | ... |
+| 8. Scoped frontend state | Pass / Partial / Fail | ... |
+| 9. Pragmatic structure evolution | Pass / Partial / Fail | ... |
+| 10. Tests and verification | Pass / Partial / Fail | ... |
+| 11. Documentation discipline | Pass / Partial / Fail | ... |
+| 12. Organize files by responsibility | Pass / Partial / Fail | ... |
+| 13. Validate and serialize at boundaries | Pass / Partial / Fail | ... |
 
 ## Findings
 
@@ -201,6 +213,7 @@ Prefer small, reviewable packages over large rewrites.
 Before finishing, verify:
 - Every **Critical** and **High** finding has a matching work package in **Now** or **Next**
 - Findings are backed by repo evidence, not generic best-practice slogans
+- Every finding maps to practice section **1–13**
 - The plan distinguishes **correctness bugs**, **architecture debt**, and **future scalability**
 - Doc drift is called out when `docs/*` no longer matches code
 - You did not propose large abstractions unless real pain exists in the codebase
@@ -216,10 +229,11 @@ Before finishing, verify:
 ## Optional deep dives
 
 If the repo changed significantly since the last review, prioritize:
-1. financial write flows and derived state
-2. auth/tenancy boundaries
-3. backend/frontend contract drift
-4. test/CI gaps
+1. financial write flows and derived state (including brokerage cash replay)
+2. auth/tenancy boundaries and shared global resources
+3. backend/frontend contract drift and serializers
+4. test/CI gaps (HTTP tenancy, frontend client/hooks, lint)
 5. route/module boundary growth in `backend/src/routes/`
+6. `handleRouteError` and validation consistency at HTTP boundaries
 
 For detailed inspection prompts, see [checklist.md](checklist.md).
