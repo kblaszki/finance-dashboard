@@ -29,7 +29,8 @@ describe('API contract fixtures', () => {
   })
 
   it('cashflow fixture net equals income minus expense', () => {
-    expect(cashflowFixture.net).toBe(cashflowFixture.income - cashflowFixture.expense)
+    const cashflow: CashflowStats = cashflowFixture
+    expect(cashflow.net).toBe(cashflow.income - cashflow.expense)
   })
 
   it('net worth and category fixtures match stats types', () => {
