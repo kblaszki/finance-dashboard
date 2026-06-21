@@ -94,19 +94,19 @@ Extract a new module when you see duplicated logic, mixed concerns in one file, 
 - Use integration or HTTP tests for workflow boundaries, auth checks, and end-to-end request behavior.
 - Define the success condition before refactoring, especially when changing data flows or cross-cutting logic.
 
-Use a practical test pyramid:
+Use a practical test pyramid — full layout, thresholds, CI jobs, and the verification checklist are in [testing.md](testing.md).
 
 | Level | Where | Examples in this repo |
 |-------|--------|------------------------|
-| Unit | `backend/src/*.test.ts` | `transactionBalance.test.ts`, `fx.test.ts` |
-| Integration | `backend/test/` | `accountValuation.integration.test.ts` |
+| Unit | `backend/src/*.test.ts` | `transactionBalance.test.ts`, `marketData.test.ts` |
+| Integration | `backend/test/` | `accountValuation.integration.test.ts`, `marketData.integration.test.ts` |
 | HTTP / workflow | `backend/test/app.http.test.ts` | auth, cross-user access, brokerage cash |
 | Golden | `backend/test/golden.integration.test.ts` | ledger scenarios |
-| Frontend unit | `frontend/src/**/*.test.ts` | `client.test.ts`, `useAsyncData.test.tsx` |
+| Frontend unit | `frontend/src/**/*.test.ts` | `apiModules.test.ts`, `client.test.ts`, `useAsyncData.test.tsx` |
 
 Prioritize tests for money and balance rules, auth and tenancy, and write flows that update derived state. Skip trivial UI snapshots and formatter-only checks unless they guard real behavior.
 
-CI runs backend tests plus frontend build, test, and lint (see `.github/workflows/ci.yml`). Run the full suite locally from the repo root with `npm test`. When refactoring, add or extend a regression test first, then change the implementation.
+Run `npm test` from the repo root; run `npm run test:coverage` when changing counted logic (see [testing.md](testing.md)). When refactoring, add or extend a regression test first, then change the implementation.
 
 ## 11. Keep documentation part of the architecture
 
@@ -159,4 +159,5 @@ Before adding a file, decide whether the change belongs in **domain**, **route**
 - [domain.md](domain.md) - data model and entity relationships
 - [api.md](api.md) - REST route catalog
 - [frontend.md](frontend.md) - frontend route and client map
+- [testing.md](testing.md) - commands, coverage thresholds, verification checklist
 - [README.md](../README.md) - setup, environment, and local development

@@ -118,6 +118,8 @@ Open `backend/coverage/index.html` and `frontend/coverage/index.html` in a brows
 
 Coverage thresholds are enforced in [`backend/.c8rc.json`](backend/.c8rc.json) and [`frontend/vitest.config.ts`](frontend/vitest.config.ts) (CI job `coverage`). Frontend metrics include only testable logic (`src/api/`, `src/hooks/`, `src/utils/`, `src/state/period.tsx`); UI pages and components are intentionally excluded.
 
+Details: [docs/testing.md](docs/testing.md) (pyramid, where to add tests, verification checklist).
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for fork/branch/PR workflow and project conventions.

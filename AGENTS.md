@@ -11,6 +11,7 @@ Token-aware index — use `@docs/...` for domain detail; do not duplicate [READM
 | [docs/domain.md](docs/domain.md) | Prisma models (Account, HoldingLot, valuations) |
 | [docs/api.md](docs/api.md) | REST route catalog |
 | [docs/frontend.md](docs/frontend.md) | Routes, API clients, UI patterns |
+| [docs/testing.md](docs/testing.md) | Test pyramid, coverage thresholds, verification checklist |
 
 ## Cursor rules
 
@@ -31,6 +32,7 @@ Token-aware index — use `@docs/...` for domain detail; do not duplicate [READM
 1. Handler in `backend/src/routes/<area>Routes.ts` (wire in `backend/src/app.ts`; match existing patterns: `requireAuth`, `userId`, `toNumber`, `normalizeCurrency` from `fx.ts`).
 2. Client in `frontend/src/api/<area>Api.ts`.
 3. One row in `docs/api.md`.
+4. Tests — see [docs/testing.md](docs/testing.md) (HTTP/integration + `apiModules.test.ts`).
 
 **Schema / model change**
 
@@ -49,10 +51,7 @@ Token-aware index — use `@docs/...` for domain detail; do not duplicate [READM
 - Positions: `HoldingLot` on `Account` (`BROKERAGE`); charts from `AccountValuationDaily` / `HoldingValuationDaily`.
 - FX: `backend/src/fx.ts` only.
 
-**Tests**
-
-- `npm test` from repo root.
-- Unit: `backend/src/*.test.ts`; integration/golden/HTTP: `backend/test/`.
+**Tests** — [docs/testing.md](docs/testing.md) (`npm test`, `npm run test:coverage`, file layout, checklist).
 
 ## Do not commit
 

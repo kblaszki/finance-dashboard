@@ -54,6 +54,7 @@ Review progress:
 
 Read, at minimum:
 - `docs/fullstack-architecture-practices.md`
+- `docs/testing.md`
 - `docs/architecture.md`
 - `backend/src/app.ts`
 - `backend/src/routes/`
@@ -77,6 +78,7 @@ Focus on:
 
 Run targeted tests when useful:
 - `npm test` from repo root
+- `npm run test:coverage` when reviewing test/CI posture (see `docs/testing.md`)
 
 ### Step 3: Frontend review
 
@@ -86,16 +88,17 @@ Focus on:
 - route/state boundaries (`frontend/src/App.tsx`, `frontend/src/state/`)
 - `useAsyncData` vs ad-hoc `useEffect` fetching; loading/error/empty UX
 - display semantics vs backend contract (especially currency/stats formatting)
-- frontend verification (`client.test.ts`, hook tests; gaps in component/E2E coverage)
+- frontend verification (`client.test.ts`, `apiModules.test.ts`, hook tests; gaps in component/E2E coverage)
 
 Run when useful:
 - `cd frontend && npm run build`
 - `cd frontend && npm run lint` (report failures; do not fix unless asked)
+- `npm run test:coverage` from repo root when assessing coverage gaps (see `docs/testing.md`)
 
 ### Step 4: Repo / docs / CI review
 
 Focus on:
-- whether CI covers backend tests and frontend build/test/lint
+- whether CI matches [docs/testing.md](../../../docs/testing.md) (backend tests, frontend build/test/lint, coverage thresholds)
 - whether docs index matches reality (`AGENTS.md`, `docs/*`, practices doc vs `routes/*`)
 - whether change discipline is clear (where to add routes, clients, docs)
 - monorepo ergonomics (install/build/test from root vs split packages)
@@ -204,7 +207,7 @@ Each item in **Now / Next / Later** must be delegatable as a standalone task:
 - one clear goal
 - bounded scope (avoid "refactor everything")
 - explicit success criteria
-- verification steps (`npm test`, specific HTTP/integration checks, build/lint, manual UI checks)
+- verification steps (`npm test`, `npm run test:coverage` when logic changed — [docs/testing.md](../../../docs/testing.md), specific HTTP/integration checks, build/lint, manual UI checks)
 
 Prefer small, reviewable packages over large rewrites.
 
@@ -232,8 +235,9 @@ If the repo changed significantly since the last review, prioritize:
 1. financial write flows and derived state (including brokerage cash replay)
 2. auth/tenancy boundaries and shared global resources
 3. backend/frontend contract drift and serializers
-4. test/CI gaps (HTTP tenancy, frontend client/hooks, lint)
+4. test/CI gaps (HTTP tenancy, frontend client/hooks, coverage thresholds, lint)
 5. route/module boundary growth in `backend/src/routes/`
 6. `handleRouteError` and validation consistency at HTTP boundaries
+7. market data sync (`marketData*.ts`, external provider, valuation recompute side effects)
 
 For detailed inspection prompts, see [checklist.md](checklist.md).

@@ -12,3 +12,4 @@ alwaysApply: false
 - REST endpoints under `/api/...`; JSON responses; appropriate HTTP status codes on errors.
 - Secrets only in `.env` (do not commit); `dotenv` loads configuration at startup.
 - Endpoint catalog: [docs/api.md](mdc:docs/api.md) — add one table row when adding routes.
+- Tests: [docs/testing.md](mdc:docs/testing.md).

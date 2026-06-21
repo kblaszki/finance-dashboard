@@ -1,6 +1,6 @@
 ---
 description: Keep docs/ in sync when changing API, schema, or routes (glob-scoped).
-globs: backend/prisma/schema.prisma,backend/src/app.ts,frontend/src/api/**/*.ts,frontend/src/App.tsx
+globs: backend/prisma/schema.prisma,backend/src/app.ts,backend/src/routes/**/*.ts,frontend/src/api/**/*.ts,frontend/src/App.tsx
 alwaysApply: false
 ---
 

@@ -49,6 +49,7 @@ import {
   fetchExpensesByCategory,
   fetchIncomeByCategory,
 } from './statsApi'
+import { fetchMarketDataStatus, triggerMarketSync } from './marketDataApi'
 
 describe('API modules', () => {
   beforeEach(() => {
@@ -218,5 +219,16 @@ describe('API modules', () => {
     expect(apiClient.get).toHaveBeenCalledWith(
       '/api/stats/income-by-category?from=2025-01-01&to=2025-01-31',
     )
+  })
+
+  it('marketDataApi calls correct endpoints', async () => {
+    await fetchMarketDataStatus()
+    expect(apiClient.get).toHaveBeenCalledWith('/api/market-data/status')
+
+    await triggerMarketSync()
+    expect(apiClient.post).toHaveBeenCalledWith('/api/market-data/sync', {})
+
+    await triggerMarketSync(30)
+    expect(apiClient.post).toHaveBeenCalledWith('/api/market-data/sync', { backfillDays: 30 })
   })
 })

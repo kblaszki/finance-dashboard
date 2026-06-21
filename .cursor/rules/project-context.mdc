@@ -15,7 +15,7 @@ Behavioral rules: [golden-rule.mdc](mdc:.cursor/rules/golden-rule.mdc). Agent in
 
 ## Local dev
 
-- Root: `npm run dev` (backend `:4000`, frontend `:5173`). Setup, env, seed: [README.md](mdc:README.md). Tests: `npm test`.
+- Root: `npm run dev` (backend `:4000`, frontend `:5173`). Setup, env, seed: [README.md](mdc:README.md). Tests: `npm test`; coverage and checklist: [docs/testing.md](mdc:docs/testing.md).
 
 ## Conventions
 

@@ -31,6 +31,8 @@ If you change backend or frontend logic covered by metrics, also run:
 npm run test:coverage
 ```
 
+See [docs/testing.md](docs/testing.md) for coverage scope, test layout, and the verification checklist.
+
 4. Open a pull request against `main` and fill in the PR template checklist.
 
 ## Pull request expectations

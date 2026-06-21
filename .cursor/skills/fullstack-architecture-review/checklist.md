@@ -67,14 +67,16 @@ Use with [SKILL.md](SKILL.md). Map each item to a section in [docs/fullstack-arc
 
 ## 10. Tests and verification
 
+See [testing.md](../../../docs/testing.md) for the full pyramid, coverage scope, thresholds, CI jobs, and verification checklist. Spot-check:
+
 - backend unit tests for pure domain logic (`backend/src/*.test.ts`)
 - integration tests for domain + Prisma (`backend/test/*.integration.test.ts`)
 - HTTP tests for auth, tenancy, and critical write paths (`backend/test/app.http.test.ts`)
 - golden fixtures for ledger/financial workflows (`backend/test/golden.integration.test.ts`)
-- frontend unit tests for cross-cutting client and hooks (`client.test.ts`, `useAsyncData.test.tsx`)
-- CI: backend tests + frontend build + test + lint (`.github/workflows/ci.yml`)
+- frontend API/client/hook tests (`apiModules.test.ts`, `client.test.ts`, `useAsyncData.test.tsx`, `apiContracts.test.ts`)
+- CI: `backend-test`, `frontend-checks`, and **`coverage`** jobs in `.github/workflows/ci.yml`
 - cross-user IDOR checks for user-owned resources where HTTP coverage exists
-- note gaps explicitly (E2E, component coverage) without treating them as blockers for hobby scale
+- note gaps explicitly (E2E, component coverage, untested API modules in coverage scope) without treating E2E as blockers for hobby scale
 
 ## 11. Documentation discipline
 
@@ -109,12 +111,13 @@ Inspect these even if the general checklist passes:
 | Stats/currency endpoints | frontend display currency vs backend conversion semantics |
 | Holdings/lots/transactions | ledger chains, delete/update edge cases, brokerage cash sync |
 | Instruments/valuations | global catalog vs user-owned data boundaries |
+| Market data sync | `marketData*.ts`, provider mapping, valuation upsert + account recompute |
 | Valuation recompute | performance and repeated DB work |
 | `backend/src/routes/httpSupport.ts` | error status mapping, shared parsers |
 | `backend/src/routes/routeSupport.ts` | shared helpers becoming a hidden god module |
 | Frontend async patterns | `useAsyncData.ts`, dashboard charts, duplicated `useEffect` loads |
 | Frontend page components | duplicated fetch/error/loading patterns |
-| CI in `.github/workflows/ci.yml` | backend tests, frontend build/test/lint |
+| CI in `.github/workflows/ci.yml` | see [testing.md](../../../docs/testing.md) |
 
 ## Evidence to collect
 
