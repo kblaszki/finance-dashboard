@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   createAccount,
@@ -7,6 +7,7 @@ import {
   type Account,
   type AccountType,
 } from '../api/accountsApi'
+import { useAsyncData } from '../hooks/useAsyncData'
 import { SUPPORTED_CURRENCIES } from '../state/currency'
 import { formatMoney } from '../utils/format'
 
@@ -17,29 +18,30 @@ const TYPE_LABELS: Record<AccountType, string> = {
 }
 
 export function ManagedAccountsList() {
-  const [accounts, setAccounts] = useState<Account[]>([])
-  const [error, setError] = useState<string | null>(null)
+  const { data: accounts, error, loading, reload } = useAsyncData(fetchAccounts, [])
+  const [formError, setFormError] = useState<string | null>(null)
   const [formType, setFormType] = useState<AccountType>('BANK')
   const [name, setName] = useState('')
   const [currency, setCurrency] = useState('PLN')
   const [openingBalance, setOpeningBalance] = useState(0)
 
-  const load = useCallback(async () => {
-    setError(null)
-    try {
-      setAccounts(await fetchAccounts())
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load')
-    }
-  }, [])
-
-  useEffect(() => {
-    void load()
-  }, [load])
+  const handleDelete = useCallback(
+    async (id: number) => {
+      if (!confirm('Delete this account?')) return
+      setFormError(null)
+      try {
+        await deleteAccount(id)
+        reload()
+      } catch (err) {
+        setFormError(err instanceof Error ? err.message : 'Failed to delete')
+      }
+    },
+    [reload],
+  )
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
-    setError(null)
+    setFormError(null)
     try {
       await createAccount({
         accountType: formType,
@@ -48,30 +50,22 @@ export function ManagedAccountsList() {
         openingBalance,
       })
       setName('')
-      await load()
+      reload()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save')
-    }
-  }
-
-  async function handleDelete(id: number) {
-    if (!confirm('Delete this account?')) return
-    try {
-      await deleteAccount(id)
-      await load()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete')
+      setFormError(err instanceof Error ? err.message : 'Failed to save')
     }
   }
 
   const grouped = (['BANK', 'BROKERAGE', 'MANUAL'] as AccountType[]).map((type) => ({
     type,
-    rows: accounts.filter((a) => a.accountType === type),
+    rows: (accounts ?? []).filter((a) => a.accountType === type),
   }))
+
+  const bannerError = formError ?? error
 
   return (
     <div className="page-stack">
-      {error && <p className="error-banner">{error}</p>}
+      {bannerError && <p className="error-banner">{bannerError}</p>}
 
       <section className="card">
         <h2>New account</h2>
@@ -100,43 +94,47 @@ export function ManagedAccountsList() {
         </form>
       </section>
 
-      {grouped.map(({ type, rows }) => (
-        <section className="card" key={type}>
-          <h2>{TYPE_LABELS[type]}</h2>
-          {!rows.length ? (
-            <p className="muted">No accounts in this section.</p>
-          ) : (
-            <div className="table-wrap">
-              <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Currency</th>
-                  <th>Cash</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((a) => (
-                  <tr key={a.id}>
-                    <td>
-                      <Link to={`/accounts/${a.id}`}>{a.name}</Link>
-                    </td>
-                    <td>{a.currency}</td>
-                    <td>{formatMoney(a.cashBalance, a.currency)}</td>
-                    <td className="table-actions">
-                      <button type="button" className="btn-link danger" onClick={() => void handleDelete(a.id)}>
-                        Delete
-                      </button>
-                    </td>
+      {loading && !accounts ? (
+        <p className="muted">Loading accounts…</p>
+      ) : (
+        grouped.map(({ type, rows }) => (
+          <section className="card" key={type}>
+            <h2>{TYPE_LABELS[type]}</h2>
+            {!rows.length ? (
+              <p className="muted">No accounts in this section.</p>
+            ) : (
+              <div className="table-wrap">
+                <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Currency</th>
+                    <th>Cash</th>
+                    <th />
                   </tr>
-                ))}
-              </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-      ))}
+                </thead>
+                <tbody>
+                  {rows.map((a: Account) => (
+                    <tr key={a.id}>
+                      <td>
+                        <Link to={`/accounts/${a.id}`}>{a.name}</Link>
+                      </td>
+                      <td>{a.currency}</td>
+                      <td>{formatMoney(a.cashBalance, a.currency)}</td>
+                      <td className="table-actions">
+                        <button type="button" className="btn-link danger" onClick={() => void handleDelete(a.id)}>
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        ))
+      )}
     </div>
   )
 }

@@ -3,7 +3,9 @@ import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import type { TransactionType } from "../transactionBalance";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
-import { handleRouteError, notFound, parseFiniteNumber, parsePositiveNumber } from "./httpSupport";
+import { badRequest, handleRouteError, notFound, parseFiniteNumber, parsePositiveNumber } from "./httpSupport";
+
+const TRANSACTION_DOMAIN_ERRORS = new Set(["Insufficient cash balance"]);
 
 type TransactionsDeps = {
   prisma: PrismaClient;
@@ -13,13 +15,6 @@ type TransactionsDeps = {
   parseDateBody: (value: unknown) => Date;
   transactionDateFilter: TransactionDateFilter;
   isValidTransactionType: (value: string) => value is TransactionType;
-  computeBalanceAfter: (
-    previousBalance: number,
-    transactionType: TransactionType,
-    amount: number,
-    allowNegative?: boolean,
-  ) => number;
-  toNumber: (value: unknown) => number;
   getAccountForUser: (
     db: DbClient,
     userId: number,
@@ -67,8 +62,6 @@ export function createTransactionsRouter(deps: TransactionsDeps): Router {
     parseDateBody,
     transactionDateFilter,
     isValidTransactionType,
-    computeBalanceAfter,
-    toNumber,
     getAccountForUser,
     recalcTransactionBalances,
     recomputeAccountValuationsFrom,
@@ -109,29 +102,28 @@ export function createTransactionsRouter(deps: TransactionsDeps): Router {
       const row = await prisma.$transaction(async (tx) => {
         const freshAccount = await getAccountForUser(tx, uid(req), accountId);
         if (!freshAccount) throw notFound("Account not found");
-        const previous = toNumber(freshAccount.cashBalance);
-        const balanceAfter = computeBalanceAfter(previous, transactionType, amount);
         const created = await tx.transaction.create({
           data: {
             accountId,
             transactionType,
             amount,
-            balanceAfter,
+            balanceAfter: 0,
             currency,
             category,
             date,
             description,
           },
         });
-        await tx.account.update({
-          where: { id: accountId },
-          data: { cashBalance: balanceAfter },
-        });
+        await recalcTransactionBalances(tx, accountId, date);
         await recomputeAccountValuationsFrom(tx, accountId, date, plnPerUnit);
-        return created;
+        return tx.transaction.findUniqueOrThrow({ where: { id: created.id } });
       });
       res.status(201).json(serializeTransaction(row));
     } catch (e: unknown) {
+      if (e instanceof Error && TRANSACTION_DOMAIN_ERRORS.has(e.message)) {
+        handleRouteError(res, badRequest(e.message), "Failed to create transaction");
+        return;
+      }
       handleRouteError(res, e, "Failed to create transaction");
     }
   });
@@ -168,6 +160,10 @@ export function createTransactionsRouter(deps: TransactionsDeps): Router {
       });
       res.json(serializeTransaction(updated));
     } catch (e: unknown) {
+      if (e instanceof Error && TRANSACTION_DOMAIN_ERRORS.has(e.message)) {
+        handleRouteError(res, badRequest(e.message), "Failed to update transaction");
+        return;
+      }
       handleRouteError(res, e, "Failed to update transaction");
     }
   });

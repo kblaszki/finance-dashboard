@@ -38,7 +38,7 @@ Preferred async pattern for page/widget data: [`frontend/src/hooks/useAsyncData.
 | `instrumentsApi.ts` | `/api/instruments`, `/api/instruments/:id/valuations` |
 | `holdingsApi.ts` | `/api/accounts/:id/holdings`, `/api/holdings/:holdingId` |
 | `holdingLotsApi.ts` | `/api/holdings/:holdingId/lots` |
-| `valuationsApi.ts` | `/api/accounts/:id/holdings/:instrumentId/valuations` — used by `HoldingValuationChart` on holding detail |
+| `valuationsApi.ts` | `/api/accounts/:id/holdings/:instrumentId/valuations` — fetched in `HoldingDetailPage` for `HoldingValuationChart` |
 | `statsApi.ts` | `/api/stats/*` |
 
 ## Related docs

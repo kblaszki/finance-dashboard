@@ -27,7 +27,7 @@ import {
   recalcLotQuantityChain,
   syncHoldingQuantity,
 } from "./holdings";
-import { computeBalanceAfter, isValidTransactionType } from "./transactionBalance";
+import { isValidTransactionType } from "./transactionBalance";
 import { computeNetWorth } from "./netWorth";
 import { createStatsRouter } from "./routes/statsRoutes";
 import { createTransactionsRouter } from "./routes/transactionsRoutes";
@@ -94,8 +94,6 @@ app.use(
     parseDateBody,
     transactionDateFilter,
     isValidTransactionType,
-    computeBalanceAfter,
-    toNumber,
     getAccountForUser,
     recalcTransactionBalances,
     recomputeAccountValuationsFrom,

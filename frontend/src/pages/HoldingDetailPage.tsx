@@ -11,6 +11,9 @@ export function HoldingDetailPage() {
   const { id, holdingId: holdingIdParam } = useParams()
   const accountId = Number(id)
   const holdingId = Number(holdingIdParam)
+  const invalidAccountId = !Number.isFinite(accountId) || accountId < 1
+  const invalidHoldingId = !Number.isFinite(holdingId) || holdingId < 1
+  const invalidId = invalidAccountId || invalidHoldingId
   const [holding, setHolding] = useState<HoldingSummary | null>(null)
   const [accountCurrency, setAccountCurrency] = useState<string>('PLN')
   const [positionHistory, setPositionHistory] = useState<Awaited<ReturnType<typeof fetchHoldingValuations>>>([])
@@ -31,19 +34,28 @@ export function HoldingDetailPage() {
   }, [accountId, holdingId])
 
   useEffect(() => {
-    if (!holdingId) return
+    if (invalidId) return
     void loadHolding()
-  }, [holdingId, loadHolding])
+  }, [invalidId, loadHolding])
 
   useEffect(() => {
-    if (!accountId || !holding?.instrumentId) {
+    if (invalidId || !holding?.instrumentId) {
       setPositionHistory([])
       return
     }
     void fetchHoldingValuations(accountId, holding.instrumentId)
       .then(setPositionHistory)
       .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load position history'))
-  }, [accountId, holding?.instrumentId])
+  }, [invalidId, accountId, holding?.instrumentId])
+
+  if (invalidId) {
+    return (
+      <div className="page">
+        <p className="error-banner">Invalid account or holding ID</p>
+        <Link to="/accounts" className="page-back-link">← Accounts</Link>
+      </div>
+    )
+  }
 
   if (!holding) {
     return (

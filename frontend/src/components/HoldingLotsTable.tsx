@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import {
   createHoldingLot,
   deleteHoldingLot,
   fetchHoldingLots,
   type HoldingLot,
 } from '../api/holdingLotsApi'
+import { useAsyncData } from '../hooks/useAsyncData'
 import { formatMoney } from '../utils/format'
 
 type Props = {
@@ -14,30 +15,17 @@ type Props = {
 }
 
 export function HoldingLotsTable({ holdingId, currency, onLotsChange }: Props) {
-  const [lots, setLots] = useState<HoldingLot[]>([])
-  const [error, setError] = useState<string | null>(null)
+  const loader = useCallback(() => fetchHoldingLots(holdingId), [holdingId])
+  const { data: lots, error, loading, reload } = useAsyncData(loader, [holdingId])
+  const [formError, setFormError] = useState<string | null>(null)
   const [side, setSide] = useState<'BUY' | 'SELL'>('BUY')
   const [quantity, setQuantity] = useState(1)
   const [pricePerUnit, setPricePerUnit] = useState(0)
   const [tradeDate, setTradeDate] = useState(new Date().toISOString().slice(0, 10))
 
-  const load = useCallback(async () => {
-    setError(null)
-    try {
-      setLots(await fetchHoldingLots(holdingId))
-      onLotsChange?.()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load lots')
-    }
-  }, [holdingId, onLotsChange])
-
-  useEffect(() => {
-    void load()
-  }, [load])
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setError(null)
+    setFormError(null)
     try {
       await createHoldingLot(holdingId, {
         side,
@@ -46,25 +34,31 @@ export function HoldingLotsTable({ holdingId, currency, onLotsChange }: Props) {
         currency,
         tradeDate: new Date(tradeDate).toISOString(),
       })
-      await load()
+      reload()
+      onLotsChange?.()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save lot')
+      setFormError(err instanceof Error ? err.message : 'Failed to save lot')
     }
   }
 
   async function handleDelete(id: number) {
     if (!confirm('Delete this lot?')) return
+    setFormError(null)
     try {
       await deleteHoldingLot(id)
-      await load()
+      reload()
+      onLotsChange?.()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete')
+      setFormError(err instanceof Error ? err.message : 'Failed to delete')
     }
   }
 
+  const rows = lots ?? []
+  const bannerError = formError ?? error
+
   return (
     <div>
-      {error && <p className="error-banner">{error}</p>}
+      {bannerError && <p className="error-banner">{bannerError}</p>}
       <form className="card inline-form form-section-gap" onSubmit={(e) => void handleSubmit(e)}>
         <select value={side} onChange={(e) => setSide(e.target.value as 'BUY' | 'SELL')}>
           <option value="BUY">BUY</option>
@@ -75,36 +69,42 @@ export function HoldingLotsTable({ holdingId, currency, onLotsChange }: Props) {
         <input type="date" value={tradeDate} onChange={(e) => setTradeDate(e.target.value)} />
         <button type="submit" className="btn-primary">Add lot</button>
       </form>
-      <div className="table-wrap">
-        <table className="data-table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Side</th>
-            <th>Qty</th>
-            <th>After</th>
-            <th>Price</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          {lots.map((l) => (
-            <tr key={l.id}>
-              <td>{new Date(l.tradeDate).toLocaleDateString('en-US')}</td>
-              <td>{l.side}</td>
-              <td>{l.quantity}</td>
-              <td>{l.quantityAfter}</td>
-              <td>{formatMoney(l.totalPrice ?? l.pricePerUnit ?? 0, l.currency)}</td>
-              <td>
-                <button type="button" className="btn-link danger" onClick={() => void handleDelete(l.id)}>
-                  Delete
-                </button>
-              </td>
+      {loading && !lots ? (
+        <p className="muted">Loading lots…</p>
+      ) : rows.length === 0 ? (
+        <p className="muted">No trades yet.</p>
+      ) : (
+        <div className="table-wrap">
+          <table className="data-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Side</th>
+              <th>Qty</th>
+              <th>After</th>
+              <th>Price</th>
+              <th />
             </tr>
-          ))}
-        </tbody>
-        </table>
-      </div>
+          </thead>
+          <tbody>
+            {rows.map((l: HoldingLot) => (
+              <tr key={l.id}>
+                <td>{new Date(l.tradeDate).toLocaleDateString('en-US')}</td>
+                <td>{l.side}</td>
+                <td>{l.quantity}</td>
+                <td>{l.quantityAfter}</td>
+                <td>{formatMoney(l.totalPrice ?? l.pricePerUnit ?? 0, l.currency)}</td>
+                <td>
+                  <button type="button" className="btn-link danger" onClick={() => void handleDelete(l.id)}>
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          </table>
+        </div>
+      )}
     </div>
   )
 }

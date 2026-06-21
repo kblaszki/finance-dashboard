@@ -12,11 +12,23 @@ export function InstrumentPicker({ value, onChange }: Props) {
   const [symbol, setSymbol] = useState('')
   const [name, setName] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [searchError, setSearchError] = useState<string | null>(null)
 
   useEffect(() => {
+    let active = true
+    setSearchError(null)
     void fetchInstruments(query || undefined)
-      .then(setInstruments)
-      .catch(() => setInstruments([]))
+      .then((rows) => {
+        if (active) setInstruments(rows)
+      })
+      .catch((e) => {
+        if (!active) return
+        setInstruments([])
+        setSearchError(e instanceof Error ? e.message : 'Failed to search instruments')
+      })
+    return () => {
+      active = false
+    }
   }, [query])
 
   async function handleCreate() {
@@ -58,7 +70,8 @@ export function InstrumentPicker({ value, onChange }: Props) {
       <button type="button" className="btn-primary" onClick={() => void handleCreate()} disabled={!symbol.trim()}>
         Add instrument
       </button>
-      {error && <p className="auth-error">{error}</p>}
+      {searchError && <p className="error-banner">{searchError}</p>}
+      {error && <p className="error-banner">{error}</p>}
     </div>
   )
 }

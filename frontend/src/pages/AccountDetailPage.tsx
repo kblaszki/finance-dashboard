@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
   fetchAccount,
@@ -6,9 +6,10 @@ import {
   type Account,
   type AccountValuationPoint,
 } from '../api/accountsApi'
-import { fetchAccountHoldings, type AccountHoldings } from '../api/holdingsApi'
+import { createHolding, fetchAccountHoldings, type AccountHoldings } from '../api/holdingsApi'
 import { AccountBalanceChart } from '../components/AccountBalanceChart'
 import { AccountHoldingsTable } from '../components/AccountHoldingsTable'
+import { InstrumentPicker } from '../components/InstrumentPicker'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { formatMoney } from '../utils/format'
 
@@ -31,10 +32,27 @@ async function loadAccountDetail(accountId: number): Promise<AccountDetailData> 
 export function AccountDetailPage() {
   const { id } = useParams()
   const accountId = Number(id)
-  const loader = useCallback(() => loadAccountDetail(accountId), [accountId])
-  const { data, error, loading } = useAsyncData(loader, [accountId])
+  const invalidId = !Number.isFinite(accountId) || accountId < 1
+  const loader = useCallback(async () => {
+    if (!Number.isFinite(accountId) || accountId < 1) {
+      throw new Error('Invalid account ID')
+    }
+    return loadAccountDetail(accountId)
+  }, [accountId])
+  const { data, error, loading, reload } = useAsyncData(loader, [accountId])
+  const [instrumentId, setInstrumentId] = useState<number | null>(null)
+  const [holdingError, setHoldingError] = useState<string | null>(null)
 
-  if (!accountId || loading) {
+  if (invalidId) {
+    return (
+      <div className="page">
+        <p className="error-banner">Invalid account ID</p>
+        <Link to="/accounts" className="page-back-link">← Accounts</Link>
+      </div>
+    )
+  }
+
+  if (loading) {
     return (
       <div className="page">
         <p className="muted">{error ?? 'Loading…'}</p>
@@ -53,6 +71,22 @@ export function AccountDetailPage() {
   }
 
   const { account, history, holdings } = data
+
+  async function handleAddHolding(e: React.FormEvent) {
+    e.preventDefault()
+    if (!instrumentId) {
+      setHoldingError('Select an instrument')
+      return
+    }
+    setHoldingError(null)
+    try {
+      await createHolding(accountId, instrumentId)
+      setInstrumentId(null)
+      reload()
+    } catch (err) {
+      setHoldingError(err instanceof Error ? err.message : 'Failed to add holding')
+    }
+  }
 
   return (
     <div className="page">
@@ -76,6 +110,13 @@ export function AccountDetailPage() {
       {account.accountType === 'BROKERAGE' && (
         <section className="card">
           <h2>Holdings</h2>
+          {holdingError && <p className="error-banner">{holdingError}</p>}
+          <form className="inline-form form-section-gap" onSubmit={(e) => void handleAddHolding(e)}>
+            <InstrumentPicker value={instrumentId} onChange={setInstrumentId} />
+            <button type="submit" className="btn-primary" disabled={!instrumentId}>
+              Open position
+            </button>
+          </form>
           <AccountHoldingsTable
             accountId={accountId}
             currency={account.currency}

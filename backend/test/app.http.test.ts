@@ -63,6 +63,20 @@ test("POST /api/accounts creates account", async () => {
   assert.equal(res.body.cashBalance, 1000);
 });
 
+test("POST /api/accounts rejects invalid openingBalance", async () => {
+  const { token } = await createUserAndToken();
+  const res = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BANK",
+      name: "Bad Balance",
+      currency: "PLN",
+      openingBalance: "not-a-number",
+    });
+  assert.equal(res.status, 400);
+});
+
 test("POST /api/transactions updates balanceAfter", async () => {
   const { token } = await createUserAndToken();
   const accountRes = await request(app)
@@ -158,6 +172,156 @@ test("GET /api/accounts/:id/valuations returns snapshots", async () => {
   assert.equal(res.status, 200);
   assert.ok(Array.isArray(res.body));
   assert.ok(res.body.length >= 1);
+});
+
+test("POST /api/transactions with backdated date recalculates balances", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BANK",
+      name: "Backdated Bank",
+      currency: "PLN",
+      openingBalance: 1000,
+    });
+  const accountId = accountRes.body.id;
+
+  const tx1 = await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      transactionType: "INCOME",
+      amount: 100,
+      currency: "PLN",
+      category: "SALARY",
+      date: "2025-01-10T12:00:00.000Z",
+    });
+  assert.equal(tx1.status, 201);
+  assert.equal(tx1.body.balanceAfter, 1100);
+
+  const tx2 = await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      transactionType: "EXPENSE",
+      amount: 50,
+      currency: "PLN",
+      category: "FOOD",
+      date: "2025-01-05T12:00:00.000Z",
+    });
+  assert.equal(tx2.status, 201);
+  assert.equal(tx2.body.balanceAfter, 950);
+
+  const rows = await prisma.transaction.findMany({
+    where: { accountId },
+    orderBy: [{ date: "asc" }, { id: "asc" }],
+  });
+  assert.equal(rows.length, 2);
+  assert.equal(Number(rows[0].balanceAfter), 950);
+  assert.equal(Number(rows[1].balanceAfter), 1050);
+
+  const account = await prisma.account.findUnique({ where: { id: accountId } });
+  assert.ok(account);
+  assert.equal(Number(account.cashBalance), 1050);
+});
+
+test("POST /api/transactions with backdated date on brokerage syncs cash via replay", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BROKERAGE",
+      name: "Backdated Broker",
+      currency: "USD",
+      openingBalance: 0,
+    });
+  const accountId = accountRes.body.id;
+
+  await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      transactionType: "TRANSFER_IN",
+      amount: 1000,
+      currency: "USD",
+      category: "FUNDING",
+      date: "2025-01-02T12:00:00.000Z",
+    });
+
+  const instrument = await prisma.instrument.create({
+    data: { instrumentType: "STOCK", symbol: "BDHTTP", exchange: "TEST", currency: "USD" },
+  });
+
+  const holdingRes = await request(app)
+    .post(`/api/accounts/${accountId}/holdings`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ instrumentId: instrument.id });
+  const holdingId = holdingRes.body.id;
+
+  await request(app)
+    .post(`/api/holdings/${holdingId}/lots`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      side: "BUY",
+      quantity: 5,
+      pricePerUnit: 100,
+      currency: "USD",
+      tradeDate: "2025-01-12T12:00:00.000Z",
+    });
+
+  let account = await prisma.account.findUnique({ where: { id: accountId } });
+  assert.ok(account);
+  assert.equal(Number(account.cashBalance), 500);
+
+  const backdatedFee = await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      transactionType: "EXPENSE",
+      amount: 50,
+      currency: "USD",
+      category: "FEE",
+      date: "2025-01-08T12:00:00.000Z",
+    });
+  assert.equal(backdatedFee.status, 201);
+
+  account = await prisma.account.findUnique({ where: { id: accountId } });
+  assert.ok(account);
+  assert.equal(Number(account.cashBalance), 450);
+});
+
+test("POST /api/transactions rejects expense exceeding balance with 400", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BANK",
+      name: "Low Balance Bank",
+      currency: "PLN",
+      openingBalance: 100,
+    });
+  const accountId = accountRes.body.id;
+
+  const res = await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      transactionType: "EXPENSE",
+      amount: 200,
+      currency: "PLN",
+      category: "FOOD",
+      date: "2025-01-10T12:00:00.000Z",
+    });
+  assert.equal(res.status, 400);
+  assert.equal(res.body.error, "Insufficient cash balance");
 });
 
 test("PUT /api/transactions recalculates balances when moving a transaction earlier", async () => {
@@ -433,4 +597,106 @@ test("cross-user transaction access returns 404", async () => {
     .delete(`/api/transactions/${txId}`)
     .set("Authorization", `Bearer ${tokenB}`);
   assert.equal(deleteRes.status, 404);
+});
+
+test("cross-user holdings access returns 404", async () => {
+  const { token: tokenA } = await createUserAndToken();
+  const { token: tokenB } = await createSecondUser();
+
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${tokenA}`)
+    .send({
+      accountType: "BROKERAGE",
+      name: "User A Broker",
+      currency: "USD",
+      openingBalance: 0,
+    });
+  const accountId = accountRes.body.id;
+
+  await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${tokenA}`)
+    .send({
+      accountId,
+      transactionType: "TRANSFER_IN",
+      amount: 1000,
+      currency: "USD",
+      category: "FUNDING",
+      date: "2025-01-02T12:00:00.000Z",
+    });
+
+  const instrument = await prisma.instrument.create({
+    data: { instrumentType: "STOCK", symbol: "IDOR", exchange: "TEST", currency: "USD" },
+  });
+
+  const holdingRes = await request(app)
+    .post(`/api/accounts/${accountId}/holdings`)
+    .set("Authorization", `Bearer ${tokenA}`)
+    .send({ instrumentId: instrument.id });
+  const holdingId = holdingRes.body.id;
+
+  const lotRes = await request(app)
+    .post(`/api/holdings/${holdingId}/lots`)
+    .set("Authorization", `Bearer ${tokenA}`)
+    .send({
+      side: "BUY",
+      quantity: 5,
+      pricePerUnit: 100,
+      currency: "USD",
+      tradeDate: "2025-01-10T12:00:00.000Z",
+    });
+  const lotId = lotRes.body.id;
+
+  assert.equal(
+    (await request(app).get(`/api/holdings/${holdingId}`).set("Authorization", `Bearer ${tokenB}`)).status,
+    404,
+  );
+  assert.equal(
+    (
+      await request(app)
+        .get(`/api/accounts/${accountId}/holdings`)
+        .set("Authorization", `Bearer ${tokenB}`)
+    ).status,
+    404,
+  );
+  assert.equal(
+    (
+      await request(app)
+        .get(`/api/holdings/${holdingId}/lots`)
+        .set("Authorization", `Bearer ${tokenB}`)
+    ).status,
+    404,
+  );
+  assert.equal(
+    (
+      await request(app)
+        .post(`/api/holdings/${holdingId}/lots`)
+        .set("Authorization", `Bearer ${tokenB}`)
+        .send({
+          side: "SELL",
+          quantity: 1,
+          pricePerUnit: 110,
+          currency: "USD",
+          tradeDate: "2025-01-12T12:00:00.000Z",
+        })
+    ).status,
+    404,
+  );
+  assert.equal(
+    (
+      await request(app)
+        .delete(`/api/holding-lots/${lotId}`)
+        .set("Authorization", `Bearer ${tokenB}`)
+    ).status,
+    404,
+  );
+  assert.equal(
+    (
+      await request(app)
+        .get(`/api/accounts/${accountId}/holdings/${instrument.id}/valuations`)
+        .set("Authorization", `Bearer ${tokenB}`)
+    ).status,
+    404,
+  );
 });
