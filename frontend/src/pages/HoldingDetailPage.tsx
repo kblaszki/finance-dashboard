@@ -5,6 +5,7 @@ import { fetchHolding, type HoldingSummary } from '../api/holdingsApi'
 import { fetchHoldingValuations } from '../api/valuationsApi'
 import { HoldingLotsTable } from '../components/HoldingLotsTable'
 import { HoldingValuationChart } from '../components/HoldingValuationChart'
+import { InstrumentValuationForm } from '../components/InstrumentValuationForm'
 import { formatMoney } from '../utils/format'
 
 export function HoldingDetailPage() {
@@ -18,6 +19,7 @@ export function HoldingDetailPage() {
   const [accountCurrency, setAccountCurrency] = useState<string>('PLN')
   const [positionHistory, setPositionHistory] = useState<Awaited<ReturnType<typeof fetchHoldingValuations>>>([])
   const [error, setError] = useState<string | null>(null)
+  const [historyVersion, setHistoryVersion] = useState(0)
 
   const loadHolding = useCallback(async () => {
     setError(null)
@@ -46,7 +48,12 @@ export function HoldingDetailPage() {
     void fetchHoldingValuations(accountId, holding.instrumentId)
       .then(setPositionHistory)
       .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load position history'))
-  }, [invalidId, accountId, holding?.instrumentId])
+  }, [invalidId, accountId, holding?.instrumentId, historyVersion])
+
+  function refreshAfterValuation() {
+    void loadHolding()
+    setHistoryVersion((v) => v + 1)
+  }
 
   if (invalidId) {
     return (
@@ -66,7 +73,7 @@ export function HoldingDetailPage() {
     )
   }
 
-  const { symbol, name } = holding.instrument
+  const { symbol, name, currency: instrumentCurrency } = holding.instrument
   const title = name ? `${symbol} — ${name}` : symbol
   const isOpen = holding.quantity > 0
 
@@ -93,11 +100,24 @@ export function HoldingDetailPage() {
       </section>
 
       <section className="card">
+        <h2>Manual price</h2>
+        <p className="muted">Use when automatic market sync has no quote for this instrument.</p>
+        <InstrumentValuationForm
+          instrumentId={holding.instrumentId}
+          currency={instrumentCurrency}
+          onSaved={refreshAfterValuation}
+        />
+      </section>
+
+      <section className="card">
         <h2>Trade history</h2>
         <HoldingLotsTable
           holdingId={holdingId}
           currency={accountCurrency}
-          onLotsChange={loadHolding}
+          onLotsChange={() => {
+            void loadHolding()
+            setHistoryVersion((v) => v + 1)
+          }}
         />
       </section>
     </div>

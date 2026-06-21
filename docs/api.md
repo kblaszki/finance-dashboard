@@ -61,3 +61,10 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 | GET | `/api/stats/cashflow` | Yes | Period income/expense/net; `from`, `to`, optional `currency` converts transaction amounts from native account currency |
 | GET | `/api/stats/expenses-by-category` | Yes | Expense breakdown by category string; optional `currency` converts amounts |
 | GET | `/api/stats/income-by-category` | Yes | Income breakdown by category string; optional `currency` converts amounts |
+
+## Market data
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/market-data/status` | Yes | Last sync time, held instrument count, stale count |
+| POST | `/api/market-data/sync` | Yes | Fetch EOD prices for held STOCK/ETF; body `{ backfillDays? }` |

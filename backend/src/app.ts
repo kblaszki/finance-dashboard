@@ -47,6 +47,7 @@ import { createAuthRouter } from "./routes/authRoutes";
 import { createAccountsRouter } from "./routes/accountsRoutes";
 import { createInstrumentsRouter } from "./routes/instrumentsRoutes";
 import { createHoldingsRouter } from "./routes/holdingsRoutes";
+import { createMarketDataRouter } from "./routes/marketDataRoutes";
 import { handleRouteError } from "./routes/httpSupport";
 
 dotenv.config();
@@ -155,6 +156,15 @@ app.use(
     convertAmount,
     getFxRatesPlnPerUnit,
     computeNetWorth,
+  }),
+);
+
+app.use(
+  createMarketDataRouter({
+    prisma,
+    requireAuth,
+    uid,
+    getFxRatesPlnPerUnit,
   }),
 );
 

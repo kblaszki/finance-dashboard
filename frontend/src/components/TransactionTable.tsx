@@ -1,54 +1,105 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import type { Transaction, TransactionInput, TransactionType } from '../api/transactionsApi'
 import {
   createTransaction,
   deleteTransaction,
   fetchTransactions,
+  updateTransaction,
 } from '../api/transactionsApi'
 import { fetchAccounts, type Account } from '../api/accountsApi'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { SUPPORTED_CURRENCIES } from '../state/currency'
 import { formatMoney } from '../utils/format'
 
-const emptyForm: TransactionInput = {
-  accountId: 0,
-  transactionType: 'EXPENSE',
-  amount: 0,
-  currency: 'PLN',
-  category: 'Uncategorized',
-  date: new Date().toISOString().slice(0, 10),
-  description: '',
+type Props = {
+  accountId?: number
+  accountCurrency?: string
+  showFilters?: boolean
+  showAccountColumn?: boolean
+  title?: string
 }
 
-export function TransactionTable() {
+function emptyForm(accountId: number, currency: string): TransactionInput {
+  return {
+    accountId,
+    transactionType: 'EXPENSE',
+    amount: 0,
+    currency,
+    category: 'Uncategorized',
+    date: new Date().toISOString().slice(0, 10),
+    description: '',
+  }
+}
+
+export function TransactionTable({
+  accountId: fixedAccountId,
+  accountCurrency,
+  showFilters = true,
+  showAccountColumn = true,
+  title = 'Transactions',
+}: Props) {
   const { data: accounts, error: accountsError } = useAsyncData(fetchAccounts, [])
-  const [form, setForm] = useState<TransactionInput>(emptyForm)
+  const [form, setForm] = useState<TransactionInput>(() => emptyForm(fixedAccountId ?? 0, accountCurrency ?? 'PLN'))
+  const [editingId, setEditingId] = useState<number | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
   const [filterFrom, setFilterFrom] = useState('')
   const [filterTo, setFilterTo] = useState('')
-  const [filterAccountId, setFilterAccountId] = useState('')
+  const [filterAccountId, setFilterAccountId] = useState(fixedAccountId ? String(fixedAccountId) : '')
+
+  useEffect(() => {
+    if (fixedAccountId) {
+      setFilterAccountId(String(fixedAccountId))
+      setForm((current) => ({
+        ...current,
+        accountId: fixedAccountId,
+        currency: accountCurrency ?? current.currency,
+      }))
+    }
+  }, [fixedAccountId, accountCurrency])
 
   const transactionLoader = useCallback(
     () =>
       fetchTransactions({
         from: filterFrom || undefined,
         to: filterTo || undefined,
-        accountId: filterAccountId ? Number(filterAccountId) : undefined,
+        accountId: filterAccountId ? Number(filterAccountId) : fixedAccountId,
       }),
-    [filterFrom, filterTo, filterAccountId],
+    [filterFrom, filterTo, filterAccountId, fixedAccountId],
   )
   const {
     data: transactions,
     error: transactionsError,
     loading,
     reload,
-  } = useAsyncData(transactionLoader, [filterFrom, filterTo, filterAccountId])
+  } = useAsyncData(transactionLoader, [filterFrom, filterTo, filterAccountId, fixedAccountId])
 
   useEffect(() => {
-    if (accounts?.length && !form.accountId) {
-      setForm((current) => ({ ...current, accountId: accounts[0].id }))
+    if (accounts?.length && !form.accountId && !fixedAccountId) {
+      setForm((current) => ({ ...current, accountId: accounts[0].id, currency: accounts[0].currency }))
     }
-  }, [accounts, form.accountId])
+  }, [accounts, form.accountId, fixedAccountId])
+
+  function resetForm() {
+    const accountId = fixedAccountId ?? accounts?.[0]?.id ?? 0
+    const currency = accountCurrency ?? accounts?.find((a) => a.id === accountId)?.currency ?? 'PLN'
+    setForm(emptyForm(accountId, currency))
+    setEditingId(null)
+  }
+
+  function startEdit(t: Transaction) {
+    setEditingId(t.id)
+    setForm({
+      accountId: t.accountId,
+      transactionType: t.transactionType,
+      amount: t.amount,
+      currency: t.currency,
+      category: t.category,
+      date: t.date.slice(0, 10),
+      description: t.description ?? '',
+    })
+    setFormError(null)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -58,14 +109,19 @@ export function TransactionTable() {
     }
     setFormError(null)
     try {
-      await createTransaction({
+      const payload = {
         ...form,
         date: new Date(form.date).toISOString(),
-      })
-      setForm(emptyForm)
+      }
+      if (editingId) {
+        await updateTransaction(editingId, payload)
+      } else {
+        await createTransaction(payload)
+      }
+      resetForm()
       reload()
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Failed to add')
+      setFormError(err instanceof Error ? err.message : 'Failed to save')
     }
   }
 
@@ -74,6 +130,7 @@ export function TransactionTable() {
     setFormError(null)
     try {
       await deleteTransaction(id)
+      if (editingId === id) resetForm()
       reload()
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Failed to delete')
@@ -83,26 +140,29 @@ export function TransactionTable() {
   const accountRows = accounts ?? []
   const transactionRows = transactions ?? []
   const bannerError = formError ?? transactionsError ?? accountsError
+  const lockAccount = fixedAccountId != null
 
   return (
     <div className="page-stack">
       {bannerError && <p className="error-banner">{bannerError}</p>}
 
       <section className="card">
-        <h2>Add transaction</h2>
+        <h2>{editingId ? 'Edit transaction' : 'Add transaction'}</h2>
         <form className="inline-form" onSubmit={(e) => void handleSubmit(e)}>
-          <select
-            value={form.accountId || ''}
-            onChange={(e) => setForm({ ...form, accountId: Number(e.target.value) })}
-            required
-          >
-            <option value="">Account</option>
-            {accountRows.map((a: Account) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
+          {!lockAccount && (
+            <select
+              value={form.accountId || ''}
+              onChange={(e) => setForm({ ...form, accountId: Number(e.target.value) })}
+              required
+            >
+              <option value="">Account</option>
+              {accountRows.map((a: Account) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
+            </select>
+          )}
           <select
             value={form.transactionType}
             onChange={(e) => setForm({ ...form, transactionType: e.target.value as TransactionType })}
@@ -130,28 +190,46 @@ export function TransactionTable() {
           <input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Category" />
           <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
           <input value={form.description ?? ''} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Description" />
-          <button type="submit" className="btn-primary">Add</button>
+          <button type="submit" className="btn-primary">{editingId ? 'Save' : 'Add'}</button>
+          {editingId && (
+            <button type="button" className="btn-link" onClick={resetForm}>Cancel</button>
+          )}
         </form>
       </section>
 
-      <section className="card">
-        <h2>Filters</h2>
-        <div className="inline-form">
-          <input type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} />
-          <input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} />
-          <select value={filterAccountId} onChange={(e) => setFilterAccountId(e.target.value)}>
-            <option value="">All accounts</option>
-            {accountRows.map((a: Account) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </section>
+      {showFilters && !lockAccount && (
+        <section className="card">
+          <h2>Filters</h2>
+          <div className="inline-form">
+            <input type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} />
+            <input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} />
+            <select value={filterAccountId} onChange={(e) => setFilterAccountId(e.target.value)}>
+              <option value="">All accounts</option>
+              {accountRows.map((a: Account) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </section>
+      )}
+
+      {showFilters && lockAccount && (
+        <section className="card">
+          <h2>Filters</h2>
+          <div className="inline-form">
+            <input type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} />
+            <input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} />
+          </div>
+          <p className="muted">
+            <Link to={`/transactions?accountId=${fixedAccountId}`}>All transactions for this account</Link>
+          </p>
+        </section>
+      )}
 
       <section className="card">
-        <h2>Transactions ({loading ? '…' : transactionRows.length})</h2>
+        <h2>{title} ({loading ? '…' : transactionRows.length})</h2>
         {loading && !transactions ? (
           <p className="muted">Loading transactions…</p>
         ) : transactionRows.length === 0 ? (
@@ -162,7 +240,7 @@ export function TransactionTable() {
             <thead>
               <tr>
                 <th>Date</th>
-                <th>Account</th>
+                {showAccountColumn && !lockAccount && <th>Account</th>}
                 <th>Type</th>
                 <th>Category</th>
                 <th>Amount</th>
@@ -174,12 +252,15 @@ export function TransactionTable() {
               {transactionRows.map((t: Transaction) => (
                 <tr key={t.id}>
                   <td>{new Date(t.date).toLocaleDateString('en-US')}</td>
-                  <td>{accountRows.find((a) => a.id === t.accountId)?.name ?? t.accountId}</td>
+                  {showAccountColumn && !lockAccount && (
+                    <td>{accountRows.find((a) => a.id === t.accountId)?.name ?? t.accountId}</td>
+                  )}
                   <td>{t.transactionType}</td>
                   <td>{t.category}</td>
                   <td>{formatMoney(t.amount, t.currency)}</td>
                   <td>{formatMoney(t.balanceAfter, t.currency)}</td>
-                  <td>
+                  <td className="table-actions">
+                    <button type="button" className="btn-link" onClick={() => startEdit(t)}>Edit</button>
                     <button type="button" className="btn-link danger" onClick={() => void handleDelete(t.id)}>
                       Delete
                     </button>

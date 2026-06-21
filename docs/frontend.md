@@ -10,9 +10,9 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 | `/register` | Register | `pages/RegisterPage.tsx` (username) |
 | `/` | Dashboard | `DashboardPage`, `NetWorthSection`, charts |
 | `/accounts` | Accounts | `ManagedAccountsList` |
-| `/accounts/:id` | Account detail | `AccountDetailPage`, `AccountBalanceChart`, `AccountHoldingsTable` |
-| `/accounts/:id/holdings/:holdingId` | Holding detail | `HoldingDetailPage`, `HoldingValuationChart`, `HoldingLotsTable` |
-| `/transactions` | Transactions | `TransactionsListPage` → `TransactionTable` |
+| `/accounts/:id` | Account detail | `AccountDetailPage`, `AccountBalanceChart`, `AccountHoldingsTable`, `TransactionTable`, `MarketPricesStatus` |
+| `/accounts/:id/holdings/:holdingId` | Holding detail | `HoldingDetailPage`, `HoldingValuationChart`, `InstrumentValuationForm`, `HoldingLotsTable` |
+| `/transactions` | Transactions | `TransactionsListPage` → `TransactionTable` (`?accountId=` filter) |
 
 Protected shell: `ProtectedRoute` → `AppShell`.
 
@@ -40,6 +40,7 @@ Preferred async pattern for page/widget data: [`frontend/src/hooks/useAsyncData.
 | `holdingLotsApi.ts` | `/api/holdings/:holdingId/lots` |
 | `valuationsApi.ts` | `/api/accounts/:id/holdings/:instrumentId/valuations` — fetched in `HoldingDetailPage` for `HoldingValuationChart` |
 | `statsApi.ts` | `/api/stats/*` |
+| `marketDataApi.ts` | `/api/market-data/*` |
 
 ## Related docs
 

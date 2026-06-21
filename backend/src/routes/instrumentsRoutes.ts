@@ -2,7 +2,17 @@ import { Router } from "express";
 import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
-import { handleRouteError, parsePositiveNumber, parseRequiredString } from "./httpSupport";
+import { badRequest, handleRouteError, parsePositiveNumber, parseRequiredString } from "./httpSupport";
+
+const ALLOWED_INSTRUMENT_TYPES = new Set(["STOCK", "ETF", "BOND", "FUND", "OTHER"]);
+
+function parseInstrumentType(value: unknown): string {
+  const type = String(value ?? "STOCK").trim().toUpperCase();
+  if (!ALLOWED_INSTRUMENT_TYPES.has(type)) {
+    throw badRequest(`Invalid instrumentType: ${type}`);
+  }
+  return type;
+}
 
 type InstrumentsDeps = {
   prisma: PrismaClient;
@@ -73,7 +83,7 @@ export function createInstrumentsRouter(deps: InstrumentsDeps): Router {
 
   router.post("/api/instruments", requireAuth, async (req: AuthedRequest, res) => {
     try {
-      const instrumentType = String(req.body?.instrumentType ?? "STOCK").trim().toUpperCase();
+      const instrumentType = parseInstrumentType(req.body?.instrumentType);
       const symbol = parseRequiredString(req.body?.symbol, "symbol").toUpperCase();
       const name = req.body?.name != null ? String(req.body.name) : null;
       const exchange = req.body?.exchange != null ? String(req.body.exchange) : null;

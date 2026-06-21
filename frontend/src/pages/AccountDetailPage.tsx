@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import {
   fetchAccount,
   fetchAccountValuations,
+  updateAccount,
   type Account,
   type AccountValuationPoint,
 } from '../api/accountsApi'
@@ -10,6 +11,8 @@ import { createHolding, fetchAccountHoldings, type AccountHoldings } from '../ap
 import { AccountBalanceChart } from '../components/AccountBalanceChart'
 import { AccountHoldingsTable } from '../components/AccountHoldingsTable'
 import { InstrumentPicker } from '../components/InstrumentPicker'
+import { MarketPricesStatus } from '../components/MarketPricesStatus'
+import { TransactionTable } from '../components/TransactionTable'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { formatMoney } from '../utils/format'
 
@@ -42,6 +45,10 @@ export function AccountDetailPage() {
   const { data, error, loading, reload } = useAsyncData(loader, [accountId])
   const [instrumentId, setInstrumentId] = useState<number | null>(null)
   const [holdingError, setHoldingError] = useState<string | null>(null)
+  const [editName, setEditName] = useState('')
+  const [editDescription, setEditDescription] = useState('')
+  const [editError, setEditError] = useState<string | null>(null)
+  const [editingAccount, setEditingAccount] = useState(false)
 
   if (invalidId) {
     return (
@@ -72,6 +79,28 @@ export function AccountDetailPage() {
 
   const { account, history, holdings } = data
 
+  function startEditAccount() {
+    setEditName(account.name)
+    setEditDescription(account.description ?? '')
+    setEditError(null)
+    setEditingAccount(true)
+  }
+
+  async function handleSaveAccount(e: React.FormEvent) {
+    e.preventDefault()
+    setEditError(null)
+    try {
+      await updateAccount(accountId, {
+        name: editName.trim(),
+        description: editDescription.trim() || null,
+      })
+      setEditingAccount(false)
+      reload()
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : 'Failed to update account')
+    }
+  }
+
   async function handleAddHolding(e: React.FormEvent) {
     e.preventDefault()
     if (!instrumentId) {
@@ -88,6 +117,8 @@ export function AccountDetailPage() {
     }
   }
 
+  const showTransactions = account.accountType === 'BANK' || account.accountType === 'BROKERAGE'
+
   return (
     <div className="page">
       <p>
@@ -97,6 +128,28 @@ export function AccountDetailPage() {
       <p className="muted">
         {account.accountType} · Cash {formatMoney(account.cashBalance, account.currency)}
       </p>
+
+      {account.accountType === 'BROKERAGE' && (
+        <MarketPricesStatus onSynced={reload} />
+      )}
+
+      <section className="card">
+        <h2>Account details</h2>
+        {editError && <p className="error-banner">{editError}</p>}
+        {editingAccount ? (
+          <form className="inline-form" onSubmit={(e) => void handleSaveAccount(e)}>
+            <input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Name" required />
+            <input value={editDescription} onChange={(e) => setEditDescription(e.target.value)} placeholder="Description" />
+            <button type="submit" className="btn-primary">Save</button>
+            <button type="button" className="btn-link" onClick={() => setEditingAccount(false)}>Cancel</button>
+          </form>
+        ) : (
+          <div>
+            {account.description && <p className="muted">{account.description}</p>}
+            <button type="button" className="btn-link" onClick={startEditAccount}>Edit account</button>
+          </div>
+        )}
+      </section>
 
       <section className="card">
         <h2>Account value history</h2>
@@ -124,6 +177,16 @@ export function AccountDetailPage() {
             closed={holdings.closed}
           />
         </section>
+      )}
+
+      {showTransactions && (
+        <TransactionTable
+          accountId={accountId}
+          accountCurrency={account.currency}
+          showFilters
+          showAccountColumn={false}
+          title="Cash transactions"
+        />
       )}
     </div>
   )

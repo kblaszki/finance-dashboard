@@ -28,6 +28,7 @@ sequenceDiagram
 | Holdings | `backend/src/holdingLot.ts` | `quantityAfter`, lot price resolution |
 | Cash ledger | `backend/src/transactionBalance.ts` | `balanceAfter`, transaction types |
 | Valuations | `backend/src/accountValuation.ts` | Daily snapshots, backfill |
+| Market data | `backend/src/marketData.ts`, `marketDataSync.ts` | Twelve Data EOD fetch, sync job |
 | Net worth | `backend/src/netWorth.ts` | Aggregated stats for dashboard |
 
 ## Auth
@@ -45,6 +46,13 @@ Env (see [README.md](../README.md)): `DATABASE_URL`, `JWT_SECRET` (≥32 chars).
 - Display currency comes from query `?currency=PLN` on stats endpoints.
 - Conversion uses `getFxRatesPlnPerUnit()` + `convertAmount()` — never reimplement in handlers.
 - FX is fetched from NBP inside handlers; there is no public `/api/fx/rates` endpoint.
+
+## Market data (EOD)
+
+- `MARKET_DATA_API_KEY` enables Twelve Data EOD quotes for held **STOCK** and **ETF** instruments.
+- `POST /api/market-data/sync` (or `npm run market:sync` in `backend/`) upserts `InstrumentValuation` with `source: twelve_data` and recomputes affected brokerage account snapshots via `recomputeAccountValuationsFrom`.
+- Symbol mapping (`marketDataSymbols.ts`): US exchanges use bare ticker; GPW → `:WAR`, XETRA → `:XETR`, etc. Unmapped types/exchanges are skipped (use manual valuation UI).
+- Scheduled sync: run `npm run market:sync` from cron on weekdays after market close (see [README.md](../README.md)).
 
 ## Where to add features
 

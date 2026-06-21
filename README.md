@@ -63,11 +63,27 @@ Required variables:
 - `DATABASE_URL` — SQLite path (default `file:./dev.db`)
 - `JWT_SECRET` — at least 32 characters (used to sign login tokens)
 
-Optional (reserved for future market data integration):
+Optional (market data — Twelve Data EOD prices):
 
 - `MARKET_DATA_API_KEY` — see `.env.example`
+- `MARKET_BACKFILL_DAYS` — days of history for `npm run market:sync` (default 90)
 
 Register via the frontend at `/register`, or call `POST /api/auth/register` with `{ "email", "username", "password" }` (password minimum 8 characters).
+
+## Market price sync
+
+After setting `MARKET_DATA_API_KEY` in `backend/.env`:
+
+```bash
+cd backend
+npm run market:sync
+```
+
+Or trigger from the dashboard / brokerage account page (**Sync prices now**). For daily updates, schedule the CLI via cron (e.g. weekdays 22:00 CET).
+
+```bash
+0 22 * * 1-5 cd /path/to/finance-dashboard/backend && npm run market:sync
+```
 
 ## Demo data (optional)
 

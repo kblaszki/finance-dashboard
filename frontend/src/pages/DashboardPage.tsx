@@ -3,6 +3,7 @@ import { ExpensesByCategoryChart } from '../components/Charts/ExpensesByCategory
 import { IncomeByCategoryChart } from '../components/Charts/IncomeByCategoryChart'
 import { CashFlowChart } from '../components/Charts/CashFlowChart'
 import { PeriodFilter } from '../components/PeriodFilter'
+import { MarketPricesStatus } from '../components/MarketPricesStatus'
 import { PeriodProvider } from '../state/period'
 import { CashFlowProvider } from '../state/cashflow'
 import { NetWorthSection } from '../components/NetWorthSection'
@@ -13,6 +14,7 @@ export function DashboardPage() {
       <CashFlowProvider>
         <div className="page dashboard-page">
           <h1 className="page-title">Dashboard</h1>
+          <MarketPricesStatus />
           <PeriodFilter />
           <NetWorthSection />
           <section className="card">

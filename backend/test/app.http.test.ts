@@ -989,3 +989,27 @@ test("GET /api/stats category breakdowns", async () => {
   assert.equal(income.status, 200);
   assert.deepEqual(income.body, [{ category: "SALARY", amount: 500 }]);
 });
+
+test("GET /api/market-data/status returns empty counts without holdings", async () => {
+  const { token } = await createUserAndToken();
+  const res = await request(app)
+    .get("/api/market-data/status")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  assert.equal(res.body.instrumentCount, 0);
+  assert.equal(res.body.lastSyncAt, null);
+  assert.equal(res.body.staleCount, 0);
+});
+
+test("POST /api/instruments rejects invalid instrumentType", async () => {
+  const { token } = await createUserAndToken();
+  const res = await request(app)
+    .post("/api/instruments")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      instrumentType: "CRYPTO",
+      symbol: "BTC",
+      currency: "USD",
+    });
+  assert.equal(res.status, 400);
+});
