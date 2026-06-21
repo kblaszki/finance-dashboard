@@ -94,7 +94,7 @@ jobs:
         shell: bash
         run: |
           shopt -s globstar
-          npm run test:coverage
+          npx c8 --reporter=text --reporter=html --reporter=lcov --include='src/**/*.ts' --exclude='**/*.test.ts' tsx --test src/**/*.test.ts test/**/*.test.ts
 
       - name: Install frontend dependencies
         working-directory: frontend
