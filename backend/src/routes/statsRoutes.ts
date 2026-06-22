@@ -2,13 +2,19 @@ import { Router } from "express";
 import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import type { TransactionDateFilter } from "./routeSupport";
-import { handleRouteError } from "./httpSupport";
 import {
   computeCashflowStats,
   computeCategoryBreakdown,
   fetchUserTransactions,
   requireTransactionDateFilter,
 } from "../stats";
+import {
+  computeBenchmarkComparison,
+  computePortfolioHistory,
+  computePortfolioSummary,
+} from "../portfolioStats";
+import { parseBenchmarkId } from "../benchmarks";
+import { badRequest, handleRouteError } from "./httpSupport";
 
 type StatsDeps = {
   prisma: PrismaClient;
@@ -96,6 +102,70 @@ export function createStatsRouter(deps: StatsDeps): Router {
       res.json(computeCategoryBreakdown(rows, currency, convertAmount, toNumber, plnPerUnit));
     } catch (e: unknown) {
       handleRouteError(res, e, "Failed to load income by category");
+    }
+  });
+
+  router.get("/api/stats/portfolio-summary", requireAuth, async (req: AuthedRequest, res) => {
+    try {
+      const date = requireTransactionDateFilter(transactionDateFilter, req.query.from, req.query.to);
+      const currency = normalizeCurrency(req.query.currency ?? "PLN");
+      const { plnPerUnit } = await getFxRatesPlnPerUnit();
+      const summary = await computePortfolioSummary(
+        prisma,
+        uid(req),
+        date.gte!,
+        date.lte!,
+        currency,
+        plnPerUnit,
+      );
+      res.json(summary);
+    } catch (e: unknown) {
+      handleRouteError(res, e, "Failed to load portfolio summary");
+    }
+  });
+
+  router.get("/api/stats/portfolio-history", requireAuth, async (req: AuthedRequest, res) => {
+    try {
+      const date = requireTransactionDateFilter(transactionDateFilter, req.query.from, req.query.to);
+      const currency = normalizeCurrency(req.query.currency ?? "PLN");
+      const { plnPerUnit } = await getFxRatesPlnPerUnit();
+      const history = await computePortfolioHistory(
+        prisma,
+        uid(req),
+        date.gte!,
+        date.lte!,
+        currency,
+        plnPerUnit,
+      );
+      res.json(history);
+    } catch (e: unknown) {
+      handleRouteError(res, e, "Failed to load portfolio history");
+    }
+  });
+
+  router.get("/api/stats/benchmark-comparison", requireAuth, async (req: AuthedRequest, res) => {
+    try {
+      const date = requireTransactionDateFilter(transactionDateFilter, req.query.from, req.query.to);
+      const currency = normalizeCurrency(req.query.currency ?? "PLN");
+      let benchmarkId;
+      try {
+        benchmarkId = parseBenchmarkId(req.query.benchmark ?? "SP500");
+      } catch {
+        throw badRequest("benchmark must be WIG or SP500");
+      }
+      const { plnPerUnit } = await getFxRatesPlnPerUnit();
+      const comparison = await computeBenchmarkComparison(
+        prisma,
+        uid(req),
+        benchmarkId,
+        date.gte!,
+        date.lte!,
+        currency,
+        plnPerUnit,
+      );
+      res.json(comparison);
+    } catch (e: unknown) {
+      handleRouteError(res, e, "Failed to load benchmark comparison");
     }
   });
 

@@ -1,6 +1,6 @@
 import type { Account } from '../accountsApi'
 import type { Transaction } from '../transactionsApi'
-import type { CashflowStats, CategoryAmount, NetWorthStats } from '../statsApi'
+import type { CashflowStats, CategoryAmount, NetWorthStats, PortfolioSummary, BenchmarkComparison } from '../statsApi'
 
 /** Sample shapes produced by backend serializers in routeSupport.ts / statsRoutes.ts */
 export const accountFixture: Account = {
@@ -49,6 +49,30 @@ export const categoryAmountFixture: CategoryAmount[] = [
   { category: 'TRAVEL', amount: 80 },
 ]
 
+export const portfolioSummaryFixture: PortfolioSummary = {
+  asOf: '2025-01-31T23:59:59.000Z',
+  displayCurrency: 'PLN',
+  totalValue: 7000,
+  cashValue: 1500,
+  securitiesValue: 5500,
+  unrealizedPnl: 320,
+  realizedPnlClosed: 0,
+  returnPct: 4.5,
+  allocation: [
+    { type: 'CASH', value: 1500, pct: 21.43 },
+    { type: 'ETF', value: 3000, pct: 42.86 },
+    { type: 'STOCK', value: 2500, pct: 35.71 },
+  ],
+}
+
+export const benchmarkComparisonFixture: BenchmarkComparison = {
+  benchmark: 'SP500',
+  benchmarkLabel: 'S&P 500 (proxy: SPY)',
+  portfolioReturnPct: 4.5,
+  benchmarkReturnPct: 3.2,
+  displayCurrency: 'PLN',
+}
+
 function assertAccountShape(value: Account): void {
   if (typeof value.id !== 'number') throw new Error('account.id')
   if (!['BANK', 'BROKERAGE', 'MANUAL'].includes(value.accountType)) throw new Error('account.accountType')
@@ -80,10 +104,22 @@ function assertCategoryAmountsShape(value: CategoryAmount[]): void {
   }
 }
 
+function assertPortfolioSummaryShape(value: PortfolioSummary): void {
+  if (typeof value.totalValue !== 'number') throw new Error('portfolioSummary.totalValue')
+  if (!Array.isArray(value.allocation)) throw new Error('portfolioSummary.allocation')
+}
+
+function assertBenchmarkComparisonShape(value: BenchmarkComparison): void {
+  if (typeof value.benchmarkLabel !== 'string') throw new Error('benchmarkComparison.benchmarkLabel')
+  if (value.benchmark !== 'WIG' && value.benchmark !== 'SP500') throw new Error('benchmarkComparison.benchmark')
+}
+
 export function validateApiContractFixtures(): void {
   assertAccountShape(accountFixture)
   assertTransactionShape(transactionFixture)
   assertCashflowShape(cashflowFixture)
   assertNetWorthShape(netWorthFixture)
   assertCategoryAmountsShape(categoryAmountFixture)
+  assertPortfolioSummaryShape(portfolioSummaryFixture)
+  assertBenchmarkComparisonShape(benchmarkComparisonFixture)
 }

@@ -24,10 +24,49 @@ export type CashflowStats = {
   currency: string;
 };
 
+export type AllocationRow = {
+  type: string;
+  value: number;
+  pct: number;
+};
+
+export type PortfolioSummary = {
+  asOf: string;
+  displayCurrency: string;
+  totalValue: number;
+  cashValue: number;
+  securitiesValue: number;
+  unrealizedPnl: number | null;
+  realizedPnlClosed: number;
+  returnPct: number | null;
+  allocation: AllocationRow[];
+};
+
+export type PortfolioHistory = {
+  points: Array<{
+    date: string;
+    totalValue: number;
+    cashValue: number;
+    securitiesValue: number;
+  }>;
+};
+
+export type BenchmarkComparison = {
+  benchmark: "WIG" | "SP500";
+  benchmarkLabel: string;
+  portfolioReturnPct: number | null;
+  benchmarkReturnPct: number | null;
+  displayCurrency: string;
+};
+
 type PeriodQuery = {
   from?: string;
   to?: string;
   currency?: string;
+};
+
+type BenchmarkQuery = PeriodQuery & {
+  benchmark?: "WIG" | "SP500";
 };
 
 function periodQuery(params?: PeriodQuery): string {
@@ -57,4 +96,22 @@ export function fetchExpensesByCategory(params?: PeriodQuery) {
 
 export function fetchIncomeByCategory(params?: PeriodQuery) {
   return apiClient.get<CategoryAmount[]>(`/api/stats/income-by-category${periodQuery(params)}`);
+}
+
+export function fetchPortfolioSummary(params?: PeriodQuery) {
+  return apiClient.get<PortfolioSummary>(`/api/stats/portfolio-summary${periodQuery(params)}`);
+}
+
+export function fetchPortfolioHistory(params?: PeriodQuery) {
+  return apiClient.get<PortfolioHistory>(`/api/stats/portfolio-history${periodQuery(params)}`);
+}
+
+export function fetchBenchmarkComparison(params?: BenchmarkQuery) {
+  const q = new URLSearchParams();
+  if (params?.from) q.set("from", params.from);
+  if (params?.to) q.set("to", params.to);
+  if (params?.currency) q.set("currency", params.currency);
+  if (params?.benchmark) q.set("benchmark", params.benchmark);
+  const s = q.toString();
+  return apiClient.get<BenchmarkComparison>(`/api/stats/benchmark-comparison${s ? `?${s}` : ""}`);
 }

@@ -8,7 +8,7 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 |------|------|----------------|
 | `/login` | Login | `pages/LoginPage.tsx` |
 | `/register` | Register | `pages/RegisterPage.tsx` (username) |
-| `/` | Dashboard | `DashboardPage`, `NetWorthSection`, charts |
+| `/` | Dashboard | `DashboardPage` — Portfolio / Budget tabs, `NetWorthSection`, portfolio & budget charts |
 | `/accounts` | Accounts | `ManagedAccountsList` |
 | `/accounts/:id` | Account detail | `AccountDetailPage`, `AccountBalanceChart`, `AccountHoldingsTable`, `TransactionTable`, `MarketPricesStatus` |
 | `/accounts/:id/holdings/:holdingId` | Holding detail | `HoldingDetailPage`, `HoldingValuationChart`, `InstrumentValuationForm`, `HoldingLotsTable` |

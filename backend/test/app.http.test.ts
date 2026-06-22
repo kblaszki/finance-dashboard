@@ -1001,6 +1001,48 @@ test("GET /api/market-data/status returns empty counts without holdings", async 
   assert.equal(res.body.staleCount, 0);
 });
 
+test("GET /api/stats/benchmark-comparison requires benchmark", async () => {
+  const { token } = await createUserAndToken();
+  const res = await request(app)
+    .get("/api/stats/benchmark-comparison?from=2025-01-01&to=2025-01-31&benchmark=INVALID")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 400);
+});
+
+test("GET /api/stats/portfolio-summary returns brokerage summary", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BROKERAGE",
+      name: "Portfolio Broker",
+      currency: "PLN",
+      openingBalance: 10000,
+    });
+  const accountId = accountRes.body.id;
+
+  await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      transactionType: "TRANSFER_IN",
+      amount: 5000,
+      currency: "PLN",
+      category: "DEPOSIT",
+      date: "2025-01-05T12:00:00.000Z",
+    });
+
+  const res = await request(app)
+    .get("/api/stats/portfolio-summary?from=2025-01-01&to=2025-01-31&currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  assert.equal(typeof res.body.totalValue, "number");
+  assert.equal(res.body.displayCurrency, "PLN");
+  assert.ok(Array.isArray(res.body.allocation));
+});
+
 test("POST /api/instruments rejects invalid instrumentType", async () => {
   const { token } = await createUserAndToken();
   const res = await request(app)
