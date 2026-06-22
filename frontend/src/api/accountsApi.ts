@@ -64,3 +64,12 @@ export async function fetchAccountValuations(
   const q = params.toString() ? `?${params}` : "";
   return apiClient.get<AccountValuationPoint[]>(`/api/accounts/${accountId}/valuations${q}`);
 }
+
+export type AccountRevalueInput = {
+  value: number;
+  valuationDate?: string;
+};
+
+export async function revalueAccount(id: number, input: AccountRevalueInput): Promise<Account> {
+  return apiClient.post<Account>(`/api/accounts/${id}/revalue`, input);
+}

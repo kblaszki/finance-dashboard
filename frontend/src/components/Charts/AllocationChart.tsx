@@ -1,3 +1,4 @@
+import { useCallback } from 'react'
 import { Pie, PieChart, ResponsiveContainer, Tooltip, Cell } from 'recharts'
 import { fetchPortfolioSummary } from '../../api/statsApi'
 import { useAsyncData } from '../../hooks/useAsyncData'
@@ -24,7 +25,7 @@ export function AllocationChart() {
   const { currency } = useCurrency()
   const { range } = usePeriod()
   useTheme()
-  const { data, error, loading } = useAsyncData(
+  const loader = useCallback(
     () =>
       fetchPortfolioSummary({
         from: range.from,
@@ -33,6 +34,7 @@ export function AllocationChart() {
       }),
     [currency, range.from, range.to],
   )
+  const { data, error, loading } = useAsyncData(loader)
   const colors = getChartColors()
 
   if (error) {

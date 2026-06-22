@@ -18,7 +18,7 @@ const TYPE_LABELS: Record<AccountType, string> = {
 }
 
 export function ManagedAccountsList() {
-  const { data: accounts, error, loading, reload } = useAsyncData(fetchAccounts, [])
+  const { data: accounts, error, loading, reload } = useAsyncData(fetchAccounts)
   const [formError, setFormError] = useState<string | null>(null)
   const [formType, setFormType] = useState<AccountType>('BANK')
   const [name, setName] = useState('')

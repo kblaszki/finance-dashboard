@@ -8,7 +8,6 @@ type AsyncState<T> = {
 
 export function useAsyncData<T>(
   loader: () => Promise<T>,
-  deps: readonly unknown[],
 ): AsyncState<T> & { reload: () => void } {
   const [state, setState] = useState<AsyncState<T>>({
     data: null,
@@ -42,7 +41,7 @@ export function useAsyncData<T>(
     return () => {
       active = false
     }
-  }, [...deps, reloadToken])
+  }, [loader, reloadToken])
 
   return { ...state, reload }
 }

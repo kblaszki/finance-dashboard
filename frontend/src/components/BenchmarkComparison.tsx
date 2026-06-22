@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { fetchBenchmarkComparison } from '../api/statsApi'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { useCurrency } from '../state/currency'
@@ -14,7 +14,7 @@ export function BenchmarkComparison() {
   const { currency } = useCurrency()
   const { range } = usePeriod()
   const [benchmark, setBenchmark] = useState<'WIG' | 'SP500'>('SP500')
-  const { data, error, loading } = useAsyncData(
+  const loader = useCallback(
     () =>
       fetchBenchmarkComparison({
         from: range.from,
@@ -24,6 +24,7 @@ export function BenchmarkComparison() {
       }),
     [currency, range.from, range.to, benchmark],
   )
+  const { data, error, loading } = useAsyncData(loader)
 
   return (
     <div className="card">

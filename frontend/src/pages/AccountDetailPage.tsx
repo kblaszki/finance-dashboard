@@ -11,6 +11,7 @@ import { createHolding, fetchAccountHoldings, type AccountHoldings } from '../ap
 import { AccountBalanceChart } from '../components/AccountBalanceChart'
 import { AccountHoldingsTable } from '../components/AccountHoldingsTable'
 import { InstrumentPicker } from '../components/InstrumentPicker'
+import { ManualAccountRevalueForm } from '../components/ManualAccountRevalueForm'
 import { MarketPricesStatus } from '../components/MarketPricesStatus'
 import { TransactionTable } from '../components/TransactionTable'
 import { useAsyncData } from '../hooks/useAsyncData'
@@ -42,7 +43,7 @@ export function AccountDetailPage() {
     }
     return loadAccountDetail(accountId)
   }, [accountId])
-  const { data, error, loading, reload } = useAsyncData(loader, [accountId])
+  const { data, error, loading, reload } = useAsyncData(loader)
   const [instrumentId, setInstrumentId] = useState<number | null>(null)
   const [holdingError, setHoldingError] = useState<string | null>(null)
   const [editName, setEditName] = useState('')
@@ -159,6 +160,19 @@ export function AccountDetailPage() {
           showComponents={account.accountType === 'BROKERAGE'}
         />
       </section>
+
+      {account.accountType === 'MANUAL' && (
+        <section className="card">
+          <h2>Update estimated value</h2>
+          <p className="muted">Revalue this asset (e.g. property estimate) without a regular income/expense entry.</p>
+          <ManualAccountRevalueForm
+            accountId={accountId}
+            currentValue={account.cashBalance}
+            currency={account.currency}
+            onSaved={reload}
+          />
+        </section>
+      )}
 
       {account.accountType === 'BROKERAGE' && (
         <section className="card">

@@ -39,7 +39,7 @@ export function TransactionTable({
   showAccountColumn = true,
   title = 'Transactions',
 }: Props) {
-  const { data: accounts, error: accountsError } = useAsyncData(fetchAccounts, [])
+  const { data: accounts, error: accountsError } = useAsyncData(fetchAccounts)
   const [form, setForm] = useState<TransactionInput>(() => emptyForm(fixedAccountId ?? 0, accountCurrency ?? 'PLN'))
   const [editingId, setEditingId] = useState<number | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
@@ -72,7 +72,7 @@ export function TransactionTable({
     error: transactionsError,
     loading,
     reload,
-  } = useAsyncData(transactionLoader, [filterFrom, filterTo, filterAccountId, fixedAccountId])
+  } = useAsyncData(transactionLoader)
 
   useEffect(() => {
     if (accounts?.length && !form.accountId && !fixedAccountId) {

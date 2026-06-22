@@ -10,7 +10,7 @@ describe('useAsyncData', () => {
       return { value: calls }
     })
 
-    const { result } = renderHook(() => useAsyncData(loader, ['stable']))
+    const { result } = renderHook(() => useAsyncData(loader))
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false)
@@ -31,7 +31,7 @@ describe('useAsyncData', () => {
       throw new Error('boom')
     })
 
-    const { result } = renderHook(() => useAsyncData(loader, ['error-case']))
+    const { result } = renderHook(() => useAsyncData(loader))
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false)

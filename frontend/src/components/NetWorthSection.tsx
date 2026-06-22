@@ -1,3 +1,4 @@
+import { useCallback } from 'react'
 import { fetchNetWorth } from '../api/statsApi'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { useCurrency } from '../state/currency'
@@ -5,7 +6,8 @@ import { formatMoney } from '../utils/format'
 
 export function NetWorthSection() {
   const { currency } = useCurrency()
-  const { data: stats, error, loading } = useAsyncData(() => fetchNetWorth(currency), [currency])
+  const loader = useCallback(() => fetchNetWorth(currency), [currency])
+  const { data: stats, error, loading } = useAsyncData(loader)
 
   if (error) {
     return (

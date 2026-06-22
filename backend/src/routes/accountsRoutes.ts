@@ -1,8 +1,10 @@
 import { Router } from "express";
 import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
+import { revalueManualAccount } from "../manualAccountRevalue";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
-import { handleRouteError, badRequest, parseFiniteNumber, parseRequiredString } from "./httpSupport";
+import { parseDateBody } from "./routeSupport";
+import { handleRouteError, badRequest, parseFiniteNumber, parsePositiveNumber, parseRequiredString } from "./httpSupport";
 
 const VALID_ACCOUNT_TYPES = new Set(["BANK", "BROKERAGE", "MANUAL"]);
 
@@ -15,6 +17,13 @@ type AccountsDeps = {
   backfillAccountValuations: (
     db: DbClient,
     accountId: number,
+    plnPerUnit: Record<string, number>,
+  ) => Promise<void>;
+  recalcTransactionBalances: (db: DbClient, accountId: number, fromDate?: Date) => Promise<void>;
+  recomputeAccountValuationsFrom: (
+    db: DbClient,
+    accountId: number,
+    fromDate: Date,
     plnPerUnit: Record<string, number>,
   ) => Promise<void>;
   getAccountForUser: (db: DbClient, userId: number, accountId: number) => Promise<any>;
@@ -32,6 +41,8 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
     normalizeCurrency,
     getFxRatesPlnPerUnit,
     backfillAccountValuations,
+    recalcTransactionBalances,
+    recomputeAccountValuationsFrom,
     getAccountForUser,
     transactionDateFilter,
     serializeAccount,
@@ -126,6 +137,29 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
         currency: r.currency,
       })),
     );
+  });
+
+  router.post("/api/accounts/:id/revalue", requireAuth, async (req: AuthedRequest, res) => {
+    try {
+      const id = Number(req.params.id);
+      const row = await getAccountForUser(prisma, uid(req), id);
+      if (!row) return res.status(404).json({ error: "Account not found" });
+      if (row.accountType !== "MANUAL") {
+        throw badRequest("Revaluation is only supported for MANUAL accounts");
+      }
+      const value = parsePositiveNumber(req.body?.value, "value");
+      const valuationDate = req.body?.valuationDate
+        ? parseDateBody(req.body.valuationDate)
+        : new Date();
+      const { plnPerUnit } = await getFxRatesPlnPerUnit();
+      const updated = await revalueManualAccount(prisma, row, value, valuationDate, plnPerUnit, {
+        recalcTransactionBalances,
+        recomputeAccountValuationsFrom,
+      });
+      res.json(serializeAccount(updated));
+    } catch (e: unknown) {
+      handleRouteError(res, e, "Failed to revalue account");
+    }
   });
 
   return router;

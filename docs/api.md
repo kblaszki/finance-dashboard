@@ -20,6 +20,7 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 | POST | `/api/accounts` | Yes | Create account |
 | GET | `/api/accounts/:id` | Yes | Account detail |
 | PUT | `/api/accounts/:id` | Yes | Update name/description |
+| POST | `/api/accounts/:id/revalue` | Yes | MANUAL only — `{ value, valuationDate? }` updates estimate and chart |
 | DELETE | `/api/accounts/:id` | Yes | Delete account |
 | GET | `/api/accounts/:id/valuations` | Yes | `AccountValuationDaily`; `from`, `to` |
 

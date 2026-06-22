@@ -10,7 +10,7 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 | `/register` | Register | `pages/RegisterPage.tsx` (username) |
 | `/` | Dashboard | `DashboardPage` — Portfolio / Budget tabs, `NetWorthSection`, portfolio & budget charts |
 | `/accounts` | Accounts | `ManagedAccountsList` |
-| `/accounts/:id` | Account detail | `AccountDetailPage`, `AccountBalanceChart`, `AccountHoldingsTable`, `TransactionTable`, `MarketPricesStatus` |
+| `/accounts/:id` | Account detail | `AccountDetailPage`, holdings, `ManualAccountRevalueForm` (MANUAL), `TransactionTable` |
 | `/accounts/:id/holdings/:holdingId` | Holding detail | `HoldingDetailPage`, `HoldingValuationChart`, `InstrumentValuationForm`, `HoldingLotsTable` |
 | `/transactions` | Transactions | `TransactionsListPage` → `TransactionTable` (`?accountId=` filter) |
 

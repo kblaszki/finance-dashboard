@@ -1,3 +1,4 @@
+import { useCallback } from 'react'
 import {
   CartesianGrid,
   Line,
@@ -16,7 +17,7 @@ import { formatMoney } from '../../utils/format'
 export function PortfolioHistoryChart() {
   const { currency } = useCurrency()
   const { range } = usePeriod()
-  const { data, error, loading } = useAsyncData(
+  const loader = useCallback(
     () =>
       fetchPortfolioHistory({
         from: range.from,
@@ -25,6 +26,7 @@ export function PortfolioHistoryChart() {
       }),
     [currency, range.from, range.to],
   )
+  const { data, error, loading } = useAsyncData(loader)
 
   if (error) {
     return (

@@ -134,5 +134,5 @@ test("syncMarketPrices skips unmapped instruments", async () => {
   const result = await syncMarketPrices(prisma, async () => MOCK_FX, { apiKey: "k" });
   assert.equal(result.synced, 0);
   assert.equal(result.skipped, 1);
-  assert.ok(result.errors.length >= 1);
+  assert.equal(result.errors.length, 0);
 });

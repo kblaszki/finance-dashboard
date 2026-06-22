@@ -1,7 +1,7 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { recomputeAccountValuationsFrom } from "./accountValuation";
 import { fetchEodTimeSeries } from "./marketData";
-import { mapInstrumentToProviderSymbol } from "./marketDataSymbols";
+import { isSyncableInstrumentType, mapInstrumentToProviderSymbol } from "./marketDataSymbols";
 
 type DbClient = PrismaClient | Prisma.TransactionClient;
 
@@ -67,13 +67,18 @@ export async function syncMarketPrices(
   let earliestValuationDate: Date | null = null;
 
   for (const instrument of instrumentById.values()) {
+    if (!isSyncableInstrumentType(instrument.instrumentType)) {
+      result.skipped += 1;
+      continue;
+    }
+
     const providerSymbol = mapInstrumentToProviderSymbol(instrument);
     if (!providerSymbol) {
       result.skipped += 1;
       result.errors.push({
         instrumentId: instrument.id,
         symbol: instrument.symbol,
-        message: `Unmapped exchange or instrument type: ${instrument.exchange ?? "none"} / ${instrument.instrumentType}`,
+        message: `Unmapped exchange: ${instrument.exchange ?? "none"} (${instrument.instrumentType})`,
       });
       continue;
     }

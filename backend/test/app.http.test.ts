@@ -1001,14 +1001,6 @@ test("GET /api/market-data/status returns empty counts without holdings", async 
   assert.equal(res.body.staleCount, 0);
 });
 
-test("GET /api/stats/benchmark-comparison requires benchmark", async () => {
-  const { token } = await createUserAndToken();
-  const res = await request(app)
-    .get("/api/stats/benchmark-comparison?from=2025-01-01&to=2025-01-31&benchmark=INVALID")
-    .set("Authorization", `Bearer ${token}`);
-  assert.equal(res.status, 400);
-});
-
 test("GET /api/stats/portfolio-summary returns brokerage summary", async () => {
   const { token } = await createUserAndToken();
   const accountRes = await request(app)
@@ -1041,6 +1033,56 @@ test("GET /api/stats/portfolio-summary returns brokerage summary", async () => {
   assert.equal(typeof res.body.totalValue, "number");
   assert.equal(res.body.displayCurrency, "PLN");
   assert.ok(Array.isArray(res.body.allocation));
+});
+
+test("GET /api/stats/benchmark-comparison requires benchmark", async () => {
+  const { token } = await createUserAndToken();
+  const res = await request(app)
+    .get("/api/stats/benchmark-comparison?from=2025-01-01&to=2025-01-31&benchmark=INVALID")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 400);
+});
+
+test("POST /api/accounts/:id/revalue updates MANUAL account", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "MANUAL",
+      name: "Flat",
+      currency: "PLN",
+      openingBalance: 400000,
+    });
+  const accountId = accountRes.body.id;
+
+  const res = await request(app)
+    .post(`/api/accounts/${accountId}/revalue`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      value: 420000,
+      valuationDate: "2025-06-01T12:00:00.000Z",
+    });
+  assert.equal(res.status, 200);
+  assert.equal(res.body.cashBalance, 420000);
+});
+
+test("POST /api/accounts/:id/revalue rejects non-MANUAL accounts", async () => {
+  const { token } = await createUserAndToken();
+  const bankRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BANK",
+      name: "Bank",
+      currency: "PLN",
+      openingBalance: 1000,
+    });
+  const res = await request(app)
+    .post(`/api/accounts/${bankRes.body.id}/revalue`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ value: 2000 });
+  assert.equal(res.status, 400);
 });
 
 test("POST /api/instruments rejects invalid instrumentType", async () => {

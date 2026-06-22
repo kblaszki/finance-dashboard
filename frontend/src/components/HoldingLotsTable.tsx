@@ -16,7 +16,7 @@ type Props = {
 
 export function HoldingLotsTable({ holdingId, currency, onLotsChange }: Props) {
   const loader = useCallback(() => fetchHoldingLots(holdingId), [holdingId])
-  const { data: lots, error, loading, reload } = useAsyncData(loader, [holdingId])
+  const { data: lots, error, loading, reload } = useAsyncData(loader)
   const [formError, setFormError] = useState<string | null>(null)
   const [side, setSide] = useState<'BUY' | 'SELL'>('BUY')
   const [quantity, setQuantity] = useState(1)

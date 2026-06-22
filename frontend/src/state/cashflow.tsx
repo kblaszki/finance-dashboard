@@ -1,4 +1,4 @@
-import { createContext, useContext, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, type ReactNode } from 'react'
 import { fetchCashflow } from '../api/statsApi'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { useCurrency } from './currency'
@@ -18,10 +18,11 @@ const CashFlowContext = createContext<CashFlowContextValue | null>(null)
 export function CashFlowProvider({ children }: { children: ReactNode }) {
   const { currency } = useCurrency()
   const { range } = usePeriod()
-  const { data, error, loading, reload } = useAsyncData(
+  const loader = useCallback(
     () => fetchCashflow({ from: range.from, to: range.to, currency }),
     [currency, range.from, range.to],
   )
+  const { data, error, loading, reload } = useAsyncData(loader)
 
   return (
     <CashFlowContext.Provider value={{ stats: data, error, loading, reload }}>

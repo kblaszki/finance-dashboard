@@ -105,6 +105,7 @@ export function HoldingDetailPage() {
         <InstrumentValuationForm
           instrumentId={holding.instrumentId}
           currency={instrumentCurrency}
+          instrumentType={holding.instrument.instrumentType}
           onSaved={refreshAfterValuation}
         />
       </section>

@@ -79,6 +79,8 @@ app.use(
     normalizeCurrency,
     getFxRatesPlnPerUnit,
     backfillAccountValuations,
+    recalcTransactionBalances,
+    recomputeAccountValuationsFrom,
     getAccountForUser,
     transactionDateFilter,
     serializeAccount,

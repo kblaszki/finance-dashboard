@@ -8,7 +8,7 @@ type Props = {
 
 export function MarketPricesStatus({ onSynced }: Props) {
   const loader = useCallback(() => fetchMarketDataStatus(), [])
-  const { data, error, loading, reload } = useAsyncData(loader, [])
+  const { data, error, loading, reload } = useAsyncData(loader)
   const [syncError, setSyncError] = useState<string | null>(null)
   const [syncing, setSyncing] = useState(false)
 

@@ -1,3 +1,4 @@
+import { useCallback } from 'react'
 import { fetchIncomeByCategory } from '../../api/statsApi'
 import { Pie, PieChart, ResponsiveContainer, Tooltip, Cell } from 'recharts'
 import { useAsyncData } from '../../hooks/useAsyncData'
@@ -24,7 +25,7 @@ export function IncomeByCategoryChart() {
   const { currency } = useCurrency()
   const { range } = usePeriod()
   useTheme()
-  const { data, error, loading } = useAsyncData(
+  const loader = useCallback(
     () =>
       fetchIncomeByCategory({
         from: range.from,
@@ -33,6 +34,7 @@ export function IncomeByCategoryChart() {
       }),
     [currency, range.from, range.to],
   )
+  const { data, error, loading } = useAsyncData(loader)
   const colors = getChartColors()
 
   if (error) {

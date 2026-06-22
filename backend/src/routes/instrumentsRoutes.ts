@@ -3,16 +3,7 @@ import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
 import { badRequest, handleRouteError, parsePositiveNumber, parseRequiredString } from "./httpSupport";
-
-const ALLOWED_INSTRUMENT_TYPES = new Set(["STOCK", "ETF", "BOND", "FUND", "OTHER"]);
-
-function parseInstrumentType(value: unknown): string {
-  const type = String(value ?? "STOCK").trim().toUpperCase();
-  if (!ALLOWED_INSTRUMENT_TYPES.has(type)) {
-    throw badRequest(`Invalid instrumentType: ${type}`);
-  }
-  return type;
-}
+import { parseInstrumentType } from "../instrumentTypes";
 
 type InstrumentsDeps = {
   prisma: PrismaClient;

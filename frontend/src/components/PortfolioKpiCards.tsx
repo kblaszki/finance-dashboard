@@ -1,3 +1,4 @@
+import { useCallback } from 'react'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { fetchPortfolioSummary } from '../api/statsApi'
 import { useCurrency } from '../state/currency'
@@ -13,7 +14,7 @@ function formatReturnPct(value: number | null): string {
 export function PortfolioKpiCards() {
   const { currency } = useCurrency()
   const { range } = usePeriod()
-  const { data, error, loading } = useAsyncData(
+  const loader = useCallback(
     () =>
       fetchPortfolioSummary({
         from: range.from,
@@ -22,6 +23,7 @@ export function PortfolioKpiCards() {
       }),
     [currency, range.from, range.to],
   )
+  const { data, error, loading } = useAsyncData(loader)
 
   if (loading) return <p className="loading-state">Loading portfolio KPIs…</p>
   if (error || !data) {
