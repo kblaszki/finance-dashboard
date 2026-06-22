@@ -85,7 +85,7 @@ export function AllocationChart() {
             cx="50%"
             cy="50%"
             outerRadius={100}
-            label={({ type, percent }) => `${type} ${((percent ?? 0) * 100).toFixed(0)}%`}
+            label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
           >
             {data.allocation.map((entry, index) => (
               <Cell key={entry.type} fill={colors[index % colors.length]} />
