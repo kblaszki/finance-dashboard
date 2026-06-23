@@ -47,6 +47,24 @@ test("computeCashflowStats sums income and expense", () => {
   assert.equal(result.net, 50);
 });
 
+test("computeCashflowStats counts DIVIDEND and INTEREST as income", () => {
+  const plnPerUnit = { PLN: 1 };
+  const convert = (amount: number, from: string, to: string) => (from === to ? amount : amount);
+  const result = computeCashflowStats(
+    [
+      { amount: 40, currency: "PLN", transactionType: "DIVIDEND", category: "DIVIDEND" },
+      { amount: 5, currency: "PLN", transactionType: "INTEREST", category: "INTEREST" },
+    ],
+    "PLN",
+    convert,
+    Number,
+    plnPerUnit,
+  );
+  assert.equal(result.income, 45);
+  assert.equal(result.expense, 0);
+  assert.equal(result.net, 45);
+});
+
 test("computeCategoryBreakdown groups by category", () => {
   const plnPerUnit = { PLN: 1 };
   const convert = (amount: number, from: string, to: string) => (from === to ? amount : amount);

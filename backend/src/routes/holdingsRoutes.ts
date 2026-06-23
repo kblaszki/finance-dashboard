@@ -4,6 +4,7 @@ import type { AuthedRequest } from "../auth";
 import { recomputeQuantityAfterChain } from "../holdingLot";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
 import { handleRouteError, badRequest, parsePositiveNumber } from "./httpSupport";
+import { applyStockSplit } from "../stockSplit";
 
 type HoldingsDeps = {
   prisma: PrismaClient;
@@ -221,6 +222,42 @@ export function createHoldingsRouter(deps: HoldingsDeps): Router {
         return;
       }
       handleRouteError(res, e, "Failed to create holding lot");
+    }
+  });
+
+  router.post("/api/holdings/:holdingId/split", requireAuth, async (req: AuthedRequest, res) => {
+    try {
+      const holdingId = Number(req.params.holdingId);
+      const holding = await getHoldingForUser(prisma, uid(req), holdingId);
+      if (!holding) return res.status(404).json({ error: "Holding not found" });
+      if (holding.account.accountType !== "BROKERAGE") {
+        return res.status(400).json({ error: "Splits are only for brokerage holdings" });
+      }
+
+      const ratio = parsePositiveNumber(req.body?.ratio, "ratio");
+      const effectiveDate = parseDateBody(req.body?.effectiveDate);
+      const { plnPerUnit } = await getFxRatesPlnPerUnit();
+      await prisma.$transaction(async (tx) => {
+        await applyStockSplit(tx, holdingId, ratio);
+        await syncHoldingQuantity(tx, holdingId);
+        await recomputeAccountValuationsFrom(tx, holding.accountId, effectiveDate, plnPerUnit);
+      });
+
+      const refreshed = await getHoldingForUser(prisma, uid(req), holdingId);
+      if (!refreshed) return res.status(404).json({ error: "Holding not found" });
+      const summary = await buildHoldingSummary(
+        prisma,
+        refreshed,
+        refreshed.account.currency,
+        plnPerUnit,
+      );
+      res.json(serializeHoldingSummary(summary));
+    } catch (e: unknown) {
+      if (e instanceof Error && e.message === "No lots to split") {
+        handleRouteError(res, badRequest(e.message), "Failed to apply split");
+        return;
+      }
+      handleRouteError(res, e, "Failed to apply split");
     }
   });
 

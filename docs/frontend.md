@@ -11,7 +11,7 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 | `/` | Dashboard | `DashboardPage` — Portfolio / Budget tabs, `NetWorthSection`, portfolio & budget charts |
 | `/accounts` | Accounts | `ManagedAccountsList` |
 | `/accounts/:id` | Account detail | `AccountDetailPage`, holdings, `ManualAccountRevalueForm` (MANUAL), `TransactionTable` |
-| `/accounts/:id/holdings/:holdingId` | Holding detail | `HoldingDetailPage`, `HoldingValuationChart`, `InstrumentValuationForm`, `HoldingLotsTable` |
+| `/accounts/:id/holdings/:holdingId` | Holding detail | `HoldingDetailPage`, `HoldingValuationChart`, `InstrumentValuationForm`, `HoldingSplitForm`, `HoldingLotsTable` |
 | `/transactions` | Transactions | `TransactionsListPage` → `TransactionTable` (`?accountId=` filter) |
 
 Protected shell: `ProtectedRoute` → `AppShell`.
@@ -36,7 +36,7 @@ Preferred async pattern for page/widget data: [`frontend/src/hooks/useAsyncData.
 | `accountsApi.ts` | `/api/accounts` |
 | `transactionsApi.ts` | `/api/transactions` |
 | `instrumentsApi.ts` | `/api/instruments`, `/api/instruments/:id/valuations` |
-| `holdingsApi.ts` | `/api/accounts/:id/holdings`, `/api/holdings/:holdingId` |
+| `holdingsApi.ts` | `/api/accounts/:id/holdings`, `/api/holdings/:holdingId`, `POST .../split` |
 | `holdingLotsApi.ts` | `/api/holdings/:holdingId/lots` |
 | `valuationsApi.ts` | `/api/accounts/:id/holdings/:instrumentId/valuations` — fetched in `HoldingDetailPage` for `HoldingValuationChart` |
 | `statsApi.ts` | `/api/stats/*` |

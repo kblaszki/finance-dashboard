@@ -40,7 +40,14 @@ export function computeCashflowStats(
   let expense = 0;
   for (const t of rows) {
     const amount = convertAmount(toNumber(t.amount), t.currency, displayCurrency, plnPerUnit);
-    if (t.transactionType === "INCOME" || t.transactionType === "TRANSFER_IN") income += amount;
+    if (
+      t.transactionType === "INCOME" ||
+      t.transactionType === "TRANSFER_IN" ||
+      t.transactionType === "DIVIDEND" ||
+      t.transactionType === "INTEREST"
+    ) {
+      income += amount;
+    }
     if (t.transactionType === "EXPENSE" || t.transactionType === "TRANSFER_OUT") expense += amount;
   }
   return { income, expense, net: income - expense, currency: displayCurrency };

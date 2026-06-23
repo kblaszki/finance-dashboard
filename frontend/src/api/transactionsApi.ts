@@ -1,6 +1,12 @@
 import { apiClient } from "./client";
 
-export type TransactionType = "INCOME" | "EXPENSE" | "TRANSFER_IN" | "TRANSFER_OUT";
+export type TransactionType =
+  | "INCOME"
+  | "EXPENSE"
+  | "TRANSFER_IN"
+  | "TRANSFER_OUT"
+  | "DIVIDEND"
+  | "INTEREST";
 
 export interface Transaction {
   id: number;

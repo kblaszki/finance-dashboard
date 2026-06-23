@@ -8,7 +8,7 @@ Source of truth: [`backend/prisma/schema.prisma`](../backend/prisma/schema.prism
 |-------|---------|
 | `User` | `email`, `username`, `passwordHash` |
 | `Account` | Unified account (`BANK`, `BROKERAGE`, `MANUAL`); `cashBalance`, `openingBalance`, `currency` |
-| `Transaction` | Cash flows with `balanceAfter` snapshot |
+| `Transaction` | Cash flows with `balanceAfter` snapshot; types include `DIVIDEND` and `INTEREST` for corporate income |
 | `Instrument` | Global instrument catalog (symbol, exchange, type) |
 | `Holding` | Brokerage position per account + instrument; persisted `quantity` (current net shares) |
 | `HoldingLot` | BUY/SELL trade ledger under a `Holding`; `quantityAfter` chain per holding |
@@ -34,6 +34,16 @@ Allowed `Instrument.instrumentType` values: `STOCK`, `ETF`, `BOND`, `FUND`, `OTH
 | OTHER | manual |
 
 Market sync (`POST /api/market-data/sync`) processes **STOCK** and **ETF** only; BOND/FUND are skipped without error.
+
+## Corporate actions
+
+| Event | Mechanism |
+|-------|-----------|
+| Dividend | `Transaction` type `DIVIDEND` credits brokerage cash (`category` typically `DIVIDEND`) |
+| Bond interest | `Transaction` type `INTEREST` on bank or brokerage (`category` typically `INTEREST`) |
+| Stock split | `POST /api/holdings/:holdingId/split` — multiplies all lot quantities and `quantityAfter` by `ratio`; `pricePerUnit` divides; `totalPrice` per lot unchanged |
+
+Splits recompute account valuations from `effectiveDate`. Historical charts before the split may show pre-split per-share prices with post-split quantities unless market prices are adjusted manually.
 
 ## Account workflow
 

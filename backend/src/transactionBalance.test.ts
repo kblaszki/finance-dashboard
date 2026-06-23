@@ -10,6 +10,8 @@ test("computeBalanceAfter income and expense", () => {
   assert.equal(computeBalanceAfter(500, "INCOME", 100), 600);
   assert.equal(computeBalanceAfter(600, "EXPENSE", 50), 550);
   assert.equal(computeBalanceAfter(0, "TRANSFER_IN", 1000), 1000);
+  assert.equal(computeBalanceAfter(1000, "DIVIDEND", 25), 1025);
+  assert.equal(computeBalanceAfter(1000, "INTEREST", 10), 1010);
 });
 
 test("computeBalanceAfter TRANSFER_OUT debits cash", () => {
@@ -29,6 +31,8 @@ test("computeBalanceAfter rejects non-positive amount", () => {
 test("cashDelta credit and debit", () => {
   assert.equal(cashDelta("INCOME", 100), 100);
   assert.equal(cashDelta("TRANSFER_IN", 50), 50);
+  assert.equal(cashDelta("DIVIDEND", 12), 12);
+  assert.equal(cashDelta("INTEREST", 8), 8);
   assert.equal(cashDelta("EXPENSE", 50), -50);
   assert.equal(cashDelta("TRANSFER_OUT", 25), -25);
 });
@@ -38,6 +42,7 @@ test("isValidTransactionType", () => {
   assert.equal(isValidTransactionType("EXPENSE"), true);
   assert.equal(isValidTransactionType("TRANSFER_IN"), true);
   assert.equal(isValidTransactionType("TRANSFER_OUT"), true);
-  assert.equal(isValidTransactionType("DIVIDEND"), false);
+  assert.equal(isValidTransactionType("DIVIDEND"), true);
+  assert.equal(isValidTransactionType("INTEREST"), true);
   assert.equal(isValidTransactionType(""), false);
 });

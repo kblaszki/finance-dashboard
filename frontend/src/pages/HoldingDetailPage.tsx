@@ -4,6 +4,7 @@ import { fetchAccount } from '../api/accountsApi'
 import { fetchHolding, type HoldingSummary } from '../api/holdingsApi'
 import { fetchHoldingValuations } from '../api/valuationsApi'
 import { HoldingLotsTable } from '../components/HoldingLotsTable'
+import { HoldingSplitForm } from '../components/HoldingSplitForm'
 import { HoldingValuationChart } from '../components/HoldingValuationChart'
 import { InstrumentValuationForm } from '../components/InstrumentValuationForm'
 import { formatMoney } from '../utils/format'
@@ -107,6 +108,17 @@ export function HoldingDetailPage() {
           currency={instrumentCurrency}
           instrumentType={holding.instrument.instrumentType}
           onSaved={refreshAfterValuation}
+        />
+      </section>
+
+      <section className="card">
+        <h2>Stock split</h2>
+        <HoldingSplitForm
+          holdingId={holdingId}
+          onApplied={() => {
+            void loadHolding()
+            setHistoryVersion((v) => v + 1)
+          }}
         />
       </section>
 

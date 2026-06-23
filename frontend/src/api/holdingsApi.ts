@@ -36,3 +36,10 @@ export async function createHolding(
 ): Promise<HoldingSummary> {
   return apiClient.post<HoldingSummary>(`/api/accounts/${accountId}/holdings`, { instrumentId });
 }
+
+export async function applyStockSplit(
+  holdingId: number,
+  input: { ratio: number; effectiveDate: string },
+): Promise<HoldingSummary> {
+  return apiClient.post<HoldingSummary>(`/api/holdings/${holdingId}/split`, input);
+}

@@ -197,6 +197,7 @@ export function AccountDetailPage() {
         <TransactionTable
           accountId={accountId}
           accountCurrency={account.currency}
+          accountType={account.accountType}
           showFilters
           showAccountColumn={false}
           title="Cash transactions"

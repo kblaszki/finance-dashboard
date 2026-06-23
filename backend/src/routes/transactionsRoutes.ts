@@ -2,6 +2,7 @@ import { Router } from "express";
 import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import type { TransactionType } from "../transactionBalance";
+import { validateTransactionForAccount } from "../transactionBalance";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
 import { badRequest, handleRouteError, notFound, parseFiniteNumber, parsePositiveNumber } from "./httpSupport";
 
@@ -98,6 +99,8 @@ export function createTransactionsRouter(deps: TransactionsDeps): Router {
       }
       const account = await getAccountForUser(prisma, uid(req), accountId);
       if (!account) return res.status(404).json({ error: "Account not found" });
+      const accountTypeError = validateTransactionForAccount(transactionType, account.accountType);
+      if (accountTypeError) return res.status(400).json({ error: accountTypeError });
       const { plnPerUnit } = await getFxRatesPlnPerUnit();
       const row = await prisma.$transaction(async (tx) => {
         const freshAccount = await getAccountForUser(tx, uid(req), accountId);
@@ -149,6 +152,14 @@ export function createTransactionsRouter(deps: TransactionsDeps): Router {
       if (req.body?.description !== undefined) {
         data.description = req.body.description != null ? String(req.body.description) : null;
       }
+      const account = await getAccountForUser(prisma, uid(req), existing.accountId);
+      if (!account) return res.status(404).json({ error: "Account not found" });
+      const nextType = (data.transactionType ?? existing.transactionType) as TransactionType;
+      if (!isValidTransactionType(nextType)) {
+        return res.status(400).json({ error: "Invalid transactionType" });
+      }
+      const accountTypeError = validateTransactionForAccount(nextType, account.accountType);
+      if (accountTypeError) return res.status(400).json({ error: accountTypeError });
       const { plnPerUnit } = await getFxRatesPlnPerUnit();
       const updated = await prisma.$transaction(async (tx) => {
         const row = await tx.transaction.update({ where: { id }, data });

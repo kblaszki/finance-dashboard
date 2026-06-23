@@ -7,7 +7,7 @@ import {
   fetchTransactions,
   updateTransaction,
 } from '../api/transactionsApi'
-import { fetchAccounts, type Account } from '../api/accountsApi'
+import { fetchAccounts, type Account, type AccountType } from '../api/accountsApi'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { SUPPORTED_CURRENCIES } from '../state/currency'
 import { formatMoney } from '../utils/format'
@@ -15,9 +15,36 @@ import { formatMoney } from '../utils/format'
 type Props = {
   accountId?: number
   accountCurrency?: string
+  accountType?: AccountType
   showFilters?: boolean
   showAccountColumn?: boolean
   title?: string
+}
+
+const BASE_TRANSACTION_TYPES: Array<{ value: TransactionType; label: string }> = [
+  { value: 'INCOME', label: 'Income' },
+  { value: 'EXPENSE', label: 'Expense' },
+  { value: 'TRANSFER_IN', label: 'Transfer in' },
+  { value: 'TRANSFER_OUT', label: 'Transfer out' },
+]
+
+const DIVIDEND_TYPE = { value: 'DIVIDEND' as const, label: 'Dividend' }
+const INTEREST_TYPE = { value: 'INTEREST' as const, label: 'Interest' }
+
+function transactionTypesForAccount(accountType?: AccountType) {
+  const types = [...BASE_TRANSACTION_TYPES]
+  if (accountType === 'BROKERAGE') {
+    types.push(DIVIDEND_TYPE, INTEREST_TYPE)
+  } else if (accountType === 'BANK') {
+    types.push(INTEREST_TYPE)
+  }
+  return types
+}
+
+function defaultCategoryForType(type: TransactionType): string | null {
+  if (type === 'DIVIDEND') return 'DIVIDEND'
+  if (type === 'INTEREST') return 'INTEREST'
+  return null
 }
 
 function emptyForm(accountId: number, currency: string): TransactionInput {
@@ -35,6 +62,7 @@ function emptyForm(accountId: number, currency: string): TransactionInput {
 export function TransactionTable({
   accountId: fixedAccountId,
   accountCurrency,
+  accountType: fixedAccountType,
   showFilters = true,
   showAccountColumn = true,
   title = 'Transactions',
@@ -141,6 +169,10 @@ export function TransactionTable({
   const transactionRows = transactions ?? []
   const bannerError = formError ?? transactionsError ?? accountsError
   const lockAccount = fixedAccountId != null
+  const selectedAccount =
+    accountRows.find((a) => a.id === (fixedAccountId ?? form.accountId)) ?? null
+  const effectiveAccountType = fixedAccountType ?? selectedAccount?.accountType
+  const transactionTypeOptions = transactionTypesForAccount(effectiveAccountType)
 
   return (
     <div className="page-stack">
@@ -165,12 +197,21 @@ export function TransactionTable({
           )}
           <select
             value={form.transactionType}
-            onChange={(e) => setForm({ ...form, transactionType: e.target.value as TransactionType })}
+            onChange={(e) => {
+              const transactionType = e.target.value as TransactionType
+              const categoryDefault = defaultCategoryForType(transactionType)
+              setForm({
+                ...form,
+                transactionType,
+                ...(categoryDefault ? { category: categoryDefault } : {}),
+              })
+            }}
           >
-            <option value="INCOME">Income</option>
-            <option value="EXPENSE">Expense</option>
-            <option value="TRANSFER_IN">Transfer in</option>
-            <option value="TRANSFER_OUT">Transfer out</option>
+            {transactionTypeOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
           </select>
           <input
             type="number"

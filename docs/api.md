@@ -29,7 +29,7 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/api/transactions` | Yes | List; `accountId`, `from`, `to` |
-| POST | `/api/transactions` | Yes | Create; sets `balanceAfter` |
+| POST | `/api/transactions` | Yes | Create; sets `balanceAfter`. Types: `INCOME`, `EXPENSE`, `TRANSFER_IN`, `TRANSFER_OUT`, `DIVIDEND` (brokerage only), `INTEREST` (bank/brokerage) |
 | PUT | `/api/transactions/:id` | Yes | Update; recalculates balances |
 | DELETE | `/api/transactions/:id` | Yes | Delete; recalculates balances |
 
@@ -51,6 +51,7 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 | GET | `/api/holdings/:holdingId` | Yes | Single holding summary |
 | GET | `/api/holdings/:holdingId/lots` | Yes | Trade history for holding |
 | POST | `/api/holdings/:holdingId/lots` | Yes | BUY/SELL lot |
+| POST | `/api/holdings/:holdingId/split` | Yes | Stock split — `{ ratio, effectiveDate }` scales lot quantities; per-share cost divides |
 | DELETE | `/api/holding-lots/:id` | Yes | Delete lot; syncs holding quantity |
 | GET | `/api/accounts/:accountId/holdings/:instrumentId/valuations` | Yes | Position value history |
 
