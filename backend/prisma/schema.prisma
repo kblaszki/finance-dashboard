@@ -32,6 +32,7 @@ model Account {
   holdings               Holding[]
   valuationsDaily        AccountValuationDaily[]
   holdingValuationsDaily HoldingValuationDaily[]
+  importBatches          ImportBatch[]
 
   @@unique([userId, name])
   @@index([userId, accountType])
@@ -141,4 +142,29 @@ model HoldingValuationDaily {
 
   @@unique([accountId, instrumentId, valuationDate])
   @@index([accountId, instrumentId, valuationDate])
+}
+
+model ImportBatch {
+  id         Int         @id @default(autoincrement())
+  accountId  Int
+  account    Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  broker     String
+  filename   String?
+  importedAt DateTime    @default(now())
+  rows       ImportRow[]
+
+  @@index([accountId, importedAt])
+}
+
+model ImportRow {
+  id            Int         @id @default(autoincrement())
+  batchId       Int
+  batch         ImportBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  accountId     Int
+  externalHash  String
+  holdingLotId  Int?
+  transactionId Int?
+
+  @@unique([accountId, externalHash])
+  @@index([batchId])
 }

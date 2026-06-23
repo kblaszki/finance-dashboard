@@ -42,6 +42,12 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 | GET | `/api/instruments/:id/valuations` | Yes | Price history |
 | POST | `/api/instruments/:id/valuations` | Yes | Add manual valuation |
 
+## Import
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/api/import/broker-trades` | Yes | `?accountId=&broker=xtb&dryRun=true`; body `{ csv, filename? }` — preview or commit XTB CSV |
+
 ## Holdings (brokerage)
 
 | Method | Path | Auth | Description |

@@ -55,6 +55,7 @@ import {
   fetchBenchmarkComparison,
 } from './statsApi'
 import { fetchMarketDataStatus, triggerMarketSync } from './marketDataApi'
+import { importBrokerTrades } from './importApi'
 
 describe('API modules', () => {
   beforeEach(() => {
@@ -273,5 +274,17 @@ describe('API modules', () => {
 
     await triggerMarketSync(30)
     expect(apiClient.post).toHaveBeenCalledWith('/api/market-data/sync', { backfillDays: 30 })
+  })
+
+  it('importApi calls correct endpoints', async () => {
+    await importBrokerTrades({ accountId: 3, csv: 'ID;Type;Time;Comment;Symbol;Amount', dryRun: true })
+    expect(apiClient.post).toHaveBeenCalledWith(
+      '/api/import/broker-trades?accountId=3&broker=xtb&dryRun=true',
+      {
+        csv: 'ID;Type;Time;Comment;Symbol;Amount',
+        filename: undefined,
+        dryRun: true,
+      },
+    )
   })
 })

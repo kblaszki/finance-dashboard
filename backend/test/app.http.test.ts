@@ -1097,3 +1097,30 @@ test("POST /api/instruments rejects invalid instrumentType", async () => {
     });
   assert.equal(res.status, 400);
 });
+
+test("POST /api/import/broker-trades dry-run previews XTB CSV", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BROKERAGE",
+      name: "Import Broker",
+      currency: "PLN",
+      openingBalance: 0,
+    });
+  const csv = readFileSync(
+    join(__dirname, "fixtures", "import", "xtb-closed-positions.csv"),
+    "utf8",
+  );
+  const res = await request(app)
+    .post(`/api/import/broker-trades?accountId=${accountRes.body.id}&dryRun=true&broker=xtb`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv });
+  assert.equal(res.status, 200);
+  assert.equal(res.body.dryRun, true);
+  assert.equal(res.body.parsed, 3);
+  assert.equal(res.body.preview.length, 3);
+});

@@ -376,7 +376,13 @@ export async function recalcTransactionBalances(
 
   for (const tx of txs) {
     if (!isValidTransactionType(tx.transactionType)) continue;
-    running = computeBalanceAfter(running, tx.transactionType as TransactionType, toNumber(tx.amount));
+    const allowOverdraft = account.accountType === "BROKERAGE";
+    running = computeBalanceAfter(
+      running,
+      tx.transactionType as TransactionType,
+      toNumber(tx.amount),
+      allowOverdraft,
+    );
     await db.transaction.update({
       where: { id: tx.id },
       data: { balanceAfter: running },

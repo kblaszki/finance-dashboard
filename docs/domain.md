@@ -35,6 +35,10 @@ Allowed `Instrument.instrumentType` values: `STOCK`, `ETF`, `BOND`, `FUND`, `OTH
 
 Market sync (`POST /api/market-data/sync`) processes **STOCK** and **ETF** only; BOND/FUND are skipped without error.
 
+## CSV import (XTB)
+
+Brokerage accounts can import XTB exports via `POST /api/import/broker-trades`. Parsed rows become `HoldingLot` (trades) or `Transaction` (dividends, interest, transfers). `ImportBatch` / `ImportRow` store `externalHash` per account for idempotent re-upload.
+
 ## Corporate actions
 
 | Event | Mechanism |

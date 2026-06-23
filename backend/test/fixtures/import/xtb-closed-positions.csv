@@ -1,0 +1,4 @@
+Position;Symbol;Type;Volume;Open time;Open price;Market price;Purchase value;SL;TP;Margin;Commission;Swap;Rollover;Gross P/L;Comment
+1;PKO.PL;BUY;10;2025-01-10 10:00:00;45.50;46.00;455.00;;;;2.00;;;;
+2;CDR.PL;BUY;5;2025-02-01 11:30:00;120.00;125.00;600.00;;;;3.00;;;;
+3;CDR.PL;SELL;2;2025-03-15 14:00:00;130.00;130.00;260.00;;;;1.50;;;;

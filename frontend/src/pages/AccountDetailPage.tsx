@@ -10,6 +10,7 @@ import {
 import { createHolding, fetchAccountHoldings, type AccountHoldings } from '../api/holdingsApi'
 import { AccountBalanceChart } from '../components/AccountBalanceChart'
 import { AccountHoldingsTable } from '../components/AccountHoldingsTable'
+import { BrokerImportForm } from '../components/BrokerImportForm'
 import { InstrumentPicker } from '../components/InstrumentPicker'
 import { ManualAccountRevalueForm } from '../components/ManualAccountRevalueForm'
 import { MarketPricesStatus } from '../components/MarketPricesStatus'
@@ -171,6 +172,13 @@ export function AccountDetailPage() {
             currency={account.currency}
             onSaved={reload}
           />
+        </section>
+      )}
+
+      {account.accountType === 'BROKERAGE' && (
+        <section className="card">
+          <h2>Import trades</h2>
+          <BrokerImportForm accountId={accountId} onImported={reload} />
         </section>
       )}
 

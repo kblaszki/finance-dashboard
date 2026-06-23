@@ -1,0 +1,5 @@
+ID;Type;Time;Comment;Symbol;Amount
+1001;Deposit;2025-01-01 09:00:00;Wire transfer;;10000.00
+1002;DIVIDENT;2025-02-20 12:00:00;Q4 dividend;PKO.PL;85.50
+1003;Free-funds Interest;2025-03-01 00:00:00;January;;12.30
+1004;Withdrawal from 123456;2025-03-10 15:00:00;Cash out;;500.00
