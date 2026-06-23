@@ -10,8 +10,8 @@ vi.mock('./client', () => ({
   setAuthToken: vi.fn(),
 }))
 
-import { apiClient } from './client'
-import { register, login, fetchMe } from './authApi'
+import { apiClient, setAuthToken } from './client'
+import { register, login, fetchMe, logoutLocal } from './authApi'
 import {
   fetchAccounts,
   fetchAccount,
@@ -19,6 +19,7 @@ import {
   updateAccount,
   deleteAccount,
   fetchAccountValuations,
+  revalueAccount,
 } from './accountsApi'
 import {
   fetchTransactions,
@@ -30,6 +31,7 @@ import {
   fetchAccountHoldings,
   fetchHolding,
   createHolding,
+  applyStockSplit,
 } from './holdingsApi'
 import {
   fetchHoldingLots,
@@ -48,6 +50,9 @@ import {
   fetchCashflow,
   fetchExpensesByCategory,
   fetchIncomeByCategory,
+  fetchPortfolioSummary,
+  fetchPortfolioHistory,
+  fetchBenchmarkComparison,
 } from './statsApi'
 import { fetchMarketDataStatus, triggerMarketSync } from './marketDataApi'
 
@@ -79,6 +84,9 @@ describe('API modules', () => {
 
     await fetchMe()
     expect(apiClient.get).toHaveBeenCalledWith('/api/auth/me')
+
+    logoutLocal()
+    expect(setAuthToken).toHaveBeenCalledWith(null)
   })
 
   it('accountsApi calls correct endpoints', async () => {
@@ -109,6 +117,12 @@ describe('API modules', () => {
     expect(apiClient.get).toHaveBeenCalledWith(
       '/api/accounts/1/valuations?from=2025-01-01&to=2025-01-31',
     )
+
+    await revalueAccount(1, { value: 100_000, valuationDate: '2025-06-01' })
+    expect(apiClient.post).toHaveBeenCalledWith('/api/accounts/1/revalue', {
+      value: 100_000,
+      valuationDate: '2025-06-01',
+    })
   })
 
   it('transactionsApi calls correct endpoints', async () => {
@@ -145,6 +159,12 @@ describe('API modules', () => {
     await createHolding(2, 11)
     expect(apiClient.post).toHaveBeenCalledWith('/api/accounts/2/holdings', {
       instrumentId: 11,
+    })
+
+    await applyStockSplit(5, { ratio: 4, effectiveDate: '2025-01-01' })
+    expect(apiClient.post).toHaveBeenCalledWith('/api/holdings/5/split', {
+      ratio: 4,
+      effectiveDate: '2025-01-01',
     })
   })
 
@@ -219,6 +239,29 @@ describe('API modules', () => {
     expect(apiClient.get).toHaveBeenCalledWith(
       '/api/stats/income-by-category?from=2025-01-01&to=2025-01-31',
     )
+
+    await fetchPortfolioSummary({ from: '2025-01-01', to: '2025-01-31', currency: 'PLN' })
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/stats/portfolio-summary?from=2025-01-01&to=2025-01-31&currency=PLN',
+    )
+
+    await fetchPortfolioHistory({ from: '2025-01-01', to: '2025-01-31' })
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/stats/portfolio-history?from=2025-01-01&to=2025-01-31',
+    )
+
+    await fetchBenchmarkComparison({
+      from: '2025-01-01',
+      to: '2025-01-31',
+      currency: 'USD',
+      benchmark: 'SP500',
+    })
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/stats/benchmark-comparison?from=2025-01-01&to=2025-01-31&currency=USD&benchmark=SP500',
+    )
+
+    await fetchBenchmarkComparison()
+    expect(apiClient.get).toHaveBeenCalledWith('/api/stats/benchmark-comparison')
   })
 
   it('marketDataApi calls correct endpoints', async () => {

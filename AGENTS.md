@@ -15,7 +15,7 @@ Token-aware index — use `@docs/...` for domain detail; do not duplicate [READM
 
 ## Cursor rules
 
-- Always: `.cursor/rules/golden-rule.mdc`, `project-context.mdc`
+- Always: `.cursor/rules/golden-rule.mdc`, `project-context.mdc`, `verification.mdc`
 - On file match: `backend.mdc`, `frontend.mdc`, `docs-maintenance.mdc`, `markdown.mdc`
 - Human setup: [README.md](README.md)
 

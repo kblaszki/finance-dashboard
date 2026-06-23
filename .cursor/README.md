@@ -6,6 +6,7 @@
 |------|------|-----------------|
 | [golden-rule.mdc](rules/golden-rule.mdc) | Always Apply | Every Agent session |
 | [project-context.mdc](rules/project-context.mdc) | Always Apply | Every Agent session |
+| [verification.mdc](rules/verification.mdc) | Always Apply | Every Agent session — tests, frontend lint, coverage before completion |
 | [backend.mdc](rules/backend.mdc) | Apply to files | Files under `backend/**` |
 | [frontend.mdc](rules/frontend.mdc) | Apply to files | Files under `frontend/**` |
 | [docs-maintenance.mdc](rules/docs-maintenance.mdc) | Apply to files | `schema.prisma`, `app.ts`, `backend/src/routes/**`, `frontend/src/api/**`, `App.tsx` |
@@ -43,7 +44,7 @@ Human onboarding (install, env, seed): [README.md](../README.md).
 1. **Cursor Settings → Rules, Commands** — project rules list with status.
 2. In Agent chat — context indicator near the prompt: active rules should appear there.
 3. Manually: `@golden-rule` or `@docs/api.md` to force-include.
-4. After logic changes: [docs/testing.md](../docs/testing.md) (`npm test`, `npm run test:coverage`).
+4. After logic changes: [verification.mdc](rules/verification.mdc) and [docs/testing.md](../docs/testing.md) (`npm test`, `npm run test:coverage`).
 
 ## Version control
 

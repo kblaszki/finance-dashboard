@@ -1,0 +1,34 @@
+---
+description: Before finishing backend/frontend work, run tests, frontend lint, and coverage; confirm all pass.
+alwaysApply: true
+---
+
+# Verification before completion
+
+When implementation work touches `backend/` or `frontend/` source (routes, domain logic, API clients, hooks, tests, config that affects build/test), **do not mark the task complete** until all checks below pass.
+
+Run commands from the **repository root** and report the outcome explicitly in your final message.
+
+## Required checks
+
+| Check | Command | Pass criteria |
+|-------|---------|---------------|
+| Tests | `npm test` | Backend and frontend test suites exit 0 |
+| Frontend ESLint | included in `npm test` | `cd frontend && npm run lint` — **0 errors, 0 warnings** |
+| Coverage | `npm run test:coverage` | Backend and frontend thresholds pass (see [docs/testing.md](mdc:docs/testing.md)) |
+
+`npm test` already runs frontend lint after frontend tests. Still run `npm run test:coverage` separately — it is not part of `npm test`.
+
+## Agent obligations
+
+1. **Run, do not assume** — execute the commands in the shell; never claim green checks without command output.
+2. **Fix failures first** — if a check fails, fix the cause and re-run until all pass.
+3. **State results** — in the completion summary, include a short verification block, e.g. `npm test: pass`, `frontend lint: pass`, `npm run test:coverage: pass`.
+4. **New API clients** — if you add `frontend/src/api/*Api.ts` exports, extend `apiModules.test.ts` so coverage thresholds stay met.
+
+## When to skip
+
+- Documentation-only edits (`.md`, comments with no logic change).
+- User explicitly asked for a partial deliverable (e.g. "plan only", "do not run tests").
+
+Details, thresholds, and CI layout: [docs/testing.md](mdc:docs/testing.md).
