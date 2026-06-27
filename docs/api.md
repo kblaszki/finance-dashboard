@@ -8,9 +8,16 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/api/auth/register` | No | `email`, `username`, `password` |
+| POST | `/api/auth/register` | No | `email`, `username`, `password` — returns 403 when `ALLOW_REGISTER=false` |
 | POST | `/api/auth/login` | No | `email`, `password` |
 | GET | `/api/auth/me` | Yes | `{ id, email, username }` |
+| GET | `/api/auth/config` | No | `{ allowRegister }` — frontend uses this to hide `/register` |
+
+## Health
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/health` | No | `{ ok, db }` — liveness + SQLite connectivity |
 
 ## Accounts
 

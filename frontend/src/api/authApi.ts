@@ -1,5 +1,13 @@
 import { apiClient, setAuthToken } from "./client";
 
+export type AuthConfig = {
+  allowRegister: boolean;
+};
+
+export async function fetchAuthConfig(): Promise<AuthConfig> {
+  return apiClient.get<AuthConfig>("/api/auth/config");
+}
+
 export type AuthUser = {
   id: number;
   email: string;

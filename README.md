@@ -70,6 +70,46 @@ Optional (market data — Twelve Data EOD prices):
 
 Register via the frontend at `/register`, or call `POST /api/auth/register` with `{ "email", "username", "password" }` (password minimum 8 characters).
 
+For a **private single-user deployment**, set `ALLOW_REGISTER=false` in `backend/.env` and create the account with `npm run create-user` — see [Private deployment](#private-deployment) below.
+
+## Private deployment
+
+For running as a personal MyFund-style instance (not open registration):
+
+1. **Lock registration** — in `backend/.env`:
+   ```env
+   ALLOW_REGISTER=false
+   ```
+2. **Create your user** (CLI):
+   ```bash
+   cd backend
+   npm run create-user -- --email you@example.com --username you --password 'your-password'
+   ```
+3. **Daily SQLite backup**:
+   ```bash
+   cd backend
+   npm run db:backup
+   ```
+   Files land in `backend/backups/` (`finance-YYYYMMDD-HHmm.db`). Add `--gzip` or set `BACKUP_GZIP=true` to compress. Sync that folder off-site manually (cloud drive, rclone).
+
+   Windows Task Scheduler / cron example:
+   ```bash
+   0 2 * * * cd /path/to/finance-dashboard/backend && npm run db:backup
+   ```
+
+4. **Health check** — `GET /api/health` returns `{ ok: true, db: true }`.
+
+5. **Docker** (optional home server):
+   ```bash
+   cp backend/.env.production.example backend/.env
+   # edit JWT_SECRET, MARKET_DATA_API_KEY
+   docker compose up -d --build
+   docker compose exec api npm run create-user -- --email you@example.com --username you --password 'secret'
+   ```
+   UI: `http://localhost:8080` (nginx proxies `/api` to the backend). Database and backups persist in `./data/`.
+
+Full checklist: [plans/07-deploy-checklist.md](plans/07-deploy-checklist.md).
+
 ## Market price sync
 
 After setting `MARKET_DATA_API_KEY` in `backend/.env`:

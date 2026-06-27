@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { fetchAuthConfig } from "../api/authApi";
 import { useAuth } from "../state/auth";
 
 export function LoginPage() {
@@ -8,6 +9,13 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [allowRegister, setAllowRegister] = useState(true);
+
+  useEffect(() => {
+    void fetchAuthConfig()
+      .then((cfg) => setAllowRegister(cfg.allowRegister))
+      .catch(() => setAllowRegister(true));
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -53,9 +61,11 @@ export function LoginPage() {
             {submitting ? "Logging in…" : "Log in"}
           </button>
         </form>
-        <p className="auth-switch">
-          Don&apos;t have an account? <Link to="/register">Sign up</Link>
-        </p>
+        {allowRegister && (
+          <p className="auth-switch">
+            Don&apos;t have an account? <Link to="/register">Sign up</Link>
+          </p>
+        )}
       </div>
     </div>
   );

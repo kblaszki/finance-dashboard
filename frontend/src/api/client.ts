@@ -1,8 +1,14 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
-
 const TOKEN_KEY = "finance_dashboard_token";
 
 let onUnauthorized: (() => void) | null = null;
+
+export function getApiBaseUrl(): string {
+  const fromEnv = import.meta.env.VITE_API_BASE_URL;
+  if (fromEnv != null && String(fromEnv).length > 0) {
+    return String(fromEnv);
+  }
+  return import.meta.env.DEV ? "http://localhost:4000" : "";
+}
 
 export function setUnauthorizedHandler(handler: (() => void) | null) {
   onUnauthorized = handler;
@@ -30,7 +36,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
     headers,
     ...options,
   });

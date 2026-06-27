@@ -25,6 +25,10 @@ frontend/.vite/
 ## Backend outputs
 backend/dist/
 backend/test/tmp/
+backend/backups/
+
+## Private deployment data
+data/
 
 ## OS / IDE
 .DS_Store

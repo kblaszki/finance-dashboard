@@ -47,6 +47,35 @@ test("GET /api/accounts returns 401 without token", async () => {
   assert.equal(res.status, 401);
 });
 
+test("GET /api/health returns ok", async () => {
+  const res = await request(app).get("/api/health");
+  assert.equal(res.status, 200);
+  assert.equal(res.body.ok, true);
+  assert.equal(res.body.db, true);
+});
+
+test("GET /api/auth/config returns allowRegister", async () => {
+  const res = await request(app).get("/api/auth/config");
+  assert.equal(res.status, 200);
+  assert.equal(typeof res.body.allowRegister, "boolean");
+});
+
+test("POST /api/auth/register returns 403 when ALLOW_REGISTER=false", async () => {
+  const prev = process.env.ALLOW_REGISTER;
+  process.env.ALLOW_REGISTER = "false";
+  try {
+    const res = await request(app).post("/api/auth/register").send({
+      email: "blocked@test.local",
+      username: "blocked",
+      password: "testpass123",
+    });
+    assert.equal(res.status, 403);
+  } finally {
+    if (prev === undefined) delete process.env.ALLOW_REGISTER;
+    else process.env.ALLOW_REGISTER = prev;
+  }
+});
+
 test("POST /api/accounts creates account", async () => {
   const { token } = await createUserAndToken();
   const res = await request(app)

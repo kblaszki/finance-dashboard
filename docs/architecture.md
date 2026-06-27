@@ -36,9 +36,10 @@ sequenceDiagram
 - Register/login return JWT (`signToken`, 7-day expiry).
 - Protected routes use `requireAuth`: header `Authorization: Bearer <token>`.
 - `AuthedRequest.userId` is set on success; queries must filter by `userId`.
-- Public (no JWT): `POST /api/auth/register`, `POST /api/auth/login`.
+- Public (no JWT): `POST /api/auth/register` (when `ALLOW_REGISTER` is not false), `POST /api/auth/login`, `GET /api/auth/config`, `GET /api/health`.
+- Private deploy: set `ALLOW_REGISTER=false`; create users via `npm run create-user`. Backups: `npm run db:backup`. See [plans/07-deploy-checklist.md](../plans/07-deploy-checklist.md).
 
-Env (see [README.md](../README.md)): `DATABASE_URL`, `JWT_SECRET` (≥32 chars). Do not commit `.env` or `*.db`.
+Env (see [README.md](../README.md)): `DATABASE_URL`, `JWT_SECRET` (≥32 chars), optional `ALLOW_REGISTER`, `MARKET_DATA_API_KEY`. Do not commit `.env` or `*.db`.
 
 ## Multi-currency
 

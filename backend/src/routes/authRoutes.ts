@@ -1,7 +1,8 @@
 import { Router } from "express";
 import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
-import { handleRouteError, parseRequiredString } from "./httpSupport";
+import { isRegisterAllowed } from "../authConfig";
+import { handleRouteError, parseRequiredString, forbidden } from "./httpSupport";
 
 type AuthDeps = {
   prisma: PrismaClient;
@@ -27,7 +28,15 @@ export function createAuthRouter(deps: AuthDeps): Router {
     signToken,
   } = deps;
 
+  router.get("/api/auth/config", (_req, res) => {
+    res.json({ allowRegister: isRegisterAllowed() });
+  });
+
   router.post("/api/auth/register", async (req, res) => {
+    if (!isRegisterAllowed()) {
+      handleRouteError(res, forbidden("Registration is disabled"), "Registration failed");
+      return;
+    }
     try {
       const email = normalizeEmail(req.body?.email);
       const username = String(req.body?.username ?? "").trim();

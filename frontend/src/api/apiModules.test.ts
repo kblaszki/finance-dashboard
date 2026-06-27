@@ -11,7 +11,7 @@ vi.mock('./client', () => ({
 }))
 
 import { apiClient, setAuthToken } from './client'
-import { register, login, fetchMe, logoutLocal } from './authApi'
+import { register, login, fetchMe, logoutLocal, fetchAuthConfig } from './authApi'
 import {
   fetchAccounts,
   fetchAccount,
@@ -71,6 +71,9 @@ describe('API modules', () => {
   })
 
   it('authApi calls correct endpoints', async () => {
+    await fetchAuthConfig()
+    expect(apiClient.get).toHaveBeenCalledWith('/api/auth/config')
+
     await register('a@b.c', 'user', 'pass')
     expect(apiClient.post).toHaveBeenCalledWith('/api/auth/register', {
       email: 'a@b.c',

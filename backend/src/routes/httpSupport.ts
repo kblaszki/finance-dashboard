@@ -21,6 +21,10 @@ export function unauthorized(message: string): HttpError {
   return new HttpError(401, message);
 }
 
+export function forbidden(message: string): HttpError {
+  return new HttpError(403, message);
+}
+
 export function handleRouteError(res: Response, error: unknown, fallback: string): void {
   if (error instanceof HttpError) {
     res.status(error.status).json({ error: error.message });

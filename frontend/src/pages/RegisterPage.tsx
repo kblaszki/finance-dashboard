@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, Navigate } from "react-router-dom";
+import { fetchAuthConfig } from "../api/authApi";
 import { useAuth } from "../state/auth";
 
 export function RegisterPage() {
@@ -9,6 +10,13 @@ export function RegisterPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [allowRegister, setAllowRegister] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    void fetchAuthConfig()
+      .then((cfg) => setAllowRegister(cfg.allowRegister))
+      .catch(() => setAllowRegister(true));
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -21,6 +29,18 @@ export function RegisterPage() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (allowRegister === false) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (allowRegister === null) {
+    return (
+      <div className="auth-page">
+        <p className="loading-state">Loading…</p>
+      </div>
+    );
   }
 
   return (

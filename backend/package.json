@@ -8,6 +8,8 @@
     "build": "tsc",
     "start": "node dist/app.js",
     "db:seed": "prisma db seed",
+    "db:backup": "tsx src/scripts/backupDb.ts",
+    "create-user": "tsx src/scripts/createUser.ts",
     "market:sync": "tsx src/scripts/marketSync.ts",
     "test": "tsx --test \"src/**/*.test.ts\" \"test/**/*.test.ts\"",
     "test:coverage": "c8 tsx --test \"src/**/*.test.ts\" \"test/**/*.test.ts\""
