@@ -14,6 +14,11 @@ import {
   computePortfolioSummary,
 } from "../portfolioStats";
 import { parseBenchmarkId } from "../benchmarks";
+import {
+  computeTaxReport,
+  formatTaxReportCsv,
+  parseTaxYear,
+} from "../taxReport";
 import { badRequest, handleRouteError } from "./httpSupport";
 
 type StatsDeps = {
@@ -171,6 +176,48 @@ export function createStatsRouter(deps: StatsDeps): Router {
       res.json(comparison);
     } catch (e: unknown) {
       handleRouteError(res, e, "Failed to load benchmark comparison");
+    }
+  });
+
+  router.get("/api/stats/tax-report", requireAuth, async (req: AuthedRequest, res) => {
+    try {
+      const taxYear = parseTaxYear(req.query.year ?? new Date().getUTCFullYear());
+      const currency = normalizeCurrency(req.query.currency ?? "PLN");
+      const { plnPerUnit } = await getFxRatesPlnPerUnit();
+      const report = await computeTaxReport(prisma, uid(req), taxYear, currency, plnPerUnit);
+      res.json(report);
+    } catch (e: unknown) {
+      if (e instanceof Error && e.message.startsWith("year must be")) {
+        handleRouteError(res, badRequest(e.message), "Failed to load tax report");
+        return;
+      }
+      handleRouteError(res, e, "Failed to load tax report");
+    }
+  });
+
+  router.get("/api/stats/tax-report/export", requireAuth, async (req: AuthedRequest, res) => {
+    try {
+      const taxYear = parseTaxYear(req.query.year ?? new Date().getUTCFullYear());
+      const format = String(req.query.format ?? "csv").toLowerCase();
+      if (format !== "csv") {
+        throw badRequest("format must be csv");
+      }
+      const currency = normalizeCurrency(req.query.currency ?? "PLN");
+      const { plnPerUnit } = await getFxRatesPlnPerUnit();
+      const report = await computeTaxReport(prisma, uid(req), taxYear, currency, plnPerUnit);
+      const csv = formatTaxReportCsv(report.sellRows);
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="tax-report-${taxYear}.csv"`,
+      );
+      res.send(csv);
+    } catch (e: unknown) {
+      if (e instanceof Error && e.message.startsWith("year must be")) {
+        handleRouteError(res, badRequest(e.message), "Failed to export tax report");
+        return;
+      }
+      handleRouteError(res, e, "Failed to export tax report");
     }
   });
 

@@ -36,6 +36,9 @@ export function AppShell() {
           <NavLink to="/transactions" className={navLinkClass}>
             Transactions
           </NavLink>
+          <NavLink to="/tax" className={navLinkClass}>
+            Tax (PL)
+          </NavLink>
         </nav>
       </aside>
       <main className="app-main">

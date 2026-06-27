@@ -1124,3 +1124,89 @@ test("POST /api/import/broker-trades dry-run previews XTB CSV", async () => {
   assert.equal(res.body.parsed, 3);
   assert.equal(res.body.preview.length, 3);
 });
+
+test("GET /api/stats/tax-report returns annual summary", async () => {
+  const { token, userId } = await createUserAndToken();
+  const account = await prisma.account.create({
+    data: {
+      userId,
+      accountType: "BROKERAGE",
+      name: "Tax Broker",
+      currency: "PLN",
+      openingBalance: 0,
+      cashBalance: 0,
+    },
+  });
+  const instrument = await prisma.instrument.create({
+    data: { instrumentType: "STOCK", symbol: "TAX", exchange: "GPW", currency: "PLN" },
+  });
+  const holding = await prisma.holding.create({
+    data: { accountId: account.id, instrumentId: instrument.id, quantity: 0 },
+  });
+  await prisma.holdingLot.create({
+    data: {
+      holdingId: holding.id,
+      side: "BUY",
+      quantity: 2,
+      quantityAfter: 2,
+      totalPrice: 200,
+      pricePerUnit: 100,
+      currency: "PLN",
+      tradeDate: new Date("2024-01-01T12:00:00.000Z"),
+    },
+  });
+  await prisma.holdingLot.create({
+    data: {
+      holdingId: holding.id,
+      side: "SELL",
+      quantity: 2,
+      quantityAfter: 0,
+      totalPrice: 240,
+      pricePerUnit: 120,
+      currency: "PLN",
+      tradeDate: new Date("2025-02-01T12:00:00.000Z"),
+    },
+  });
+
+  const res = await request(app)
+    .get("/api/stats/tax-report?year=2025&currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  assert.equal(res.body.taxYear, 2025);
+  assert.equal(res.body.netRealized, 40);
+  assert.equal(res.body.estimatedBelka, 7.6);
+
+  const csvRes = await request(app)
+    .get("/api/stats/tax-report/export?year=2025&format=csv")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(csvRes.status, 200);
+  assert.match(csvRes.headers["content-type"] ?? "", /text\/csv/);
+  assert.ok(String(csvRes.text).includes("saleDate,symbol,account"));
+});
+
+test("GET /api/stats/tax-report rejects invalid year", async () => {
+  const { token } = await createUserAndToken();
+  const res = await request(app)
+    .get("/api/stats/tax-report?year=abc")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 400);
+  assert.match(res.body.error ?? "", /year must be/);
+});
+
+test("GET /api/stats/tax-report/export rejects non-csv format", async () => {
+  const { token } = await createUserAndToken();
+  const res = await request(app)
+    .get("/api/stats/tax-report/export?year=2025&format=pdf")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 400);
+  assert.match(res.body.error ?? "", /format must be csv/);
+});
+
+test("GET /api/stats/tax-report/export rejects invalid year", async () => {
+  const { token } = await createUserAndToken();
+  const res = await request(app)
+    .get("/api/stats/tax-report/export?year=1999&format=csv")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 400);
+  assert.match(res.body.error ?? "", /year must be/);
+});

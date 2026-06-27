@@ -13,6 +13,7 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 | `/accounts/:id` | Account detail | `AccountDetailPage`, `BrokerImportForm` (BROKERAGE), holdings, `ManualAccountRevalueForm` (MANUAL), `TransactionTable` |
 | `/accounts/:id/holdings/:holdingId` | Holding detail | `HoldingDetailPage`, `HoldingValuationChart`, `InstrumentValuationForm`, `HoldingSplitForm`, `HoldingLotsTable` |
 | `/transactions` | Transactions | `TransactionsListPage` → `TransactionTable` (`?accountId=` filter) |
+| `/tax` | PL tax report | `TaxReportPage` — FIFO gains, Belka estimate, CSV export |
 
 Protected shell: `ProtectedRoute` → `AppShell`.
 
@@ -40,7 +41,8 @@ Preferred async pattern for page/widget data: [`frontend/src/hooks/useAsyncData.
 | `holdingsApi.ts` | `/api/accounts/:id/holdings`, `/api/holdings/:holdingId`, `POST .../split` |
 | `holdingLotsApi.ts` | `/api/holdings/:holdingId/lots` |
 | `valuationsApi.ts` | `/api/accounts/:id/holdings/:instrumentId/valuations` — fetched in `HoldingDetailPage` for `HoldingValuationChart` |
-| `statsApi.ts` | `/api/stats/*` |
+| `statsApi.ts` | `/api/stats/*` including `tax-report` |
+| `taxReportApi.ts` | CSV download for tax report |
 | `marketDataApi.ts` | `/api/market-data/*` |
 
 ## Related docs

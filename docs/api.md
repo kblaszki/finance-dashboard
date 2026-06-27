@@ -72,6 +72,8 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 | GET | `/api/stats/portfolio-summary` | Yes | Brokerage KPIs; `from`, `to`, `currency` |
 | GET | `/api/stats/portfolio-history` | Yes | Aggregated brokerage value series; `from`, `to`, `currency` |
 | GET | `/api/stats/benchmark-comparison` | Yes | Portfolio vs benchmark return; `from`, `to`, `currency`, `benchmark=WIG\|SP500` |
+| GET | `/api/stats/tax-report` | Yes | PL tax year summary; `year`, `currency` |
+| GET | `/api/stats/tax-report/export` | Yes | CSV of sales; `year`, `format=csv`, `currency` |
 
 ## Market data
 

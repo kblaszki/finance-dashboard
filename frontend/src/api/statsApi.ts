@@ -115,3 +115,31 @@ export function fetchBenchmarkComparison(params?: BenchmarkQuery) {
   const s = q.toString();
   return apiClient.get<BenchmarkComparison>(`/api/stats/benchmark-comparison${s ? `?${s}` : ""}`);
 }
+
+export type TaxReport = {
+  taxYear: number;
+  displayCurrency: string;
+  realizedGains: number;
+  realizedLosses: number;
+  netRealized: number;
+  estimatedBelka: number;
+  dividendsGross: number;
+  byAccount: Array<{ accountId: number; name: string; netRealized: number }>;
+  byInstrument: Array<{ symbol: string; netRealized: number }>;
+  sellRows: Array<{
+    saleDate: string;
+    symbol: string;
+    accountId: number;
+    accountName: string;
+    quantity: number;
+    proceeds: number;
+    cost: number;
+    gainLoss: number;
+    currency: string;
+  }>;
+};
+
+export function fetchTaxReport(year: number, currency = "PLN") {
+  const q = new URLSearchParams({ year: String(year), currency });
+  return apiClient.get<TaxReport>(`/api/stats/tax-report?${q}`);
+}

@@ -27,13 +27,39 @@ test.beforeEach(async () => {
   await resetDatabase(prisma);
 });
 
-test("computeRealizedPnl returns sell proceeds minus buy cost", () => {
+test("computeRealizedPnl uses FIFO on sells", () => {
+  const d = (iso: string) => new Date(iso);
   const pnl = computeRealizedPnl(
     [
-      { side: "BUY", totalPrice: 1000, currency: "USD" },
-      { side: "SELL", totalPrice: 1100, currency: "USD" },
+      {
+        id: 1,
+        side: "BUY",
+        quantity: 10,
+        totalPrice: 400,
+        pricePerUnit: 40,
+        currency: "PLN",
+        tradeDate: d("2024-01-01"),
+      },
+      {
+        id: 2,
+        side: "BUY",
+        quantity: 10,
+        totalPrice: 600,
+        pricePerUnit: 60,
+        currency: "PLN",
+        tradeDate: d("2024-06-01"),
+      },
+      {
+        id: 3,
+        side: "SELL",
+        quantity: 5,
+        totalPrice: 300,
+        pricePerUnit: 60,
+        currency: "PLN",
+        tradeDate: d("2025-01-01"),
+      },
     ],
-    "USD",
+    "PLN",
     MOCK_FX,
   );
   assert.equal(pnl, 100);

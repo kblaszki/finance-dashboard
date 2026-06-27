@@ -53,6 +53,7 @@ import {
   fetchPortfolioSummary,
   fetchPortfolioHistory,
   fetchBenchmarkComparison,
+  fetchTaxReport,
 } from './statsApi'
 import { fetchMarketDataStatus, triggerMarketSync } from './marketDataApi'
 import { importBrokerTrades } from './importApi'
@@ -263,6 +264,9 @@ describe('API modules', () => {
 
     await fetchBenchmarkComparison()
     expect(apiClient.get).toHaveBeenCalledWith('/api/stats/benchmark-comparison')
+
+    await fetchTaxReport(2025, 'PLN')
+    expect(apiClient.get).toHaveBeenCalledWith('/api/stats/tax-report?year=2025&currency=PLN')
   })
 
   it('marketDataApi calls correct endpoints', async () => {

@@ -8,6 +8,7 @@ import { DashboardPage } from './pages/DashboardPage'
 import { AccountsPage } from './pages/AccountsPage'
 import { AccountDetailPage } from './pages/AccountDetailPage'
 import { HoldingDetailPage } from './pages/HoldingDetailPage'
+import { TaxReportPage } from './pages/TaxReportPage'
 import { TransactionsListPage } from './pages/TransactionsListPage'
 import { useAuth } from './state/auth'
 
@@ -23,6 +24,7 @@ function App() {
           <Route path="/accounts/:id" element={<AccountDetailPage />} />
           <Route path="/accounts/:id/holdings/:holdingId" element={<HoldingDetailPage />} />
           <Route path="/transactions" element={<TransactionsListPage />} />
+          <Route path="/tax" element={<TaxReportPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

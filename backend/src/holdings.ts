@@ -1,6 +1,7 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { convertAmount } from "./fx";
 import { priceAsOf, recomputeQuantityAfterChain } from "./holdingLot";
+import { computeFifoRealizedEvents } from "./fifoRealizedPnl";
 import { toNumber } from "./accountValuation";
 
 export type HoldingLotRow = {
@@ -95,19 +96,33 @@ export async function syncHoldingQuantity(prisma: DbClient, holdingId: number): 
 }
 
 export function computeRealizedPnl(
-  lots: Array<{ side: string; totalPrice: unknown | null; currency: string }>,
+  lots: Array<{
+    id: number;
+    side: string;
+    quantity: unknown;
+    totalPrice: unknown | null;
+    pricePerUnit: unknown | null;
+    currency: string;
+    tradeDate: Date;
+  }>,
   accountCurrency: string,
   plnPerUnit: Record<string, number>,
 ): number {
-  let buyTotal = 0;
-  let sellTotal = 0;
-  for (const lot of lots) {
-    const amount = toNumber(lot.totalPrice ?? 0);
-    const converted = convertAmount(amount, lot.currency, accountCurrency, plnPerUnit);
-    if (lot.side === "BUY") buyTotal += converted;
-    else if (lot.side === "SELL") sellTotal += converted;
-  }
-  return sellTotal - buyTotal;
+  const events = computeFifoRealizedEvents(
+    lots.map((lot) => ({
+      id: lot.id,
+      side: lot.side,
+      quantity: toNumber(lot.quantity),
+      pricePerUnit: toNumber(lot.pricePerUnit ?? 0),
+      currency: lot.currency,
+      tradeDate: lot.tradeDate,
+    })),
+  );
+  return events.reduce(
+    (sum, event) =>
+      sum + convertAmount(event.gainLoss, event.currency, accountCurrency, plnPerUnit),
+    0,
+  );
 }
 
 async function getInstrumentPriceAsOf(

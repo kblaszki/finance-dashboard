@@ -21,7 +21,7 @@ Source of truth: [`backend/prisma/schema.prisma`](../backend/prisma/schema.prism
 - One `Holding` row per `(accountId, instrumentId)`; created on first trade.
 - `Holding.quantity` is synced from the last lot's `quantityAfter` after every lot CRUD.
 - Closed positions (`quantity = 0`) are retained for history and realized P&amp;L.
-- `marketValue` and `realizedPnl` are computed at read time (not stored on `Holding`).
+- `marketValue` and `realizedPnl` are computed at read time (not stored on `Holding`). Closed-position `realizedPnl` uses **FIFO** across lots (`fifoRealizedPnl.ts`).
 
 ## Instrument types
 
@@ -48,6 +48,10 @@ Brokerage accounts can import XTB exports via `POST /api/import/broker-trades`. 
 | Stock split | `POST /api/holdings/:holdingId/split` — multiplies all lot quantities and `quantityAfter` by `ratio`; `pricePerUnit` divides; `totalPrice` per lot unchanged |
 
 Splits recompute account valuations from `effectiveDate`. Historical charts before the split may show pre-split per-share prices with post-split quantities unless market prices are adjusted manually.
+
+## Tax reporting (PL)
+
+Annual estimates via `GET /api/stats/tax-report` — FIFO realized gains on SELL lots in calendar year, dividend gross, Belka 19% on positive net gains. Details: [tax.md](tax.md).
 
 ## Account workflow
 
