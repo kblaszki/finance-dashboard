@@ -4,7 +4,7 @@ import type { AuthedRequest } from "../auth";
 import { revalueManualAccount } from "../manualAccountRevalue";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
 import { parseDateBody } from "./routeSupport";
-import { handleRouteError, badRequest, parseFiniteNumber, parsePositiveNumber, parseRequiredString } from "./httpSupport";
+import { handleRouteError, badRequest, parseIdParam, parseFiniteNumber, parsePositiveNumber, parseRequiredString } from "./httpSupport";
 
 const VALID_ACCOUNT_TYPES = new Set(["BANK", "BROKERAGE", "MANUAL"]);
 
@@ -92,56 +92,72 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
   });
 
   router.get("/api/accounts/:id", requireAuth, async (req: AuthedRequest, res) => {
-    const id = Number(req.params.id);
-    const row = await getAccountForUser(prisma, uid(req), id);
-    if (!row) return res.status(404).json({ error: "Account not found" });
-    res.json(serializeAccount(row));
+    try {
+      const id = parseIdParam(req.params.id);
+      const row = await getAccountForUser(prisma, uid(req), id);
+      if (!row) return res.status(404).json({ error: "Account not found" });
+      res.json(serializeAccount(row));
+    } catch (e: unknown) {
+      handleRouteError(res, e, "Failed to load account");
+    }
   });
 
   router.put("/api/accounts/:id", requireAuth, async (req: AuthedRequest, res) => {
-    const id = Number(req.params.id);
-    const row = await getAccountForUser(prisma, uid(req), id);
-    if (!row) return res.status(404).json({ error: "Account not found" });
-    const data: { name?: string; description?: string | null } = {};
-    if (req.body?.name != null) data.name = String(req.body.name).trim();
-    if (req.body?.description !== undefined) {
-      data.description = req.body.description != null ? String(req.body.description) : null;
+    try {
+      const id = parseIdParam(req.params.id);
+      const row = await getAccountForUser(prisma, uid(req), id);
+      if (!row) return res.status(404).json({ error: "Account not found" });
+      const data: { name?: string; description?: string | null } = {};
+      if (req.body?.name != null) data.name = String(req.body.name).trim();
+      if (req.body?.description !== undefined) {
+        data.description = req.body.description != null ? String(req.body.description) : null;
+      }
+      const updated = await prisma.account.update({ where: { id }, data });
+      res.json(serializeAccount(updated));
+    } catch (e: unknown) {
+      handleRouteError(res, e, "Failed to update account");
     }
-    const updated = await prisma.account.update({ where: { id }, data });
-    res.json(serializeAccount(updated));
   });
 
   router.delete("/api/accounts/:id", requireAuth, async (req: AuthedRequest, res) => {
-    const id = Number(req.params.id);
-    const row = await getAccountForUser(prisma, uid(req), id);
-    if (!row) return res.status(404).json({ error: "Account not found" });
-    await prisma.account.delete({ where: { id } });
-    res.status(204).send();
+    try {
+      const id = parseIdParam(req.params.id);
+      const row = await getAccountForUser(prisma, uid(req), id);
+      if (!row) return res.status(404).json({ error: "Account not found" });
+      await prisma.account.delete({ where: { id } });
+      res.status(204).send();
+    } catch (e: unknown) {
+      handleRouteError(res, e, "Failed to delete account");
+    }
   });
 
   router.get("/api/accounts/:id/valuations", requireAuth, async (req: AuthedRequest, res) => {
-    const id = Number(req.params.id);
-    const row = await getAccountForUser(prisma, uid(req), id);
-    if (!row) return res.status(404).json({ error: "Account not found" });
-    const date = transactionDateFilter(req.query.from, req.query.to);
-    const rows = await prisma.accountValuationDaily.findMany({
-      where: { accountId: id, ...(date ? { valuationDate: date } : {}) },
-      orderBy: { valuationDate: "asc" },
-    });
-    res.json(
-      rows.map((r) => ({
-        valuationDate: r.valuationDate.toISOString(),
-        totalValue: toNumber(r.totalValue),
-        cashValue: toNumber(r.cashValue),
-        securitiesValue: toNumber(r.securitiesValue),
-        currency: r.currency,
-      })),
-    );
+    try {
+      const id = parseIdParam(req.params.id);
+      const row = await getAccountForUser(prisma, uid(req), id);
+      if (!row) return res.status(404).json({ error: "Account not found" });
+      const date = transactionDateFilter(req.query.from, req.query.to);
+      const rows = await prisma.accountValuationDaily.findMany({
+        where: { accountId: id, ...(date ? { valuationDate: date } : {}) },
+        orderBy: { valuationDate: "asc" },
+      });
+      res.json(
+        rows.map((r) => ({
+          valuationDate: r.valuationDate.toISOString(),
+          totalValue: toNumber(r.totalValue),
+          cashValue: toNumber(r.cashValue),
+          securitiesValue: toNumber(r.securitiesValue),
+          currency: r.currency,
+        })),
+      );
+    } catch (e: unknown) {
+      handleRouteError(res, e, "Failed to load account valuations");
+    }
   });
 
   router.post("/api/accounts/:id/revalue", requireAuth, async (req: AuthedRequest, res) => {
     try {
-      const id = Number(req.params.id);
+      const id = parseIdParam(req.params.id);
       const row = await getAccountForUser(prisma, uid(req), id);
       if (!row) return res.status(404).json({ error: "Account not found" });
       if (row.accountType !== "MANUAL") {

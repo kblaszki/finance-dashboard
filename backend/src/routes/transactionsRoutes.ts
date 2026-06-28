@@ -4,7 +4,7 @@ import type { AuthedRequest } from "../auth";
 import type { TransactionType } from "../transactionBalance";
 import { validateTransactionForAccount } from "../transactionBalance";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
-import { badRequest, handleRouteError, notFound, parseFiniteNumber, parsePositiveNumber } from "./httpSupport";
+import { badRequest, handleRouteError, notFound, parseFiniteNumber, parseIdParam, parsePositiveNumber } from "./httpSupport";
 
 const TRANSACTION_DOMAIN_ERRORS = new Set(["Insufficient cash balance"]);
 
@@ -133,7 +133,7 @@ export function createTransactionsRouter(deps: TransactionsDeps): Router {
 
   router.put("/api/transactions/:id", requireAuth, async (req: AuthedRequest, res) => {
     try {
-      const id = Number(req.params.id);
+      const id = parseIdParam(req.params.id);
       const existing = await prisma.transaction.findFirst({
         where: { id, account: { userId: uid(req) } },
       });
@@ -180,18 +180,22 @@ export function createTransactionsRouter(deps: TransactionsDeps): Router {
   });
 
   router.delete("/api/transactions/:id", requireAuth, async (req: AuthedRequest, res) => {
-    const id = Number(req.params.id);
-    const existing = await prisma.transaction.findFirst({
-      where: { id, account: { userId: uid(req) } },
-    });
-    if (!existing) return res.status(404).json({ error: "Transaction not found" });
-    const { plnPerUnit } = await getFxRatesPlnPerUnit();
-    await prisma.$transaction(async (tx) => {
-      await tx.transaction.delete({ where: { id } });
-      await recalcTransactionBalances(tx, existing.accountId, existing.date);
-      await recomputeAccountValuationsFrom(tx, existing.accountId, existing.date, plnPerUnit);
-    });
-    res.status(204).send();
+    try {
+      const id = parseIdParam(req.params.id);
+      const existing = await prisma.transaction.findFirst({
+        where: { id, account: { userId: uid(req) } },
+      });
+      if (!existing) return res.status(404).json({ error: "Transaction not found" });
+      const { plnPerUnit } = await getFxRatesPlnPerUnit();
+      await prisma.$transaction(async (tx) => {
+        await tx.transaction.delete({ where: { id } });
+        await recalcTransactionBalances(tx, existing.accountId, existing.date);
+        await recomputeAccountValuationsFrom(tx, existing.accountId, existing.date, plnPerUnit);
+      });
+      res.status(204).send();
+    } catch (e: unknown) {
+      handleRouteError(res, e, "Failed to delete transaction");
+    }
   });
 
   return router;

@@ -135,3 +135,41 @@ test("tax report ignores sells outside selected year", async () => {
   assert.equal(report.sellRows.length, 0);
   assert.equal(report.netRealized, 0);
 });
+
+test("tax report surfaces FIFO errors as warnings instead of silent skip", async () => {
+  const user = await prisma.user.create({
+    data: { email: "taxwarn@test.local", username: "taxwarn", passwordHash: "x" },
+  });
+  const account = await prisma.account.create({
+    data: {
+      userId: user.id,
+      accountType: "BROKERAGE",
+      name: "Broker",
+      currency: "PLN",
+      openingBalance: 0,
+      cashBalance: 0,
+    },
+  });
+  const instrument = await prisma.instrument.create({
+    data: { instrumentType: "STOCK", symbol: "BAD", exchange: "GPW", currency: "PLN" },
+  });
+  const holding = await findOrCreateHolding(prisma, account.id, instrument.id);
+  await prisma.holdingLot.create({
+    data: {
+      holdingId: holding.id,
+      side: "SELL",
+      quantity: 5,
+      quantityAfter: -5,
+      totalPrice: 500,
+      pricePerUnit: 100,
+      currency: "PLN",
+      tradeDate: new Date("2025-06-01T12:00:00.000Z"),
+    },
+  });
+
+  const report = await computeTaxReport(prisma, user.id, 2025, "PLN", MOCK_FX.plnPerUnit);
+  assert.equal(report.sellRows.length, 0);
+  assert.equal(report.warnings.length, 1);
+  assert.equal(report.warnings[0].symbol, "BAD");
+  assert.match(report.warnings[0].message, /sell more/i);
+});

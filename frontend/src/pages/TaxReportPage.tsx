@@ -1,42 +1,42 @@
 import { useCallback, useState } from 'react'
 import { fetchTaxReport, type TaxReport } from '../api/statsApi'
 import { downloadTaxReportCsv } from '../api/taxReportApi'
+import { useAsyncData } from '../hooks/useAsyncData'
 import { useCurrency } from '../state/currency'
 import { formatMoney } from '../utils/format'
 
 const CURRENT_YEAR = new Date().getFullYear();
 
+type TaxReportQuery = { year: number; currency: string };
+
 export function TaxReportPage() {
   const { currency } = useCurrency()
   const [year, setYear] = useState(CURRENT_YEAR)
-  const [report, setReport] = useState<TaxReport | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [query, setQuery] = useState<TaxReportQuery | null>(null)
+  const [downloadError, setDownloadError] = useState<string | null>(null)
 
-  const loadReport = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const data = await fetchTaxReport(year, currency)
-      setReport(data)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load tax report')
-      setReport(null)
-    } finally {
-      setLoading(false)
-    }
-  }, [year, currency])
+  const loader = useCallback(async (): Promise<TaxReport | null> => {
+    if (!query) return null
+    return fetchTaxReport(query.year, query.currency)
+  }, [query])
+
+  const { data: report, error, loading } = useAsyncData(loader)
+
+  function handleLoad() {
+    setQuery({ year, currency })
+  }
 
   async function handleDownload() {
-    setError(null)
+    setDownloadError(null)
     try {
       await downloadTaxReportCsv(year, currency)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to download CSV')
+      setDownloadError(e instanceof Error ? e.message : 'Failed to download CSV')
     }
   }
 
   const years = Array.from({ length: 6 }, (_, i) => CURRENT_YEAR - i)
+  const displayError = error ?? downloadError
 
   return (
     <div className="page">
@@ -57,7 +57,7 @@ export function TaxReportPage() {
               </option>
             ))}
           </select>
-          <button type="button" className="btn-primary" disabled={loading} onClick={() => void loadReport()}>
+          <button type="button" className="btn-primary" disabled={loading} onClick={handleLoad}>
             {loading ? 'Loading…' : 'Load report'}
           </button>
           <button
@@ -69,7 +69,22 @@ export function TaxReportPage() {
             Download CSV
           </button>
         </div>
-        {error && <p className="error-banner">{error}</p>}
+        {displayError && <p className="error-banner">{displayError}</p>}
+        {report && report.warnings.length > 0 && (
+          <div className="error-banner" role="alert">
+            <p>
+              <strong>FIFO warnings:</strong> Some holdings have inconsistent lot chains and were
+              excluded from realized gains. Review and fix lots before relying on this report.
+            </p>
+            <ul>
+              {report.warnings.map((w) => (
+                <li key={`${w.holdingId}-${w.message}`}>
+                  {w.accountName} / {w.symbol}: {w.message}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </section>
 
       {report && (

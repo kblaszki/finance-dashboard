@@ -51,3 +51,14 @@ test("FIFO rejects oversell", () => {
     ]),
   );
 });
+
+test("FIFO rejects sell in currency without matching buy lots", () => {
+  assert.throws(
+    () =>
+      computeFifoRealizedEvents([
+        { id: 1, side: "BUY", quantity: 5, pricePerUnit: 100, currency: "USD", tradeDate: d("2025-01-01") },
+        { id: 2, side: "SELL", quantity: 5, pricePerUnit: 400, currency: "PLN", tradeDate: d("2025-02-01") },
+      ]),
+    /currency mismatch/i,
+  );
+});

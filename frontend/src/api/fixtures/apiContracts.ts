@@ -1,6 +1,17 @@
 import type { Account } from '../accountsApi'
 import type { Transaction } from '../transactionsApi'
-import type { CashflowStats, CategoryAmount, NetWorthStats, PortfolioSummary, BenchmarkComparison } from '../statsApi'
+import type {
+  CashflowStats,
+  CategoryAmount,
+  NetWorthStats,
+  PortfolioSummary,
+  PortfolioHistory,
+  BenchmarkComparison,
+  TaxReport,
+} from '../statsApi'
+import type { HoldingSummary } from '../holdingsApi'
+import type { ImportResult } from '../importApi'
+import type { Instrument } from '../instrumentsApi'
 
 /** Sample shapes produced by backend serializers in routeSupport.ts / statsRoutes.ts */
 export const accountFixture: Account = {
@@ -73,6 +84,89 @@ export const benchmarkComparisonFixture: BenchmarkComparison = {
   displayCurrency: 'PLN',
 }
 
+export const portfolioHistoryFixture: PortfolioHistory = {
+  points: [
+    { date: '2025-01-01T00:00:00.000Z', totalValue: 6500, cashValue: 1500, securitiesValue: 5000 },
+    { date: '2025-01-31T23:59:59.000Z', totalValue: 7000, cashValue: 1500, securitiesValue: 5500 },
+  ],
+}
+
+export const taxReportFixture: TaxReport = {
+  taxYear: 2025,
+  displayCurrency: 'PLN',
+  realizedGains: 500,
+  realizedLosses: 100,
+  netRealized: 400,
+  estimatedBelka: 76,
+  dividendsGross: 50,
+  byAccount: [{ accountId: 2, name: 'Broker', netRealized: 400 }],
+  byInstrument: [{ symbol: 'AAA', netRealized: 400 }],
+  sellRows: [
+    {
+      saleDate: '2025-04-01T12:00:00.000Z',
+      symbol: 'AAA',
+      accountId: 2,
+      accountName: 'Broker',
+      quantity: 4,
+      proceeds: 480,
+      cost: 400,
+      gainLoss: 80,
+      currency: 'PLN',
+    },
+  ],
+  warnings: [],
+}
+
+export const holdingSummaryFixture: HoldingSummary = {
+  id: 1,
+  accountId: 2,
+  instrumentId: 10,
+  quantity: 6,
+  instrument: {
+    id: 10,
+    symbol: 'AAA',
+    name: 'Example SA',
+    instrumentType: 'STOCK',
+    exchange: 'GPW',
+    currency: 'PLN',
+  },
+  marketValue: 720,
+  realizedPnl: null,
+  lastTradeDate: '2025-04-01T12:00:00.000Z',
+}
+
+export const importResultFixture: ImportResult = {
+  dryRun: true,
+  parsed: 2,
+  imported: 0,
+  skipped: 0,
+  errors: [],
+  preview: [
+    {
+      row: 1,
+      kind: 'TRADE',
+      tradeDate: '2025-01-15',
+      symbol: 'AAPL',
+      side: 'BUY',
+      quantity: 1,
+      price: 150,
+      amount: 150,
+      currency: 'USD',
+    },
+  ],
+}
+
+export const instrumentFixture: Instrument = {
+  id: 10,
+  instrumentType: 'STOCK',
+  symbol: 'AAA',
+  name: 'Example SA',
+  exchange: 'GPW',
+  currency: 'PLN',
+  source: 'manual',
+  createdAt: '2025-01-01T00:00:00.000Z',
+}
+
 function assertAccountShape(value: Account): void {
   if (typeof value.id !== 'number') throw new Error('account.id')
   if (!['BANK', 'BROKERAGE', 'MANUAL'].includes(value.accountType)) throw new Error('account.accountType')
@@ -114,6 +208,35 @@ function assertBenchmarkComparisonShape(value: BenchmarkComparison): void {
   if (value.benchmark !== 'WIG' && value.benchmark !== 'SP500') throw new Error('benchmarkComparison.benchmark')
 }
 
+function assertPortfolioHistoryShape(value: PortfolioHistory): void {
+  if (!Array.isArray(value.points)) throw new Error('portfolioHistory.points')
+  for (const point of value.points) {
+    if (!point.date.includes('T')) throw new Error('portfolioHistory.point.date')
+    if (typeof point.totalValue !== 'number') throw new Error('portfolioHistory.point.totalValue')
+  }
+}
+
+function assertTaxReportShape(value: TaxReport): void {
+  if (typeof value.taxYear !== 'number') throw new Error('taxReport.taxYear')
+  if (!Array.isArray(value.sellRows)) throw new Error('taxReport.sellRows')
+  if (!Array.isArray(value.warnings)) throw new Error('taxReport.warnings')
+}
+
+function assertHoldingSummaryShape(value: HoldingSummary): void {
+  if (typeof value.quantity !== 'number') throw new Error('holdingSummary.quantity')
+  if (typeof value.instrument.symbol !== 'string') throw new Error('holdingSummary.instrument.symbol')
+}
+
+function assertImportResultShape(value: ImportResult): void {
+  if (typeof value.parsed !== 'number') throw new Error('importResult.parsed')
+  if (!Array.isArray(value.errors)) throw new Error('importResult.errors')
+}
+
+function assertInstrumentShape(value: Instrument): void {
+  if (typeof value.symbol !== 'string') throw new Error('instrument.symbol')
+  if (!value.createdAt.includes('T')) throw new Error('instrument.createdAt ISO')
+}
+
 export function validateApiContractFixtures(): void {
   assertAccountShape(accountFixture)
   assertTransactionShape(transactionFixture)
@@ -122,4 +245,9 @@ export function validateApiContractFixtures(): void {
   assertCategoryAmountsShape(categoryAmountFixture)
   assertPortfolioSummaryShape(portfolioSummaryFixture)
   assertBenchmarkComparisonShape(benchmarkComparisonFixture)
+  assertPortfolioHistoryShape(portfolioHistoryFixture)
+  assertTaxReportShape(taxReportFixture)
+  assertHoldingSummaryShape(holdingSummaryFixture)
+  assertImportResultShape(importResultFixture)
+  assertInstrumentShape(instrumentFixture)
 }

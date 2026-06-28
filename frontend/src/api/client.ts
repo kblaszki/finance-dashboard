@@ -64,6 +64,38 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return (await response.json()) as T;
 }
 
+async function requestBlob(path: string, options?: RequestInit): Promise<Blob> {
+  const headers: Record<string, string> = {};
+
+  const token = getAuthToken();
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
+    headers,
+    ...options,
+  });
+
+  if (response.status === 401) {
+    onUnauthorized?.();
+    throw new Error("Unauthorized");
+  }
+
+  if (!response.ok) {
+    let message = `API error: ${response.status}`;
+    try {
+      const body = (await response.json()) as { error?: string };
+      if (body.error) message = body.error;
+    } catch {
+      // ignore parse errors
+    }
+    throw new Error(message);
+  }
+
+  return response.blob();
+}
+
 export const apiClient = {
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, body: unknown) =>
@@ -71,4 +103,5 @@ export const apiClient = {
   put: <T>(path: string, body: unknown) =>
     request<T>(path, { method: "PUT", body: JSON.stringify(body) }),
   delete: (path: string) => request<void>(path, { method: "DELETE" }),
+  getBlob: (path: string) => requestBlob(path),
 };

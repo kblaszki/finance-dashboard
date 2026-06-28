@@ -50,6 +50,17 @@ describe("apiClient", () => {
     expect(onUnauthorized).toHaveBeenCalledOnce();
   });
 
+  it("getBlob calls unauthorized handler on 401", async () => {
+    const onUnauthorized = vi.fn();
+    setUnauthorizedHandler(onUnauthorized);
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 }),
+    );
+
+    await expect(apiClient.getBlob("/api/export")).rejects.toThrow("Unauthorized");
+    expect(onUnauthorized).toHaveBeenCalledOnce();
+  });
+
   it("returns undefined for 204 responses", async () => {
     vi.mocked(fetch).mockResolvedValue(new Response(null, { status: 204 }));
 

@@ -30,8 +30,15 @@ export function handleRouteError(res: Response, error: unknown, fallback: string
     res.status(error.status).json({ error: error.message });
     return;
   }
-  const msg = error instanceof Error ? error.message : fallback;
-  res.status(500).json({ error: msg });
+  if (error instanceof Error) {
+    // eslint-disable-next-line no-console
+    console.error(fallback, error.message);
+  }
+  res.status(500).json({ error: fallback });
+}
+
+export function parseIdParam(value: unknown, field = "id"): number {
+  return parseFiniteNumber(value, field, { min: 1 });
 }
 
 export function parseRequiredString(value: unknown, field: string): string {

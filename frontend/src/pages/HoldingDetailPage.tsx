@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { fetchAccount } from '../api/accountsApi'
 import { fetchHolding, type HoldingSummary } from '../api/holdingsApi'
@@ -7,7 +7,14 @@ import { HoldingLotsTable } from '../components/HoldingLotsTable'
 import { HoldingSplitForm } from '../components/HoldingSplitForm'
 import { HoldingValuationChart } from '../components/HoldingValuationChart'
 import { InstrumentValuationForm } from '../components/InstrumentValuationForm'
+import { useAsyncData } from '../hooks/useAsyncData'
 import { formatMoney } from '../utils/format'
+
+type HoldingDetailData = {
+  holding: HoldingSummary
+  accountCurrency: string
+  positionHistory: Awaited<ReturnType<typeof fetchHoldingValuations>>
+}
 
 export function HoldingDetailPage() {
   const { id, holdingId: holdingIdParam } = useParams()
@@ -16,43 +23,23 @@ export function HoldingDetailPage() {
   const invalidAccountId = !Number.isFinite(accountId) || accountId < 1
   const invalidHoldingId = !Number.isFinite(holdingId) || holdingId < 1
   const invalidId = invalidAccountId || invalidHoldingId
-  const [holding, setHolding] = useState<HoldingSummary | null>(null)
-  const [accountCurrency, setAccountCurrency] = useState<string>('PLN')
-  const [positionHistory, setPositionHistory] = useState<Awaited<ReturnType<typeof fetchHoldingValuations>>>([])
-  const [error, setError] = useState<string | null>(null)
   const [historyVersion, setHistoryVersion] = useState(0)
 
-  const loadHolding = useCallback(async () => {
-    setError(null)
-    try {
-      const [h, account] = await Promise.all([
-        fetchHolding(holdingId),
-        fetchAccount(accountId),
-      ])
-      setHolding(h)
-      setAccountCurrency(account.currency)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load holding')
-    }
-  }, [accountId, holdingId])
+  const loader = useCallback(async (): Promise<HoldingDetailData | null> => {
+    if (invalidId) return null
+    void historyVersion
+    const [holding, account] = await Promise.all([
+      fetchHolding(holdingId),
+      fetchAccount(accountId),
+    ])
+    const positionHistory = await fetchHoldingValuations(accountId, holding.instrumentId)
+    return { holding, accountCurrency: account.currency, positionHistory }
+  }, [invalidId, accountId, holdingId, historyVersion])
 
-  useEffect(() => {
-    if (invalidId) return
-    void loadHolding()
-  }, [invalidId, loadHolding])
-
-  useEffect(() => {
-    if (invalidId || !holding?.instrumentId) {
-      setPositionHistory([])
-      return
-    }
-    void fetchHoldingValuations(accountId, holding.instrumentId)
-      .then(setPositionHistory)
-      .catch((e) => setError(e instanceof Error ? e.message : 'Failed to load position history'))
-  }, [invalidId, accountId, holding?.instrumentId, historyVersion])
+  const { data, error, loading, reload } = useAsyncData(loader)
 
   function refreshAfterValuation() {
-    void loadHolding()
+    reload()
     setHistoryVersion((v) => v + 1)
   }
 
@@ -65,15 +52,25 @@ export function HoldingDetailPage() {
     )
   }
 
-  if (!holding) {
+  if (loading && !data) {
     return (
       <div className="page">
-        <p className="muted">{error ?? 'Loading…'}</p>
+        <p className="muted">Loading…</p>
         <Link to={`/accounts/${accountId}`} className="page-back-link">← Account</Link>
       </div>
     )
   }
 
+  if (!data) {
+    return (
+      <div className="page">
+        <p className="error-banner">{error ?? 'Failed to load holding'}</p>
+        <Link to={`/accounts/${accountId}`} className="page-back-link">← Account</Link>
+      </div>
+    )
+  }
+
+  const { holding, accountCurrency, positionHistory } = data
   const { symbol, name, currency: instrumentCurrency } = holding.instrument
   const title = name ? `${symbol} — ${name}` : symbol
   const isOpen = holding.quantity > 0
@@ -116,7 +113,7 @@ export function HoldingDetailPage() {
         <HoldingSplitForm
           holdingId={holdingId}
           onApplied={() => {
-            void loadHolding()
+            reload()
             setHistoryVersion((v) => v + 1)
           }}
         />
@@ -128,7 +125,7 @@ export function HoldingDetailPage() {
           holdingId={holdingId}
           currency={accountCurrency}
           onLotsChange={() => {
-            void loadHolding()
+            reload()
             setHistoryVersion((v) => v + 1)
           }}
         />

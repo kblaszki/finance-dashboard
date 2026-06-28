@@ -1,26 +1,15 @@
-import { getApiBaseUrl, getAuthToken } from "./client";
+import { apiClient } from "./client";
+import { downloadBlob } from "../utils/downloadBlob";
+
+export async function fetchTaxReportCsvBlob(
+  year: number,
+  currency = "PLN",
+): Promise<Blob> {
+  const params = new URLSearchParams({ year: String(year), currency, format: "csv" });
+  return apiClient.getBlob(`/api/stats/tax-report/export?${params}`);
+}
 
 export async function downloadTaxReportCsv(year: number, currency = "PLN"): Promise<void> {
-  const params = new URLSearchParams({ year: String(year), currency, format: "csv" });
-  const token = getAuthToken();
-  const response = await fetch(`${getApiBaseUrl()}/api/stats/tax-report/export?${params}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
-  if (!response.ok) {
-    let message = `Export failed: ${response.status}`;
-    try {
-      const body = (await response.json()) as { error?: string };
-      if (body.error) message = body.error;
-    } catch {
-      // ignore
-    }
-    throw new Error(message);
-  }
-  const blob = await response.blob();
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `tax-report-${year}.csv`;
-  link.click();
-  URL.revokeObjectURL(url);
+  const blob = await fetchTaxReportCsvBlob(year, currency);
+  downloadBlob(blob, `tax-report-${year}.csv`);
 }

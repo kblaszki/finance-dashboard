@@ -47,6 +47,15 @@ test("GET /api/accounts returns 401 without token", async () => {
   assert.equal(res.status, 401);
 });
 
+test("GET /api/accounts/:id rejects non-numeric id", async () => {
+  const { token } = await createUserAndToken();
+  const res = await request(app)
+    .get("/api/accounts/foo")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 400);
+  assert.match(res.body.error, /id must be a valid number/i);
+});
+
 test("GET /api/health returns ok", async () => {
   const res = await request(app).get("/api/health");
   assert.equal(res.status, 200);

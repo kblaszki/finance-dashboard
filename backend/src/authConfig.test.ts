@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { isRegisterAllowed } from "./authConfig";
+import { isRegisterAllowed, assertProductionEnvironment } from "./authConfig";
 
 function withEnv(value: string | undefined, fn: () => void): void {
   const prev = process.env.ALLOW_REGISTER;
@@ -26,4 +26,27 @@ test("isRegisterAllowed respects false values", () => {
 
 test("isRegisterAllowed allows explicit true", () => {
   withEnv("true", () => assert.equal(isRegisterAllowed(), true));
+});
+
+test("assertProductionEnvironment requires JWT_SECRET and closed registration", () => {
+  const prevNode = process.env.NODE_ENV;
+  const prevJwt = process.env.JWT_SECRET;
+  const prevReg = process.env.ALLOW_REGISTER;
+  process.env.NODE_ENV = "production";
+  process.env.JWT_SECRET = "short";
+  delete process.env.ALLOW_REGISTER;
+  try {
+    assert.throws(() => assertProductionEnvironment(), /JWT_SECRET/);
+    process.env.JWT_SECRET = "x".repeat(32);
+    assert.throws(() => assertProductionEnvironment(), /ALLOW_REGISTER/);
+    process.env.ALLOW_REGISTER = "false";
+    assert.doesNotThrow(() => assertProductionEnvironment());
+  } finally {
+    if (prevNode === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = prevNode;
+    if (prevJwt === undefined) delete process.env.JWT_SECRET;
+    else process.env.JWT_SECRET = prevJwt;
+    if (prevReg === undefined) delete process.env.ALLOW_REGISTER;
+    else process.env.ALLOW_REGISTER = prevReg;
+  }
 });

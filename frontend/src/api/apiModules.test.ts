@@ -265,9 +265,6 @@ describe('API modules', () => {
       '/api/stats/benchmark-comparison?from=2025-01-01&to=2025-01-31&currency=USD&benchmark=SP500',
     )
 
-    await fetchBenchmarkComparison()
-    expect(apiClient.get).toHaveBeenCalledWith('/api/stats/benchmark-comparison')
-
     await fetchTaxReport(2025, 'PLN')
     expect(apiClient.get).toHaveBeenCalledWith('/api/stats/tax-report?year=2025&currency=PLN')
   })

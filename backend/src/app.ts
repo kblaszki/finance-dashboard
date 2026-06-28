@@ -1,7 +1,9 @@
 import express from "express";
 import cors from "cors";
+import rateLimit from "express-rate-limit";
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
+import { assertProductionEnvironment } from "./authConfig";
 import { convertAmount, getFxRatesPlnPerUnit, normalizeCurrency } from "./fx";
 import {
   hashPassword,
@@ -16,6 +18,7 @@ import {
   backfillAccountValuations,
   recalcTransactionBalances,
   recomputeAccountValuationsFrom,
+  recomputeAllAccountsForInstrument,
   syncBrokerageCashBalance,
   toNumber,
 } from "./accountValuation";
@@ -52,11 +55,36 @@ import { createImportRouter } from "./routes/importRoutes";
 import { handleRouteError } from "./routes/httpSupport";
 
 dotenv.config();
+assertProductionEnvironment();
 
 const app = express();
 const prisma = new PrismaClient();
-app.use(cors());
-app.use(express.json());
+
+const corsOrigin = process.env.CORS_ORIGIN?.trim();
+app.use(
+  corsOrigin
+    ? cors({ origin: corsOrigin })
+    : cors(),
+);
+app.use(express.json({ limit: process.env.JSON_BODY_LIMIT ?? "1mb" }));
+
+const authRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+const importRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+if (process.env.NODE_ENV === "production") {
+  app.use("/api/auth/login", authRateLimiter);
+  app.use("/api/auth/register", authRateLimiter);
+  app.use("/api/import", importRateLimiter);
+}
 
 app.get("/api/health", async (_req, res) => {
   try {
@@ -119,12 +147,10 @@ app.use(
   createInstrumentsRouter({
     prisma,
     requireAuth,
-    uid,
     normalizeCurrency,
     parseDateBody,
     getFxRatesPlnPerUnit,
-    getAccountForUser,
-    recomputeAccountValuationsFrom,
+    recomputeAllAccountsForInstrument,
     transactionDateFilter,
     serializeInstrument,
     serializeInstrumentValuation,

@@ -59,24 +59,22 @@ export type BenchmarkComparison = {
   displayCurrency: string;
 };
 
-type PeriodQuery = {
-  from?: string;
-  to?: string;
+type RequiredPeriodQuery = {
+  from: string;
+  to: string;
   currency?: string;
 };
 
-type BenchmarkQuery = PeriodQuery & {
+type BenchmarkQuery = RequiredPeriodQuery & {
   benchmark?: "WIG" | "SP500";
 };
 
-function periodQuery(params?: PeriodQuery): string {
-  if (!params) return "";
+function periodQuery(params: RequiredPeriodQuery): string {
   const q = new URLSearchParams();
-  if (params.from) q.set("from", params.from);
-  if (params.to) q.set("to", params.to);
+  q.set("from", params.from);
+  q.set("to", params.to);
   if (params.currency) q.set("currency", params.currency);
-  const s = q.toString();
-  return s ? `?${s}` : "";
+  return `?${q.toString()}`;
 }
 
 export function fetchNetWorth(currency: string) {
@@ -84,37 +82,44 @@ export function fetchNetWorth(currency: string) {
   return apiClient.get<NetWorthStats>(`/api/stats/net-worth?${q}`);
 }
 
-export function fetchCashflow(params?: PeriodQuery) {
+export function fetchCashflow(params: RequiredPeriodQuery) {
   return apiClient.get<CashflowStats>(`/api/stats/cashflow${periodQuery(params)}`);
 }
 
-export function fetchExpensesByCategory(params?: PeriodQuery) {
+export function fetchExpensesByCategory(params: RequiredPeriodQuery) {
   return apiClient.get<CategoryAmount[]>(
     `/api/stats/expenses-by-category${periodQuery(params)}`,
   );
 }
 
-export function fetchIncomeByCategory(params?: PeriodQuery) {
+export function fetchIncomeByCategory(params: RequiredPeriodQuery) {
   return apiClient.get<CategoryAmount[]>(`/api/stats/income-by-category${periodQuery(params)}`);
 }
 
-export function fetchPortfolioSummary(params?: PeriodQuery) {
+export function fetchPortfolioSummary(params: RequiredPeriodQuery) {
   return apiClient.get<PortfolioSummary>(`/api/stats/portfolio-summary${periodQuery(params)}`);
 }
 
-export function fetchPortfolioHistory(params?: PeriodQuery) {
+export function fetchPortfolioHistory(params: RequiredPeriodQuery) {
   return apiClient.get<PortfolioHistory>(`/api/stats/portfolio-history${periodQuery(params)}`);
 }
 
-export function fetchBenchmarkComparison(params?: BenchmarkQuery) {
+export function fetchBenchmarkComparison(params: BenchmarkQuery) {
   const q = new URLSearchParams();
-  if (params?.from) q.set("from", params.from);
-  if (params?.to) q.set("to", params.to);
-  if (params?.currency) q.set("currency", params.currency);
-  if (params?.benchmark) q.set("benchmark", params.benchmark);
-  const s = q.toString();
-  return apiClient.get<BenchmarkComparison>(`/api/stats/benchmark-comparison${s ? `?${s}` : ""}`);
+  q.set("from", params.from);
+  q.set("to", params.to);
+  if (params.currency) q.set("currency", params.currency);
+  if (params.benchmark) q.set("benchmark", params.benchmark);
+  return apiClient.get<BenchmarkComparison>(`/api/stats/benchmark-comparison?${q.toString()}`);
 }
+
+export type TaxReportWarning = {
+  accountId: number;
+  accountName: string;
+  symbol: string;
+  holdingId: number;
+  message: string;
+};
 
 export type TaxReport = {
   taxYear: number;
@@ -137,6 +142,7 @@ export type TaxReport = {
     gainLoss: number;
     currency: string;
   }>;
+  warnings: TaxReportWarning[];
 };
 
 export function fetchTaxReport(year: number, currency = "PLN") {

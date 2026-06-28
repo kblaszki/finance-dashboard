@@ -2,20 +2,18 @@ import { Router } from "express";
 import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
-import { badRequest, handleRouteError, parsePositiveNumber, parseRequiredString } from "./httpSupport";
+import { badRequest, handleRouteError, parseIdParam, parsePositiveNumber, parseRequiredString } from "./httpSupport";
 import { parseInstrumentType } from "../instrumentTypes";
 
 type InstrumentsDeps = {
   prisma: PrismaClient;
   requireAuth: (req: AuthedRequest, res: any, next: any) => void;
-  uid: (req: AuthedRequest) => number;
   normalizeCurrency: (value: unknown) => string;
   parseDateBody: (value: unknown) => Date;
   getFxRatesPlnPerUnit: () => Promise<{ asOf: string; plnPerUnit: Record<string, number> }>;
-  getAccountForUser: (db: DbClient, userId: number, accountId: number) => Promise<any>;
-  recomputeAccountValuationsFrom: (
+  recomputeAllAccountsForInstrument: (
     db: DbClient,
-    accountId: number,
+    instrumentId: number,
     fromDate: Date,
     plnPerUnit: Record<string, number>,
   ) => Promise<void>;
@@ -45,12 +43,10 @@ export function createInstrumentsRouter(deps: InstrumentsDeps): Router {
   const {
     prisma,
     requireAuth,
-    uid,
     normalizeCurrency,
     parseDateBody,
     getFxRatesPlnPerUnit,
-    getAccountForUser,
-    recomputeAccountValuationsFrom,
+    recomputeAllAccountsForInstrument,
     transactionDateFilter,
     serializeInstrument,
     serializeInstrumentValuation,
@@ -90,18 +86,22 @@ export function createInstrumentsRouter(deps: InstrumentsDeps): Router {
   });
 
   router.get("/api/instruments/:id/valuations", requireAuth, async (req: AuthedRequest, res) => {
-    const id = Number(req.params.id);
-    const date = transactionDateFilter(req.query.from, req.query.to);
-    const rows = await prisma.instrumentValuation.findMany({
-      where: { instrumentId: id, ...(date ? { valuationDate: date } : {}) },
-      orderBy: { valuationDate: "asc" },
-    });
-    res.json(rows.map(serializeInstrumentValuation));
+    try {
+      const id = parseIdParam(req.params.id);
+      const date = transactionDateFilter(req.query.from, req.query.to);
+      const rows = await prisma.instrumentValuation.findMany({
+        where: { instrumentId: id, ...(date ? { valuationDate: date } : {}) },
+        orderBy: { valuationDate: "asc" },
+      });
+      res.json(rows.map(serializeInstrumentValuation));
+    } catch (e: unknown) {
+      handleRouteError(res, e, "Failed to load instrument valuations");
+    }
   });
 
   router.post("/api/instruments/:id/valuations", requireAuth, async (req: AuthedRequest, res) => {
     try {
-      const instrumentId = Number(req.params.id);
+      const instrumentId = parseIdParam(req.params.id);
       const instrument = await prisma.instrument.findUnique({ where: { id: instrumentId } });
       if (!instrument) return res.status(404).json({ error: "Instrument not found" });
       const valuationDate = parseDateBody(req.body?.valuationDate);
@@ -113,17 +113,7 @@ export function createInstrumentsRouter(deps: InstrumentsDeps): Router {
         const created = await tx.instrumentValuation.create({
           data: { instrumentId, valuationDate, price, currency, source },
         });
-        const accounts = await tx.holding.findMany({
-          where: { instrumentId },
-          select: { accountId: true },
-          distinct: ["accountId"],
-        });
-        for (const { accountId } of accounts) {
-          const account = await getAccountForUser(tx, uid(req), accountId);
-          if (account) {
-            await recomputeAccountValuationsFrom(tx, accountId, valuationDate, plnPerUnit);
-          }
-        }
+        await recomputeAllAccountsForInstrument(tx, instrumentId, valuationDate, plnPerUnit);
         return created;
       });
       res.status(201).json(serializeInstrumentValuation(row));

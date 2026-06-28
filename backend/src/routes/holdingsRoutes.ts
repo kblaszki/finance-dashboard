@@ -3,7 +3,7 @@ import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import { recomputeQuantityAfterChain } from "../holdingLot";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
-import { handleRouteError, badRequest, parsePositiveNumber } from "./httpSupport";
+import { handleRouteError, badRequest, parseFiniteNumber, parseIdParam, parsePositiveNumber } from "./httpSupport";
 import { applyStockSplit } from "../stockSplit";
 
 type HoldingsDeps = {
@@ -76,27 +76,31 @@ export function createHoldingsRouter(deps: HoldingsDeps): Router {
   } = deps;
 
   router.get("/api/accounts/:accountId/holdings", requireAuth, async (req: AuthedRequest, res) => {
-    const accountId = Number(req.params.accountId);
-    const account = await getAccountForUser(prisma, uid(req), accountId);
-    if (!account) return res.status(404).json({ error: "Account not found" });
-    if (account.accountType !== "BROKERAGE") {
-      return res.json({ open: [], closed: [] });
+    try {
+      const accountId = parseIdParam(req.params.accountId, "accountId");
+      const account = await getAccountForUser(prisma, uid(req), accountId);
+      if (!account) return res.status(404).json({ error: "Account not found" });
+      if (account.accountType !== "BROKERAGE") {
+        return res.json({ open: [], closed: [] });
+      }
+      const { plnPerUnit } = await getFxRatesPlnPerUnit();
+      const holdings = await getAccountHoldings(prisma, accountId, account.currency, plnPerUnit);
+      res.json(holdings);
+    } catch (e: unknown) {
+      handleRouteError(res, e, "Failed to load holdings");
     }
-    const { plnPerUnit } = await getFxRatesPlnPerUnit();
-    const holdings = await getAccountHoldings(prisma, accountId, account.currency, plnPerUnit);
-    res.json(holdings);
   });
 
   router.post("/api/accounts/:accountId/holdings", requireAuth, async (req: AuthedRequest, res) => {
     try {
-      const accountId = Number(req.params.accountId);
+      const accountId = parseIdParam(req.params.accountId, "accountId");
       const account = await getAccountForUser(prisma, uid(req), accountId);
       if (!account) return res.status(404).json({ error: "Account not found" });
       if (account.accountType !== "BROKERAGE") {
         return res.status(400).json({ error: "Holdings are only for brokerage accounts" });
       }
 
-      const instrumentId = Number(req.body?.instrumentId);
+      const instrumentId = parseFiniteNumber(req.body?.instrumentId, "instrumentId", { min: 1 });
       const instrument = await prisma.instrument.findUnique({ where: { id: instrumentId } });
       if (!instrument) return res.status(404).json({ error: "Instrument not found" });
 
@@ -119,22 +123,27 @@ export function createHoldingsRouter(deps: HoldingsDeps): Router {
   });
 
   router.get("/api/holdings/:holdingId", requireAuth, async (req: AuthedRequest, res) => {
-    const holdingId = Number(req.params.holdingId);
-    const holding = await getHoldingForUser(prisma, uid(req), holdingId);
-    if (!holding) return res.status(404).json({ error: "Holding not found" });
+    try {
+      const holdingId = parseIdParam(req.params.holdingId, "holdingId");
+      const holding = await getHoldingForUser(prisma, uid(req), holdingId);
+      if (!holding) return res.status(404).json({ error: "Holding not found" });
 
-    const { plnPerUnit } = await getFxRatesPlnPerUnit();
-    const summary = await buildHoldingSummary(
-      prisma,
-      holding,
-      holding.account.currency,
-      plnPerUnit,
-    );
-    res.json(serializeHoldingSummary(summary));
+      const { plnPerUnit } = await getFxRatesPlnPerUnit();
+      const summary = await buildHoldingSummary(
+        prisma,
+        holding,
+        holding.account.currency,
+        plnPerUnit,
+      );
+      res.json(serializeHoldingSummary(summary));
+    } catch (e: unknown) {
+      handleRouteError(res, e, "Failed to load holding");
+    }
   });
 
   router.get("/api/holdings/:holdingId/lots", requireAuth, async (req: AuthedRequest, res) => {
-    const holdingId = Number(req.params.holdingId);
+    try {
+      const holdingId = parseIdParam(req.params.holdingId, "holdingId");
     const holding = await getHoldingForUser(prisma, uid(req), holdingId);
     if (!holding) return res.status(404).json({ error: "Holding not found" });
 
@@ -146,11 +155,14 @@ export function createHoldingsRouter(deps: HoldingsDeps): Router {
       orderBy: [{ tradeDate: "desc" }, { id: "desc" }],
     });
     res.json(rows.map(serializeHoldingLot));
+    } catch (e: unknown) {
+      handleRouteError(res, e, "Failed to load holding lots");
+    }
   });
 
   router.post("/api/holdings/:holdingId/lots", requireAuth, async (req: AuthedRequest, res) => {
     try {
-      const holdingId = Number(req.params.holdingId);
+      const holdingId = parseIdParam(req.params.holdingId, "holdingId");
       const holding = await getHoldingForUser(prisma, uid(req), holdingId);
       if (!holding) return res.status(404).json({ error: "Holding not found" });
 
@@ -227,7 +239,7 @@ export function createHoldingsRouter(deps: HoldingsDeps): Router {
 
   router.post("/api/holdings/:holdingId/split", requireAuth, async (req: AuthedRequest, res) => {
     try {
-      const holdingId = Number(req.params.holdingId);
+      const holdingId = parseIdParam(req.params.holdingId, "holdingId");
       const holding = await getHoldingForUser(prisma, uid(req), holdingId);
       if (!holding) return res.status(404).json({ error: "Holding not found" });
       if (holding.account.accountType !== "BROKERAGE") {
@@ -262,7 +274,8 @@ export function createHoldingsRouter(deps: HoldingsDeps): Router {
   });
 
   router.delete("/api/holding-lots/:id", requireAuth, async (req: AuthedRequest, res) => {
-    const id = Number(req.params.id);
+    try {
+      const id = parseIdParam(req.params.id);
     const existing = await prisma.holdingLot.findFirst({
       where: { id, holding: { account: { userId: uid(req) } } },
       include: { holding: true },
@@ -282,14 +295,18 @@ export function createHoldingsRouter(deps: HoldingsDeps): Router {
       await recomputeAccountValuationsFrom(tx, accountId, tradeDate, plnPerUnit);
     });
     res.status(204).send();
+    } catch (e: unknown) {
+      handleRouteError(res, e, "Failed to delete holding lot");
+    }
   });
 
   router.get(
     "/api/accounts/:accountId/holdings/:instrumentId/valuations",
     requireAuth,
     async (req: AuthedRequest, res) => {
-      const accountId = Number(req.params.accountId);
-      const instrumentId = Number(req.params.instrumentId);
+      try {
+        const accountId = parseIdParam(req.params.accountId, "accountId");
+        const instrumentId = parseIdParam(req.params.instrumentId, "instrumentId");
       const account = await getAccountForUser(prisma, uid(req), accountId);
       if (!account) return res.status(404).json({ error: "Account not found" });
       const date = transactionDateFilter(req.query.from, req.query.to);
@@ -309,6 +326,9 @@ export function createHoldingsRouter(deps: HoldingsDeps): Router {
           currency: r.currency,
         })),
       );
+      } catch (e: unknown) {
+        handleRouteError(res, e, "Failed to load holding valuations");
+      }
     },
   );
 

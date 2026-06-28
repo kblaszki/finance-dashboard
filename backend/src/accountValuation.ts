@@ -315,6 +315,22 @@ export async function recomputeAccountValuationsFrom(
   }
 }
 
+export async function recomputeAllAccountsForInstrument(
+  prisma: DbClient,
+  instrumentId: number,
+  fromDate: Date,
+  plnPerUnit: Record<string, number>,
+): Promise<void> {
+  const accounts = await prisma.holding.findMany({
+    where: { instrumentId },
+    select: { accountId: true },
+    distinct: ["accountId"],
+  });
+  for (const { accountId } of accounts) {
+    await recomputeAccountValuationsFrom(prisma, accountId, fromDate, plnPerUnit);
+  }
+}
+
 export async function backfillAccountValuations(
   prisma: DbClient,
   accountId: number,

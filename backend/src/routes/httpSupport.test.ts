@@ -5,6 +5,7 @@ import {
   badRequest,
   handleRouteError,
   parseFiniteNumber,
+  parseIdParam,
   parseRequiredString,
 } from "./httpSupport";
 
@@ -20,6 +21,14 @@ test("parseFiniteNumber rejects non-finite values", () => {
   assert.throws(() => parseFiniteNumber("abc", "amount"), (error: unknown) => {
     assert.ok(error instanceof HttpError);
     assert.equal(error.message, "amount must be a valid number");
+    return true;
+  });
+});
+
+test("parseIdParam rejects invalid route ids", () => {
+  assert.throws(() => parseIdParam("foo"), (error: unknown) => {
+    assert.ok(error instanceof HttpError);
+    assert.equal(error.status, 400);
     return true;
   });
 });
@@ -59,5 +68,5 @@ test("handleRouteError maps unknown errors to 500", () => {
 
   handleRouteError(response as never, new Error("Database down"), "Internal server error");
   assert.equal(response.statusCode, 500);
-  assert.deepEqual(response.body, { error: "Database down" });
+  assert.deepEqual(response.body, { error: "Internal server error" });
 });

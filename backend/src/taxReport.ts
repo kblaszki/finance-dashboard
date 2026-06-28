@@ -17,6 +17,14 @@ export type TaxSellRow = {
   currency: string;
 };
 
+export type TaxReportWarning = {
+  accountId: number;
+  accountName: string;
+  symbol: string;
+  holdingId: number;
+  message: string;
+};
+
 export type TaxReport = {
   taxYear: number;
   displayCurrency: string;
@@ -28,6 +36,7 @@ export type TaxReport = {
   byAccount: Array<{ accountId: number; name: string; netRealized: number }>;
   byInstrument: Array<{ symbol: string; netRealized: number }>;
   sellRows: TaxSellRow[];
+  warnings: TaxReportWarning[];
 };
 
 function taxYearBounds(year: number): { start: Date; end: Date } {
@@ -104,6 +113,7 @@ export async function computeTaxReport(
   });
 
   const sellRows: TaxSellRow[] = [];
+  const warnings: TaxReportWarning[] = [];
   const byAccountMap = new Map<number, { name: string; net: number }>();
   const byInstrumentMap = new Map<string, number>();
 
@@ -122,7 +132,15 @@ export async function computeTaxReport(
       let events: RealizedGainEvent[] = [];
       try {
         events = computeFifoRealizedEvents(fifoLots);
-      } catch {
+      } catch (e) {
+        const message = e instanceof Error ? e.message : "FIFO calculation failed";
+        warnings.push({
+          accountId: account.id,
+          accountName: account.name,
+          symbol: holding.instrument.symbol,
+          holdingId: holding.id,
+          message,
+        });
         continue;
       }
 
@@ -198,6 +216,7 @@ export async function computeTaxReport(
       .map(([symbol, netRealized]) => ({ symbol, netRealized }))
       .sort((a, b) => a.symbol.localeCompare(b.symbol)),
     sellRows,
+    warnings,
   };
 }
 
