@@ -8,11 +8,13 @@ import { parseInstrumentType } from "../instrumentTypes";
 type InstrumentsDeps = {
   prisma: PrismaClient;
   requireAuth: (req: AuthedRequest, res: any, next: any) => void;
+  uid: (req: AuthedRequest) => number;
   normalizeCurrency: (value: unknown) => string;
   parseDateBody: (value: unknown) => Date;
   getFxRatesPlnPerUnit: () => Promise<{ asOf: string; plnPerUnit: Record<string, number> }>;
-  recomputeAllAccountsForInstrument: (
+  recomputeAccountsForInstrumentUser: (
     db: DbClient,
+    userId: number,
     instrumentId: number,
     fromDate: Date,
     plnPerUnit: Record<string, number>,
@@ -43,10 +45,11 @@ export function createInstrumentsRouter(deps: InstrumentsDeps): Router {
   const {
     prisma,
     requireAuth,
+    uid,
     normalizeCurrency,
     parseDateBody,
     getFxRatesPlnPerUnit,
-    recomputeAllAccountsForInstrument,
+    recomputeAccountsForInstrumentUser,
     transactionDateFilter,
     serializeInstrument,
     serializeInstrumentValuation,
@@ -113,7 +116,7 @@ export function createInstrumentsRouter(deps: InstrumentsDeps): Router {
         const created = await tx.instrumentValuation.create({
           data: { instrumentId, valuationDate, price, currency, source },
         });
-        await recomputeAllAccountsForInstrument(tx, instrumentId, valuationDate, plnPerUnit);
+        await recomputeAccountsForInstrumentUser(tx, uid(req), instrumentId, valuationDate, plnPerUnit);
         return created;
       });
       res.status(201).json(serializeInstrumentValuation(row));

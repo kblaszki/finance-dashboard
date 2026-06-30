@@ -3,7 +3,7 @@ import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import { importBrokerTrades } from "../import/importTrades";
 import type { BrokerId } from "../import/types";
-import { badRequest, handleRouteError, notFound } from "./httpSupport";
+import { badRequest, handleRouteError, notFound, parseFiniteNumber, parseIdParam, parsePositiveNumber } from "./httpSupport";
 
 type ImportDeps = {
   prisma: PrismaClient;
@@ -28,10 +28,11 @@ export function createImportRouter(deps: ImportDeps): Router {
 
   router.post("/api/import/broker-trades", requireAuth, async (req: AuthedRequest, res) => {
     try {
-      const accountId = Number(req.query.accountId ?? req.body?.accountId);
-      if (!Number.isFinite(accountId) || accountId < 1) {
-        return res.status(400).json({ error: "accountId is required" });
-      }
+      const accountId = parseFiniteNumber(
+        req.query.accountId ?? req.body?.accountId,
+        "accountId",
+        { min: 1 },
+      );
       const dryRun =
         req.query.dryRun === "true" || req.query.dryRun === "1" || req.body?.dryRun === true;
       const broker = parseBroker(req.query.broker ?? req.body?.broker);

@@ -1,4 +1,5 @@
-import type { Account } from '../accountsApi'
+import type { Account, AccountValuationPoint } from '../accountsApi'
+import type { AuthConfig, AuthUser } from '../authApi'
 import type { Transaction } from '../transactionsApi'
 import type {
   CashflowStats,
@@ -10,8 +11,11 @@ import type {
   TaxReport,
 } from '../statsApi'
 import type { HoldingSummary } from '../holdingsApi'
+import type { HoldingLot } from '../holdingLotsApi'
 import type { ImportResult } from '../importApi'
-import type { Instrument } from '../instrumentsApi'
+import type { Instrument, InstrumentValuation } from '../instrumentsApi'
+import type { MarketDataStatus, MarketDataSyncResult } from '../marketDataApi'
+import type { HoldingValuationPoint } from '../valuationsApi'
 
 /** Sample shapes produced by backend serializers in routeSupport.ts / statsRoutes.ts */
 export const accountFixture: Account = {
@@ -167,6 +171,69 @@ export const instrumentFixture: Instrument = {
   createdAt: '2025-01-01T00:00:00.000Z',
 }
 
+export const instrumentValuationFixture: InstrumentValuation = {
+  id: 1,
+  instrumentId: 10,
+  valuationDate: '2025-01-10T12:00:00.000Z',
+  price: 110,
+  currency: 'PLN',
+  source: 'manual',
+}
+
+export const holdingLotFixture: HoldingLot = {
+  id: 5,
+  holdingId: 1,
+  accountId: 2,
+  instrumentId: 10,
+  side: 'BUY',
+  quantity: 10,
+  quantityAfter: 10,
+  totalPrice: 1000,
+  pricePerUnit: 100,
+  currency: 'PLN',
+  tradeDate: '2025-01-05T12:00:00.000Z',
+  createdAt: '2025-01-05T12:00:00.000Z',
+}
+
+export const accountValuationPointFixture: AccountValuationPoint = {
+  valuationDate: '2025-01-31T23:59:59.000Z',
+  totalValue: 7000,
+  cashValue: 1500,
+  securitiesValue: 5500,
+  currency: 'PLN',
+}
+
+export const holdingValuationPointFixture: HoldingValuationPoint = {
+  valuationDate: '2025-01-31T23:59:59.000Z',
+  quantity: 10,
+  marketValue: 1100,
+  currency: 'PLN',
+}
+
+export const marketDataStatusFixture: MarketDataStatus = {
+  lastSyncAt: '2025-01-31T22:00:00.000Z',
+  instrumentCount: 12,
+  staleCount: 1,
+}
+
+export const marketDataSyncResultFixture: MarketDataSyncResult = {
+  synced: 5,
+  skipped: 2,
+  valuationsUpserted: 10,
+  accountsRecomputed: 3,
+  errors: [],
+}
+
+export const authUserFixture: AuthUser = {
+  id: 1,
+  email: 'user@example.com',
+  username: 'user',
+}
+
+export const authConfigFixture: AuthConfig = {
+  allowRegister: true,
+}
+
 function assertAccountShape(value: Account): void {
   if (typeof value.id !== 'number') throw new Error('account.id')
   if (!['BANK', 'BROKERAGE', 'MANUAL'].includes(value.accountType)) throw new Error('account.accountType')
@@ -237,6 +304,42 @@ function assertInstrumentShape(value: Instrument): void {
   if (!value.createdAt.includes('T')) throw new Error('instrument.createdAt ISO')
 }
 
+function assertInstrumentValuationShape(value: InstrumentValuation): void {
+  if (typeof value.price !== 'number') throw new Error('instrumentValuation.price')
+  if (!value.valuationDate.includes('T')) throw new Error('instrumentValuation.valuationDate ISO')
+}
+
+function assertHoldingLotShape(value: HoldingLot): void {
+  if (!['BUY', 'SELL'].includes(value.side)) throw new Error('holdingLot.side')
+  if (typeof value.quantityAfter !== 'number') throw new Error('holdingLot.quantityAfter')
+}
+
+function assertAccountValuationPointShape(value: AccountValuationPoint): void {
+  if (typeof value.totalValue !== 'number') throw new Error('accountValuationPoint.totalValue')
+  if (!value.valuationDate.includes('T')) throw new Error('accountValuationPoint.valuationDate ISO')
+}
+
+function assertHoldingValuationPointShape(value: HoldingValuationPoint): void {
+  if (typeof value.marketValue !== 'number') throw new Error('holdingValuationPoint.marketValue')
+}
+
+function assertMarketDataStatusShape(value: MarketDataStatus): void {
+  if (typeof value.instrumentCount !== 'number') throw new Error('marketDataStatus.instrumentCount')
+}
+
+function assertMarketDataSyncResultShape(value: MarketDataSyncResult): void {
+  if (typeof value.synced !== 'number') throw new Error('marketDataSyncResult.synced')
+  if (!Array.isArray(value.errors)) throw new Error('marketDataSyncResult.errors')
+}
+
+function assertAuthUserShape(value: AuthUser): void {
+  if (typeof value.email !== 'string') throw new Error('authUser.email')
+}
+
+function assertAuthConfigShape(value: AuthConfig): void {
+  if (typeof value.allowRegister !== 'boolean') throw new Error('authConfig.allowRegister')
+}
+
 export function validateApiContractFixtures(): void {
   assertAccountShape(accountFixture)
   assertTransactionShape(transactionFixture)
@@ -250,4 +353,12 @@ export function validateApiContractFixtures(): void {
   assertHoldingSummaryShape(holdingSummaryFixture)
   assertImportResultShape(importResultFixture)
   assertInstrumentShape(instrumentFixture)
+  assertInstrumentValuationShape(instrumentValuationFixture)
+  assertHoldingLotShape(holdingLotFixture)
+  assertAccountValuationPointShape(accountValuationPointFixture)
+  assertHoldingValuationPointShape(holdingValuationPointFixture)
+  assertMarketDataStatusShape(marketDataStatusFixture)
+  assertMarketDataSyncResultShape(marketDataSyncResultFixture)
+  assertAuthUserShape(authUserFixture)
+  assertAuthConfigShape(authConfigFixture)
 }

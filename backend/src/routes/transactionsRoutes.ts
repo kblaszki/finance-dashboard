@@ -71,17 +71,24 @@ export function createTransactionsRouter(deps: TransactionsDeps): Router {
   } = deps;
 
   router.get("/api/transactions", requireAuth, async (req: AuthedRequest, res) => {
-    const accountId = req.query.accountId != null ? Number(req.query.accountId) : undefined;
-    const where: { account: { userId: number }; accountId?: number } = {
-      account: { userId: uid(req) },
-    };
-    if (accountId) where.accountId = accountId;
-    const date = transactionDateFilter(req.query.from, req.query.to);
-    const rows = await prisma.transaction.findMany({
-      where: { ...where, ...(date ? { date } : {}) },
-      orderBy: [{ date: "desc" }, { id: "desc" }],
-    });
-    res.json(rows.map(serializeTransaction));
+    try {
+      const accountId =
+        req.query.accountId != null
+          ? parseFiniteNumber(req.query.accountId, "accountId", { min: 1 })
+          : undefined;
+      const where: { account: { userId: number }; accountId?: number } = {
+        account: { userId: uid(req) },
+      };
+      if (accountId) where.accountId = accountId;
+      const date = transactionDateFilter(req.query.from, req.query.to);
+      const rows = await prisma.transaction.findMany({
+        where: { ...where, ...(date ? { date } : {}) },
+        orderBy: [{ date: "desc" }, { id: "desc" }],
+      });
+      res.json(rows.map(serializeTransaction));
+    } catch (e: unknown) {
+      handleRouteError(res, e, "Failed to load transactions");
+    }
   });
 
   router.post("/api/transactions", requireAuth, async (req: AuthedRequest, res) => {
@@ -101,6 +108,9 @@ export function createTransactionsRouter(deps: TransactionsDeps): Router {
       if (!account) return res.status(404).json({ error: "Account not found" });
       const accountTypeError = validateTransactionForAccount(transactionType, account.accountType);
       if (accountTypeError) return res.status(400).json({ error: accountTypeError });
+      if (currency !== account.currency) {
+        return res.status(400).json({ error: "Transaction currency must match account currency" });
+      }
       const { plnPerUnit } = await getFxRatesPlnPerUnit();
       const row = await prisma.$transaction(async (tx) => {
         const freshAccount = await getAccountForUser(tx, uid(req), accountId);
@@ -160,6 +170,11 @@ export function createTransactionsRouter(deps: TransactionsDeps): Router {
       }
       const accountTypeError = validateTransactionForAccount(nextType, account.accountType);
       if (accountTypeError) return res.status(400).json({ error: accountTypeError });
+      const nextCurrency =
+        data.currency != null ? String(data.currency) : existing.currency;
+      if (nextCurrency !== account.currency) {
+        return res.status(400).json({ error: "Transaction currency must match account currency" });
+      }
       const { plnPerUnit } = await getFxRatesPlnPerUnit();
       const updated = await prisma.$transaction(async (tx) => {
         const row = await tx.transaction.update({ where: { id }, data });

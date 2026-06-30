@@ -331,6 +331,24 @@ export async function recomputeAllAccountsForInstrument(
   }
 }
 
+/** Manual instrument valuations: recompute only accounts owned by the caller (tenancy-safe). */
+export async function recomputeAccountsForInstrumentUser(
+  prisma: DbClient,
+  userId: number,
+  instrumentId: number,
+  fromDate: Date,
+  plnPerUnit: Record<string, number>,
+): Promise<void> {
+  const accounts = await prisma.holding.findMany({
+    where: { instrumentId, account: { userId } },
+    select: { accountId: true },
+    distinct: ["accountId"],
+  });
+  for (const { accountId } of accounts) {
+    await recomputeAccountValuationsFrom(prisma, accountId, fromDate, plnPerUnit);
+  }
+}
+
 export async function backfillAccountValuations(
   prisma: DbClient,
   accountId: number,

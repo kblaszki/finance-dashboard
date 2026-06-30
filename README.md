@@ -108,7 +108,7 @@ For running as a personal MyFund-style instance (not open registration):
    ```
    UI: `http://localhost:8080` (nginx proxies `/api` to the backend). Database and backups persist in `./data/`.
 
-Full checklist: [plans/07-deploy-checklist.md](plans/07-deploy-checklist.md).
+Full checklist: [docs/private-ops.md](docs/private-ops.md).
 
 ## Market price sync
 
@@ -136,7 +136,7 @@ npm run db:seed
 
 Login: `demo@finance.local` / `demo12345` (username: `demo`)
 
-The seed creates four accounts: PLN bank (~90 days of transactions), USD brokerage (AAPL, VT), EUR brokerage (IWDA), and a MANUAL property account. See `plans/baza_danych/07-dane-demo.md` if available locally.
+The seed creates four accounts: PLN bank (~90 days of transactions), USD brokerage (AAPL, VT), EUR brokerage (IWDA), and a MANUAL property account.
 
 ## Tests
 

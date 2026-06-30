@@ -908,6 +908,120 @@ test("GET and POST /api/instruments/:id/valuations", async () => {
   assert.ok(snapshots.body.length >= 1);
 });
 
+test("POST /api/transactions rejects currency mismatch with 400", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BANK",
+      name: "PLN Bank",
+      currency: "PLN",
+      openingBalance: 100,
+    });
+  const accountId = accountRes.body.id;
+
+  const res = await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      transactionType: "INCOME",
+      amount: 50,
+      currency: "USD",
+      category: "SALARY",
+      date: "2025-01-10T12:00:00.000Z",
+    });
+  assert.equal(res.status, 400);
+  assert.match(res.body.error, /currency must match account/i);
+});
+
+test("GET /api/transactions rejects invalid accountId query with 400", async () => {
+  const { token } = await createUserAndToken();
+  const res = await request(app)
+    .get("/api/transactions?accountId=not-a-number")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 400);
+});
+
+test("manual instrument valuation recompute is scoped to caller accounts", async () => {
+  const { token: tokenA } = await createUserAndToken();
+  const { token: tokenB } = await createSecondUser();
+
+  const instrument = await prisma.instrument.create({
+    data: { instrumentType: "STOCK", symbol: "SCOPE", exchange: "TEST", currency: "USD" },
+  });
+
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${tokenA}`)
+    .send({
+      accountType: "BROKERAGE",
+      name: "User A Scope Broker",
+      currency: "USD",
+      openingBalance: 0,
+    });
+  const accountIdA = accountRes.body.id;
+
+  await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${tokenA}`)
+    .send({
+      accountId: accountIdA,
+      transactionType: "TRANSFER_IN",
+      amount: 5000,
+      currency: "USD",
+      category: "FUNDING",
+      date: "2025-01-01T12:00:00.000Z",
+    });
+
+  const holdingRes = await request(app)
+    .post(`/api/accounts/${accountIdA}/holdings`)
+    .set("Authorization", `Bearer ${tokenA}`)
+    .send({ instrumentId: instrument.id });
+  const holdingId = holdingRes.body.id;
+
+  await request(app)
+    .post(`/api/holdings/${holdingId}/lots`)
+    .set("Authorization", `Bearer ${tokenA}`)
+    .send({
+      side: "BUY",
+      quantity: 10,
+      pricePerUnit: 100,
+      currency: "USD",
+      tradeDate: "2025-01-05T12:00:00.000Z",
+    });
+
+  await request(app)
+    .post(`/api/instruments/${instrument.id}/valuations`)
+    .set("Authorization", `Bearer ${tokenA}`)
+    .send({
+      valuationDate: "2025-01-10T12:00:00.000Z",
+      price: 100,
+      currency: "USD",
+    });
+
+  const beforeB = await request(app)
+    .get(`/api/accounts/${accountIdA}/valuations?from=2025-01-01&to=2025-01-31`)
+    .set("Authorization", `Bearer ${tokenA}`);
+  assert.equal(beforeB.status, 200);
+
+  await request(app)
+    .post(`/api/instruments/${instrument.id}/valuations`)
+    .set("Authorization", `Bearer ${tokenB}`)
+    .send({
+      valuationDate: "2025-01-15T12:00:00.000Z",
+      price: 200,
+      currency: "USD",
+    });
+
+  const afterB = await request(app)
+    .get(`/api/accounts/${accountIdA}/valuations?from=2025-01-01&to=2025-01-31`)
+    .set("Authorization", `Bearer ${tokenA}`);
+  assert.equal(afterB.status, 200);
+  assert.deepEqual(afterB.body, beforeB.body);
+});
+
 test("GET /api/stats/net-worth sums account values", async () => {
   const { token } = await createUserAndToken();
   await request(app)

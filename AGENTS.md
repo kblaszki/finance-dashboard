@@ -12,6 +12,7 @@ Token-aware index — use `@docs/...` for domain detail; do not duplicate [READM
 | [docs/api.md](docs/api.md) | REST route catalog |
 | [docs/frontend.md](docs/frontend.md) | Routes, API clients, UI patterns |
 | [docs/testing.md](docs/testing.md) | Test pyramid, coverage thresholds, verification checklist |
+| [docs/private-ops.md](docs/private-ops.md) | Private deployment checklist |
 
 ## Cursor rules
 
@@ -56,3 +57,4 @@ Token-aware index — use `@docs/...` for domain detail; do not duplicate [READM
 ## Do not commit
 
 - `backend/.env`, `**/dev.db`, local SQLite files
+- `plans/` — local work-in-progress only (gitignored); never link to it from committed docs (`README.md`, `docs/*`, `AGENTS.md`)

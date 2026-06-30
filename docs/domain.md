@@ -1,6 +1,6 @@
 # Domain model
 
-Source of truth: [`backend/prisma/schema.prisma`](../backend/prisma/schema.prisma). Planning docs: [`plans/baza_danych/`](../plans/baza_danych/).
+Source of truth: [`backend/prisma/schema.prisma`](../backend/prisma/schema.prisma).
 
 ## Core entities
 
@@ -34,6 +34,14 @@ Allowed `Instrument.instrumentType` values: `STOCK`, `ETF`, `BOND`, `FUND`, `OTH
 | OTHER | manual |
 
 Market sync (`POST /api/market-data/sync`) processes **STOCK** and **ETF** only; BOND/FUND are skipped without error.
+
+## Global instrument catalog
+
+- `Instrument` and `InstrumentValuation` rows are **shared** across all users (no `userId` on the model).
+- Any authenticated user may search/create instruments and append manual valuations.
+- `POST /api/instruments/:id/valuations` writes a global price row but **recomputes daily account snapshots only for the caller's accounts** that hold the instrument (`recomputeAccountsForInstrumentUser`).
+- `POST /api/market-data/sync` still recomputes all affected accounts (system job).
+- Designed for **single-user private** deployment; multi-tenant hosting requires a product decision (per-user catalog, admin-only writes, etc.). See [private-ops.md](private-ops.md).
 
 ## CSV import (XTB)
 

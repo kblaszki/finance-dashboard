@@ -12,6 +12,7 @@ Applies when editing schema, routes, API clients, or app routing.
 - Model or relation change: update [docs/domain.md](mdc:docs/domain.md).
 - New route/page or API client module: update [docs/frontend.md](mdc:docs/frontend.md).
 - Auth/FX/architecture change: update [docs/architecture.md](mdc:docs/architecture.md) only if behavior changed.
+- Never link to `plans/` from committed documentation (`README.md`, `docs/*`, `AGENTS.md`). That directory is gitignored local WIP.
 
 Skip doc updates for trivial changes (typo, CSS-only, comment-only).
 
