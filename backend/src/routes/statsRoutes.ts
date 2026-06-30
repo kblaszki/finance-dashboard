@@ -88,10 +88,7 @@ export function createStatsRouter(deps: StatsDeps): Router {
       const date = requireTransactionDateFilter(transactionDateFilter, req.query.from, req.query.to);
       const currency = normalizeCurrency(req.query.currency ?? "PLN");
       const { plnPerUnit } = await getFxRatesPlnPerUnit();
-      const rows = await fetchUserTransactions(prisma, uid(req), date, [
-        "EXPENSE",
-        "TRANSFER_OUT",
-      ]);
+      const rows = await fetchUserTransactions(prisma, uid(req), date, ["EXPENSE"]);
       res.json(computeCategoryBreakdown(rows, currency, convertAmount, toNumber, plnPerUnit));
     } catch (e: unknown) {
       handleRouteError(res, e, "Failed to load expenses by category");
@@ -105,7 +102,6 @@ export function createStatsRouter(deps: StatsDeps): Router {
       const { plnPerUnit } = await getFxRatesPlnPerUnit();
       const rows = await fetchUserTransactions(prisma, uid(req), date, [
         "INCOME",
-        "TRANSFER_IN",
         "DIVIDEND",
         "INTEREST",
       ]);

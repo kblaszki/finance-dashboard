@@ -1296,6 +1296,62 @@ test("GET /api/stats/cashflow requires date range", async () => {
   assert.equal(res.body.net, 200);
 });
 
+test("GET /api/stats/cashflow excludes internal transfers", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BANK",
+      name: "Transfer CF Bank",
+      currency: "PLN",
+      openingBalance: 1000,
+    });
+  const accountId = accountRes.body.id;
+
+  await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      transactionType: "INCOME",
+      amount: 200,
+      currency: "PLN",
+      category: "SALARY",
+      date: "2025-03-01T12:00:00.000Z",
+    });
+  await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      transactionType: "TRANSFER_IN",
+      amount: 500,
+      currency: "PLN",
+      category: "FUNDING",
+      date: "2025-03-02T12:00:00.000Z",
+    });
+  await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      transactionType: "TRANSFER_OUT",
+      amount: 50,
+      currency: "PLN",
+      category: "MOVE",
+      date: "2025-03-03T12:00:00.000Z",
+    });
+
+  const res = await request(app)
+    .get("/api/stats/cashflow?from=2025-03-01&to=2025-03-31&currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  assert.equal(res.body.income, 200);
+  assert.equal(res.body.expense, 0);
+  assert.equal(res.body.net, 200);
+});
+
 test("GET /api/stats category breakdowns", async () => {
   const { token } = await createUserAndToken();
   const accountRes = await request(app)

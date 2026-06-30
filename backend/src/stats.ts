@@ -9,6 +9,17 @@ type TransactionRow = {
   category: string;
 };
 
+const CASHFLOW_INCOME_TYPES = new Set(["INCOME", "DIVIDEND", "INTEREST"]);
+const CASHFLOW_EXPENSE_TYPES = new Set(["EXPENSE"]);
+
+export function isCashflowIncomeType(transactionType: string): boolean {
+  return CASHFLOW_INCOME_TYPES.has(transactionType);
+}
+
+export function isCashflowExpenseType(transactionType: string): boolean {
+  return CASHFLOW_EXPENSE_TYPES.has(transactionType);
+}
+
 export function requireTransactionDateFilter(
   transactionDateFilter: TransactionDateFilter,
   from?: unknown,
@@ -40,15 +51,12 @@ export function computeCashflowStats(
   let expense = 0;
   for (const t of rows) {
     const amount = convertAmount(toNumber(t.amount), t.currency, displayCurrency, plnPerUnit);
-    if (
-      t.transactionType === "INCOME" ||
-      t.transactionType === "TRANSFER_IN" ||
-      t.transactionType === "DIVIDEND" ||
-      t.transactionType === "INTEREST"
-    ) {
+    if (isCashflowIncomeType(t.transactionType)) {
       income += amount;
     }
-    if (t.transactionType === "EXPENSE" || t.transactionType === "TRANSFER_OUT") expense += amount;
+    if (isCashflowExpenseType(t.transactionType)) {
+      expense += amount;
+    }
   }
   return { income, expense, net: income - expense, currency: displayCurrency };
 }

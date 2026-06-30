@@ -3,9 +3,19 @@ import assert from "node:assert/strict";
 import {
   computeCashflowStats,
   computeCategoryBreakdown,
+  isCashflowExpenseType,
+  isCashflowIncomeType,
   requireTransactionDateFilter,
 } from "./stats";
 import { transactionDateFilter } from "./routes/routeSupport";
+
+test("isCashflowIncomeType and isCashflowExpenseType classify transaction types", () => {
+  assert.equal(isCashflowIncomeType("INCOME"), true);
+  assert.equal(isCashflowIncomeType("DIVIDEND"), true);
+  assert.equal(isCashflowIncomeType("TRANSFER_IN"), false);
+  assert.equal(isCashflowExpenseType("EXPENSE"), true);
+  assert.equal(isCashflowExpenseType("TRANSFER_OUT"), false);
+});
 
 test("requireTransactionDateFilter rejects missing range", () => {
   assert.throws(
@@ -43,8 +53,42 @@ test("computeCashflowStats sums income and expense", () => {
     plnPerUnit,
   );
   assert.equal(result.income, 100);
-  assert.equal(result.expense, 50);
-  assert.equal(result.net, 50);
+  assert.equal(result.expense, 30);
+  assert.equal(result.net, 70);
+});
+
+test("computeCashflowStats excludes internal transfers", () => {
+  const plnPerUnit = { PLN: 1 };
+  const convert = (amount: number, from: string, to: string) => (from === to ? amount : amount);
+  const result = computeCashflowStats(
+    [
+      { amount: 100, currency: "PLN", transactionType: "INCOME", category: "SALARY" },
+      { amount: 50, currency: "PLN", transactionType: "TRANSFER_IN", category: "FUNDING" },
+      { amount: 20, currency: "PLN", transactionType: "TRANSFER_OUT", category: "MOVE" },
+    ],
+    "PLN",
+    convert,
+    Number,
+    plnPerUnit,
+  );
+  assert.equal(result.income, 100);
+  assert.equal(result.expense, 0);
+  assert.equal(result.net, 100);
+});
+
+test("computeCashflowStats ignores non-cashflow transaction types", () => {
+  const plnPerUnit = { PLN: 1 };
+  const convert = (amount: number, from: string, to: string) => (from === to ? amount : amount);
+  const result = computeCashflowStats(
+    [{ amount: 99, currency: "PLN", transactionType: "ADJUSTMENT", category: "X" }],
+    "PLN",
+    convert,
+    Number,
+    plnPerUnit,
+  );
+  assert.equal(result.income, 0);
+  assert.equal(result.expense, 0);
+  assert.equal(result.net, 0);
 });
 
 test("computeCashflowStats counts DIVIDEND and INTEREST as income", () => {
