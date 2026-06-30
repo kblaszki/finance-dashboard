@@ -12,7 +12,7 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 | `/password-reset` | Password reset stub | `pages/PasswordResetPage.tsx` |
 | `/dashboard` | Dashboard | `DashboardPage` — Portfolio / Budget tabs, `NetWorthSection`, portfolio & budget charts |
 | `/statistics` | Statistics (placeholder) | `PlaceholderPage` — FR-003/004 pending |
-| `/portfolio` | Portfolio (placeholder) | `PlaceholderPage` — FR-008 pending |
+| `/portfolio` | Portfolio (all accounts) | `PortfolioPage` — filters by account, type, bucket (FR-008) |
 | `/accounts` | Accounts | `ManagedAccountsList` |
 | `/accounts/:id` | Account detail | `AccountDetailPage`, `BrokerImportForm` (BROKERAGE), holdings, `ManualAccountRevalueForm` (MANUAL), `TransactionTable` |
 | `/accounts/:id/holdings/:holdingId` | Holding detail | `HoldingDetailPage`, `HoldingValuationChart`, `InstrumentValuationForm`, `HoldingSplitForm`, `HoldingLotsTable` |
@@ -45,6 +45,7 @@ Preferred async pattern for page/widget data: [`frontend/src/hooks/useAsyncData.
 | `instrumentsApi.ts` | `/api/instruments`, `/api/instruments/:id/valuations` |
 | `importApi.ts` | `POST /api/import/broker-trades` — XTB CSV dry-run / import |
 | `holdingsApi.ts` | `/api/accounts/:id/holdings`, `/api/holdings/:holdingId`, `POST .../split` |
+| `portfolioApi.ts` | `GET /api/portfolio/positions` |
 | `holdingLotsApi.ts` | `/api/holdings/:holdingId/lots` |
 | `valuationsApi.ts` | `/api/accounts/:id/holdings/:instrumentId/valuations` — fetched in `HoldingDetailPage` for `HoldingValuationChart` |
 | `statsApi.ts` | `/api/stats/*` including `tax-report` |

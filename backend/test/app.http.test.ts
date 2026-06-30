@@ -892,6 +892,111 @@ test("GET /api/auth/me returns current user", async () => {
   assert.equal(res.body.email, "http@test.local");
 });
 
+test("GET /api/portfolio/positions lists open holdings across accounts", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BROKERAGE",
+      name: "Portfolio Broker",
+      currency: "USD",
+      openingBalance: 0,
+    });
+  const accountId = accountRes.body.id;
+
+  const instrument = await prisma.instrument.create({
+    data: { instrumentType: "STOCK", symbol: "PORT1", exchange: "TEST", currency: "USD" },
+  });
+
+  const holdingRes = await request(app)
+    .post(`/api/accounts/${accountId}/holdings`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ instrumentId: instrument.id });
+  assert.equal(holdingRes.status, 201);
+
+  await request(app)
+    .post(`/api/holdings/${holdingRes.body.id}/lots`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      side: "BUY",
+      quantity: 2,
+      pricePerUnit: 10,
+      currency: "USD",
+      tradeDate: "2025-01-10T12:00:00.000Z",
+    });
+
+  const res = await request(app)
+    .get("/api/portfolio/positions")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  assert.equal(res.body.positions.length, 1);
+  assert.equal(res.body.positions[0].accountName, "Portfolio Broker");
+  assert.equal(res.body.positions[0].quantity, 2);
+  assert.equal(res.body.positions[0].assetBucket, "stock_market");
+});
+
+test("GET /api/portfolio/positions filters by accountId", async () => {
+  const { token } = await createUserAndToken();
+  const a1 = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountType: "BROKERAGE", name: "A1", currency: "PLN", openingBalance: 0 });
+  const a2 = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountType: "BROKERAGE", name: "A2", currency: "PLN", openingBalance: 0 });
+
+  const inst = await prisma.instrument.create({
+    data: { instrumentType: "ETF", symbol: "PFETF", exchange: "TEST", currency: "PLN" },
+  });
+
+  const h1 = await request(app)
+    .post(`/api/accounts/${a1.body.id}/holdings`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ instrumentId: inst.id });
+  await request(app)
+    .post(`/api/holdings/${h1.body.id}/lots`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      side: "BUY",
+      quantity: 1,
+      pricePerUnit: 100,
+      currency: "PLN",
+      tradeDate: "2025-02-01T12:00:00.000Z",
+    });
+
+  const h2 = await request(app)
+    .post(`/api/accounts/${a2.body.id}/holdings`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ instrumentId: inst.id });
+  await request(app)
+    .post(`/api/holdings/${h2.body.id}/lots`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      side: "BUY",
+      quantity: 3,
+      pricePerUnit: 100,
+      currency: "PLN",
+      tradeDate: "2025-02-01T12:00:00.000Z",
+    });
+
+  const filtered = await request(app)
+    .get(`/api/portfolio/positions?accountId=${a1.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(filtered.status, 200);
+  assert.equal(filtered.body.positions.length, 1);
+  assert.equal(filtered.body.positions[0].quantity, 1);
+});
+
+test("GET /api/portfolio/positions rejects invalid assetBucket", async () => {
+  const { token } = await createUserAndToken();
+  const res = await request(app)
+    .get("/api/portfolio/positions?assetBucket=invalid")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 400);
+});
+
 test("GET /api/instruments lists and searches", async () => {
   const { token } = await createUserAndToken();
   await prisma.instrument.create({

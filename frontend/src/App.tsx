@@ -13,6 +13,7 @@ import { HoldingDetailPage } from "./pages/HoldingDetailPage";
 import { TaxReportPage } from "./pages/TaxReportPage";
 import { TransactionsListPage } from "./pages/TransactionsListPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { PortfolioPage } from "./pages/PortfolioPage";
 import { PlaceholderPage } from "./pages/PlaceholderPage";
 import { useAuth } from "./state/auth";
 
@@ -35,15 +36,7 @@ function App() {
               />
             }
           />
-          <Route
-            path="/portfolio"
-            element={
-              <PlaceholderPage
-                title="Portfolio"
-                description="Cross-account holdings view coming soon (FR-008)."
-              />
-            }
-          />
+          <Route path="/portfolio" element={<PortfolioPage />} />
           <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/accounts/:id" element={<AccountDetailPage />} />
           <Route path="/accounts/:id/holdings/:holdingId" element={<HoldingDetailPage />} />

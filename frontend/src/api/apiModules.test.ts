@@ -58,6 +58,7 @@ import {
 } from './statsApi'
 import { fetchMarketDataStatus, triggerMarketSync } from './marketDataApi'
 import { importBrokerTrades } from './importApi'
+import { fetchPortfolioPositions } from './portfolioApi'
 
 describe('API modules', () => {
   beforeEach(() => {
@@ -306,6 +307,13 @@ describe('API modules', () => {
         filename: undefined,
         dryRun: true,
       },
+    )
+  })
+
+  it('portfolioApi calls correct endpoints', async () => {
+    await fetchPortfolioPositions({ accountId: 2, instrumentType: 'STOCK', assetBucket: 'stock_market' })
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/portfolio/positions?accountId=2&instrumentType=STOCK&assetBucket=stock_market',
     )
   })
 })

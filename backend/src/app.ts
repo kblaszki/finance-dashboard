@@ -53,6 +53,7 @@ import { createAuthRouter } from "./routes/authRoutes";
 import { createAccountsRouter } from "./routes/accountsRoutes";
 import { createInstrumentsRouter } from "./routes/instrumentsRoutes";
 import { createHoldingsRouter } from "./routes/holdingsRoutes";
+import { createPortfolioRouter } from "./routes/portfolioRoutes";
 import { createMarketDataRouter } from "./routes/marketDataRoutes";
 import { createImportRouter } from "./routes/importRoutes";
 import { handleRouteError } from "./routes/httpSupport";
@@ -186,6 +187,15 @@ app.use(
     serializeHoldingLot,
     transactionDateFilter,
     toNumber,
+  }),
+);
+
+app.use(
+  createPortfolioRouter({
+    prisma,
+    requireAuth,
+    uid,
+    getFxRatesPlnPerUnit,
   }),
 );
 

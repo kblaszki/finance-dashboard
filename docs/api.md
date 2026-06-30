@@ -71,6 +71,12 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 | DELETE | `/api/holding-lots/:id` | Yes | Delete lot; syncs holding quantity |
 | GET | `/api/accounts/:accountId/holdings/:instrumentId/valuations` | Yes | Position value history |
 
+## Portfolio
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/portfolio/positions` | Yes | Cross-account open positions; optional `accountId`, `instrumentType`, `assetBucket` filters |
+
 ## Stats
 
 | Method | Path | Auth | Description |
