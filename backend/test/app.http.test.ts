@@ -1496,6 +1496,162 @@ test("GET /api/stats/average-holding-return returns value-weighted average", asy
   assert.ok(Math.abs(res.body.averageReturnPct - 10) < 0.01);
 });
 
+test("GET /api/asset-trades lists buy and sell lots", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BROKERAGE",
+      name: "Trade Broker",
+      currency: "PLN",
+      openingBalance: 10000,
+    });
+  const accountId = accountRes.body.id;
+
+  const instrument = await prisma.instrument.create({
+    data: { instrumentType: "STOCK", symbol: "TRD1", exchange: "TEST", currency: "PLN" },
+  });
+
+  const createRes = await request(app)
+    .post("/api/asset-trades")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      instrumentId: instrument.id,
+      side: "BUY",
+      quantity: 5,
+      pricePerUnit: 20,
+      currency: "PLN",
+      tradeDate: "2025-03-01T12:00:00.000Z",
+    });
+  assert.equal(createRes.status, 201);
+  assert.equal(createRes.body.side, "BUY");
+  assert.equal(createRes.body.instrument.symbol, "TRD1");
+
+  const listRes = await request(app)
+    .get(`/api/asset-trades?accountId=${accountId}&from=2025-03-01&to=2025-03-31`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(listRes.status, 200);
+  assert.equal(listRes.body.length, 1);
+  assert.equal(listRes.body[0].quantity, 5);
+});
+
+test("GET /api/asset-trades filters by instrumentId", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountType: "BROKERAGE", name: "Filter Broker", currency: "PLN", openingBalance: 5000 });
+  const accountId = accountRes.body.id;
+
+  const inst1 = await prisma.instrument.create({
+    data: { instrumentType: "STOCK", symbol: "F1", exchange: "TEST", currency: "PLN" },
+  });
+  const inst2 = await prisma.instrument.create({
+    data: { instrumentType: "ETF", symbol: "F2", exchange: "TEST", currency: "PLN" },
+  });
+
+  for (const instrumentId of [inst1.id, inst2.id]) {
+    await request(app)
+      .post("/api/asset-trades")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        accountId,
+        instrumentId,
+        side: "BUY",
+        quantity: 1,
+        pricePerUnit: 10,
+        currency: "PLN",
+        tradeDate: "2025-04-10T12:00:00.000Z",
+      });
+  }
+
+  const res = await request(app)
+    .get(`/api/asset-trades?instrumentId=${inst2.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  assert.equal(res.body.length, 1);
+  assert.equal(res.body[0].instrumentId, inst2.id);
+});
+
+test("POST /api/asset-trades rejects non-brokerage account", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BANK",
+      name: "Bank",
+      currency: "PLN",
+      openingBalance: 1000,
+    });
+  const instrument = await prisma.instrument.create({
+    data: { instrumentType: "STOCK", symbol: "BANKX", exchange: "TEST", currency: "PLN" },
+  });
+
+  const res = await request(app)
+    .post("/api/asset-trades")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId: accountRes.body.id,
+      instrumentId: instrument.id,
+      side: "BUY",
+      quantity: 1,
+      pricePerUnit: 10,
+      currency: "PLN",
+      tradeDate: "2025-03-01T12:00:00.000Z",
+    });
+  assert.equal(res.status, 400);
+});
+
+test("POST /api/asset-trades rejects invalid side", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountType: "BROKERAGE", name: "Side Broker", currency: "PLN", openingBalance: 0 });
+  const instrument = await prisma.instrument.create({
+    data: { instrumentType: "STOCK", symbol: "SIDE1", exchange: "TEST", currency: "PLN" },
+  });
+
+  const res = await request(app)
+    .post("/api/asset-trades")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId: accountRes.body.id,
+      instrumentId: instrument.id,
+      side: "HOLD",
+      quantity: 1,
+      pricePerUnit: 10,
+      currency: "PLN",
+      tradeDate: "2025-03-01T12:00:00.000Z",
+    });
+  assert.equal(res.status, 400);
+});
+
+test("POST /api/asset-trades rejects unknown instrument", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountType: "BROKERAGE", name: "Inst Broker", currency: "PLN", openingBalance: 0 });
+
+  const res = await request(app)
+    .post("/api/asset-trades")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId: accountRes.body.id,
+      instrumentId: 999999,
+      side: "BUY",
+      quantity: 1,
+      pricePerUnit: 10,
+      currency: "PLN",
+      tradeDate: "2025-03-01T12:00:00.000Z",
+    });
+  assert.equal(res.status, 404);
+});
+
 test("GET /api/stats/benchmark-comparison requires benchmark", async () => {
   const { token } = await createUserAndToken();
   const res = await request(app)

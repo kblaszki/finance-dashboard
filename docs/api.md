@@ -76,6 +76,8 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/api/portfolio/positions` | Yes | Cross-account open positions; optional `accountId`, `instrumentType`, `assetBucket` filters |
+| GET | `/api/asset-trades` | Yes | FR-007 buy/sell list; optional `from`, `to`, `accountId`, `instrumentId` |
+| POST | `/api/asset-trades` | Yes | Create buy/sell; body `accountId`, `instrumentId`, `side`, `quantity`, `pricePerUnit` or `totalPrice`, `currency?`, `tradeDate` |
 
 ## Stats
 

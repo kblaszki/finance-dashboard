@@ -60,6 +60,7 @@ import {
 import { fetchMarketDataStatus, triggerMarketSync } from './marketDataApi'
 import { importBrokerTrades } from './importApi'
 import { fetchPortfolioPositions } from './portfolioApi'
+import { createAssetTrade, fetchAssetTrades } from './assetTradesApi'
 
 describe('API modules', () => {
   beforeEach(() => {
@@ -319,5 +320,31 @@ describe('API modules', () => {
     expect(apiClient.get).toHaveBeenCalledWith(
       '/api/portfolio/positions?accountId=2&instrumentType=STOCK&assetBucket=stock_market',
     )
+  })
+
+  it('assetTradesApi calls correct endpoints', async () => {
+    await fetchAssetTrades({ from: '2025-01-01', to: '2025-01-31', accountId: 3, instrumentId: 9 })
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/asset-trades?from=2025-01-01&to=2025-01-31&accountId=3&instrumentId=9',
+    )
+
+    await createAssetTrade({
+      accountId: 3,
+      instrumentId: 9,
+      side: 'BUY',
+      quantity: 2,
+      pricePerUnit: 50,
+      currency: 'PLN',
+      tradeDate: '2025-02-01T00:00:00.000Z',
+    })
+    expect(apiClient.post).toHaveBeenCalledWith('/api/asset-trades', {
+      accountId: 3,
+      instrumentId: 9,
+      side: 'BUY',
+      quantity: 2,
+      pricePerUnit: 50,
+      currency: 'PLN',
+      tradeDate: '2025-02-01T00:00:00.000Z',
+    })
   })
 })

@@ -1,5 +1,5 @@
 import { useSearchParams } from 'react-router-dom'
-import { TransactionTable } from '../components/TransactionTable'
+import { AssetTradesTable } from '../components/AssetTradesTable'
 
 export function TransactionsListPage() {
   const [params] = useSearchParams()
@@ -9,8 +9,12 @@ export function TransactionsListPage() {
 
   return (
     <div className="page">
-      <h1 className="page-title">Transactions</h1>
-      <TransactionTable accountId={validAccountId} showAccountColumn={!validAccountId} />
+      <h1 className="page-title">Asset trades</h1>
+      <p className="muted page-lead">
+        Buy and sell transactions for stocks, ETFs, and other brokerage holdings. Cash transfers and
+        income are managed on each account page.
+      </p>
+      <AssetTradesTable accountId={validAccountId} />
     </div>
   )
 }

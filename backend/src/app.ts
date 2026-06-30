@@ -54,6 +54,7 @@ import { createAccountsRouter } from "./routes/accountsRoutes";
 import { createInstrumentsRouter } from "./routes/instrumentsRoutes";
 import { createHoldingsRouter } from "./routes/holdingsRoutes";
 import { createPortfolioRouter } from "./routes/portfolioRoutes";
+import { createAssetTradesRouter } from "./routes/assetTradesRoutes";
 import { createMarketDataRouter } from "./routes/marketDataRoutes";
 import { createImportRouter } from "./routes/importRoutes";
 import { handleRouteError } from "./routes/httpSupport";
@@ -196,6 +197,24 @@ app.use(
     requireAuth,
     uid,
     getFxRatesPlnPerUnit,
+  }),
+);
+
+app.use(
+  createAssetTradesRouter({
+    prisma,
+    requireAuth,
+    uid,
+    normalizeCurrency,
+    parseDateBody,
+    isValidLotSide,
+    transactionDateFilter,
+    getAccountForUser,
+    resolveLotPrice,
+    getFxRatesPlnPerUnit,
+    recomputeAccountValuationsFrom,
+    serializeHoldingLot,
+    toNumber,
   }),
 );
 

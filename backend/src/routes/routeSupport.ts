@@ -120,12 +120,18 @@ export function serializeHoldingLot(l: {
       exchange: string | null;
       currency: string;
     };
+    account?: {
+      id: number;
+      name: string;
+      currency: string;
+    };
   };
 }) {
   return {
     id: l.id,
     holdingId: l.holdingId,
     accountId: l.holding?.accountId,
+    accountName: l.holding?.account?.name,
     instrumentId: l.holding?.instrumentId,
     side: l.side,
     quantity: toNumber(l.quantity),

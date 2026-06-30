@@ -5,6 +5,7 @@ export type HoldingLot = {
   id: number;
   holdingId: number;
   accountId?: number;
+  accountName?: string;
   instrumentId?: number;
   side: "BUY" | "SELL";
   quantity: number;
