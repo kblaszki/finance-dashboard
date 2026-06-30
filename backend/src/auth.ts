@@ -22,6 +22,20 @@ export function validatePassword(password: unknown): string | null {
   return null;
 }
 
+export function validateUsername(username: unknown): string | null {
+  const u = String(username ?? "").trim();
+  if (u.length < 3 || u.length > 32) return "Username must be 3–32 characters";
+  if (!/^[a-zA-Z0-9_]+$/.test(u)) {
+    return "Username may only contain letters, numbers, and underscores";
+  }
+  return null;
+}
+
+export function parseLoginIdentifier(body: { login?: unknown; email?: unknown }): string {
+  const raw = body.login ?? body.email;
+  return String(raw ?? "").trim();
+}
+
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10);
 }

@@ -5,7 +5,7 @@ import { useAuth } from "../state/auth";
 
 export function LoginPage() {
   const { login } = useAuth();
-  const [email, setEmail] = useState("");
+  const [loginId, setLoginId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -22,7 +22,7 @@ export function LoginPage() {
     setError(null);
     setSubmitting(true);
     try {
-      await login(email, password);
+      await login(loginId, password);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
@@ -36,13 +36,13 @@ export function LoginPage() {
         <h1 className="page-title">Log in</h1>
         <form className="auth-form" onSubmit={handleSubmit}>
           <label>
-            Email
+            Email or username
             <input
-              type="email"
-              autoComplete="email"
+              type="text"
+              autoComplete="username"
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={loginId}
+              onChange={(e) => setLoginId(e.target.value)}
             />
           </label>
           <label>
@@ -61,6 +61,9 @@ export function LoginPage() {
             {submitting ? "Logging in…" : "Log in"}
           </button>
         </form>
+        <p className="auth-switch">
+          <Link to="/password-reset">Forgot password?</Link>
+        </p>
         {allowRegister && (
           <p className="auth-switch">
             Don&apos;t have an account? <Link to="/register">Sign up</Link>

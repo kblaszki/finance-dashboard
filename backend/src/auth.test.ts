@@ -3,8 +3,10 @@ import assert from "node:assert/strict";
 import {
   getJwtSecret,
   normalizeEmail,
+  parseLoginIdentifier,
   signToken,
   validatePassword,
+  validateUsername,
   verifyToken,
 } from "./auth";
 
@@ -17,6 +19,17 @@ test("normalizeEmail trims and lowercases", () => {
 test("validatePassword accepts long passwords and rejects short ones", () => {
   assert.equal(validatePassword("password123"), null);
   assert.match(validatePassword("short")!, /8 characters/);
+});
+
+test("validateUsername enforces length and charset", () => {
+  assert.match(validateUsername("ab")!, /3–32/);
+  assert.equal(validateUsername("valid_user1"), null);
+  assert.match(validateUsername("bad name")!, /letters/);
+});
+
+test("parseLoginIdentifier prefers login over email field", () => {
+  assert.equal(parseLoginIdentifier({ login: "  alice ", email: "b@c.d" }), "alice");
+  assert.equal(parseLoginIdentifier({ email: "b@c.d" }), "b@c.d");
 });
 
 test("verifyToken returns null for invalid token", () => {

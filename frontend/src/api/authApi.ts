@@ -33,14 +33,29 @@ export async function register(
   return data;
 }
 
-export async function login(email: string, password: string): Promise<AuthResponse> {
-  const data = await apiClient.post<AuthResponse>("/api/auth/login", { email, password });
+export async function login(login: string, password: string): Promise<AuthResponse> {
+  const data = await apiClient.post<AuthResponse>("/api/auth/login", { login, password });
   setAuthToken(data.token);
   return data;
 }
 
 export async function fetchMe(): Promise<AuthUser> {
   return apiClient.get<AuthUser>("/api/auth/me");
+}
+
+export async function updateProfile(username: string): Promise<AuthUser> {
+  return apiClient.patch<AuthUser>("/api/auth/profile", { username });
+}
+
+export async function updatePassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<AuthUser> {
+  return apiClient.patch<AuthUser>("/api/auth/password", { currentPassword, newPassword });
+}
+
+export async function updateEmail(email: string, currentPassword: string): Promise<AuthUser> {
+  return apiClient.patch<AuthUser>("/api/auth/email", { email, currentPassword });
 }
 
 export function logoutLocal() {

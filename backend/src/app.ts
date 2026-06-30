@@ -11,6 +11,8 @@ import {
   requireAuth,
   signToken,
   validatePassword,
+  validateUsername,
+  parseLoginIdentifier,
   verifyPassword,
 } from "./auth";
 import { isValidLotSide, resolveLotPrice } from "./holdingLot";
@@ -104,6 +106,8 @@ app.use(
     uid,
     normalizeEmail,
     validatePassword,
+    validateUsername,
+    parseLoginIdentifier,
     hashPassword,
     verifyPassword,
     signToken,

@@ -5,13 +5,14 @@ vi.mock('./client', () => ({
     get: vi.fn(),
     post: vi.fn(),
     put: vi.fn(),
+    patch: vi.fn(),
     delete: vi.fn(),
   },
   setAuthToken: vi.fn(),
 }))
 
 import { apiClient, setAuthToken } from './client'
-import { register, login, fetchMe, logoutLocal, fetchAuthConfig } from './authApi'
+import { register, login, fetchMe, logoutLocal, fetchAuthConfig, updateProfile, updatePassword, updateEmail } from './authApi'
 import {
   fetchAccounts,
   fetchAccount,
@@ -63,6 +64,7 @@ describe('API modules', () => {
     vi.mocked(apiClient.get).mockResolvedValue({})
     vi.mocked(apiClient.post).mockResolvedValue({ token: 't', user: {} })
     vi.mocked(apiClient.put).mockResolvedValue({})
+    vi.mocked(apiClient.patch).mockResolvedValue({})
     vi.mocked(apiClient.delete).mockResolvedValue(undefined)
   })
 
@@ -83,12 +85,27 @@ describe('API modules', () => {
 
     await login('a@b.c', 'pass')
     expect(apiClient.post).toHaveBeenCalledWith('/api/auth/login', {
-      email: 'a@b.c',
+      login: 'a@b.c',
       password: 'pass',
     })
 
     await fetchMe()
     expect(apiClient.get).toHaveBeenCalledWith('/api/auth/me')
+
+    await updateProfile('newname')
+    expect(apiClient.patch).toHaveBeenCalledWith('/api/auth/profile', { username: 'newname' })
+
+    await updatePassword('old', 'newpass99')
+    expect(apiClient.patch).toHaveBeenCalledWith('/api/auth/password', {
+      currentPassword: 'old',
+      newPassword: 'newpass99',
+    })
+
+    await updateEmail('x@y.z', 'old')
+    expect(apiClient.patch).toHaveBeenCalledWith('/api/auth/email', {
+      email: 'x@y.z',
+      currentPassword: 'old',
+    })
 
     logoutLocal()
     expect(setAuthToken).toHaveBeenCalledWith(null)

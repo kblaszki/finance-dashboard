@@ -6,14 +6,20 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 
 | Path | Page | Key components |
 |------|------|----------------|
-| `/login` | Login | `pages/LoginPage.tsx` |
+| `/` | Landing (guests) | `pages/LandingPage.tsx` — marketing; authed users redirect to `/dashboard` |
+| `/login` | Login | `pages/LoginPage.tsx` — email or username |
 | `/register` | Register | `pages/RegisterPage.tsx` (username) |
-| `/` | Dashboard | `DashboardPage` — Portfolio / Budget tabs, `NetWorthSection`, portfolio & budget charts |
+| `/password-reset` | Password reset stub | `pages/PasswordResetPage.tsx` |
+| `/dashboard` | Dashboard | `DashboardPage` — Portfolio / Budget tabs, `NetWorthSection`, portfolio & budget charts |
+| `/statistics` | Statistics (placeholder) | `PlaceholderPage` — FR-003/004 pending |
+| `/portfolio` | Portfolio (placeholder) | `PlaceholderPage` — FR-008 pending |
 | `/accounts` | Accounts | `ManagedAccountsList` |
 | `/accounts/:id` | Account detail | `AccountDetailPage`, `BrokerImportForm` (BROKERAGE), holdings, `ManualAccountRevalueForm` (MANUAL), `TransactionTable` |
 | `/accounts/:id/holdings/:holdingId` | Holding detail | `HoldingDetailPage`, `HoldingValuationChart`, `InstrumentValuationForm`, `HoldingSplitForm`, `HoldingLotsTable` |
 | `/transactions` | Transactions | `TransactionsListPage` → `TransactionTable` (`?accountId=` filter) |
+| `/transfers` | Transfers (placeholder) | `PlaceholderPage` — FR-011 pending |
 | `/tax` | PL tax report | `TaxReportPage` — FIFO gains, Belka estimate, CSV export |
+| `/settings` | Account settings | `SettingsPage` — username, email, password |
 
 Protected shell: `ProtectedRoute` → `AppShell`.
 

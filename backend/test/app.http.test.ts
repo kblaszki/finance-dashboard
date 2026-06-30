@@ -42,6 +42,16 @@ async function createUserAndToken(): Promise<{ token: string; userId: number }> 
   return { token: res.body.token, userId: user.id };
 }
 
+async function registerAndLogin(
+  email: string,
+  username: string,
+  password: string,
+): Promise<string> {
+  const reg = await request(app).post("/api/auth/register").send({ email, username, password });
+  assert.equal(reg.status, 201);
+  return reg.body.token as string;
+}
+
 test("GET /api/accounts returns 401 without token", async () => {
   const res = await request(app).get("/api/accounts");
   assert.equal(res.status, 401);
@@ -785,6 +795,94 @@ test("POST /api/auth/login rejects wrong password", async () => {
     password: "wrongpassword",
   });
   assert.equal(res.status, 401);
+});
+
+test("POST /api/auth/login accepts username identifier", async () => {
+  await request(app).post("/api/auth/register").send({
+    email: "userlogin@test.local",
+    username: "MyUser99",
+    password: "password123",
+  });
+  const res = await request(app).post("/api/auth/login").send({
+    login: "myuser99",
+    password: "password123",
+  });
+  assert.equal(res.status, 200);
+  assert.equal(res.body.user.username, "MyUser99");
+});
+
+test("POST /api/auth/login requires identifier", async () => {
+  const res = await request(app).post("/api/auth/login").send({ password: "password123" });
+  assert.equal(res.status, 400);
+});
+
+test("PATCH /api/auth/profile rejects invalid username", async () => {
+  const token = await registerAndLogin("badname@test.local", "badnameuser", "password123");
+  const res = await request(app)
+    .patch("/api/auth/profile")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ username: "x" });
+  assert.equal(res.status, 400);
+});
+
+test("PATCH /api/auth/password rejects short new password", async () => {
+  const token = await registerAndLogin("shortpwd@test.local", "shortpwduser", "password123");
+  const res = await request(app)
+    .patch("/api/auth/password")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ currentPassword: "password123", newPassword: "short" });
+  assert.equal(res.status, 400);
+});
+
+test("PATCH /api/auth/profile updates username", async () => {
+  const token = await registerAndLogin("profile@test.local", "profileuser", "password123");
+  const res = await request(app)
+    .patch("/api/auth/profile")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ username: "renamed_user" });
+  assert.equal(res.status, 200);
+  assert.equal(res.body.username, "renamed_user");
+});
+
+test("PATCH /api/auth/password requires current password", async () => {
+  const token = await registerAndLogin("pwd@test.local", "pwduser", "password123");
+  const bad = await request(app)
+    .patch("/api/auth/password")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ currentPassword: "wrong", newPassword: "newpassword99" });
+  assert.equal(bad.status, 401);
+
+  const ok = await request(app)
+    .patch("/api/auth/password")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ currentPassword: "password123", newPassword: "newpassword99" });
+  assert.equal(ok.status, 200);
+
+  const loginOld = await request(app)
+    .post("/api/auth/login")
+    .send({ login: "pwd@test.local", password: "password123" });
+  assert.equal(loginOld.status, 401);
+
+  const loginNew = await request(app)
+    .post("/api/auth/login")
+    .send({ login: "pwd@test.local", password: "newpassword99" });
+  assert.equal(loginNew.status, 200);
+});
+
+test("PATCH /api/auth/email updates email with current password", async () => {
+  const token = await registerAndLogin("oldmail@test.local", "mailuser", "password123");
+  const bad = await request(app)
+    .patch("/api/auth/email")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ email: "newmail@test.local", currentPassword: "wrong" });
+  assert.equal(bad.status, 401);
+
+  const ok = await request(app)
+    .patch("/api/auth/email")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ email: "newmail@test.local", currentPassword: "password123" });
+  assert.equal(ok.status, 200);
+  assert.equal(ok.body.email, "newmail@test.local");
 });
 
 test("GET /api/auth/me returns current user", async () => {

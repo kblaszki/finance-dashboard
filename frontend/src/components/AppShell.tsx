@@ -1,22 +1,22 @@
-import { NavLink, Outlet } from 'react-router-dom'
-import { CurrencySelect } from './CurrencySelect'
-import { ThemeToggle } from './ThemeToggle'
-import { useAuth } from '../state/auth'
+import { NavLink, Outlet } from "react-router-dom";
+import { CurrencySelect } from "./CurrencySelect";
+import { ThemeToggle } from "./ThemeToggle";
+import { useAuth } from "../state/auth";
 
 function navLinkClass({ isActive }: { isActive: boolean }) {
-  return isActive ? 'active' : undefined
+  return isActive ? "active" : undefined;
 }
 
 export function AppShell() {
-  const { user, logout } = useAuth()
+  const { user, logout } = useAuth();
 
   return (
     <div className="app-root">
       <aside className="app-sidebar">
         <h1 className="app-logo">Finance Dashboard</h1>
         <div className="sidebar-user">
-          <span className="sidebar-user-email" title={user?.email ?? ''}>
-            {user?.email}
+          <span className="sidebar-user-email" title={user?.email ?? ""}>
+            {user?.username ?? user?.email}
           </span>
           <button type="button" className="theme-toggle" onClick={logout}>
             Log out
@@ -27,8 +27,14 @@ export function AppShell() {
           <ThemeToggle />
         </div>
         <nav className="app-nav">
-          <NavLink to="/" end className={navLinkClass}>
+          <NavLink to="/dashboard" className={navLinkClass}>
             Dashboard
+          </NavLink>
+          <NavLink to="/statistics" className={navLinkClass}>
+            Statistics
+          </NavLink>
+          <NavLink to="/portfolio" className={navLinkClass}>
+            Portfolio
           </NavLink>
           <NavLink to="/accounts" className={navLinkClass}>
             Accounts
@@ -36,8 +42,14 @@ export function AppShell() {
           <NavLink to="/transactions" className={navLinkClass}>
             Transactions
           </NavLink>
+          <NavLink to="/transfers" className={navLinkClass}>
+            Transfers
+          </NavLink>
           <NavLink to="/tax" className={navLinkClass}>
             Tax (PL)
+          </NavLink>
+          <NavLink to="/settings" className={navLinkClass}>
+            Settings
           </NavLink>
         </nav>
       </aside>
@@ -45,5 +57,5 @@ export function AppShell() {
         <Outlet />
       </main>
     </div>
-  )
+  );
 }

@@ -1,50 +1,99 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
-import './App.css'
-import { ProtectedRoute } from './components/ProtectedRoute'
-import { AppShell } from './components/AppShell'
-import { LoginPage } from './pages/LoginPage'
-import { RegisterPage } from './pages/RegisterPage'
-import { DashboardPage } from './pages/DashboardPage'
-import { AccountsPage } from './pages/AccountsPage'
-import { AccountDetailPage } from './pages/AccountDetailPage'
-import { HoldingDetailPage } from './pages/HoldingDetailPage'
-import { TaxReportPage } from './pages/TaxReportPage'
-import { TransactionsListPage } from './pages/TransactionsListPage'
-import { useAuth } from './state/auth'
+import { Navigate, Route, Routes } from "react-router-dom";
+import "./App.css";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AppShell } from "./components/AppShell";
+import { LoginPage } from "./pages/LoginPage";
+import { RegisterPage } from "./pages/RegisterPage";
+import { LandingPage } from "./pages/LandingPage";
+import { PasswordResetPage } from "./pages/PasswordResetPage";
+import { DashboardPage } from "./pages/DashboardPage";
+import { AccountsPage } from "./pages/AccountsPage";
+import { AccountDetailPage } from "./pages/AccountDetailPage";
+import { HoldingDetailPage } from "./pages/HoldingDetailPage";
+import { TaxReportPage } from "./pages/TaxReportPage";
+import { TransactionsListPage } from "./pages/TransactionsListPage";
+import { SettingsPage } from "./pages/SettingsPage";
+import { PlaceholderPage } from "./pages/PlaceholderPage";
+import { useAuth } from "./state/auth";
 
 function App() {
   return (
     <Routes>
+      <Route path="/" element={<RootRoute />} />
       <Route path="/login" element={<GuestOnly><LoginPage /></GuestOnly>} />
       <Route path="/register" element={<GuestOnly><RegisterPage /></GuestOnly>} />
+      <Route path="/password-reset" element={<GuestOnly><PasswordResetPage /></GuestOnly>} />
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
-          <Route path="/" element={<DashboardPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route
+            path="/statistics"
+            element={
+              <PlaceholderPage
+                title="Statistics"
+                description="Income, expense, and net income charts will appear here (FR-003, FR-004)."
+              />
+            }
+          />
+          <Route
+            path="/portfolio"
+            element={
+              <PlaceholderPage
+                title="Portfolio"
+                description="Cross-account holdings view coming soon (FR-008)."
+              />
+            }
+          />
           <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/accounts/:id" element={<AccountDetailPage />} />
           <Route path="/accounts/:id/holdings/:holdingId" element={<HoldingDetailPage />} />
           <Route path="/transactions" element={<TransactionsListPage />} />
+          <Route
+            path="/transfers"
+            element={
+              <PlaceholderPage
+                title="Internal transfers"
+                description="Dedicated transfer form coming soon (FR-011)."
+              />
+            }
+          />
           <Route path="/tax" element={<TaxReportPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
-  )
+  );
 }
 
-function GuestOnly(props: { children: React.ReactNode }) {
-  const { user, loading } = useAuth()
+function RootRoute() {
+  const { user, loading } = useAuth();
   if (loading) {
     return (
       <div className="auth-page">
         <p className="loading-state">Loading…</p>
       </div>
-    )
+    );
   }
   if (user) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/dashboard" replace />;
   }
-  return props.children
+  return <LandingPage />;
 }
 
-export default App
+function GuestOnly(props: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="auth-page">
+        <p className="loading-state">Loading…</p>
+      </div>
+    );
+  }
+  if (user) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return props.children;
+}
+
+export default App;

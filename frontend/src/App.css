@@ -713,8 +713,84 @@ button:disabled {
   color: var(--color-accent);
 }
 
-.btn-secondary:disabled {
-  opacity: 0.6;
+.landing-page {
+  min-height: 100vh;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.landing-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.landing-logo {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.landing-nav {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.landing-nav a {
+  text-decoration: none;
+}
+
+.landing-main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: var(--space-xl) var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+.landing-hero {
+  padding: var(--space-xl);
+}
+
+.landing-title {
+  margin: 0 0 var(--space-md);
+  font-size: 1.75rem;
+}
+
+.landing-lead {
+  margin: 0 0 var(--space-lg);
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.landing-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.landing-cta a {
+  text-decoration: none;
+}
+
+.landing-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-md);
+}
+
+.landing-feature h3 {
+  margin: 0 0 var(--space-sm);
+  font-size: 1rem;
+}
+
+.landing-feature p {
+  margin: 0;
+  font-size: 0.9rem;
 }
 
 .transaction-edit-row td {

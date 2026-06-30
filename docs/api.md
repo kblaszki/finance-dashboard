@@ -9,8 +9,11 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | POST | `/api/auth/register` | No | `email`, `username`, `password` — returns 403 when `ALLOW_REGISTER=false` |
-| POST | `/api/auth/login` | No | `email`, `password` |
+| POST | `/api/auth/login` | No | `login` or `email` + `password` — username login supported (case-insensitive) |
 | GET | `/api/auth/me` | Yes | `{ id, email, username }` |
+| PATCH | `/api/auth/profile` | Yes | `{ username }` |
+| PATCH | `/api/auth/password` | Yes | `{ currentPassword, newPassword }` |
+| PATCH | `/api/auth/email` | Yes | `{ email, currentPassword }` |
 | GET | `/api/auth/config` | No | `{ allowRegister }` — frontend uses this to hide `/register` |
 
 ## Health
