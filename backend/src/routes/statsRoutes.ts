@@ -48,6 +48,7 @@ type StatsDeps = {
     total: number;
     currency: string;
     byAccountType: Record<string, number>;
+    byBucket: Array<{ bucket: string; value: number; pct: number }>;
     accounts: Array<{ id: number; name: string; accountType: string; value: number }>;
   }>;
 };

@@ -1,9 +1,23 @@
 import { apiClient } from "./client";
 
+export type NetWorthBucket =
+  | 'cash'
+  | 'stock_market'
+  | 'crypto'
+  | 'precious_metal_other'
+  | 'real_estate'
+
+export type NetWorthBucketRow = {
+  bucket: NetWorthBucket
+  value: number
+  pct: number
+}
+
 export type NetWorthStats = {
   total: number;
   currency: string;
   byAccountType: Record<string, number>;
+  byBucket: NetWorthBucketRow[];
   accounts: Array<{
     id: number;
     name: string;

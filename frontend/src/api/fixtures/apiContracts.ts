@@ -53,6 +53,13 @@ export const netWorthFixture: NetWorthStats = {
   total: 12000,
   currency: 'PLN',
   byAccountType: { BANK: 5000, BROKERAGE: 7000 },
+  byBucket: [
+    { bucket: 'cash', value: 5000, pct: 41.67 },
+    { bucket: 'stock_market', value: 7000, pct: 58.33 },
+    { bucket: 'crypto', value: 0, pct: 0 },
+    { bucket: 'precious_metal_other', value: 0, pct: 0 },
+    { bucket: 'real_estate', value: 0, pct: 0 },
+  ],
   accounts: [
     { id: 1, name: 'Bank', accountType: 'BANK', value: 5000 },
     { id: 2, name: 'Broker', accountType: 'BROKERAGE', value: 7000 },
@@ -255,6 +262,9 @@ function assertCashflowShape(value: CashflowStats): void {
 function assertNetWorthShape(value: NetWorthStats): void {
   if (typeof value.total !== 'number') throw new Error('netWorth.total')
   if (typeof value.byAccountType !== 'object') throw new Error('netWorth.byAccountType')
+  if (!Array.isArray(value.byBucket) || value.byBucket.length !== 5) {
+    throw new Error('netWorth.byBucket')
+  }
   if (!Array.isArray(value.accounts)) throw new Error('netWorth.accounts')
 }
 

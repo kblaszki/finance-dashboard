@@ -83,7 +83,7 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/api/stats/net-worth` | Yes | Net worth by account type; `currency` query converts each account value from its native currency via NBP rates (PLN base) |
+| GET | `/api/stats/net-worth` | Yes | Net worth with 5-bucket breakdown (FR-002); `currency` converts values via NBP rates |
 | GET | `/api/stats/average-holding-return` | Yes | FR-001 value-weighted average holding return; optional `currency` |
 | GET | `/api/stats/cashflow` | Yes | Period income/expense/net; `from`, `to`, optional `currency` converts transaction amounts from native account currency |
 | GET | `/api/stats/cashflow-history` | Yes | FR-004 monthly income/expense/net series; `from`, `to`, optional `currency` |

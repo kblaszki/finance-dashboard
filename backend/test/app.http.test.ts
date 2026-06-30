@@ -1244,6 +1244,9 @@ test("GET /api/stats/net-worth sums account values", async () => {
   assert.equal(res.body.currency, "PLN");
   assert.ok(res.body.total >= 2500);
   assert.ok(res.body.byAccountType.BANK >= 2500);
+  assert.ok(Array.isArray(res.body.byBucket));
+  assert.equal(res.body.byBucket.length, 5);
+  assert.ok(res.body.byBucket.some((row: { bucket: string }) => row.bucket === 'cash'));
 });
 
 test("GET /api/stats/cashflow requires date range", async () => {
