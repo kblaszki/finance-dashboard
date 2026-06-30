@@ -25,6 +25,7 @@ Token-aware index — use `@docs/...` for domain detail; do not duplicate [READM
 | Skill | Use when |
 |-------|----------|
 | [.cursor/skills/fullstack-architecture-review/SKILL.md](.cursor/skills/fullstack-architecture-review/SKILL.md) | Periodic fullstack architecture / practices audit; output is a prioritized remediation plan for delegation |
+| [.cursor/skills/mvp-scope-implementer/SKILL.md](.cursor/skills/mvp-scope-implementer/SKILL.md) | Implement MVP from local docs (`database/`, `mvp/scope.md`, `requirements/`) until scope is met; commits + tests + coverage per step |
 
 ## Recipes
 
