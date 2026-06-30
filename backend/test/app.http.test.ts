@@ -2352,6 +2352,63 @@ test("GET/POST /api/income-events supports CRUD (FR-024)", async () => {
   assert.equal(delRes.status, 204);
 });
 
+test("GET/POST /api/liabilities and net worth subtracts balance (FR-029)", async () => {
+  const { token } = await createUserAndToken();
+  const createRes = await request(app)
+    .post("/api/liabilities")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      name: "Mortgage",
+      liabilityType: "mortgage",
+      balance: 200000,
+      currency: "PLN",
+    });
+  assert.equal(createRes.status, 201);
+
+  const nwBefore = await request(app)
+    .get("/api/stats/net-worth?currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(nwBefore.status, 200);
+  assert.equal(nwBefore.body.totalLiabilities, 200000);
+
+  const delRes = await request(app)
+    .delete(`/api/liabilities/${createRes.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(delRes.status, 204);
+});
+
+test("POST /api/property-cash-flows on REAL_ESTATE account (FR-030)", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "REAL_ESTATE",
+      name: "Rental flat",
+      currency: "PLN",
+      openingBalance: 400000,
+    });
+
+  const flowRes = await request(app)
+    .post("/api/property-cash-flows")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId: accountRes.body.id,
+      flowType: "rent",
+      amount: 3000,
+      currency: "PLN",
+      date: "2026-05-01T12:00:00.000Z",
+    });
+  assert.equal(flowRes.status, 201);
+
+  const taxRes = await request(app)
+    .get("/api/stats/tax-report?year=2026&currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(taxRes.status, 200);
+  assert.equal(taxRes.body.rental.available, true);
+  assert.equal(taxRes.body.rental.rentalIncome, 3000);
+});
+
 test("POST /api/import/bank-transactions previews mBank CSV (FR-019)", async () => {
   const { token } = await createUserAndToken();
   const accountRes = await request(app)

@@ -135,10 +135,23 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
       const id = parseIdParam(req.params.id);
       const row = await getAccountForUser(prisma, uid(req), id);
       if (!row) return res.status(404).json({ error: "Account not found" });
-      const data: { name?: string; description?: string | null } = {};
+      const data: {
+        name?: string;
+        description?: string | null;
+        metalGrams?: number | null;
+      } = {};
       if (req.body?.name != null) data.name = String(req.body.name).trim();
       if (req.body?.description !== undefined) {
         data.description = req.body.description != null ? String(req.body.description) : null;
+      }
+      if (req.body?.metalGrams !== undefined) {
+        if (row.accountType !== "PRECIOUS_METAL") {
+          throw badRequest("metalGrams is only supported for PRECIOUS_METAL accounts");
+        }
+        data.metalGrams =
+          req.body.metalGrams == null
+            ? null
+            : parseFiniteNumber(req.body.metalGrams, "metalGrams", { min: 0 });
       }
       const updated = await prisma.account.update({ where: { id }, data });
       const totalBalance =

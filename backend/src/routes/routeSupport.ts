@@ -58,6 +58,7 @@ export function serializeAccount(
     cashBalance: unknown;
     openingBalance: unknown;
     openingCashAsOf: Date | null;
+    metalGrams?: unknown | null;
     description: string | null;
     createdAt: Date;
     updatedAt: Date;
@@ -73,6 +74,7 @@ export function serializeAccount(
     totalBalance: totalBalance ?? toNumber(a.cashBalance),
     openingBalance: toNumber(a.openingBalance),
     openingCashAsOf: a.openingCashAsOf?.toISOString() ?? null,
+    metalGrams: a.metalGrams != null ? toNumber(a.metalGrams) : null,
     description: a.description,
     createdAt: a.createdAt.toISOString(),
     updatedAt: a.updatedAt.toISOString(),

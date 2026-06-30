@@ -419,6 +419,22 @@ export async function computeTaxReport(
   );
   const pitZg = buildPitZgRows(incomeEvents, displayCurrency, plnPerUnit);
 
+  const propertyFlows = await prisma.propertyCashFlow.findMany({
+    where: {
+      userId,
+      occurredOn: { gte: start, lte: end },
+      account: { accountType: "REAL_ESTATE" },
+    },
+  });
+  let rentalIncome = 0;
+  let maintenanceCosts = 0;
+  for (const flow of propertyFlows) {
+    const amount = convertGain(toNumber(flow.amount), flow.currency, displayCurrency, plnPerUnit);
+    if (flow.flowType === "rent") rentalIncome += amount;
+    else if (flow.flowType === "maintenance") maintenanceCosts += amount;
+  }
+  const hasRentalData = propertyFlows.length > 0;
+
   const totals = aggregateRealizedAmounts(sellRows.map((r) => r.gainLoss));
 
   return {
@@ -446,10 +462,12 @@ export async function computeTaxReport(
           : "No derivative sells in this year.",
     },
     rental: {
-      available: false,
-      rentalIncome: 0,
-      maintenanceCosts: 0,
-      message: "Rental section requires real estate accounts (FR-030, Phase C).",
+      available: hasRentalData,
+      rentalIncome,
+      maintenanceCosts,
+      message: hasRentalData
+        ? "PIT-36 rental helper — net rent before tax method (FR-026)."
+        : "Add rental/maintenance flows on real estate accounts (FR-030).",
     },
   };
 }

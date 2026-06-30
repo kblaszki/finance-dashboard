@@ -79,12 +79,18 @@ import {
   deleteCategory,
 } from './categoriesApi'
 import { fetchBudgets, upsertBudget, deleteBudget } from './budgetsApi'
+import { fetchIncomeEvents, createIncomeEvent, updateIncomeEvent, deleteIncomeEvent } from './incomeEventsApi'
 import {
-  fetchIncomeEvents,
-  createIncomeEvent,
-  updateIncomeEvent,
-  deleteIncomeEvent,
-} from './incomeEventsApi'
+  fetchLiabilities,
+  createLiability,
+  updateLiability,
+  deleteLiability,
+} from './liabilitiesApi'
+import {
+  fetchPropertyCashFlows,
+  createPropertyCashFlow,
+  deletePropertyCashFlow,
+} from './propertyCashFlowsApi'
 
 describe('API modules', () => {
   beforeEach(() => {
@@ -505,5 +511,52 @@ describe('API modules', () => {
 
     await deleteIncomeEvent(4)
     expect(apiClient.delete).toHaveBeenCalledWith('/api/income-events/4')
+  })
+
+  it('liabilitiesApi calls correct endpoints', async () => {
+    await fetchLiabilities()
+    expect(apiClient.get).toHaveBeenCalledWith('/api/liabilities')
+
+    await createLiability({
+      name: 'Mortgage',
+      liabilityType: 'mortgage',
+      balance: 100000,
+      currency: 'PLN',
+    })
+    expect(apiClient.post).toHaveBeenCalledWith('/api/liabilities', {
+      name: 'Mortgage',
+      liabilityType: 'mortgage',
+      balance: 100000,
+      currency: 'PLN',
+    })
+
+    await updateLiability(2, { balance: 90000 })
+    expect(apiClient.put).toHaveBeenCalledWith('/api/liabilities/2', { balance: 90000 })
+
+    await deleteLiability(2)
+    expect(apiClient.delete).toHaveBeenCalledWith('/api/liabilities/2')
+  })
+
+  it('propertyCashFlowsApi calls correct endpoints', async () => {
+    await fetchPropertyCashFlows({ accountId: 5 })
+    expect(apiClient.get).toHaveBeenCalledWith('/api/property-cash-flows?accountId=5')
+
+    await createPropertyCashFlow({
+      accountId: 5,
+      flowType: 'rent',
+      amount: 2000,
+      currency: 'PLN',
+      date: '2026-06-01',
+    })
+    expect(apiClient.post).toHaveBeenCalledWith('/api/property-cash-flows', {
+      accountId: 5,
+      flowType: 'rent',
+      amount: 2000,
+      currency: 'PLN',
+      date: '2026-06-01',
+    })
+
+    await deletePropertyCashFlow(8)
+    expect(apiClient.delete).toHaveBeenCalledWith('/api/property-cash-flows/8')
   })
 })

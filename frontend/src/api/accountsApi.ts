@@ -18,6 +18,7 @@ export type Account = {
   totalBalance: number;
   openingBalance: number;
   openingCashAsOf: string | null;
+  metalGrams: number | null;
   description: string | null;
   createdAt: string;
   updatedAt: string;
@@ -80,7 +81,7 @@ export async function createAccount(input: AccountInput): Promise<Account> {
 
 export async function updateAccount(
   id: number,
-  input: Partial<Pick<AccountInput, "name" | "description">>,
+  input: Partial<Pick<AccountInput, "name" | "description">> & { metalGrams?: number | null },
 ): Promise<Account> {
   return apiClient.put<Account>(`/api/accounts/${id}`, input);
 }

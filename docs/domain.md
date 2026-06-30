@@ -84,6 +84,16 @@ User-scoped `Category` tree (`parentId`, `sortOrder`). Defaults seeded on regist
 
 `Instrument.pitZgCountry` — ISO country for PIT/ZG helper (FR-028); default `PL`.
 
+## Liabilities (FR-029, DATA-016)
+
+`Liability` — `mortgage`, `loan`, `credit`, `tax_provision`, `tax_advance`; optional `accountId` link. Net worth = total assets − sum(liabilities).
+
+## Property cash flows (FR-030, DATA-017)
+
+`PropertyCashFlow` on `REAL_ESTATE` accounts — `rent`, `maintenance`, `other`. Feeds FR-026 rental section in tax report.
+
+`Account.metalGrams` — optional grams on `PRECIOUS_METAL` accounts (FR-032).
+
 ## Related docs
 
 - [api.md](api.md) — REST surface

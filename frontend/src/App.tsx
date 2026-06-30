@@ -21,6 +21,7 @@ import { CategoriesPage } from "./pages/CategoriesPage";
 import { BudgetsPage } from "./pages/BudgetsPage";
 import { ImportPage } from "./pages/ImportPage";
 import { IncomeEventsPage } from "./pages/IncomeEventsPage";
+import { LiabilitiesPage } from "./pages/LiabilitiesPage";
 import { useAuth } from "./state/auth";
 
 function App() {
@@ -45,6 +46,7 @@ function App() {
           <Route path="/budgets" element={<BudgetsPage />} />
           <Route path="/import" element={<ImportPage />} />
           <Route path="/income-events" element={<IncomeEventsPage />} />
+          <Route path="/liabilities" element={<LiabilitiesPage />} />
           <Route path="/transfers" element={<TransfersPage />} />
           <Route path="/tax" element={<TaxReportPage />} />
           <Route path="/tax/:year" element={<TaxReportPage />} />

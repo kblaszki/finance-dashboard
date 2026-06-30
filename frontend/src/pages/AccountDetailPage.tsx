@@ -20,6 +20,8 @@ import { AccountStatsCards } from '../components/AccountStatsCards'
 import { BrokerImportForm } from '../components/BrokerImportForm'
 import { InstrumentPicker } from '../components/InstrumentPicker'
 import { ManualAccountRevalueForm } from '../components/ManualAccountRevalueForm'
+import { PropertyCashFlowsSection } from '../components/PropertyCashFlowsSection'
+import { PreciousMetalGramsForm } from '../components/PreciousMetalGramsForm'
 import { MarketPricesStatus } from '../components/MarketPricesStatus'
 import { TransactionTable } from '../components/TransactionTable'
 import { useAsyncData } from '../hooks/useAsyncData'
@@ -199,6 +201,20 @@ export function AccountDetailPage() {
             onSaved={reload}
           />
         </section>
+      )}
+
+      {account.accountType === 'REAL_ESTATE' && (
+        <PropertyCashFlowsSection accountId={accountId} currency={account.currency} />
+      )}
+
+      {account.accountType === 'PRECIOUS_METAL' && (
+        <PreciousMetalGramsForm
+          accountId={accountId}
+          metalGrams={account.metalGrams}
+          currency={account.currency}
+          estimatedValue={account.totalBalance}
+          onSaved={reload}
+        />
       )}
 
       {isHoldings && account.accountType === 'BROKERAGE' && (

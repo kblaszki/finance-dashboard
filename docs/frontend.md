@@ -18,12 +18,13 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 | `/portfolio` | Portfolio (all accounts) | `PortfolioPage` — filters by account, type, bucket (FR-008) |
 | `/assets/:id` | Asset price chart | `AssetDetailPage`, `InstrumentPriceChart` (FR-009) |
 | `/accounts` | Accounts | `ManagedAccountsList` — total balance, type filter (FR-012) |
-| `/accounts/:id` | Account detail | `AccountDetailPage`, chart date range, `AccountStatsCards`, `AccountActivityTable` (BROKERAGE), `BrokerImportForm` (BROKERAGE), holdings, `ManualAccountRevalueForm` (MANUAL), `TransactionTable` with bank cash-flow tabs |
+| `/accounts/:id` | Account detail | `AccountDetailPage`, chart date range, `AccountStatsCards`, `PropertyCashFlowsSection` (REAL_ESTATE), `PreciousMetalGramsForm` (PRECIOUS_METAL), … |
 | `/accounts/:id/assets/:instrumentId` | Holding detail (FR-014) | `HoldingDetailPage`, `HoldingKpiCards`, `HoldingValuationChart`, `HoldingLotsTable`; link to `/assets/:id` |
 | `/accounts/:id/holdings/:holdingId` | Holding detail (legacy URL) | Same as `/accounts/:id/assets/:instrumentId` |
 | `/transactions` | Asset trades | `TransactionsListPage` → `AssetTradesTable` (FR-007; `?accountId=` filter) |
 | `/transfers` | Internal transfers | `TransfersPage` → `InternalTransfersTable` (FR-011; `?accountId=` filter) |
 | `/tax` | PL tax report | `TaxReportPage` — FR-022/023/025–028; `/tax/:year` |
+| `/liabilities` | Liabilities | `LiabilitiesPage` — FR-029 mortgages, loans, credits |
 | `/income-events` | Income events | `IncomeEventsPage` — FR-024 dividends, interest, coupons |
 | `/settings` | Account settings | `SettingsPage` — username, email, password |
 
@@ -51,6 +52,8 @@ Preferred async pattern for page/widget data: [`frontend/src/hooks/useAsyncData.
 | `categoriesApi.ts` | `/api/categories` |
 | `budgetsApi.ts` | `/api/budgets` |
 | `incomeEventsApi.ts` | `/api/income-events` |
+| `liabilitiesApi.ts` | `/api/liabilities` |
+| `propertyCashFlowsApi.ts` | `/api/property-cash-flows` |
 | `instrumentsApi.ts` | `/api/instruments`, `/api/instruments/:id/valuations` |
 | `importApi.ts` | `POST /api/import/broker-trades`, `POST /api/import/bank-transactions` |
 | `holdingsApi.ts` | `/api/accounts/:id/holdings`, `/api/holdings/:holdingId`, `POST .../split` |

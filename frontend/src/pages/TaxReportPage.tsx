@@ -223,7 +223,29 @@ export function TaxReportPage() {
 
           <section className="card">
             <h2>Rental — PIT-36 helper (FR-026)</h2>
-            <p className="muted">{report.rental.message}</p>
+            {report.rental.available ? (
+              <div className="kpi-grid">
+                <div>
+                  <p className="muted">Rental income</p>
+                  <p>{formatMoney(report.rental.rentalIncome, report.displayCurrency)}</p>
+                </div>
+                <div>
+                  <p className="muted">Maintenance</p>
+                  <p>{formatMoney(report.rental.maintenanceCosts, report.displayCurrency)}</p>
+                </div>
+                <div>
+                  <p className="muted">Net rent</p>
+                  <p>
+                    {formatMoney(
+                      report.rental.rentalIncome - report.rental.maintenanceCosts,
+                      report.displayCurrency,
+                    )}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <p className="muted">{report.rental.message}</p>
+            )}
           </section>
 
           <section className="card">

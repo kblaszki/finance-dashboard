@@ -30,7 +30,7 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 | POST | `/api/accounts` | Yes | Create account |
 | GET | `/api/accounts/:id` | Yes | Account detail |
 | GET | `/api/accounts/:id/stats` | Yes | YTD cashflow, YoY balance change, brokerage cash/securities split; optional `currency` |
-| PUT | `/api/accounts/:id` | Yes | Update name/description |
+| PUT | `/api/accounts/:id` | Yes | Update name/description; `metalGrams` on PRECIOUS_METAL (FR-032) |
 | POST | `/api/accounts/:id/revalue` | Yes | MANUAL only — `{ value, valuationDate? }` updates estimate and chart |
 | DELETE | `/api/accounts/:id` | Yes | Delete account |
 | GET | `/api/accounts/:id/valuations` | Yes | `AccountValuationDaily`; `from`, `to` |
@@ -108,7 +108,7 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/api/stats/net-worth` | Yes | Net worth with 5-bucket breakdown (FR-002); `currency` converts values via NBP rates |
+| GET | `/api/stats/net-worth` | Yes | Net worth with 5-bucket breakdown (FR-002); `currency`; returns `totalAssets`, `totalLiabilities`, `total` (net), `liabilities[]` (FR-029) |
 | GET | `/api/stats/average-holding-return` | Yes | FR-001 value-weighted average holding return; optional `currency` |
 | GET | `/api/stats/cashflow` | Yes | Period income/expense/net; `from`, `to`, optional `currency` converts transaction amounts from native account currency |
 | GET | `/api/stats/cashflow-history` | Yes | FR-004 monthly income/expense/net series; `from`, `to`, optional `currency` |
@@ -129,6 +129,24 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 | POST | `/api/income-events` | Yes | Create `{ accountId, eventType, amount, currency, date, taxType?, instrumentId?, withheldTax?, sourceCountry?, foreignTaxPaid?, description? }` |
 | PUT | `/api/income-events/:id` | Yes | Update |
 | DELETE | `/api/income-events/:id` | Yes | Delete |
+
+## Liabilities (FR-029)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/liabilities` | Yes | List user liabilities |
+| POST | `/api/liabilities` | Yes | Create `{ name, liabilityType, balance, currency, accountId? }` |
+| PUT | `/api/liabilities/:id` | Yes | Update |
+| DELETE | `/api/liabilities/:id` | Yes | Delete |
+
+## Property cash flows (FR-030)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/property-cash-flows` | Yes | List; `accountId`, `from`, `to` |
+| POST | `/api/property-cash-flows` | Yes | Create on REAL_ESTATE account — `{ accountId, flowType, amount, currency, date, description? }` |
+| PUT | `/api/property-cash-flows/:id` | Yes | Update |
+| DELETE | `/api/property-cash-flows/:id` | Yes | Delete |
 
 ## Market data
 

@@ -60,6 +60,8 @@ import { createImportRouter } from "./routes/importRoutes";
 import { createCategoriesRouter } from "./routes/categoriesRoutes";
 import { createBudgetsRouter } from "./routes/budgetsRoutes";
 import { createIncomeEventsRouter } from "./routes/incomeEventsRoutes";
+import { createLiabilitiesRouter } from "./routes/liabilitiesRoutes";
+import { createPropertyCashFlowsRouter } from "./routes/propertyCashFlowsRoutes";
 import { handleRouteError } from "./routes/httpSupport";
 
 dotenv.config();
@@ -286,6 +288,24 @@ app.use(
 
 app.use(
   createIncomeEventsRouter({
+    prisma,
+    requireAuth,
+    uid,
+    parseDateBody,
+    transactionDateFilter,
+  }),
+);
+
+app.use(
+  createLiabilitiesRouter({
+    prisma,
+    requireAuth,
+    uid,
+  }),
+);
+
+app.use(
+  createPropertyCashFlowsRouter({
     prisma,
     requireAuth,
     uid,

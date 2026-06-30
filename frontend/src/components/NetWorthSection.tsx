@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { fetchNetWorth, type NetWorthBucket } from '../api/statsApi'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { useCurrency } from '../state/currency'
@@ -39,6 +40,16 @@ export function NetWorthSection() {
     <section className="card">
       <h2>Net worth</h2>
       <p className="kpi-highlight">{formatMoney(stats.total, currency)}</p>
+      <p className="muted">
+        Assets {formatMoney(stats.totalAssets, currency)} − liabilities{' '}
+        {formatMoney(stats.totalLiabilities, currency)}
+        {stats.totalLiabilities > 0 && (
+          <>
+            {' '}
+            · <Link to="/liabilities">Manage liabilities</Link>
+          </>
+        )}
+      </p>
       <div className="kpi-grid stack-md">
         {stats.byBucket.map((row) => (
           <div className="kpi-card" key={row.bucket}>
@@ -48,6 +59,31 @@ export function NetWorthSection() {
           </div>
         ))}
       </div>
+      {stats.liabilities.length > 0 && (
+        <details className="stack-md">
+          <summary className="muted">Liabilities ({stats.liabilities.length})</summary>
+          <div className="table-wrap stack-md">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Type</th>
+                  <th>Balance</th>
+                </tr>
+              </thead>
+              <tbody>
+                {stats.liabilities.map((row) => (
+                  <tr key={row.id}>
+                    <td>{row.name}</td>
+                    <td>{row.liabilityType}</td>
+                    <td>{formatMoney(row.balance, row.currency)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </details>
+      )}
       {stats.accounts.length > 0 && (
         <details className="stack-md">
           <summary className="muted">By account</summary>

@@ -14,6 +14,8 @@ export type NetWorthBucketRow = {
 }
 
 export type NetWorthStats = {
+  totalAssets: number;
+  totalLiabilities: number;
   total: number;
   currency: string;
   byAccountType: Record<string, number>;
@@ -23,6 +25,15 @@ export type NetWorthStats = {
     name: string;
     accountType: string;
     value: number;
+  }>;
+  liabilities: Array<{
+    id: number;
+    name: string;
+    liabilityType: string;
+    balance: number;
+    currency: string;
+    accountId: number | null;
+    accountName: string | null;
   }>;
 };
 

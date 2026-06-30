@@ -3,6 +3,7 @@ import { CASH_BALANCE_ACCOUNT_TYPES, isRevalueAccountType, type AccountType } fr
 import { convertAmount, getFxRatesPlnPerUnit } from "./fx";
 import { getLatestAccountTotalValues, toNumber } from "./accountValuation";
 import { getUserPortfolioPositions } from "./portfolio";
+import { listUserLiabilities, serializeLiability, sumUserLiabilitiesInCurrency } from "./liabilities";
 
 export const NET_WORTH_BUCKETS = [
   "cash",
@@ -137,11 +138,14 @@ export async function computeNetWorth(
   userId: number,
   displayCurrency: string,
 ): Promise<{
+  totalAssets: number;
+  totalLiabilities: number;
   total: number;
   currency: string;
   byAccountType: Record<string, number>;
   byBucket: NetWorthBucketRow[];
   accounts: Array<{ id: number; name: string; accountType: string; value: number }>;
+  liabilities: ReturnType<typeof serializeLiability>[];
 }> {
   const { plnPerUnit } = await getFxRatesPlnPerUnit();
   const accounts = await prisma.account.findMany({ where: { userId } });
@@ -160,12 +164,23 @@ export async function computeNetWorth(
 
   const legacy = sumAccountsInDisplayCurrency(inputs, displayCurrency, plnPerUnit);
   const bucketSummary = await aggregateNetWorthBuckets(prisma, userId, displayCurrency, plnPerUnit);
+  const liabilityRows = await listUserLiabilities(prisma, userId);
+  const totalLiabilities = await sumUserLiabilitiesInCurrency(
+    prisma,
+    userId,
+    displayCurrency,
+    plnPerUnit,
+  );
+  const totalAssets = bucketSummary.total;
 
   return {
-    total: bucketSummary.total,
+    totalAssets,
+    totalLiabilities,
+    total: totalAssets - totalLiabilities,
     currency: displayCurrency,
     byAccountType: legacy.byAccountType,
     byBucket: bucketSummary.byBucket,
     accounts: legacy.accounts,
+    liabilities: liabilityRows.map(serializeLiability),
   };
 }

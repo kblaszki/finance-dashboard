@@ -27,6 +27,7 @@ export const accountFixture: Account = {
   totalBalance: 1500.5,
   openingBalance: 1000,
   openingCashAsOf: '2025-01-01T00:00:00.000Z',
+  metalGrams: null,
   description: null,
   createdAt: '2025-01-01T00:00:00.000Z',
   updatedAt: '2025-01-15T12:00:00.000Z',
@@ -53,19 +54,32 @@ export const cashflowFixture: CashflowStats = {
 }
 
 export const netWorthFixture: NetWorthStats = {
+  totalAssets: 12500,
+  totalLiabilities: 500,
   total: 12000,
   currency: 'PLN',
   byAccountType: { BANK: 5000, BROKERAGE: 7000 },
   byBucket: [
-    { bucket: 'cash', value: 5000, pct: 41.67 },
-    { bucket: 'stock_market', value: 7000, pct: 58.33 },
+    { bucket: 'cash', value: 5000, pct: 40 },
+    { bucket: 'stock_market', value: 7000, pct: 56 },
     { bucket: 'crypto', value: 0, pct: 0 },
     { bucket: 'precious_metal_other', value: 0, pct: 0 },
-    { bucket: 'real_estate', value: 0, pct: 0 },
+    { bucket: 'real_estate', value: 500, pct: 4 },
   ],
   accounts: [
     { id: 1, name: 'Bank', accountType: 'BANK', value: 5000 },
     { id: 2, name: 'Broker', accountType: 'BROKERAGE', value: 7000 },
+  ],
+  liabilities: [
+    {
+      id: 1,
+      name: 'Mortgage',
+      liabilityType: 'mortgage',
+      balance: 500,
+      currency: 'PLN',
+      accountId: null,
+      accountName: null,
+    },
   ],
 }
 
@@ -143,7 +157,7 @@ export const taxReportFixture: TaxReport = {
     available: false,
     rentalIncome: 0,
     maintenanceCosts: 0,
-    message: 'Rental section requires real estate accounts (FR-030, Phase C).',
+    message: 'Add rental/maintenance flows on real estate accounts (FR-030).',
   },
 }
 
