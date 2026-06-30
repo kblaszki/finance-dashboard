@@ -49,6 +49,26 @@ export function computeSimpleReturnPct(
   return ((endValue - startValue - netContributions) / base) * 100;
 }
 
+/**
+ * FR-001: value-weighted mean of per-holding return rates.
+ * return_rate_i = (current_value - cost_basis) / cost_basis
+ */
+export function computeValueWeightedAverageReturnPct(
+  holdings: Array<{ currentValue: number; costBasis: number }>,
+): number | null {
+  let weightedSum = 0;
+  let totalValue = 0;
+  for (const row of holdings) {
+    if (!Number.isFinite(row.currentValue) || row.currentValue <= 0) continue;
+    if (!Number.isFinite(row.costBasis) || row.costBasis <= 0) continue;
+    const returnRate = (row.currentValue - row.costBasis) / row.costBasis;
+    weightedSum += returnRate * row.currentValue;
+    totalValue += row.currentValue;
+  }
+  if (totalValue <= 0) return null;
+  return (weightedSum / totalValue) * 100;
+}
+
 function utcEndOfDay(d: Date): Date {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999));
 }
@@ -75,6 +95,48 @@ function computeOpenCostBasis(
     else if (lot.side === "SELL") sellTotal += amount;
   }
   return buyTotal - sellTotal;
+}
+
+export async function computeUserAverageHoldingReturn(
+  prisma: PrismaClient,
+  userId: number,
+  displayCurrency: string,
+  plnPerUnit: Record<string, number>,
+): Promise<{ averageReturnPct: number | null; displayCurrency: string }> {
+  const accounts = await prisma.account.findMany({
+    where: { userId },
+    orderBy: { id: "asc" },
+  });
+
+  const rows: Array<{ currentValue: number; costBasis: number }> = [];
+
+  for (const account of accounts) {
+    const holdings = await getAccountHoldings(prisma, account.id, account.currency, plnPerUnit);
+    for (const holding of holdings.open) {
+      if (holding.marketValue == null || holding.marketValue <= 0) continue;
+      const lotRow = await prisma.holding.findUnique({
+        where: { id: holding.id },
+        include: { lots: true },
+      });
+      if (!lotRow) continue;
+      const costBasisNative = computeOpenCostBasis(lotRow.lots, account.currency, plnPerUnit);
+      if (costBasisNative <= 0) continue;
+      rows.push({
+        currentValue: convertAmount(
+          holding.marketValue,
+          account.currency,
+          displayCurrency,
+          plnPerUnit,
+        ),
+        costBasis: convertAmount(costBasisNative, account.currency, displayCurrency, plnPerUnit),
+      });
+    }
+  }
+
+  return {
+    averageReturnPct: computeValueWeightedAverageReturnPct(rows),
+    displayCurrency,
+  };
 }
 
 async function getBrokerageAccounts(prisma: PrismaClient, userId: number) {

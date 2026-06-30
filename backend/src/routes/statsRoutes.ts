@@ -12,6 +12,7 @@ import {
   computeBenchmarkComparison,
   computePortfolioHistory,
   computePortfolioSummary,
+  computeUserAverageHoldingReturn,
 } from "../portfolioStats";
 import { parseBenchmarkId } from "../benchmarks";
 import {
@@ -68,6 +69,17 @@ export function createStatsRouter(deps: StatsDeps): Router {
       res.json(data);
     } catch (e: unknown) {
       handleRouteError(res, e, "Failed to load net worth");
+    }
+  });
+
+  router.get("/api/stats/average-holding-return", requireAuth, async (req: AuthedRequest, res) => {
+    try {
+      const currency = normalizeCurrency(req.query.currency ?? "PLN");
+      const { plnPerUnit } = await getFxRatesPlnPerUnit();
+      const data = await computeUserAverageHoldingReturn(prisma, uid(req), currency, plnPerUnit);
+      res.json(data);
+    } catch (e: unknown) {
+      handleRouteError(res, e, "Failed to load average holding return");
     }
   });
 

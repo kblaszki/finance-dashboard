@@ -82,6 +82,16 @@ export function fetchNetWorth(currency: string) {
   return apiClient.get<NetWorthStats>(`/api/stats/net-worth?${q}`);
 }
 
+export type AverageHoldingReturn = {
+  averageReturnPct: number | null;
+  displayCurrency: string;
+};
+
+export function fetchAverageHoldingReturn(currency: string) {
+  const q = new URLSearchParams({ currency });
+  return apiClient.get<AverageHoldingReturn>(`/api/stats/average-holding-return?${q}`);
+}
+
 export function fetchCashflow(params: RequiredPeriodQuery) {
   return apiClient.get<CashflowStats>(`/api/stats/cashflow${periodQuery(params)}`);
 }

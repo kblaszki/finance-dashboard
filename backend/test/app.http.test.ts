@@ -1446,6 +1446,56 @@ test("GET /api/stats/portfolio-summary returns brokerage summary", async () => {
   assert.ok(Array.isArray(res.body.allocation));
 });
 
+test("GET /api/stats/average-holding-return returns value-weighted average", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BROKERAGE",
+      name: "Return Broker",
+      currency: "PLN",
+      openingBalance: 0,
+    });
+  const accountId = accountRes.body.id;
+
+  const instrument = await prisma.instrument.create({
+    data: { instrumentType: "STOCK", symbol: "AVG1", exchange: "TEST", currency: "PLN" },
+  });
+  await prisma.instrumentValuation.create({
+    data: {
+      instrumentId: instrument.id,
+      valuationDate: new Date("2025-01-10T12:00:00.000Z"),
+      price: 110,
+      currency: "PLN",
+      source: "manual",
+    },
+  });
+
+  const holdingRes = await request(app)
+    .post(`/api/accounts/${accountId}/holdings`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ instrumentId: instrument.id });
+  await request(app)
+    .post(`/api/holdings/${holdingRes.body.id}/lots`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      side: "BUY",
+      quantity: 10,
+      pricePerUnit: 100,
+      currency: "PLN",
+      tradeDate: "2025-01-05T12:00:00.000Z",
+    });
+
+  const res = await request(app)
+    .get("/api/stats/average-holding-return?currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  assert.equal(res.body.displayCurrency, "PLN");
+  assert.ok(res.body.averageReturnPct != null);
+  assert.ok(Math.abs(res.body.averageReturnPct - 10) < 0.01);
+});
+
 test("GET /api/stats/benchmark-comparison requires benchmark", async () => {
   const { token } = await createUserAndToken();
   const res = await request(app)

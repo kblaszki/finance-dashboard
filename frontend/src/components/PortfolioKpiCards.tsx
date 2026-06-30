@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { useAsyncData } from '../hooks/useAsyncData'
-import { fetchPortfolioSummary } from '../api/statsApi'
+import { fetchAverageHoldingReturn, fetchPortfolioSummary } from '../api/statsApi'
 import { useCurrency } from '../state/currency'
 import { usePeriod } from '../state/period'
 import { formatMoney } from '../utils/format'
@@ -16,11 +16,14 @@ export function PortfolioKpiCards() {
   const { range } = usePeriod()
   const loader = useCallback(
     () =>
-      fetchPortfolioSummary({
-        from: range.from,
-        to: range.to,
-        currency,
-      }),
+      Promise.all([
+        fetchPortfolioSummary({
+          from: range.from,
+          to: range.to,
+          currency,
+        }),
+        fetchAverageHoldingReturn(currency),
+      ]).then(([summary, averageReturn]) => ({ summary, averageReturn })),
     [currency, range.from, range.to],
   )
   const { data, error, loading } = useAsyncData(loader)
@@ -30,28 +33,36 @@ export function PortfolioKpiCards() {
     return <p className="error-banner">{error ?? 'Failed to load portfolio summary'}</p>
   }
 
+  const { summary, averageReturn } = data
+
   return (
     <div className="kpi-grid">
       <div className="kpi-card">
         <h3>Portfolio value</h3>
-        <p>{formatMoney(data.totalValue, currency)}</p>
+        <p>{formatMoney(summary.totalValue, currency)}</p>
       </div>
       <div className="kpi-card">
         <h3>Securities</h3>
-        <p>{formatMoney(data.securitiesValue, currency)}</p>
+        <p>{formatMoney(summary.securitiesValue, currency)}</p>
       </div>
       <div className="kpi-card">
         <h3>Cash</h3>
-        <p>{formatMoney(data.cashValue, currency)}</p>
+        <p>{formatMoney(summary.cashValue, currency)}</p>
       </div>
       <div className="kpi-card">
         <h3>Unrealized P/L</h3>
-        <p>{data.unrealizedPnl != null ? formatMoney(data.unrealizedPnl, currency) : '—'}</p>
+        <p>{summary.unrealizedPnl != null ? formatMoney(summary.unrealizedPnl, currency) : '—'}</p>
       </div>
       <div className="kpi-card">
-        <h3>Return (period)</h3>
-        <p className={data.returnPct != null && data.returnPct >= 0 ? 'positive' : 'negative'}>
-          {formatReturnPct(data.returnPct)}
+        <h3>Average return</h3>
+        <p
+          className={
+            averageReturn.averageReturnPct != null && averageReturn.averageReturnPct >= 0
+              ? 'positive'
+              : 'negative'
+          }
+        >
+          {formatReturnPct(averageReturn.averageReturnPct)}
         </p>
       </div>
     </div>

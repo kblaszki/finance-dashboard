@@ -48,6 +48,7 @@ import {
 import { fetchHoldingValuations } from './valuationsApi'
 import {
   fetchNetWorth,
+  fetchAverageHoldingReturn,
   fetchCashflow,
   fetchExpensesByCategory,
   fetchIncomeByCategory,
@@ -244,6 +245,9 @@ describe('API modules', () => {
   it('statsApi calls correct endpoints', async () => {
     await fetchNetWorth('EUR')
     expect(apiClient.get).toHaveBeenCalledWith('/api/stats/net-worth?currency=EUR')
+
+    await fetchAverageHoldingReturn('PLN')
+    expect(apiClient.get).toHaveBeenCalledWith('/api/stats/average-holding-return?currency=PLN')
 
     await fetchCashflow({ from: '2025-01-01', to: '2025-01-31', currency: 'PLN' })
     expect(apiClient.get).toHaveBeenCalledWith(
