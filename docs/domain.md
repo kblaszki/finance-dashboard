@@ -78,6 +78,12 @@ User-scoped `Category` tree (`parentId`, `sortOrder`). Defaults seeded on regist
 
 `Budget` — per user, per `categoryId`, per calendar month (`budgetMonth`), `amount` + `currency`. Unique on `(userId, categoryId, budgetMonth)`.
 
+## Income events (FR-024, DATA-015)
+
+`IncomeEvent` — dividends, interest, coupons separate from trade lots. Fields: `eventType`, `taxType` (`belka`, `pit38`, `exempt`), optional `instrumentId`, `withheldTax`, `sourceCountry`, `foreignTaxPaid`. Tax reports prefer income events over duplicate `Transaction` rows.
+
+`Instrument.pitZgCountry` — ISO country for PIT/ZG helper (FR-028); default `PL`.
+
 ## Related docs
 
 - [api.md](api.md) — REST surface

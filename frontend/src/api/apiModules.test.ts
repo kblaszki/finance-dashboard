@@ -79,6 +79,12 @@ import {
   deleteCategory,
 } from './categoriesApi'
 import { fetchBudgets, upsertBudget, deleteBudget } from './budgetsApi'
+import {
+  fetchIncomeEvents,
+  createIncomeEvent,
+  updateIncomeEvent,
+  deleteIncomeEvent,
+} from './incomeEventsApi'
 
 describe('API modules', () => {
   beforeEach(() => {
@@ -471,5 +477,33 @@ describe('API modules', () => {
 
     await deleteBudget(7)
     expect(apiClient.delete).toHaveBeenCalledWith('/api/budgets/7')
+  })
+
+  it('incomeEventsApi calls correct endpoints', async () => {
+    await fetchIncomeEvents({ from: '2026-01-01', to: '2026-12-31', accountId: 2 })
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/income-events?from=2026-01-01&to=2026-12-31&accountId=2',
+    )
+
+    await createIncomeEvent({
+      accountId: 2,
+      eventType: 'dividend',
+      amount: 50,
+      currency: 'PLN',
+      date: '2026-05-01',
+    })
+    expect(apiClient.post).toHaveBeenCalledWith('/api/income-events', {
+      accountId: 2,
+      eventType: 'dividend',
+      amount: 50,
+      currency: 'PLN',
+      date: '2026-05-01',
+    })
+
+    await updateIncomeEvent(4, { amount: 60 })
+    expect(apiClient.put).toHaveBeenCalledWith('/api/income-events/4', { amount: 60 })
+
+    await deleteIncomeEvent(4)
+    expect(apiClient.delete).toHaveBeenCalledWith('/api/income-events/4')
   })
 })

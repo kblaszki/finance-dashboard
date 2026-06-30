@@ -79,8 +79,10 @@ export function createInstrumentsRouter(deps: InstrumentsDeps): Router {
       const exchange = req.body?.exchange != null ? String(req.body.exchange) : null;
       const currency = normalizeCurrency(req.body?.currency ?? "USD");
       const source = String(req.body?.source ?? "manual");
+      const pitZgCountry =
+        req.body?.pitZgCountry != null ? String(req.body.pitZgCountry).trim().toUpperCase() : "PL";
       const row = await prisma.instrument.create({
-        data: { instrumentType, symbol, name, exchange, currency, source },
+        data: { instrumentType, symbol, name, exchange, currency, source, pitZgCountry },
       });
       res.status(201).json(serializeInstrument(row));
     } catch (e: unknown) {

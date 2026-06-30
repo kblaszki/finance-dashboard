@@ -126,9 +126,25 @@ export const taxReportFixture: TaxReport = {
       cost: 400,
       gainLoss: 80,
       currency: 'PLN',
+      instrumentType: 'STOCK',
+      pitZgCountry: 'PL',
     },
   ],
   warnings: [],
+  belka: {
+    interestGross: 12,
+    withheldTax: 2,
+    estimatedBelkaDue: 0.28,
+    rows: [],
+  },
+  pitZg: [],
+  derivatives: { sellCount: 0, message: 'No derivative sells in this year.' },
+  rental: {
+    available: false,
+    rentalIncome: 0,
+    maintenanceCosts: 0,
+    message: 'Rental section requires real estate accounts (FR-030, Phase C).',
+  },
 }
 
 export const holdingSummaryFixture: HoldingSummary = {

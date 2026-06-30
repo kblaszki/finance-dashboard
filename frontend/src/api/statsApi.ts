@@ -192,8 +192,40 @@ export type TaxReport = {
     cost: number;
     gainLoss: number;
     currency: string;
+    instrumentType: string;
+    pitZgCountry: string;
   }>;
   warnings: TaxReportWarning[];
+  belka: {
+    interestGross: number;
+    withheldTax: number;
+    estimatedBelkaDue: number;
+    rows: Array<{
+      occurredOn: string;
+      accountName: string;
+      eventType: string;
+      amount: number;
+      withheldTax: number;
+      currency: string;
+    }>;
+  };
+  pitZg: Array<{
+    country: string;
+    symbol: string | null;
+    incomeGross: number;
+    withheldTax: number;
+    foreignTaxPaid: number;
+  }>;
+  derivatives: {
+    sellCount: number;
+    message: string;
+  };
+  rental: {
+    available: boolean;
+    rentalIncome: number;
+    maintenanceCosts: number;
+    message: string;
+  };
 };
 
 export function fetchTaxReport(year: number, currency = "PLN") {

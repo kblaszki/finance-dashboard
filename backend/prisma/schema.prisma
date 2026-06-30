@@ -15,6 +15,7 @@ model User {
   createdAt    DateTime   @default(now())
   accounts     Account[]
   categories   Category[]
+  incomeEvents IncomeEvent[]
 }
 
 model Account {
@@ -35,6 +36,7 @@ model Account {
   valuationsDaily        AccountValuationDaily[]
   holdingValuationsDaily HoldingValuationDaily[]
   importBatches          ImportBatch[]
+  incomeEvents           IncomeEvent[]
 
   @@unique([userId, name])
   @@index([userId, accountType])
@@ -103,6 +105,29 @@ model TransactionSplit {
   @@unique([transactionId, categoryId])
 }
 
+model IncomeEvent {
+  id             Int         @id @default(autoincrement())
+  userId         Int
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId      Int
+  account        Account     @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  instrumentId   Int?
+  instrument     Instrument? @relation(fields: [instrumentId], references: [id], onDelete: SetNull)
+  eventType      String
+  taxType        String?
+  amount         Decimal
+  currency       String
+  occurredOn     DateTime
+  description    String?
+  withheldTax    Decimal     @default(0)
+  sourceCountry  String?
+  foreignTaxPaid Decimal     @default(0)
+  createdAt      DateTime    @default(now())
+
+  @@index([userId, occurredOn])
+  @@index([accountId, occurredOn])
+}
+
 model Instrument {
   id                     Int                      @id @default(autoincrement())
   instrumentType         String
@@ -110,11 +135,13 @@ model Instrument {
   name                   String?
   exchange               String?
   currency               String
+  pitZgCountry           String                   @default("PL")
   source                 String                   @default("manual")
   createdAt              DateTime                 @default(now())
   holdings               Holding[]
   valuations             InstrumentValuation[]
   holdingValuationsDaily HoldingValuationDaily[]
+  incomeEvents           IncomeEvent[]
 
   @@unique([symbol, exchange, source])
   @@index([symbol])

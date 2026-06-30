@@ -43,6 +43,35 @@ test("sumGainLoss totals realized events", () => {
   assert.equal(sumGainLoss(events), 60);
 });
 
+test("FIFO includes commission in buy cost and sell proceeds", () => {
+  const events = computeFifoRealizedEvents([
+    {
+      id: 1,
+      side: "BUY",
+      quantity: 10,
+      pricePerUnit: 100,
+      totalPrice: 1000,
+      commission: 10,
+      currency: "PLN",
+      tradeDate: d("2025-01-01"),
+    },
+    {
+      id: 2,
+      side: "SELL",
+      quantity: 10,
+      pricePerUnit: 120,
+      totalPrice: 1200,
+      commission: 5,
+      currency: "PLN",
+      tradeDate: d("2025-06-01"),
+    },
+  ]);
+  assert.equal(events.length, 1);
+  assert.equal(events[0].cost, 1010);
+  assert.equal(events[0].proceeds, 1195);
+  assert.equal(events[0].gainLoss, 185);
+});
+
 test("FIFO rejects oversell", () => {
   assert.throws(() =>
     computeFifoRealizedEvents([

@@ -1,9 +1,11 @@
 import type { PrismaClient } from "@prisma/client";
 import { convertAmount } from "./fx";
 import { computeFifoRealizedEvents, type RealizedGainEvent } from "./fifoRealizedPnl";
+import { isBelkaIncomeEvent } from "./incomeEvents";
 import { toNumber } from "./accountValuation";
 
 const BELKA_RATE = 0.19;
+const DERIVATIVE_TYPES = new Set(["FUTURES", "OPTION", "OPTIONS", "CFD", "CFDS"]);
 
 export type TaxSellRow = {
   saleDate: string;
@@ -15,6 +17,8 @@ export type TaxSellRow = {
   cost: number;
   gainLoss: number;
   currency: string;
+  instrumentType: string;
+  pitZgCountry: string;
 };
 
 export type TaxReportWarning = {
@@ -22,6 +26,42 @@ export type TaxReportWarning = {
   accountName: string;
   symbol: string;
   holdingId: number;
+  message: string;
+};
+
+export type BelkaTaxRow = {
+  occurredOn: string;
+  accountName: string;
+  eventType: string;
+  amount: number;
+  withheldTax: number;
+  currency: string;
+};
+
+export type BelkaSection = {
+  interestGross: number;
+  withheldTax: number;
+  estimatedBelkaDue: number;
+  rows: BelkaTaxRow[];
+};
+
+export type PitZgRow = {
+  country: string;
+  symbol: string | null;
+  incomeGross: number;
+  withheldTax: number;
+  foreignTaxPaid: number;
+};
+
+export type DerivativesSection = {
+  sellCount: number;
+  message: string;
+};
+
+export type RentalSection = {
+  available: boolean;
+  rentalIncome: number;
+  maintenanceCosts: number;
   message: string;
 };
 
@@ -37,6 +77,10 @@ export type TaxReport = {
   byInstrument: Array<{ symbol: string; netRealized: number }>;
   sellRows: TaxSellRow[];
   warnings: TaxReportWarning[];
+  belka: BelkaSection;
+  pitZg: PitZgRow[];
+  derivatives: DerivativesSection;
+  rental: RentalSection;
 };
 
 function taxYearBounds(year: number): { start: Date; end: Date } {
@@ -59,6 +103,10 @@ function convertGain(
   return convertAmount(amount, fromCurrency, displayCurrency, plnPerUnit);
 }
 
+function isDerivativeInstrumentType(value: string): boolean {
+  return DERIVATIVE_TYPES.has(value.trim().toUpperCase());
+}
+
 export function aggregateRealizedAmounts(netRows: number[]): {
   realizedGains: number;
   realizedLosses: number;
@@ -77,7 +125,8 @@ export function aggregateRealizedAmounts(netRows: number[]): {
 }
 
 export function formatTaxReportCsv(rows: TaxSellRow[]): string {
-  const header = "saleDate,symbol,account,quantity,proceeds,cost,gainLoss,currency";
+  const header =
+    "saleDate,symbol,account,quantity,proceeds,cost,gainLoss,currency,instrumentType,pitZgCountry";
   const lines = rows.map((r) =>
     [
       r.saleDate.slice(0, 10),
@@ -88,9 +137,125 @@ export function formatTaxReportCsv(rows: TaxSellRow[]): string {
       r.cost.toFixed(2),
       r.gainLoss.toFixed(2),
       r.currency,
+      r.instrumentType,
+      r.pitZgCountry,
     ].join(","),
   );
   return [header, ...lines].join("\n");
+}
+
+function buildBelkaSection(
+  incomeRows: Array<{
+    occurredOn: Date;
+    eventType: string;
+    taxType: string | null;
+    amount: unknown;
+    currency: string;
+    withheldTax: unknown;
+    account: { name: string };
+  }>,
+  interestTransactions: Array<{
+    date: Date;
+    amount: unknown;
+    currency: string;
+    account: { name: string };
+  }>,
+  displayCurrency: string,
+  plnPerUnit: Record<string, number>,
+): BelkaSection {
+  const rows: BelkaTaxRow[] = [];
+  let interestGross = 0;
+  let withheldTax = 0;
+
+  for (const row of incomeRows) {
+    if (!isBelkaIncomeEvent(row.eventType, row.taxType)) continue;
+    const amount = convertGain(toNumber(row.amount), row.currency, displayCurrency, plnPerUnit);
+    const withheld = convertGain(
+      toNumber(row.withheldTax ?? 0),
+      row.currency,
+      displayCurrency,
+      plnPerUnit,
+    );
+    interestGross += amount;
+    withheldTax += withheld;
+    rows.push({
+      occurredOn: row.occurredOn.toISOString(),
+      accountName: row.account.name,
+      eventType: row.eventType,
+      amount,
+      withheldTax: withheld,
+      currency: displayCurrency,
+    });
+  }
+
+  if (rows.length === 0) {
+    for (const row of interestTransactions) {
+      const amount = convertGain(toNumber(row.amount), row.currency, displayCurrency, plnPerUnit);
+      interestGross += amount;
+      rows.push({
+        occurredOn: row.date.toISOString(),
+        accountName: row.account.name,
+        eventType: "interest",
+        amount,
+        withheldTax: 0,
+        currency: displayCurrency,
+      });
+    }
+  }
+
+  const estimatedBelkaDue = Math.max(0, interestGross * BELKA_RATE - withheldTax);
+  return { interestGross, withheldTax, estimatedBelkaDue, rows };
+}
+
+function buildPitZgRows(
+  incomeRows: Array<{
+    eventType: string;
+    amount: unknown;
+    currency: string;
+    withheldTax: unknown;
+    foreignTaxPaid: unknown;
+    sourceCountry: string | null;
+    instrument: { symbol: string; pitZgCountry: string } | null;
+  }>,
+  displayCurrency: string,
+  plnPerUnit: Record<string, number>,
+): PitZgRow[] {
+  const byKey = new Map<string, PitZgRow>();
+  for (const row of incomeRows) {
+    const country = (
+      row.sourceCountry ??
+      row.instrument?.pitZgCountry ??
+      "PL"
+    ).toUpperCase();
+    if (country === "PL") continue;
+    const symbol = row.instrument?.symbol ?? null;
+    const key = `${country}|${symbol ?? ""}`;
+    const amount = convertGain(toNumber(row.amount), row.currency, displayCurrency, plnPerUnit);
+    const withheld = convertGain(
+      toNumber(row.withheldTax ?? 0),
+      row.currency,
+      displayCurrency,
+      plnPerUnit,
+    );
+    const foreignPaid = convertGain(
+      toNumber(row.foreignTaxPaid ?? 0),
+      row.currency,
+      displayCurrency,
+      plnPerUnit,
+    );
+    const existing = byKey.get(key) ?? {
+      country,
+      symbol,
+      incomeGross: 0,
+      withheldTax: 0,
+      foreignTaxPaid: 0,
+    };
+    existing.incomeGross += amount;
+    existing.withheldTax += withheld;
+    existing.foreignTaxPaid += foreignPaid;
+    byKey.set(key, existing);
+  }
+  return [...byKey.values()].sort((a, b) => a.country.localeCompare(b.country));
 }
 
 export async function computeTaxReport(
@@ -116,18 +281,26 @@ export async function computeTaxReport(
   const warnings: TaxReportWarning[] = [];
   const byAccountMap = new Map<number, { name: string; net: number }>();
   const byInstrumentMap = new Map<string, number>();
+  let derivativeSellCount = 0;
 
   for (const account of accounts) {
     let accountNet = 0;
     for (const holding of account.holdings) {
-      const fifoLots = holding.lots.map((lot) => ({
-        id: lot.id,
-        side: lot.side,
-        quantity: toNumber(lot.quantity),
-        pricePerUnit: toNumber(lot.pricePerUnit ?? 0),
-        currency: lot.currency,
-        tradeDate: lot.tradeDate,
-      }));
+      const fifoLots = holding.lots.map((lot) => {
+        const mapped = {
+          id: lot.id,
+          side: lot.side,
+          quantity: toNumber(lot.quantity),
+          pricePerUnit: toNumber(lot.pricePerUnit ?? 0),
+          commission: toNumber(lot.commission ?? 0),
+          currency: lot.currency,
+          tradeDate: lot.tradeDate,
+        };
+        if (lot.totalPrice != null) {
+          return { ...mapped, totalPrice: toNumber(lot.totalPrice) };
+        }
+        return mapped;
+      });
 
       let events: RealizedGainEvent[] = [];
       try {
@@ -164,6 +337,10 @@ export async function computeTaxReport(
         const symbol = holding.instrument.symbol;
         byInstrumentMap.set(symbol, (byInstrumentMap.get(symbol) ?? 0) + gainDisplay);
 
+        if (isDerivativeInstrumentType(holding.instrument.instrumentType)) {
+          derivativeSellCount++;
+        }
+
         sellRows.push({
           saleDate: event.tradeDate.toISOString(),
           symbol,
@@ -174,6 +351,8 @@ export async function computeTaxReport(
           cost: costDisplay,
           gainLoss: gainDisplay,
           currency: displayCurrency,
+          instrumentType: holding.instrument.instrumentType,
+          pitZgCountry: holding.instrument.pitZgCountry ?? "PL",
         });
       }
     }
@@ -183,22 +362,62 @@ export async function computeTaxReport(
   sellRows.sort((a, b) => a.saleDate.localeCompare(b.saleDate));
 
   const { start, end } = taxYearBounds(taxYear);
-  const dividendRows = await prisma.transaction.findMany({
+  const incomeEvents = await prisma.incomeEvent.findMany({
     where: {
-      transactionType: "DIVIDEND",
+      userId,
+      occurredOn: { gte: start, lte: end },
+    },
+    include: {
+      account: { select: { name: true } },
+      instrument: { select: { symbol: true, pitZgCountry: true } },
+    },
+  });
+
+  const dividendEvents = incomeEvents.filter((row) => row.eventType === "dividend");
+  let dividendsGross = 0;
+  if (dividendEvents.length > 0) {
+    for (const row of dividendEvents) {
+      dividendsGross += convertGain(
+        toNumber(row.amount),
+        row.currency,
+        displayCurrency,
+        plnPerUnit,
+      );
+    }
+  } else {
+    const dividendRows = await prisma.transaction.findMany({
+      where: {
+        transactionType: "DIVIDEND",
+        date: { gte: start, lte: end },
+        account: { userId },
+      },
+    });
+    for (const row of dividendRows) {
+      dividendsGross += convertGain(
+        toNumber(row.amount),
+        row.currency,
+        displayCurrency,
+        plnPerUnit,
+      );
+    }
+  }
+
+  const interestTransactions = await prisma.transaction.findMany({
+    where: {
+      transactionType: "INTEREST",
       date: { gte: start, lte: end },
       account: { userId },
     },
+    include: { account: { select: { name: true } } },
   });
-  let dividendsGross = 0;
-  for (const row of dividendRows) {
-    dividendsGross += convertGain(
-      toNumber(row.amount),
-      row.currency,
-      displayCurrency,
-      plnPerUnit,
-    );
-  }
+
+  const belka = buildBelkaSection(
+    incomeEvents,
+    interestTransactions,
+    displayCurrency,
+    plnPerUnit,
+  );
+  const pitZg = buildPitZgRows(incomeEvents, displayCurrency, plnPerUnit);
 
   const totals = aggregateRealizedAmounts(sellRows.map((r) => r.gainLoss));
 
@@ -217,6 +436,21 @@ export async function computeTaxReport(
       .sort((a, b) => a.symbol.localeCompare(b.symbol)),
     sellRows,
     warnings,
+    belka,
+    pitZg,
+    derivatives: {
+      sellCount: derivativeSellCount,
+      message:
+        derivativeSellCount > 0
+          ? "Derivative instruments detected — review PIT-38 mapping manually (FR-025)."
+          : "No derivative sells in this year.",
+    },
+    rental: {
+      available: false,
+      rentalIncome: 0,
+      maintenanceCosts: 0,
+      message: "Rental section requires real estate accounts (FR-030, Phase C).",
+    },
   };
 }
 

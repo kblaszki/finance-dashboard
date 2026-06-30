@@ -23,7 +23,8 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 | `/accounts/:id/holdings/:holdingId` | Holding detail (legacy URL) | Same as `/accounts/:id/assets/:instrumentId` |
 | `/transactions` | Asset trades | `TransactionsListPage` → `AssetTradesTable` (FR-007; `?accountId=` filter) |
 | `/transfers` | Internal transfers | `TransfersPage` → `InternalTransfersTable` (FR-011; `?accountId=` filter) |
-| `/tax` | PL tax report | `TaxReportPage` — FIFO gains, Belka estimate, CSV export |
+| `/tax` | PL tax report | `TaxReportPage` — FR-022/023/025–028; `/tax/:year` |
+| `/income-events` | Income events | `IncomeEventsPage` — FR-024 dividends, interest, coupons |
 | `/settings` | Account settings | `SettingsPage` — username, email, password |
 
 Protected shell: `ProtectedRoute` → `AppShell`.
@@ -49,6 +50,7 @@ Preferred async pattern for page/widget data: [`frontend/src/hooks/useAsyncData.
 | `transactionsApi.ts` | `/api/transactions` |
 | `categoriesApi.ts` | `/api/categories` |
 | `budgetsApi.ts` | `/api/budgets` |
+| `incomeEventsApi.ts` | `/api/income-events` |
 | `instrumentsApi.ts` | `/api/instruments`, `/api/instruments/:id/valuations` |
 | `importApi.ts` | `POST /api/import/broker-trades`, `POST /api/import/bank-transactions` |
 | `holdingsApi.ts` | `/api/accounts/:id/holdings`, `/api/holdings/:holdingId`, `POST .../split` |

@@ -36,6 +36,8 @@ test("formatTaxReportCsv escapes account names", () => {
       cost: 400,
       gainLoss: 100,
       currency: "PLN",
+      instrumentType: "STOCK",
+      pitZgCountry: "PL",
     },
   ]);
   assert.ok(csv.includes("saleDate,symbol,account"));

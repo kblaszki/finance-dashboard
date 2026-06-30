@@ -67,7 +67,7 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 |--------|------|------|-------------|
 | GET | `/api/instruments` | Yes | Search; `q` |
 | GET | `/api/instruments/:id` | Yes | Instrument metadata (FR-009) |
-| POST | `/api/instruments` | Yes | Create manual instrument |
+| POST | `/api/instruments` | Yes | Create manual instrument; optional `pitZgCountry` (default `PL`) |
 | GET | `/api/instruments/:id/valuations` | Yes | Price history |
 | POST | `/api/instruments/:id/valuations` | Yes | Add manual valuation |
 
@@ -118,8 +118,17 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 | GET | `/api/stats/portfolio-summary` | Yes | Brokerage KPIs; `from`, `to`, `currency` |
 | GET | `/api/stats/portfolio-history` | Yes | Aggregated brokerage value series; `from`, `to`, `currency` |
 | GET | `/api/stats/benchmark-comparison` | Yes | Portfolio vs benchmark return; `from`, `to`, `currency`, `benchmark=WIG\|SP500` |
-| GET | `/api/stats/tax-report` | Yes | PL tax year summary; `year`, `currency` |
+| GET | `/api/stats/tax-report` | Yes | PL tax year — PIT-38 FIFO (FR-022), Belka sections (FR-027), PIT/ZG helper (FR-028), derivative flag (FR-025), rental stub (FR-026); `year`, `currency` |
 | GET | `/api/stats/tax-report/export` | Yes | CSV of sales; `year`, `format=csv`, `currency` |
+
+## Income events (FR-024)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/income-events` | Yes | List; `from`, `to`, `accountId` |
+| POST | `/api/income-events` | Yes | Create `{ accountId, eventType, amount, currency, date, taxType?, instrumentId?, withheldTax?, sourceCountry?, foreignTaxPaid?, description? }` |
+| PUT | `/api/income-events/:id` | Yes | Update |
+| DELETE | `/api/income-events/:id` | Yes | Delete |
 
 ## Market data
 

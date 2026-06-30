@@ -28,6 +28,7 @@ not-a-date,Grocery,-10.00`;
   assert.equal(errors.length, 1);
 });
 
+test("parseBankCsv parses generic comma export", () => {
   const csv = `Date,Description,Amount
 2024-02-01,Grocery,-10.00
 2024-02-02,Refund,5.50`;

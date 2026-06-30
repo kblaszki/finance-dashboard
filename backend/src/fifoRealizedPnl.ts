@@ -5,6 +5,8 @@ export type FifoLotInput = {
   pricePerUnit: number;
   currency: string;
   tradeDate: Date;
+  totalPrice?: number;
+  commission?: number;
 };
 
 export type RealizedGainEvent = {
@@ -37,9 +39,18 @@ export function computeFifoRealizedEvents(lots: FifoLotInput[]): RealizedGainEve
 
   const events: RealizedGainEvent[] = [];
 
+  function lotGross(lot: FifoLotInput): number {
+    return lot.totalPrice ?? lot.quantity * lot.pricePerUnit;
+  }
+
   for (const lot of sorted) {
     if (lot.side === "BUY") {
-      buyQueueFor(lot.currency).push({ quantity: lot.quantity, pricePerUnit: lot.pricePerUnit });
+      const fee = lot.commission ?? 0;
+      const totalCost = lotGross(lot) + fee;
+      buyQueueFor(lot.currency).push({
+        quantity: lot.quantity,
+        pricePerUnit: totalCost / lot.quantity,
+      });
       continue;
     }
     if (lot.side !== "SELL") continue;
@@ -61,7 +72,7 @@ export function computeFifoRealizedEvents(lots: FifoLotInput[]): RealizedGainEve
       );
     }
 
-    const proceeds = lot.quantity * lot.pricePerUnit;
+    const proceeds = lotGross(lot) - (lot.commission ?? 0);
     events.push({
       lotId: lot.id,
       tradeDate: lot.tradeDate,

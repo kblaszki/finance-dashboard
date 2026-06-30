@@ -187,6 +187,7 @@ export function serializeInstrument(i: {
   name: string | null;
   exchange: string | null;
   currency: string;
+  pitZgCountry?: string | null;
   source: string;
   createdAt: Date;
 }) {
@@ -197,6 +198,7 @@ export function serializeInstrument(i: {
     name: i.name,
     exchange: i.exchange,
     currency: i.currency,
+    pitZgCountry: i.pitZgCountry ?? "PL",
     source: i.source,
     createdAt: i.createdAt.toISOString(),
   };

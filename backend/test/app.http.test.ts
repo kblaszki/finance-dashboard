@@ -2302,6 +2302,56 @@ test("POST /api/transactions supports categoryId and splits (FR-018)", async () 
   assert.equal(splitRes.body.splits.length, 2);
 });
 
+test("GET/POST /api/income-events supports CRUD (FR-024)", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BANK",
+      name: "Income Bank",
+      currency: "PLN",
+      openingBalance: 0,
+    });
+
+  const createRes = await request(app)
+    .post("/api/income-events")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId: accountRes.body.id,
+      eventType: "interest",
+      amount: 120,
+      currency: "PLN",
+      date: "2026-04-01T12:00:00.000Z",
+      withheldTax: 19,
+    });
+  assert.equal(createRes.status, 201);
+  assert.equal(createRes.body.taxType, "belka");
+
+  const listRes = await request(app)
+    .get("/api/income-events")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(listRes.status, 200);
+  assert.equal(listRes.body.length, 1);
+
+  const taxRes = await request(app)
+    .get("/api/stats/tax-report?year=2026&currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(taxRes.status, 200);
+  assert.equal(taxRes.body.belka.interestGross >= 120);
+
+  const updateRes = await request(app)
+    .put(`/api/income-events/${createRes.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ amount: 150 });
+  assert.equal(updateRes.status, 200);
+
+  const delRes = await request(app)
+    .delete(`/api/income-events/${createRes.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(delRes.status, 204);
+});
+
 test("POST /api/import/bank-transactions previews mBank CSV (FR-019)", async () => {
   const { token } = await createUserAndToken();
   const accountRes = await request(app)

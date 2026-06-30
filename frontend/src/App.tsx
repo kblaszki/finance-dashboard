@@ -20,6 +20,7 @@ import { StatisticsPage } from "./pages/StatisticsPage";
 import { CategoriesPage } from "./pages/CategoriesPage";
 import { BudgetsPage } from "./pages/BudgetsPage";
 import { ImportPage } from "./pages/ImportPage";
+import { IncomeEventsPage } from "./pages/IncomeEventsPage";
 import { useAuth } from "./state/auth";
 
 function App() {
@@ -43,8 +44,10 @@ function App() {
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/budgets" element={<BudgetsPage />} />
           <Route path="/import" element={<ImportPage />} />
+          <Route path="/income-events" element={<IncomeEventsPage />} />
           <Route path="/transfers" element={<TransfersPage />} />
           <Route path="/tax" element={<TaxReportPage />} />
+          <Route path="/tax/:year" element={<TaxReportPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Route>

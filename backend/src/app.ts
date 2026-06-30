@@ -59,6 +59,7 @@ import { createMarketDataRouter } from "./routes/marketDataRoutes";
 import { createImportRouter } from "./routes/importRoutes";
 import { createCategoriesRouter } from "./routes/categoriesRoutes";
 import { createBudgetsRouter } from "./routes/budgetsRoutes";
+import { createIncomeEventsRouter } from "./routes/incomeEventsRoutes";
 import { handleRouteError } from "./routes/httpSupport";
 
 dotenv.config();
@@ -280,6 +281,16 @@ app.use(
     convertAmount,
     getFxRatesPlnPerUnit,
     toNumber,
+  }),
+);
+
+app.use(
+  createIncomeEventsRouter({
+    prisma,
+    requireAuth,
+    uid,
+    parseDateBody,
+    transactionDateFilter,
   }),
 );
 
