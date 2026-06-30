@@ -143,6 +143,8 @@ export const holdingSummaryFixture: HoldingSummary = {
     currency: 'PLN',
   },
   marketValue: 720,
+  costBasis: 600,
+  unrealizedPnl: 120,
   realizedPnl: null,
   lastTradeDate: '2025-04-01T12:00:00.000Z',
 }

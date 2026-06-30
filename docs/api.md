@@ -65,7 +65,7 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 |--------|------|------|-------------|
 | GET | `/api/accounts/:accountId/holdings` | Yes | Open/closed holdings with metrics (`{ open, closed }`) |
 | POST | `/api/accounts/:accountId/holdings` | Yes | Find-or-create holding for `instrumentId` |
-| GET | `/api/holdings/:holdingId` | Yes | Single holding summary |
+| GET | `/api/holdings/:holdingId` | Yes | Single holding summary (`costBasis`, `unrealizedPnl`, `realizedPnl`) |
 | GET | `/api/holdings/:holdingId/lots` | Yes | Trade history for holding |
 | POST | `/api/holdings/:holdingId/lots` | Yes | BUY/SELL lot |
 | POST | `/api/holdings/:holdingId/split` | Yes | Stock split — `{ ratio, effectiveDate }` scales lot quantities; per-share cost divides |

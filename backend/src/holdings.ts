@@ -32,6 +32,8 @@ export type HoldingSummary = {
   quantity: number;
   instrument: HoldingInstrument;
   marketValue: number | null;
+  costBasis: number | null;
+  unrealizedPnl: number | null;
   realizedPnl: number | null;
   lastTradeDate: string | null;
 };
@@ -198,6 +200,26 @@ function lastTradeDateFromLots(lots: HoldingLotRow[]): string | null {
   return latest.tradeDate.toISOString();
 }
 
+function computeOpenCostBasis(
+  lots: HoldingLotRow[],
+  accountCurrency: string,
+  plnPerUnit: Record<string, number>,
+): number {
+  let buyTotal = 0;
+  let sellTotal = 0;
+  for (const lot of lots) {
+    const amount = convertAmount(
+      toNumber(lot.totalPrice ?? 0),
+      lot.currency,
+      accountCurrency,
+      plnPerUnit,
+    );
+    if (lot.side === "BUY") buyTotal += amount;
+    else if (lot.side === "SELL") sellTotal += amount;
+  }
+  return buyTotal - sellTotal;
+}
+
 function serializeInstrument(instrument: HoldingInstrument): HoldingInstrument {
   return {
     id: instrument.id,
@@ -247,6 +269,10 @@ export async function buildHoldingSummary(
         )
     : null;
 
+  const costBasis = isOpen ? computeOpenCostBasis(holding.lots, accountCurrency, plnPerUnit) : null;
+  const unrealizedPnl =
+    isOpen && marketValue != null && costBasis != null ? marketValue - costBasis : null;
+
   return {
     id: holding.id,
     accountId: holding.accountId,
@@ -254,6 +280,8 @@ export async function buildHoldingSummary(
     quantity,
     instrument: serializeInstrument(holding.instrument),
     marketValue,
+    costBasis,
+    unrealizedPnl,
     realizedPnl: !isOpen
       ? computeRealizedPnl(holding.lots, accountCurrency, plnPerUnit)
       : null,

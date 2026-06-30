@@ -13,6 +13,8 @@ export type HoldingSummary = {
   quantity: number;
   instrument: HoldingInstrument;
   marketValue: number | null;
+  costBasis: number | null;
+  unrealizedPnl: number | null;
   realizedPnl: number | null;
   lastTradeDate: string | null;
 };

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Transaction, TransactionInput, TransactionType } from '../api/transactionsApi'
 import {
@@ -20,6 +20,19 @@ type Props = {
   showAccountColumn?: boolean
   title?: string
   hideList?: boolean
+  showBankCashFilters?: boolean
+}
+
+type CashFlowTab = 'ALL' | 'INCOME' | 'EXPENSE'
+
+const INCOME_TYPES = new Set(['INCOME', 'DIVIDEND', 'INTEREST'])
+const EXPENSE_TYPES = new Set(['EXPENSE'])
+
+function matchesCashFlowTab(transactionType: string, category: string, tab: CashFlowTab): boolean {
+  if (tab === 'ALL') return true
+  if (category === 'INTERNAL_TRANSFER') return false
+  if (tab === 'INCOME') return INCOME_TYPES.has(transactionType)
+  return EXPENSE_TYPES.has(transactionType)
 }
 
 const BASE_TRANSACTION_TYPES: Array<{ value: TransactionType; label: string }> = [
@@ -68,6 +81,7 @@ export function TransactionTable({
   showAccountColumn = true,
   title = 'Transactions',
   hideList = false,
+  showBankCashFilters = false,
 }: Props) {
   const { data: accounts, error: accountsError } = useAsyncData(fetchAccounts)
   const [form, setForm] = useState<TransactionInput>(() => emptyForm(fixedAccountId ?? 0, accountCurrency ?? 'PLN'))
@@ -76,6 +90,8 @@ export function TransactionTable({
   const [filterFrom, setFilterFrom] = useState('')
   const [filterTo, setFilterTo] = useState('')
   const [filterAccountId, setFilterAccountId] = useState(fixedAccountId ? String(fixedAccountId) : '')
+  const [cashFlowTab, setCashFlowTab] = useState<CashFlowTab>('ALL')
+  const [filterCategory, setFilterCategory] = useState('')
 
   useEffect(() => {
     if (fixedAccountId) {
@@ -168,7 +184,23 @@ export function TransactionTable({
   }
 
   const accountRows = accounts ?? []
-  const transactionRows = transactions ?? []
+  const allTransactionRows = transactions ?? []
+  const categoryOptions = useMemo(() => {
+    const categories = new Set<string>()
+    for (const row of allTransactionRows) {
+      if (row.category) categories.add(row.category)
+    }
+    return [...categories].sort((a, b) => a.localeCompare(b))
+  }, [allTransactionRows])
+  const transactionRows = useMemo(() => {
+    return allTransactionRows.filter((row) => {
+      if (showBankCashFilters && !matchesCashFlowTab(row.transactionType, row.category, cashFlowTab)) {
+        return false
+      }
+      if (filterCategory && row.category !== filterCategory) return false
+      return true
+    })
+  }, [allTransactionRows, showBankCashFilters, cashFlowTab, filterCategory])
   const bannerError = formError ?? transactionsError ?? accountsError
   const lockAccount = fixedAccountId != null
   const selectedAccount =
@@ -268,6 +300,27 @@ export function TransactionTable({
           <p className="muted">
             <Link to={`/transactions?accountId=${fixedAccountId}`}>All transactions for this account</Link>
           </p>
+        </section>
+      )}
+
+      {showBankCashFilters && lockAccount && (
+        <section className="card">
+          <h2>Cash flow view</h2>
+          <div className="inline-form">
+            <select value={cashFlowTab} onChange={(e) => setCashFlowTab(e.target.value as CashFlowTab)}>
+              <option value="ALL">All</option>
+              <option value="INCOME">Income</option>
+              <option value="EXPENSE">Expenses</option>
+            </select>
+            <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
+              <option value="">All categories</option>
+              {categoryOptions.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </div>
         </section>
       )}
 

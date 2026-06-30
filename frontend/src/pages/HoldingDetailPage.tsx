@@ -3,12 +3,16 @@ import { Link, useParams } from 'react-router-dom'
 import { fetchAccount } from '../api/accountsApi'
 import { fetchHolding, type HoldingSummary } from '../api/holdingsApi'
 import { fetchHoldingValuations } from '../api/valuationsApi'
+import { HoldingKpiCards } from '../components/HoldingKpiCards'
 import { HoldingLotsTable } from '../components/HoldingLotsTable'
 import { HoldingSplitForm } from '../components/HoldingSplitForm'
 import { HoldingValuationChart } from '../components/HoldingValuationChart'
 import { InstrumentValuationForm } from '../components/InstrumentValuationForm'
 import { useAsyncData } from '../hooks/useAsyncData'
+import { rangeForPreset } from '../state/period'
 import { formatMoney } from '../utils/format'
+
+const defaultChartRange = rangeForPreset('last_12_months')
 
 type HoldingDetailData = {
   holding: HoldingSummary
@@ -23,6 +27,8 @@ export function HoldingDetailPage() {
   const invalidAccountId = !Number.isFinite(accountId) || accountId < 1
   const invalidHoldingId = !Number.isFinite(holdingId) || holdingId < 1
   const invalidId = invalidAccountId || invalidHoldingId
+  const [chartFrom, setChartFrom] = useState(defaultChartRange.from)
+  const [chartTo, setChartTo] = useState(defaultChartRange.to)
   const [historyVersion, setHistoryVersion] = useState(0)
 
   const loader = useCallback(async (): Promise<HoldingDetailData | null> => {
@@ -32,9 +38,14 @@ export function HoldingDetailPage() {
       fetchHolding(holdingId),
       fetchAccount(accountId),
     ])
-    const positionHistory = await fetchHoldingValuations(accountId, holding.instrumentId)
+    const positionHistory = await fetchHoldingValuations(
+      accountId,
+      holding.instrumentId,
+      chartFrom,
+      chartTo,
+    )
     return { holding, accountCurrency: account.currency, positionHistory }
-  }, [invalidId, accountId, holdingId, historyVersion])
+  }, [invalidId, accountId, holdingId, historyVersion, chartFrom, chartTo])
 
   const { data, error, loading, reload } = useAsyncData(loader)
 
@@ -93,7 +104,16 @@ export function HoldingDetailPage() {
       {error && <p className="error-banner">{error}</p>}
 
       <section className="card">
+        <h2>Position summary</h2>
+        <HoldingKpiCards holding={holding} currency={accountCurrency} />
+      </section>
+
+      <section className="card">
         <h2>Position value history</h2>
+        <div className="inline-form form-section-gap">
+          <input type="date" value={chartFrom} onChange={(e) => setChartFrom(e.target.value)} />
+          <input type="date" value={chartTo} onChange={(e) => setChartTo(e.target.value)} />
+        </div>
         <HoldingValuationChart points={positionHistory} currency={accountCurrency} />
       </section>
 

@@ -1153,6 +1153,13 @@ test("GET and POST /api/instruments/:id/valuations", async () => {
       tradeDate: "2025-01-05T12:00:00.000Z",
     });
 
+  const holdingDetail = await request(app)
+    .get(`/api/holdings/${holdingId}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(holdingDetail.status, 200);
+  assert.equal(holdingDetail.body.costBasis, 1000);
+  assert.equal(holdingDetail.body.quantity, 10);
+
   const valRes = await request(app)
     .post(`/api/instruments/${instrument.id}/valuations`)
     .set("Authorization", `Bearer ${token}`)

@@ -14,8 +14,8 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 | `/statistics` | Statistics | `StatisticsPage` — FR-003 summary KPIs, FR-004 cashflow history chart |
 | `/portfolio` | Portfolio (all accounts) | `PortfolioPage` — filters by account, type, bucket (FR-008) |
 | `/accounts` | Accounts | `ManagedAccountsList` — total balance per account (FR-012) |
-| `/accounts/:id` | Account detail | `AccountDetailPage`, `AccountStatsCards`, `AccountActivityTable` (BROKERAGE), `BrokerImportForm` (BROKERAGE), holdings, `ManualAccountRevalueForm` (MANUAL), `TransactionTable` |
-| `/accounts/:id/holdings/:holdingId` | Holding detail | `HoldingDetailPage`, `HoldingValuationChart`, `InstrumentValuationForm`, `HoldingSplitForm`, `HoldingLotsTable` |
+| `/accounts/:id` | Account detail | `AccountDetailPage`, chart date range, `AccountStatsCards`, `AccountActivityTable` (BROKERAGE), `BrokerImportForm` (BROKERAGE), holdings, `ManualAccountRevalueForm` (MANUAL), `TransactionTable` with bank cash-flow tabs |
+| `/accounts/:id/holdings/:holdingId` | Holding detail | `HoldingDetailPage`, `HoldingKpiCards`, `HoldingValuationChart` (date range), `InstrumentValuationForm`, `HoldingSplitForm`, `HoldingLotsTable` |
 | `/transactions` | Asset trades | `TransactionsListPage` → `AssetTradesTable` (FR-007; `?accountId=` filter) |
 | `/transfers` | Internal transfers | `TransfersPage` → `InternalTransfersTable` (FR-011; `?accountId=` filter) |
 | `/tax` | PL tax report | `TaxReportPage` — FIFO gains, Belka estimate, CSV export |

@@ -273,6 +273,8 @@ test("getAccountHoldings splits open and closed with marketValue and realizedPnl
   assert.equal(result.closed.length, 1);
   assert.equal(result.open[0]!.instrument.symbol, "OPEN");
   assert.equal(result.open[0]!.marketValue, 100);
+  assert.equal(result.open[0]!.costBasis, 80);
+  assert.equal(result.open[0]!.unrealizedPnl, 20);
   assert.equal(result.closed[0]!.realizedPnl, 100);
   assert.equal(result.closed[0]!.marketValue, null);
 });

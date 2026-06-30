@@ -18,6 +18,7 @@ import { ManualAccountRevalueForm } from '../components/ManualAccountRevalueForm
 import { MarketPricesStatus } from '../components/MarketPricesStatus'
 import { TransactionTable } from '../components/TransactionTable'
 import { useAsyncData } from '../hooks/useAsyncData'
+import { rangeForPreset } from '../state/period'
 import { formatMoney } from '../utils/format'
 
 type AccountDetailData = {
@@ -26,9 +27,15 @@ type AccountDetailData = {
   holdings: AccountHoldings
 }
 
-async function loadAccountDetail(accountId: number): Promise<AccountDetailData> {
+const defaultChartRange = rangeForPreset('last_12_months')
+
+async function loadAccountDetail(
+  accountId: number,
+  chartFrom: string,
+  chartTo: string,
+): Promise<AccountDetailData> {
   const account = await fetchAccount(accountId)
-  const history = await fetchAccountValuations(accountId)
+  const history = await fetchAccountValuations(accountId, chartFrom, chartTo)
   const holdings =
     account.accountType === 'BROKERAGE'
       ? await fetchAccountHoldings(accountId)
@@ -40,12 +47,14 @@ export function AccountDetailPage() {
   const { id } = useParams()
   const accountId = Number(id)
   const invalidId = !Number.isFinite(accountId) || accountId < 1
+  const [chartFrom, setChartFrom] = useState(defaultChartRange.from)
+  const [chartTo, setChartTo] = useState(defaultChartRange.to)
   const loader = useCallback(async () => {
     if (!Number.isFinite(accountId) || accountId < 1) {
       throw new Error('Invalid account ID')
     }
-    return loadAccountDetail(accountId)
-  }, [accountId])
+    return loadAccountDetail(accountId, chartFrom, chartTo)
+  }, [accountId, chartFrom, chartTo])
   const { data, error, loading, reload } = useAsyncData(loader)
   const [instrumentId, setInstrumentId] = useState<number | null>(null)
   const [holdingError, setHoldingError] = useState<string | null>(null)
@@ -157,6 +166,10 @@ export function AccountDetailPage() {
 
       <section className="card">
         <h2>Account value history</h2>
+        <div className="inline-form form-section-gap">
+          <input type="date" value={chartFrom} onChange={(e) => setChartFrom(e.target.value)} />
+          <input type="date" value={chartTo} onChange={(e) => setChartTo(e.target.value)} />
+        </div>
         <AccountBalanceChart
           points={history}
           currency={account.currency}
@@ -229,6 +242,7 @@ export function AccountDetailPage() {
           accountCurrency={account.currency}
           accountType={account.accountType}
           showFilters
+          showBankCashFilters
           showAccountColumn={false}
           title="Cash transactions"
         />
