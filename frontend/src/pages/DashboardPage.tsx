@@ -12,6 +12,7 @@ import { BenchmarkComparison } from '../components/BenchmarkComparison'
 import { PeriodProvider } from '../state/period'
 import { CashFlowProvider } from '../state/cashflow'
 import { NetWorthSection } from '../components/NetWorthSection'
+import { RollingCashflowKpis } from '../components/RollingCashflowKpis'
 
 type DashboardTab = 'portfolio' | 'budget'
 
@@ -57,6 +58,10 @@ export function DashboardPage() {
             </>
           ) : (
             <>
+              <section className="card">
+                <h2>12-month rolling averages</h2>
+                <RollingCashflowKpis />
+              </section>
               <section className="card">
                 <h2>Cash flows (period)</h2>
                 <KpiCards />

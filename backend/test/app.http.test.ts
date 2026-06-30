@@ -1413,6 +1413,60 @@ test("GET /api/stats/cashflow-history returns monthly buckets", async () => {
   assert.equal(res.body.points[1].expense, 50);
 });
 
+test("GET /api/stats/cashflow-rolling-12m returns monthly averages", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BANK",
+      name: "Rolling Bank",
+      currency: "PLN",
+      openingBalance: 0,
+    });
+  const accountId = accountRes.body.id;
+
+  const now = new Date();
+  const month = now.getMonth();
+  const year = now.getFullYear();
+  const prevMonth = month === 0 ? 11 : month - 1;
+  const prevYear = month === 0 ? year - 1 : year;
+  const tradeDate = new Date(prevYear, prevMonth, 15, 12, 0, 0).toISOString();
+
+  await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      transactionType: "INCOME",
+      amount: 1200,
+      currency: "PLN",
+      category: "SALARY",
+      date: tradeDate,
+    });
+  await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      transactionType: "EXPENSE",
+      amount: 300,
+      currency: "PLN",
+      category: "FOOD",
+      date: tradeDate,
+    });
+
+  const res = await request(app)
+    .get("/api/stats/cashflow-rolling-12m?currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  assert.equal(res.body.currency, "PLN");
+  assert.equal(res.body.months, 12);
+  assert.ok(res.body.avgIncome > 0);
+  assert.ok(res.body.avgExpense > 0);
+  assert.ok(res.body.avgNet > 0);
+});
+
 test("GET /api/stats category breakdowns", async () => {
   const { token } = await createUserAndToken();
   const accountRes = await request(app)

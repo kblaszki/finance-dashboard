@@ -132,6 +132,40 @@ export function computeCashflowHistory(
   });
 }
 
+export function last12CompleteCalendarMonths(now = new Date()): {
+  from: Date;
+  to: Date;
+  months: string[];
+} {
+  const end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+  const start = new Date(end.getFullYear(), end.getMonth() - 11, 1, 0, 0, 0, 0);
+  return { from: start, to: end, months: enumerateCalendarMonths(start, end) };
+}
+
+export function computeRollingMonthlyAverages(points: CashflowHistoryPoint[]): {
+  avgIncome: number;
+  avgExpense: number;
+  avgNet: number;
+} {
+  if (points.length === 0) {
+    return { avgIncome: 0, avgExpense: 0, avgNet: 0 };
+  }
+  const totals = points.reduce(
+    (acc, point) => ({
+      income: acc.income + point.income,
+      expense: acc.expense + point.expense,
+      net: acc.net + point.net,
+    }),
+    { income: 0, expense: 0, net: 0 },
+  );
+  const count = points.length;
+  return {
+    avgIncome: totals.income / count,
+    avgExpense: totals.expense / count,
+    avgNet: totals.net / count,
+  };
+}
+
 export function computeCategoryBreakdown(
   rows: TransactionRow[],
   displayCurrency: string,

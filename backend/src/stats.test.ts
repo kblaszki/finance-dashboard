@@ -4,9 +4,11 @@ import {
   computeCashflowStats,
   computeCashflowHistory,
   computeCategoryBreakdown,
+  computeRollingMonthlyAverages,
   enumerateCalendarMonths,
   isCashflowExpenseType,
   isCashflowIncomeType,
+  last12CompleteCalendarMonths,
   requireTransactionDateFilter,
 } from "./stats";
 import { transactionDateFilter } from "./routes/routeSupport";
@@ -176,4 +178,25 @@ test("computeCashflowHistory buckets by month and fills zeros", () => {
     { month: "2025-01", income: 100, expense: 40, net: 60 },
     { month: "2025-02", income: 0, expense: 25, net: -25 },
   ]);
+});
+
+test("computeRollingMonthlyAverages returns mean monthly values", () => {
+  const result = computeRollingMonthlyAverages([
+    { month: "2025-01", income: 100, expense: 40, net: 60 },
+    { month: "2025-02", income: 200, expense: 50, net: 150 },
+  ]);
+  assert.equal(result.avgIncome, 150);
+  assert.equal(result.avgExpense, 45);
+  assert.equal(result.avgNet, 105);
+});
+
+test("last12CompleteCalendarMonths spans twelve months ending previous month", () => {
+  const { months, from, to } = last12CompleteCalendarMonths(new Date("2025-06-15T12:00:00.000Z"));
+  assert.equal(months.length, 12);
+  assert.equal(months[0], "2024-06");
+  assert.equal(months[11], "2025-05");
+  assert.equal(from.getFullYear(), 2024);
+  assert.equal(from.getMonth(), 5);
+  assert.equal(to.getFullYear(), 2025);
+  assert.equal(to.getMonth(), 4);
 });

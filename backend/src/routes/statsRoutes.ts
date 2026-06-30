@@ -6,8 +6,10 @@ import {
   computeCashflowStats,
   computeCashflowHistory,
   computeCategoryBreakdown,
+  computeRollingMonthlyAverages,
   enumerateCalendarMonths,
   fetchUserTransactions,
+  last12CompleteCalendarMonths,
   requireTransactionDateFilter,
 } from "../stats";
 import {
@@ -116,6 +118,27 @@ export function createStatsRouter(deps: StatsDeps): Router {
       res.json({ currency, points });
     } catch (e: unknown) {
       handleRouteError(res, e, "Failed to load cashflow history");
+    }
+  });
+
+  router.get("/api/stats/cashflow-rolling-12m", requireAuth, async (req: AuthedRequest, res) => {
+    try {
+      const currency = normalizeCurrency(req.query.currency ?? "PLN");
+      const { plnPerUnit } = await getFxRatesPlnPerUnit();
+      const { from, to, months } = last12CompleteCalendarMonths();
+      const rows = await fetchUserTransactions(prisma, uid(req), { gte: from, lte: to });
+      const points = computeCashflowHistory(
+        rows,
+        months,
+        currency,
+        convertAmount,
+        toNumber,
+        plnPerUnit,
+      );
+      const averages = computeRollingMonthlyAverages(points);
+      res.json({ currency, months: months.length, ...averages });
+    } catch (e: unknown) {
+      handleRouteError(res, e, "Failed to load rolling cashflow averages");
     }
   });
 

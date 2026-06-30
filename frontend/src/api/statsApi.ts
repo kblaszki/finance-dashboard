@@ -106,6 +106,19 @@ export function fetchCashflow(params: RequiredPeriodQuery) {
   return apiClient.get<CashflowStats>(`/api/stats/cashflow${periodQuery(params)}`);
 }
 
+export type CashflowRolling12m = {
+  currency: string;
+  months: number;
+  avgIncome: number;
+  avgExpense: number;
+  avgNet: number;
+};
+
+export function fetchCashflowRolling12m(currency: string) {
+  const q = new URLSearchParams({ currency });
+  return apiClient.get<CashflowRolling12m>(`/api/stats/cashflow-rolling-12m?${q}`);
+}
+
 export function fetchCashflowHistory(params: RequiredPeriodQuery) {
   return apiClient.get<CashflowHistory>(`/api/stats/cashflow-history${periodQuery(params)}`);
 }
