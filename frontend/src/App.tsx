@@ -14,6 +14,7 @@ import { TaxReportPage } from "./pages/TaxReportPage";
 import { TransactionsListPage } from "./pages/TransactionsListPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { PortfolioPage } from "./pages/PortfolioPage";
+import { StatisticsPage } from "./pages/StatisticsPage";
 import { PlaceholderPage } from "./pages/PlaceholderPage";
 import { useAuth } from "./state/auth";
 
@@ -27,15 +28,7 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
           <Route path="/dashboard" element={<DashboardPage />} />
-          <Route
-            path="/statistics"
-            element={
-              <PlaceholderPage
-                title="Statistics"
-                description="Income, expense, and net income charts will appear here (FR-003, FR-004)."
-              />
-            }
-          />
+          <Route path="/statistics" element={<StatisticsPage />} />
           <Route path="/portfolio" element={<PortfolioPage />} />
           <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/accounts/:id" element={<AccountDetailPage />} />

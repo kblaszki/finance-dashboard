@@ -11,6 +11,7 @@ export type PeriodPreset =
   | "prev_month"
   | "current_quarter"
   | "current_year"
+  | "last_12_months"
   | "custom";
 
 export type DateRange = {
@@ -53,6 +54,12 @@ export function rangeForPreset(preset: PeriodPreset): DateRange {
     return { from: formatDateLocal(from), to: formatDateLocal(to) };
   }
 
+  if (preset === "last_12_months") {
+    const to = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const from = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+    return { from: formatDateLocal(from), to: formatDateLocal(to) };
+  }
+
   const from = new Date(now.getFullYear(), now.getMonth(), 1);
   const to = new Date(now.getFullYear(), now.getMonth() + 1, 0);
   return { from: formatDateLocal(from), to: formatDateLocal(to) };
@@ -68,11 +75,10 @@ type PeriodContextValue = {
 
 const PeriodContext = createContext<PeriodContextValue | null>(null);
 
-export function PeriodProvider(props: { children: React.ReactNode }) {
-  const [preset, setPresetState] = useState<PeriodPreset>("current_month");
-  const [customRange, setCustomRangeState] = useState<DateRange>(() =>
-    rangeForPreset("current_month"),
-  );
+export function PeriodProvider(props: { children: React.ReactNode; initialPreset?: PeriodPreset }) {
+  const initial = props.initialPreset ?? "current_month";
+  const [preset, setPresetState] = useState<PeriodPreset>(initial);
+  const [customRange, setCustomRangeState] = useState<DateRange>(() => rangeForPreset(initial));
 
   const range = useMemo(() => {
     if (preset === "custom") return customRange;

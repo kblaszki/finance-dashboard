@@ -4,7 +4,9 @@ import type { AuthedRequest } from "../auth";
 import type { TransactionDateFilter } from "./routeSupport";
 import {
   computeCashflowStats,
+  computeCashflowHistory,
   computeCategoryBreakdown,
+  enumerateCalendarMonths,
   fetchUserTransactions,
   requireTransactionDateFilter,
 } from "../stats";
@@ -92,6 +94,28 @@ export function createStatsRouter(deps: StatsDeps): Router {
       res.json(computeCashflowStats(rows, currency, convertAmount, toNumber, plnPerUnit));
     } catch (e: unknown) {
       handleRouteError(res, e, "Failed to load cashflow");
+    }
+  });
+
+  router.get("/api/stats/cashflow-history", requireAuth, async (req: AuthedRequest, res) => {
+    try {
+      const date = requireTransactionDateFilter(transactionDateFilter, req.query.from, req.query.to);
+      const currency = normalizeCurrency(req.query.currency ?? "PLN");
+      const { plnPerUnit } = await getFxRatesPlnPerUnit();
+      const rows = await fetchUserTransactions(prisma, uid(req), date);
+      const months =
+        date.gte && date.lte ? enumerateCalendarMonths(date.gte, date.lte) : [];
+      const points = computeCashflowHistory(
+        rows,
+        months,
+        currency,
+        convertAmount,
+        toNumber,
+        plnPerUnit,
+      );
+      res.json({ currency, points });
+    } catch (e: unknown) {
+      handleRouteError(res, e, "Failed to load cashflow history");
     }
   });
 

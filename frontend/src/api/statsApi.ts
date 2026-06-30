@@ -24,6 +24,16 @@ export type CashflowStats = {
   currency: string;
 };
 
+export type CashflowHistory = {
+  currency: string;
+  points: Array<{
+    month: string;
+    income: number;
+    expense: number;
+    net: number;
+  }>;
+};
+
 export type AllocationRow = {
   type: string;
   value: number;
@@ -94,6 +104,10 @@ export function fetchAverageHoldingReturn(currency: string) {
 
 export function fetchCashflow(params: RequiredPeriodQuery) {
   return apiClient.get<CashflowStats>(`/api/stats/cashflow${periodQuery(params)}`);
+}
+
+export function fetchCashflowHistory(params: RequiredPeriodQuery) {
+  return apiClient.get<CashflowHistory>(`/api/stats/cashflow-history${periodQuery(params)}`);
 }
 
 export function fetchExpensesByCategory(params: RequiredPeriodQuery) {

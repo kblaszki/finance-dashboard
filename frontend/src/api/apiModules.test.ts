@@ -50,6 +50,7 @@ import {
   fetchNetWorth,
   fetchAverageHoldingReturn,
   fetchCashflow,
+  fetchCashflowHistory,
   fetchExpensesByCategory,
   fetchIncomeByCategory,
   fetchPortfolioSummary,
@@ -256,6 +257,11 @@ describe('API modules', () => {
     )
     expect(apiClient.get).toHaveBeenCalledWith(
       expect.stringMatching(/from=2025-01-01/),
+    )
+
+    await fetchCashflowHistory({ from: '2024-01-01', to: '2024-12-31', currency: 'PLN' })
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/stats/cashflow-history?from=2024-01-01&to=2024-12-31&currency=PLN',
     )
 
     await fetchExpensesByCategory({ from: '2025-01-01', to: '2025-01-31' })

@@ -2,7 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   computeCashflowStats,
+  computeCashflowHistory,
   computeCategoryBreakdown,
+  enumerateCalendarMonths,
   isCashflowExpenseType,
   isCashflowIncomeType,
   requireTransactionDateFilter,
@@ -126,5 +128,52 @@ test("computeCategoryBreakdown groups by category", () => {
   assert.deepEqual(rows.sort((a, b) => a.category.localeCompare(b.category)), [
     { category: "FOOD", amount: 15 },
     { category: "TRAVEL", amount: 3 },
+  ]);
+});
+
+test("enumerateCalendarMonths lists inclusive months", () => {
+  const months = enumerateCalendarMonths(
+    new Date("2025-01-15T12:00:00.000Z"),
+    new Date("2025-03-10T12:00:00.000Z"),
+  );
+  assert.deepEqual(months, ["2025-01", "2025-02", "2025-03"]);
+});
+
+test("computeCashflowHistory buckets by month and fills zeros", () => {
+  const plnPerUnit = { PLN: 1 };
+  const convert = (amount: number, from: string, to: string) => (from === to ? amount : amount);
+  const points = computeCashflowHistory(
+    [
+      {
+        amount: 100,
+        currency: "PLN",
+        transactionType: "INCOME",
+        category: "SALARY",
+        date: new Date("2025-01-10T12:00:00.000Z"),
+      },
+      {
+        amount: 40,
+        currency: "PLN",
+        transactionType: "EXPENSE",
+        category: "FOOD",
+        date: new Date("2025-01-20T12:00:00.000Z"),
+      },
+      {
+        amount: 25,
+        currency: "PLN",
+        transactionType: "EXPENSE",
+        category: "TRAVEL",
+        date: new Date("2025-02-05T12:00:00.000Z"),
+      },
+    ],
+    ["2025-01", "2025-02"],
+    "PLN",
+    convert,
+    Number,
+    plnPerUnit,
+  );
+  assert.deepEqual(points, [
+    { month: "2025-01", income: 100, expense: 40, net: 60 },
+    { month: "2025-02", income: 0, expense: 25, net: -25 },
   ]);
 });

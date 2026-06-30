@@ -1352,6 +1352,67 @@ test("GET /api/stats/cashflow excludes internal transfers", async () => {
   assert.equal(res.body.net, 200);
 });
 
+test("GET /api/stats/cashflow-history returns monthly buckets", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BANK",
+      name: "History Bank",
+      currency: "PLN",
+      openingBalance: 0,
+    });
+  const accountId = accountRes.body.id;
+
+  await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      transactionType: "INCOME",
+      amount: 1000,
+      currency: "PLN",
+      category: "SALARY",
+      date: "2025-01-15T12:00:00.000Z",
+    });
+  await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      transactionType: "EXPENSE",
+      amount: 200,
+      currency: "PLN",
+      category: "FOOD",
+      date: "2025-01-20T12:00:00.000Z",
+    });
+  await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      transactionType: "EXPENSE",
+      amount: 50,
+      currency: "PLN",
+      category: "TRAVEL",
+      date: "2025-02-10T12:00:00.000Z",
+    });
+
+  const res = await request(app)
+    .get("/api/stats/cashflow-history?from=2025-01-01&to=2025-02-28&currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  assert.equal(res.body.currency, "PLN");
+  assert.equal(res.body.points.length, 2);
+  assert.equal(res.body.points[0].month, "2025-01");
+  assert.equal(res.body.points[0].income, 1000);
+  assert.equal(res.body.points[0].expense, 200);
+  assert.equal(res.body.points[0].net, 800);
+  assert.equal(res.body.points[1].month, "2025-02");
+  assert.equal(res.body.points[1].expense, 50);
+});
+
 test("GET /api/stats category breakdowns", async () => {
   const { token } = await createUserAndToken();
   const accountRes = await request(app)

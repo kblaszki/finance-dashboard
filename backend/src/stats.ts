@@ -7,6 +7,14 @@ type TransactionRow = {
   currency: string;
   transactionType: string;
   category: string;
+  date?: Date;
+};
+
+export type CashflowHistoryPoint = {
+  month: string;
+  income: number;
+  expense: number;
+  net: number;
 };
 
 const CASHFLOW_INCOME_TYPES = new Set(["INCOME", "DIVIDEND", "INTEREST"]);
@@ -61,6 +69,69 @@ export function computeCashflowStats(
   return { income, expense, net: income - expense, currency: displayCurrency };
 }
 
+function monthKeyFromDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  return `${y}-${m}`;
+}
+
+export function enumerateCalendarMonths(from: Date, to: Date): string[] {
+  const months: string[] = [];
+  let y = from.getFullYear();
+  let m = from.getMonth();
+  const endY = to.getFullYear();
+  const endM = to.getMonth();
+  while (y < endY || (y === endY && m <= endM)) {
+    months.push(`${y}-${String(m + 1).padStart(2, "0")}`);
+    m += 1;
+    if (m > 11) {
+      m = 0;
+      y += 1;
+    }
+  }
+  return months;
+}
+
+export function computeCashflowHistory(
+  rows: Array<TransactionRow & { date: Date }>,
+  months: string[],
+  displayCurrency: string,
+  convertAmount: (
+    amount: number,
+    fromCurrency: string,
+    toCurrency: string,
+    plnPerUnit: Record<string, number>,
+  ) => number,
+  toNumber: (value: unknown) => number,
+  plnPerUnit: Record<string, number>,
+): CashflowHistoryPoint[] {
+  const buckets = new Map<string, { income: number; expense: number }>();
+  for (const month of months) {
+    buckets.set(month, { income: 0, expense: 0 });
+  }
+  for (const t of rows) {
+    const key = monthKeyFromDate(t.date);
+    const bucket = buckets.get(key);
+    if (!bucket) continue;
+    const amount = convertAmount(toNumber(t.amount), t.currency, displayCurrency, plnPerUnit);
+    if (isCashflowIncomeType(t.transactionType)) {
+      bucket.income += amount;
+    }
+    if (isCashflowExpenseType(t.transactionType)) {
+      bucket.expense += amount;
+    }
+  }
+  return months.map((month) => {
+    const bucket = buckets.get(month) ?? { income: 0, expense: 0 };
+    return {
+      month,
+      income: bucket.income,
+      expense: bucket.expense,
+      net: bucket.income - bucket.expense,
+    };
+  });
+}
+
 export function computeCategoryBreakdown(
   rows: TransactionRow[],
   displayCurrency: string,
@@ -86,12 +157,19 @@ export async function fetchUserTransactions(
   userId: number,
   date: { gte?: Date; lte?: Date },
   transactionTypes?: string[],
-): Promise<TransactionRow[]> {
+): Promise<Array<TransactionRow & { date: Date }>> {
   return prisma.transaction.findMany({
     where: {
       account: { userId },
       ...(transactionTypes ? { transactionType: { in: transactionTypes } } : {}),
       date,
+    },
+    select: {
+      amount: true,
+      currency: true,
+      transactionType: true,
+      category: true,
+      date: true,
     },
   });
 }

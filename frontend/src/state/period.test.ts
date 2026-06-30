@@ -39,6 +39,13 @@ describe('rangeForPreset', () => {
     })
   })
 
+  it('returns last 12 months range', () => {
+    expect(rangeForPreset('last_12_months')).toEqual({
+      from: '2024-07-01',
+      to: '2025-06-30',
+    })
+  })
+
   it('falls back to current month for custom preset', () => {
     expect(rangeForPreset('custom')).toEqual({
       from: '2025-06-01',

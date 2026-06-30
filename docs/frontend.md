@@ -11,7 +11,7 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 | `/register` | Register | `pages/RegisterPage.tsx` (username) |
 | `/password-reset` | Password reset stub | `pages/PasswordResetPage.tsx` |
 | `/dashboard` | Dashboard | `DashboardPage` — Portfolio / Budget tabs, `NetWorthSection`, portfolio & budget charts |
-| `/statistics` | Statistics (placeholder) | `PlaceholderPage` — FR-003/004 pending |
+| `/statistics` | Statistics | `StatisticsPage` — FR-003 summary KPIs, FR-004 cashflow history chart |
 | `/portfolio` | Portfolio (all accounts) | `PortfolioPage` — filters by account, type, bucket (FR-008) |
 | `/accounts` | Accounts | `ManagedAccountsList` |
 | `/accounts/:id` | Account detail | `AccountDetailPage`, `BrokerImportForm` (BROKERAGE), holdings, `ManualAccountRevalueForm` (MANUAL), `TransactionTable` |

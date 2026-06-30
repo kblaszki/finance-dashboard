@@ -6,6 +6,7 @@ const PRESET_LABELS: { value: PeriodPreset; label: string }[] = [
   { value: "prev_month", label: "Previous month" },
   { value: "current_quarter", label: "Current quarter" },
   { value: "current_year", label: "Current year" },
+  { value: "last_12_months", label: "Last 12 months" },
   { value: "custom", label: "Custom range" },
 ];
 
