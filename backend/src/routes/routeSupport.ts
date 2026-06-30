@@ -59,6 +59,7 @@ export function serializeAccount(
     openingBalance: unknown;
     openingCashAsOf: Date | null;
     metalGrams?: unknown | null;
+    taxWrapperType?: string;
     description: string | null;
     createdAt: Date;
     updatedAt: Date;
@@ -75,6 +76,7 @@ export function serializeAccount(
     openingBalance: toNumber(a.openingBalance),
     openingCashAsOf: a.openingCashAsOf?.toISOString() ?? null,
     metalGrams: a.metalGrams != null ? toNumber(a.metalGrams) : null,
+    taxWrapperType: a.taxWrapperType ?? "standard",
     description: a.description,
     createdAt: a.createdAt.toISOString(),
     updatedAt: a.updatedAt.toISOString(),
@@ -130,6 +132,7 @@ export function serializeHoldingLot(l: {
   pricePerUnit: unknown | null;
   currency: string;
   tradeDate: Date;
+  settlementDate?: Date | null;
   createdAt: Date;
   holding?: {
     id: number;
@@ -164,6 +167,7 @@ export function serializeHoldingLot(l: {
     pricePerUnit: l.pricePerUnit != null ? toNumber(l.pricePerUnit) : null,
     currency: l.currency,
     tradeDate: l.tradeDate.toISOString(),
+    settlementDate: l.settlementDate?.toISOString() ?? null,
     createdAt: l.createdAt.toISOString(),
     instrument: l.holding?.instrument
       ? {

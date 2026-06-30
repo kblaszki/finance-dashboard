@@ -94,6 +94,24 @@ User-scoped `Category` tree (`parentId`, `sortOrder`). Defaults seeded on regist
 
 `Account.metalGrams` — optional grams on `PRECIOUS_METAL` accounts (FR-032).
 
+## Tax wrappers (FR-039, DATA-018/023)
+
+`Account.taxWrapperType` — `standard`, `ike`, `ikze`, `ppk` on brokerage accounts. IKE/IKZE/PPK holdings are excluded from PIT-38 unless a `TaxWrapperWithdrawal` with `includeInPit38` exists in the sell tax year.
+
+`TaxWrapperWithdrawal` — partial/full/securities_transfer withdrawals from wrapper accounts.
+
+`IkzeContribution` — annual IKZE deposits per account and tax year.
+
+## Position transfers (FR-041, DATA-020)
+
+`PositionTransfer` — non-taxable move of open buy lots between brokerage accounts (FIFO slice of cost basis preserved).
+
+## Corporate actions (FR-040, DATA-019)
+
+`CorporateAction` — audit log; `stock_split` / `reverse_split` apply lot ratio via existing split logic.
+
+`HoldingLot.settlementDate` — optional; tax report uses it (fallback `tradeDate`) for PIT-38 year assignment.
+
 ## Related docs
 
 - [api.md](api.md) — REST surface

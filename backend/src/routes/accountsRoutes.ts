@@ -7,6 +7,7 @@ import { getLatestAccountTotalValue, getLatestAccountTotalValues, toNumber } fro
 import { computeAccountDetailStats } from "../accountStats";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
 import { parseDateBody, serializeAccount } from "./routeSupport";
+import { parseTaxWrapperType } from "../taxWrapper";
 import { handleRouteError, badRequest, parseIdParam, parseFiniteNumber, parsePositiveNumber, parseRequiredString } from "./httpSupport";
 
 type AccountsDeps = {
@@ -139,6 +140,7 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
         name?: string;
         description?: string | null;
         metalGrams?: number | null;
+        taxWrapperType?: string;
       } = {};
       if (req.body?.name != null) data.name = String(req.body.name).trim();
       if (req.body?.description !== undefined) {
@@ -152,6 +154,12 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
           req.body.metalGrams == null
             ? null
             : parseFiniteNumber(req.body.metalGrams, "metalGrams", { min: 0 });
+      }
+      if (req.body?.taxWrapperType != null) {
+        if (row.accountType !== "BROKERAGE") {
+          throw badRequest("taxWrapperType is only supported for BROKERAGE accounts");
+        }
+        data.taxWrapperType = parseTaxWrapperType(req.body.taxWrapperType);
       }
       const updated = await prisma.account.update({ where: { id }, data });
       const totalBalance =

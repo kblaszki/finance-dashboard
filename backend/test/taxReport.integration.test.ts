@@ -283,3 +283,122 @@ test("tax report flags derivative instrument sells", async () => {
   assert.equal(report.derivatives.sellCount, 1);
   assert.match(report.derivatives.message, /Derivative/i);
 });
+
+test("tax report excludes IKE account without withdrawal in tax year (FR-039)", async () => {
+  const user = await prisma.user.create({
+    data: { email: "ike@test.local", username: "ikeuser", passwordHash: "x" },
+  });
+  const account = await prisma.account.create({
+    data: {
+      userId: user.id,
+      accountType: "BROKERAGE",
+      name: "IKE",
+      currency: "PLN",
+      taxWrapperType: "ike",
+      openingBalance: 0,
+      cashBalance: 0,
+    },
+  });
+  const instrument = await prisma.instrument.create({
+    data: { instrumentType: "STOCK", symbol: "IKE1", exchange: "GPW", currency: "PLN" },
+  });
+  const holding = await findOrCreateHolding(prisma, account.id, instrument.id);
+  await prisma.holdingLot.create({
+    data: {
+      holdingId: holding.id,
+      side: "BUY",
+      quantity: 5,
+      quantityAfter: 5,
+      totalPrice: 500,
+      pricePerUnit: 100,
+      currency: "PLN",
+      tradeDate: new Date("2024-01-01T12:00:00.000Z"),
+    },
+  });
+  await prisma.holdingLot.create({
+    data: {
+      holdingId: holding.id,
+      side: "SELL",
+      quantity: 2,
+      quantityAfter: 3,
+      totalPrice: 240,
+      pricePerUnit: 120,
+      currency: "PLN",
+      tradeDate: new Date("2025-08-01T12:00:00.000Z"),
+    },
+  });
+  await syncHoldingQuantity(prisma, holding.id);
+
+  const excluded = await computeTaxReport(prisma, user.id, 2025, "PLN", MOCK_FX.plnPerUnit);
+  assert.equal(excluded.sellRows.length, 0);
+  assert.ok(excluded.warnings.some((w) => w.message.includes("excluded from PIT-38")));
+
+  await prisma.taxWrapperWithdrawal.create({
+    data: {
+      userId: user.id,
+      accountId: account.id,
+      withdrawnOn: new Date("2025-06-01T12:00:00.000Z"),
+      amount: 1000,
+      currency: "PLN",
+      withdrawalType: "partial",
+      includeInPit38: true,
+    },
+  });
+
+  const included = await computeTaxReport(prisma, user.id, 2025, "PLN", MOCK_FX.plnPerUnit);
+  assert.equal(included.sellRows.length, 1);
+  assert.equal(included.sellRows[0].gainLoss, 40);
+});
+
+test("tax report uses settlement date for tax year (FR-007)", async () => {
+  const user = await prisma.user.create({
+    data: { email: "settle@test.local", username: "settle", passwordHash: "x" },
+  });
+  const account = await prisma.account.create({
+    data: {
+      userId: user.id,
+      accountType: "BROKERAGE",
+      name: "Broker",
+      currency: "PLN",
+      openingBalance: 0,
+      cashBalance: 0,
+    },
+  });
+  const instrument = await prisma.instrument.create({
+    data: { instrumentType: "STOCK", symbol: "SET", exchange: "GPW", currency: "PLN" },
+  });
+  const holding = await findOrCreateHolding(prisma, account.id, instrument.id);
+  await prisma.holdingLot.create({
+    data: {
+      holdingId: holding.id,
+      side: "BUY",
+      quantity: 1,
+      quantityAfter: 1,
+      totalPrice: 100,
+      pricePerUnit: 100,
+      currency: "PLN",
+      tradeDate: new Date("2024-01-01T12:00:00.000Z"),
+    },
+  });
+  await prisma.holdingLot.create({
+    data: {
+      holdingId: holding.id,
+      side: "SELL",
+      quantity: 1,
+      quantityAfter: 0,
+      totalPrice: 150,
+      pricePerUnit: 150,
+      currency: "PLN",
+      tradeDate: new Date("2025-12-20T12:00:00.000Z"),
+      settlementDate: new Date("2026-01-05T12:00:00.000Z"),
+    },
+  });
+  await syncHoldingQuantity(prisma, holding.id);
+
+  const report2025 = await computeTaxReport(prisma, user.id, 2025, "PLN", MOCK_FX.plnPerUnit);
+  assert.equal(report2025.sellRows.length, 0);
+
+  const report2026 = await computeTaxReport(prisma, user.id, 2026, "PLN", MOCK_FX.plnPerUnit);
+  assert.equal(report2026.sellRows.length, 1);
+  assert.equal(report2026.sellRows[0].gainLoss, 50);
+});

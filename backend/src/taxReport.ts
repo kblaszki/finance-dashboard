@@ -2,6 +2,11 @@ import type { PrismaClient } from "@prisma/client";
 import { convertAmount } from "./fx";
 import { computeFifoRealizedEvents, type RealizedGainEvent } from "./fifoRealizedPnl";
 import { isBelkaIncomeEvent } from "./incomeEvents";
+import {
+  accountIncludedInPit38,
+  fetchWithdrawalsForTaxYear,
+  isTaxAdvantagedWrapper,
+} from "./taxWrapper";
 import { toNumber } from "./accountValuation";
 
 const BELKA_RATE = 0.19;
@@ -277,6 +282,8 @@ export async function computeTaxReport(
     },
   });
 
+  const withdrawalsByAccount = await fetchWithdrawalsForTaxYear(prisma, userId, taxYear);
+
   const sellRows: TaxSellRow[] = [];
   const warnings: TaxReportWarning[] = [];
   const byAccountMap = new Map<number, { name: string; net: number }>();
@@ -284,8 +291,27 @@ export async function computeTaxReport(
   let derivativeSellCount = 0;
 
   for (const account of accounts) {
+    const withdrawals = withdrawalsByAccount.get(account.id) ?? [];
+    const includeAccount = accountIncludedInPit38(account.taxWrapperType, withdrawals);
+    if (!includeAccount) {
+      if (isTaxAdvantagedWrapper(account.taxWrapperType) && account.holdings.length > 0) {
+        warnings.push({
+          accountId: account.id,
+          accountName: account.name,
+          symbol: "*",
+          holdingId: 0,
+          message: `Account excluded from PIT-38 (${account.taxWrapperType.toUpperCase()}) — no qualifying withdrawal in ${taxYear}`,
+        });
+      }
+      byAccountMap.set(account.id, { name: account.name, net: 0 });
+      continue;
+    }
+
     let accountNet = 0;
     for (const holding of account.holdings) {
+      const settlementByLotId = new Map(
+        holding.lots.map((lot) => [lot.id, lot.settlementDate ?? null]),
+      );
       const fifoLots = holding.lots.map((lot) => {
         const mapped = {
           id: lot.id,
@@ -318,7 +344,9 @@ export async function computeTaxReport(
       }
 
       for (const event of events) {
-        if (!inTaxYear(event.tradeDate, taxYear)) continue;
+        const settlementDate = settlementByLotId.get(event.lotId);
+        const taxDate = settlementDate ?? event.tradeDate;
+        if (!inTaxYear(taxDate, taxYear)) continue;
         const gainDisplay = convertGain(
           event.gainLoss,
           event.currency,
@@ -342,7 +370,7 @@ export async function computeTaxReport(
         }
 
         sellRows.push({
-          saleDate: event.tradeDate.toISOString(),
+          saleDate: taxDate.toISOString(),
           symbol,
           accountId: account.id,
           accountName: account.name,

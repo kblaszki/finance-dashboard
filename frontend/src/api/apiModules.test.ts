@@ -91,6 +91,16 @@ import {
   createPropertyCashFlow,
   deletePropertyCashFlow,
 } from './propertyCashFlowsApi'
+import {
+  fetchTaxWrapperWithdrawals,
+  createTaxWrapperWithdrawal,
+  deleteTaxWrapperWithdrawal,
+  fetchIkzeContributions,
+  createIkzeContribution,
+  deleteIkzeContribution,
+} from './taxWrappersApi'
+import { fetchPositionTransfers, createPositionTransfer } from './positionTransfersApi'
+import { fetchCorporateActions, createCorporateAction } from './corporateActionsApi'
 
 describe('API modules', () => {
   beforeEach(() => {
@@ -558,5 +568,89 @@ describe('API modules', () => {
 
     await deletePropertyCashFlow(8)
     expect(apiClient.delete).toHaveBeenCalledWith('/api/property-cash-flows/8')
+  })
+
+  it('taxWrappersApi calls correct endpoints', async () => {
+    await fetchTaxWrapperWithdrawals({ accountId: 2 })
+    expect(apiClient.get).toHaveBeenCalledWith('/api/tax-wrapper-withdrawals?accountId=2')
+
+    await createTaxWrapperWithdrawal({
+      accountId: 2,
+      amount: 1000,
+      currency: 'PLN',
+      withdrawnOn: '2026-06-01',
+      withdrawalType: 'partial',
+    })
+    expect(apiClient.post).toHaveBeenCalledWith('/api/tax-wrapper-withdrawals', {
+      accountId: 2,
+      amount: 1000,
+      currency: 'PLN',
+      withdrawnOn: '2026-06-01',
+      withdrawalType: 'partial',
+    })
+
+    await deleteTaxWrapperWithdrawal(3)
+    expect(apiClient.delete).toHaveBeenCalledWith('/api/tax-wrapper-withdrawals/3')
+
+    await fetchIkzeContributions({ taxYear: 2026 })
+    expect(apiClient.get).toHaveBeenCalledWith('/api/ikze-contributions?taxYear=2026')
+
+    await createIkzeContribution({
+      accountId: 2,
+      taxYear: 2026,
+      amount: 500,
+      currency: 'PLN',
+      contributedOn: '2026-03-01',
+    })
+    expect(apiClient.post).toHaveBeenCalledWith('/api/ikze-contributions', {
+      accountId: 2,
+      taxYear: 2026,
+      amount: 500,
+      currency: 'PLN',
+      contributedOn: '2026-03-01',
+    })
+
+    await deleteIkzeContribution(4)
+    expect(apiClient.delete).toHaveBeenCalledWith('/api/ikze-contributions/4')
+  })
+
+  it('positionTransfersApi calls correct endpoints', async () => {
+    await fetchPositionTransfers({ accountId: 1 })
+    expect(apiClient.get).toHaveBeenCalledWith('/api/position-transfers?accountId=1')
+
+    await createPositionTransfer({
+      fromAccountId: 1,
+      toAccountId: 2,
+      instrumentId: 5,
+      quantity: 10,
+      transferDate: '2026-06-01',
+    })
+    expect(apiClient.post).toHaveBeenCalledWith('/api/position-transfers', {
+      fromAccountId: 1,
+      toAccountId: 2,
+      instrumentId: 5,
+      quantity: 10,
+      transferDate: '2026-06-01',
+    })
+  })
+
+  it('corporateActionsApi calls correct endpoints', async () => {
+    await fetchCorporateActions({ accountId: 2 })
+    expect(apiClient.get).toHaveBeenCalledWith('/api/corporate-actions?accountId=2')
+
+    await createCorporateAction({
+      accountId: 2,
+      instrumentId: 5,
+      actionType: 'stock_split',
+      actionDate: '2026-06-01',
+      ratio: 2,
+    })
+    expect(apiClient.post).toHaveBeenCalledWith('/api/corporate-actions', {
+      accountId: 2,
+      instrumentId: 5,
+      actionType: 'stock_split',
+      actionDate: '2026-06-01',
+      ratio: 2,
+    })
   })
 })

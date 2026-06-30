@@ -2338,7 +2338,7 @@ test("GET/POST /api/income-events supports CRUD (FR-024)", async () => {
     .get("/api/stats/tax-report?year=2026&currency=PLN")
     .set("Authorization", `Bearer ${token}`);
   assert.equal(taxRes.status, 200);
-  assert.equal(taxRes.body.belka.interestGross >= 120);
+  assert.ok(taxRes.body.belka.interestGross >= 120);
 
   const updateRes = await request(app)
     .put(`/api/income-events/${createRes.body.id}`)
@@ -2407,6 +2407,98 @@ test("POST /api/property-cash-flows on REAL_ESTATE account (FR-030)", async () =
   assert.equal(taxRes.status, 200);
   assert.equal(taxRes.body.rental.available, true);
   assert.equal(taxRes.body.rental.rentalIncome, 3000);
+});
+
+test("tax wrappers, position transfers, corporate actions (FR-039–041)", async () => {
+  const { token } = await createUserAndToken();
+  const brokerA = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountType: "BROKERAGE", name: "Broker A", currency: "PLN", openingBalance: 10000 });
+  const brokerB = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountType: "BROKERAGE", name: "Broker B", currency: "PLN", openingBalance: 0 });
+  assert.equal(brokerA.status, 201);
+  assert.equal(brokerB.status, 201);
+
+  const ikeUpdate = await request(app)
+    .put(`/api/accounts/${brokerA.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ taxWrapperType: "ike" });
+  assert.equal(ikeUpdate.status, 200);
+  assert.equal(ikeUpdate.body.taxWrapperType, "ike");
+
+  const withdrawalRes = await request(app)
+    .post("/api/tax-wrapper-withdrawals")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId: brokerA.body.id,
+      amount: 500,
+      currency: "PLN",
+      withdrawnOn: "2026-03-01T12:00:00.000Z",
+      withdrawalType: "partial",
+      includeInPit38: true,
+    });
+  assert.equal(withdrawalRes.status, 201);
+
+  const instrumentRes = await request(app)
+    .post("/api/instruments")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ instrumentType: "STOCK", symbol: "TST", currency: "PLN" });
+  assert.equal(instrumentRes.status, 201);
+
+  const holdingRes = await request(app)
+    .post(`/api/accounts/${brokerA.body.id}/holdings`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ instrumentId: instrumentRes.body.id });
+  assert.equal(holdingRes.status, 201);
+
+  const lotRes = await request(app)
+    .post(`/api/holdings/${holdingRes.body.id}/lots`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      side: "BUY",
+      quantity: 10,
+      pricePerUnit: 10,
+      currency: "PLN",
+      tradeDate: "2026-01-01T12:00:00.000Z",
+      settlementDate: "2026-01-03T12:00:00.000Z",
+    });
+  assert.equal(lotRes.status, 201);
+  assert.equal(lotRes.body.settlementDate?.slice(0, 10), "2026-01-03");
+
+  const transferRes = await request(app)
+    .post("/api/position-transfers")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      fromAccountId: brokerA.body.id,
+      toAccountId: brokerB.body.id,
+      instrumentId: instrumentRes.body.id,
+      quantity: 4,
+      transferDate: "2026-02-01T12:00:00.000Z",
+    });
+  assert.equal(transferRes.status, 201);
+  assert.equal(transferRes.body.quantity, 4);
+
+  const actionRes = await request(app)
+    .post("/api/corporate-actions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId: brokerB.body.id,
+      instrumentId: instrumentRes.body.id,
+      actionType: "stock_split",
+      actionDate: "2026-04-01T12:00:00.000Z",
+      ratio: 2,
+    });
+  assert.equal(actionRes.status, 201);
+  assert.equal(actionRes.body.ratio, 2);
+
+  const listRes = await request(app)
+    .get("/api/position-transfers")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(listRes.status, 200);
+  assert.equal(listRes.body.length, 1);
 });
 
 test("POST /api/import/bank-transactions previews mBank CSV (FR-019)", async () => {

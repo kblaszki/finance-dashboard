@@ -196,6 +196,8 @@ export function createHoldingsRouter(deps: HoldingsDeps): Router {
       const quantity = parsePositiveNumber(req.body?.quantity, "quantity");
       const currency = normalizeCurrency(req.body?.currency ?? account.currency);
       const tradeDate = parseDateBody(req.body?.tradeDate);
+      const settlementDate =
+        req.body?.settlementDate != null ? parseDateBody(req.body.settlementDate) : null;
 
       if (!isValidLotSide(side)) return res.status(400).json({ error: "Invalid side" });
 
@@ -235,6 +237,7 @@ export function createHoldingsRouter(deps: HoldingsDeps): Router {
             pricePerUnit: prices.pricePerUnit,
             currency,
             tradeDate,
+            settlementDate,
           },
           include: {
             holding: { include: { instrument: true } },

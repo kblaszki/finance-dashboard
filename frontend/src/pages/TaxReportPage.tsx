@@ -64,7 +64,8 @@ export function TaxReportPage() {
       </p>
       <p className="muted">
         Record dividends and interest in <Link to="/income-events">Income events</Link> for accurate
-        Belka and foreign income sections.
+        Belka and foreign income sections. Configure IKE/IKZE withdrawals and position transfers in{' '}
+        <Link to="/tax/settings">Tax settings</Link>.
       </p>
 
       <section className="card">

@@ -22,6 +22,7 @@ import { BudgetsPage } from "./pages/BudgetsPage";
 import { ImportPage } from "./pages/ImportPage";
 import { IncomeEventsPage } from "./pages/IncomeEventsPage";
 import { LiabilitiesPage } from "./pages/LiabilitiesPage";
+import { TaxSettingsPage } from "./pages/TaxSettingsPage";
 import { useAuth } from "./state/auth";
 
 function App() {
@@ -49,6 +50,7 @@ function App() {
           <Route path="/liabilities" element={<LiabilitiesPage />} />
           <Route path="/transfers" element={<TransfersPage />} />
           <Route path="/tax" element={<TaxReportPage />} />
+          <Route path="/tax/settings" element={<TaxSettingsPage />} />
           <Route path="/tax/:year" element={<TaxReportPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>

@@ -18,6 +18,10 @@ model User {
   incomeEvents     IncomeEvent[]
   liabilities      Liability[]
   propertyCashFlows PropertyCashFlow[]
+  taxWrapperWithdrawals TaxWrapperWithdrawal[]
+  ikzeContributions IkzeContribution[]
+  positionTransfers PositionTransfer[]
+  corporateActions CorporateAction[]
 }
 
 model Account {
@@ -31,6 +35,7 @@ model Account {
   openingBalance         Decimal                  @default(0)
   openingCashAsOf        DateTime?
   metalGrams             Decimal?
+  taxWrapperType         String                   @default("standard")
   description            String?
   createdAt              DateTime                 @default(now())
   updatedAt              DateTime                 @updatedAt
@@ -42,6 +47,11 @@ model Account {
   incomeEvents           IncomeEvent[]
   liabilities            Liability[]
   propertyCashFlows      PropertyCashFlow[]
+  taxWrapperWithdrawals  TaxWrapperWithdrawal[]
+  ikzeContributions      IkzeContribution[]
+  positionTransfersFrom  PositionTransfer[]     @relation("PositionTransferFrom")
+  positionTransfersTo    PositionTransfer[]     @relation("PositionTransferTo")
+  corporateActions       CorporateAction[]
 
   @@unique([userId, name])
   @@index([userId, accountType])
@@ -133,6 +143,80 @@ model IncomeEvent {
   @@index([accountId, occurredOn])
 }
 
+model TaxWrapperWithdrawal {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId      Int
+  account        Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  withdrawnOn    DateTime
+  amount         Decimal
+  currency       String
+  withdrawalType String
+  includeInPit38 Boolean  @default(true)
+  description    String?
+  createdAt      DateTime @default(now())
+
+  @@index([userId, withdrawnOn])
+  @@index([accountId, withdrawnOn])
+}
+
+model IkzeContribution {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId     Int
+  account       Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  taxYear       Int
+  amount        Decimal
+  currency      String
+  contributedOn DateTime
+  createdAt     DateTime @default(now())
+
+  @@index([userId, taxYear])
+  @@index([accountId, taxYear])
+}
+
+model CorporateAction {
+  id           Int        @id @default(autoincrement())
+  userId       Int
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId    Int
+  account      Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  holdingId    Int?
+  holding      Holding?   @relation(fields: [holdingId], references: [id], onDelete: SetNull)
+  instrumentId Int
+  instrument   Instrument @relation(fields: [instrumentId], references: [id], onDelete: Restrict)
+  actionType   String
+  actionDate   DateTime
+  ratio        Decimal?
+  quantityDelta Decimal?
+  notes        String?
+  createdAt    DateTime   @default(now())
+
+  @@index([userId, actionDate])
+  @@index([accountId, actionDate])
+}
+
+model PositionTransfer {
+  id            Int        @id @default(autoincrement())
+  userId        Int
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fromAccountId Int
+  fromAccount   Account    @relation("PositionTransferFrom", fields: [fromAccountId], references: [id], onDelete: Cascade)
+  toAccountId   Int
+  toAccount     Account    @relation("PositionTransferTo", fields: [toAccountId], references: [id], onDelete: Cascade)
+  instrumentId  Int
+  instrument    Instrument @relation(fields: [instrumentId], references: [id], onDelete: Restrict)
+  quantity      Decimal
+  transferDate  DateTime
+  createdAt     DateTime   @default(now())
+
+  @@index([userId, transferDate])
+  @@index([fromAccountId, transferDate])
+  @@index([toAccountId, transferDate])
+}
+
 model Liability {
   id            Int      @id @default(autoincrement())
   userId        Int
@@ -180,6 +264,8 @@ model Instrument {
   valuations             InstrumentValuation[]
   holdingValuationsDaily HoldingValuationDaily[]
   incomeEvents           IncomeEvent[]
+  corporateActions       CorporateAction[]
+  positionTransfers      PositionTransfer[]
 
   @@unique([symbol, exchange, source])
   @@index([symbol])
@@ -195,6 +281,7 @@ model Holding {
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
   lots         HoldingLot[]
+  corporateActions CorporateAction[]
 
   @@unique([accountId, instrumentId])
   @@index([accountId])
@@ -211,8 +298,9 @@ model HoldingLot {
   commission    Decimal                  @default(0)
   pricePerUnit  Decimal?
   currency      String
-  tradeDate     DateTime
-  createdAt     DateTime @default(now())
+  tradeDate      DateTime
+  settlementDate DateTime?
+  createdAt      DateTime @default(now())
 
   @@index([holdingId, tradeDate])
 }

@@ -22,6 +22,7 @@ import { InstrumentPicker } from '../components/InstrumentPicker'
 import { ManualAccountRevalueForm } from '../components/ManualAccountRevalueForm'
 import { PropertyCashFlowsSection } from '../components/PropertyCashFlowsSection'
 import { PreciousMetalGramsForm } from '../components/PreciousMetalGramsForm'
+import { TaxWrapperTypeForm } from '../components/TaxWrapperTypeForm'
 import { MarketPricesStatus } from '../components/MarketPricesStatus'
 import { TransactionTable } from '../components/TransactionTable'
 import { useAsyncData } from '../hooks/useAsyncData'
@@ -213,6 +214,14 @@ export function AccountDetailPage() {
           metalGrams={account.metalGrams}
           currency={account.currency}
           estimatedValue={account.totalBalance}
+          onSaved={reload}
+        />
+      )}
+
+      {account.accountType === 'BROKERAGE' && (
+        <TaxWrapperTypeForm
+          accountId={accountId}
+          taxWrapperType={account.taxWrapperType}
           onSaved={reload}
         />
       )}

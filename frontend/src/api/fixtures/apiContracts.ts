@@ -28,6 +28,7 @@ export const accountFixture: Account = {
   openingBalance: 1000,
   openingCashAsOf: '2025-01-01T00:00:00.000Z',
   metalGrams: null,
+  taxWrapperType: 'standard',
   description: null,
   createdAt: '2025-01-01T00:00:00.000Z',
   updatedAt: '2025-01-15T12:00:00.000Z',

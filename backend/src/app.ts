@@ -62,6 +62,9 @@ import { createBudgetsRouter } from "./routes/budgetsRoutes";
 import { createIncomeEventsRouter } from "./routes/incomeEventsRoutes";
 import { createLiabilitiesRouter } from "./routes/liabilitiesRoutes";
 import { createPropertyCashFlowsRouter } from "./routes/propertyCashFlowsRoutes";
+import { createTaxWrappersRouter } from "./routes/taxWrappersRoutes";
+import { createPositionTransfersRouter } from "./routes/positionTransfersRoutes";
+import { createCorporateActionsRouter } from "./routes/corporateActionsRoutes";
 import { handleRouteError } from "./routes/httpSupport";
 
 dotenv.config();
@@ -311,6 +314,40 @@ app.use(
     uid,
     parseDateBody,
     transactionDateFilter,
+  }),
+);
+
+app.use(
+  createTaxWrappersRouter({
+    prisma,
+    requireAuth,
+    uid,
+    parseDateBody,
+    transactionDateFilter,
+  }),
+);
+
+app.use(
+  createPositionTransfersRouter({
+    prisma,
+    requireAuth,
+    uid,
+    parseDateBody,
+    transactionDateFilter,
+    getFxRatesPlnPerUnit,
+    recomputeAccountValuationsFrom,
+  }),
+);
+
+app.use(
+  createCorporateActionsRouter({
+    prisma,
+    requireAuth,
+    uid,
+    parseDateBody,
+    transactionDateFilter,
+    getFxRatesPlnPerUnit,
+    recomputeAccountValuationsFrom,
   }),
 );
 

@@ -148,6 +148,35 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 | PUT | `/api/property-cash-flows/:id` | Yes | Update |
 | DELETE | `/api/property-cash-flows/:id` | Yes | Delete |
 
+## Tax wrappers (FR-039, DATA-018/023)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/tax-wrapper-withdrawals` | Yes | List; `accountId`, `from`, `to` |
+| POST | `/api/tax-wrapper-withdrawals` | Yes | Create — `{ accountId, amount, currency, withdrawnOn, withdrawalType, includeInPit38?, description? }` |
+| DELETE | `/api/tax-wrapper-withdrawals/:id` | Yes | Delete |
+| GET | `/api/ikze-contributions` | Yes | List; `accountId`, `taxYear` |
+| POST | `/api/ikze-contributions` | Yes | Create on IKZE account — `{ accountId, taxYear, amount, currency, contributedOn }` |
+| DELETE | `/api/ikze-contributions/:id` | Yes | Delete |
+
+`PUT /api/accounts/:id` accepts `taxWrapperType` (`standard`, `ike`, `ikze`, `ppk`) on brokerage accounts.
+
+## Position transfers (FR-041, DATA-020)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/position-transfers` | Yes | List; `accountId`, `from`, `to` |
+| POST | `/api/position-transfers` | Yes | Move open lots — `{ fromAccountId, toAccountId, instrumentId, quantity, transferDate }` |
+
+## Corporate actions (FR-040, DATA-019)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/corporate-actions` | Yes | List; `accountId`, `from`, `to` |
+| POST | `/api/corporate-actions` | Yes | Record action; `stock_split` / `reverse_split` apply split — `{ accountId, instrumentId, actionType, actionDate, ratio?, holdingId?, notes? }` |
+
+`POST /api/holdings/:holdingId/lots` accepts optional `settlementDate` (FR-007).
+
 ## Market data
 
 | Method | Path | Auth | Description |

@@ -24,6 +24,7 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 | `/transactions` | Asset trades | `TransactionsListPage` → `AssetTradesTable` (FR-007; `?accountId=` filter) |
 | `/transfers` | Internal transfers | `TransfersPage` → `InternalTransfersTable` (FR-011; `?accountId=` filter) |
 | `/tax` | PL tax report | `TaxReportPage` — FR-022/023/025–028; `/tax/:year` |
+| `/tax/settings` | Tax prerequisites | `TaxSettingsPage` — FR-039–041 wrappers, transfers, corporate actions |
 | `/liabilities` | Liabilities | `LiabilitiesPage` — FR-029 mortgages, loans, credits |
 | `/income-events` | Income events | `IncomeEventsPage` — FR-024 dividends, interest, coupons |
 | `/settings` | Account settings | `SettingsPage` — username, email, password |
@@ -54,6 +55,9 @@ Preferred async pattern for page/widget data: [`frontend/src/hooks/useAsyncData.
 | `incomeEventsApi.ts` | `/api/income-events` |
 | `liabilitiesApi.ts` | `/api/liabilities` |
 | `propertyCashFlowsApi.ts` | `/api/property-cash-flows` |
+| `taxWrappersApi.ts` | `/api/tax-wrapper-withdrawals`, `/api/ikze-contributions` |
+| `positionTransfersApi.ts` | `/api/position-transfers` |
+| `corporateActionsApi.ts` | `/api/corporate-actions` |
 | `instrumentsApi.ts` | `/api/instruments`, `/api/instruments/:id/valuations` |
 | `importApi.ts` | `POST /api/import/broker-trades`, `POST /api/import/bank-transactions` |
 | `holdingsApi.ts` | `/api/accounts/:id/holdings`, `/api/holdings/:holdingId`, `POST .../split` |
