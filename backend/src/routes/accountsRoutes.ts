@@ -1,14 +1,13 @@
 import { Router } from "express";
 import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
+import { isRevalueAccountType, isValidAccountType } from "../accountTypes";
 import { revalueManualAccount } from "../manualAccountRevalue";
 import { getLatestAccountTotalValue, getLatestAccountTotalValues, toNumber } from "../accountValuation";
 import { computeAccountDetailStats } from "../accountStats";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
 import { parseDateBody, serializeAccount } from "./routeSupport";
 import { handleRouteError, badRequest, parseIdParam, parseFiniteNumber, parsePositiveNumber, parseRequiredString } from "./httpSupport";
-
-const VALID_ACCOUNT_TYPES = new Set(["BANK", "BROKERAGE", "MANUAL"]);
 
 type AccountsDeps = {
   prisma: PrismaClient;
@@ -68,7 +67,7 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
   router.post("/api/accounts", requireAuth, async (req: AuthedRequest, res) => {
     try {
       const accountType = parseRequiredString(req.body?.accountType, "accountType").toUpperCase();
-      if (!VALID_ACCOUNT_TYPES.has(accountType)) {
+      if (!isValidAccountType(accountType)) {
         throw badRequest("Invalid accountType");
       }
       const name = parseRequiredString(req.body?.name, "name");
@@ -186,7 +185,7 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
       const id = parseIdParam(req.params.id);
       const row = await getAccountForUser(prisma, uid(req), id);
       if (!row) return res.status(404).json({ error: "Account not found" });
-      if (row.accountType !== "MANUAL") {
+      if (!isRevalueAccountType(row.accountType)) {
         throw badRequest("Revaluation is only supported for MANUAL accounts");
       }
       const value = parsePositiveNumber(req.body?.value, "value");

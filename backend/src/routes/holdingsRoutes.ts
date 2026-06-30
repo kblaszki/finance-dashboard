@@ -1,6 +1,7 @@
 import { Router } from "express";
 import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
+import { isHoldingsAccountType } from "../accountTypes";
 import { recomputeQuantityAfterChain } from "../holdingLot";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
 import { handleRouteError, badRequest, parseFiniteNumber, parseIdParam, parsePositiveNumber } from "./httpSupport";
@@ -80,7 +81,7 @@ export function createHoldingsRouter(deps: HoldingsDeps): Router {
       const accountId = parseIdParam(req.params.accountId, "accountId");
       const account = await getAccountForUser(prisma, uid(req), accountId);
       if (!account) return res.status(404).json({ error: "Account not found" });
-      if (account.accountType !== "BROKERAGE") {
+      if (!isHoldingsAccountType(account.accountType)) {
         return res.json({ open: [], closed: [] });
       }
       const { plnPerUnit } = await getFxRatesPlnPerUnit();
@@ -96,7 +97,7 @@ export function createHoldingsRouter(deps: HoldingsDeps): Router {
       const accountId = parseIdParam(req.params.accountId, "accountId");
       const account = await getAccountForUser(prisma, uid(req), accountId);
       if (!account) return res.status(404).json({ error: "Account not found" });
-      if (account.accountType !== "BROKERAGE") {
+      if (!isHoldingsAccountType(account.accountType)) {
         return res.status(400).json({ error: "Holdings are only for brokerage accounts" });
       }
 
@@ -242,7 +243,7 @@ export function createHoldingsRouter(deps: HoldingsDeps): Router {
       const holdingId = parseIdParam(req.params.holdingId, "holdingId");
       const holding = await getHoldingForUser(prisma, uid(req), holdingId);
       if (!holding) return res.status(404).json({ error: "Holding not found" });
-      if (holding.account.accountType !== "BROKERAGE") {
+      if (!isHoldingsAccountType(holding.account.accountType)) {
         return res.status(400).json({ error: "Splits are only for brokerage holdings" });
       }
 

@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { HOLDINGS_ACCOUNT_TYPES } from "./accountTypes";
 import { recomputeQuantityAfterChain } from "./holdingLot";
 import { findOrCreateHolding, recalcLotQuantityChain, syncHoldingQuantity } from "./holdings";
 import type { DbClient } from "./routes/routeSupport";
@@ -27,7 +28,7 @@ export async function fetchUserAssetTrades(
       holding: {
         account: {
           userId,
-          accountType: "BROKERAGE",
+          accountType: { in: [...HOLDINGS_ACCOUNT_TYPES] },
           ...(filters.accountId != null ? { id: filters.accountId } : {}),
         },
         ...(filters.instrumentId != null ? { instrumentId: filters.instrumentId } : {}),

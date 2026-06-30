@@ -1,6 +1,13 @@
 import { apiClient } from "./client";
 
-export type AccountType = "BANK" | "BROKERAGE" | "MANUAL";
+export type AccountType =
+  | "BANK"
+  | "BROKERAGE"
+  | "CRYPTO"
+  | "PRECIOUS_METAL"
+  | "REAL_ESTATE"
+  | "OTHER"
+  | "MANUAL";
 
 export type Account = {
   id: number;

@@ -177,6 +177,23 @@ test("POST /api/accounts creates account", async () => {
   assert.equal(res.body.cashBalance, 1000);
 });
 
+test("POST /api/accounts accepts extended account types (FR-006)", async () => {
+  const { token } = await createUserAndToken();
+  for (const accountType of ["CRYPTO", "REAL_ESTATE", "PRECIOUS_METAL", "OTHER"]) {
+    const res = await request(app)
+      .post("/api/accounts")
+      .set("Authorization", `Bearer ${token}`)
+      .send({
+        accountType,
+        name: `${accountType} account`,
+        currency: "PLN",
+        openingBalance: 0,
+      });
+    assert.equal(res.status, 201, accountType);
+    assert.equal(res.body.accountType, accountType);
+  }
+});
+
 test("POST /api/accounts rejects invalid openingBalance", async () => {
   const { token } = await createUserAndToken();
   const res = await request(app)
@@ -2083,7 +2100,7 @@ test("POST /api/accounts/:id/revalue updates MANUAL account", async () => {
   assert.equal(res.body.cashBalance, 420000);
 });
 
-test("POST /api/accounts/:id/revalue rejects non-MANUAL accounts", async () => {
+test("POST /api/accounts/:id/revalue rejects bank accounts", async () => {
   const { token } = await createUserAndToken();
   const bankRes = await request(app)
     .post("/api/accounts")

@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { CASH_BALANCE_ACCOUNT_TYPES, isRevalueAccountType, type AccountType } from "./accountTypes";
 import { convertAmount, getFxRatesPlnPerUnit } from "./fx";
 import { getLatestAccountTotalValues, toNumber } from "./accountValuation";
 import { getUserPortfolioPositions } from "./portfolio";
@@ -106,14 +107,14 @@ export async function aggregateNetWorthBuckets(
   }
 
   for (const account of accounts) {
-    if (account.accountType === "BANK" || account.accountType === "BROKERAGE") {
+    if (CASH_BALANCE_ACCOUNT_TYPES.has(account.accountType as AccountType)) {
       buckets.cash += convertAmount(
         toNumber(account.cashBalance),
         account.currency,
         displayCurrency,
         plnPerUnit,
       );
-    } else if (account.accountType === "MANUAL") {
+    } else if (isRevalueAccountType(account.accountType)) {
       const totalNative = latestValues.get(account.id) ?? toNumber(account.cashBalance);
       const totalDisplay = convertAmount(totalNative, account.currency, displayCurrency, plnPerUnit);
       const heldDisplay = holdingsValueByAccount.get(account.id) ?? 0;

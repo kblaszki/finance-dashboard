@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { fetchAccounts, type Account } from '../api/accountsApi'
+import { isHoldingsAccountType } from '../state/accountTypes'
 import {
   createAssetTrade,
   fetchAssetTrades,
@@ -22,7 +23,7 @@ function instrumentLabel(inst: { symbol: string; name: string | null }): string 
 export function AssetTradesTable({ accountId: fixedAccountId }: Props) {
   const { data: accounts, error: accountsError } = useAsyncData(fetchAccounts)
   const brokerageAccounts = useMemo(
-    () => (accounts ?? []).filter((a: Account) => a.accountType === 'BROKERAGE'),
+    () => (accounts ?? []).filter((a: Account) => isHoldingsAccountType(a.accountType)),
     [accounts],
   )
 

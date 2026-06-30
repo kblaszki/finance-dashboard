@@ -1,6 +1,7 @@
 import { Router } from "express";
 import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
+import { isHoldingsAccountType } from "../accountTypes";
 import { createUserAssetTradeForAccount, fetchUserAssetTrades } from "../assetTrades";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
 import {
@@ -100,8 +101,8 @@ export function createAssetTradesRouter(deps: AssetTradesDeps): Router {
 
       const account = await getAccountForUser(prisma, uid(req), accountId);
       if (!account) return res.status(404).json({ error: "Account not found" });
-      if (account.accountType !== "BROKERAGE") {
-        return res.status(400).json({ error: "Asset trades are only for brokerage accounts" });
+      if (!isHoldingsAccountType(account.accountType)) {
+        return res.status(400).json({ error: "Asset trades require a holdings account (brokerage, crypto, or precious metal)" });
       }
 
       const instrument = await prisma.instrument.findUnique({ where: { id: instrumentId } });
