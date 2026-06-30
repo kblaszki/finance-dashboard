@@ -41,6 +41,7 @@ export function AssetTradesTable({ accountId: fixedAccountId }: Props) {
   const [side, setSide] = useState<'BUY' | 'SELL'>('BUY')
   const [quantity, setQuantity] = useState(1)
   const [pricePerUnit, setPricePerUnit] = useState(0)
+  const [commission, setCommission] = useState(0)
   const [tradeDate, setTradeDate] = useState(new Date().toISOString().slice(0, 10))
   const [formError, setFormError] = useState<string | null>(null)
 
@@ -121,12 +122,14 @@ export function AssetTradesTable({ accountId: fixedAccountId }: Props) {
         side,
         quantity,
         pricePerUnit,
+        commission,
         currency: inst?.currency ?? 'PLN',
         tradeDate: new Date(tradeDate).toISOString(),
       })
       reload()
       setQuantity(1)
       setPricePerUnit(0)
+      setCommission(0)
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Failed to save trade')
     }
@@ -238,6 +241,14 @@ export function AssetTradesTable({ accountId: fixedAccountId }: Props) {
           onChange={(e) => setPricePerUnit(Number(e.target.value))}
           placeholder="Price per unit"
         />
+        <input
+          type="number"
+          step="any"
+          min="0"
+          value={commission}
+          onChange={(e) => setCommission(Number(e.target.value))}
+          placeholder="Commission"
+        />
         <input type="date" value={tradeDate} onChange={(e) => setTradeDate(e.target.value)} />
         <button type="submit" className="btn-primary">
           Save trade
@@ -268,6 +279,7 @@ export function AssetTradesTable({ accountId: fixedAccountId }: Props) {
                 <th>Side</th>
                 <th>Qty</th>
                 <th>Gross</th>
+                <th>Commission</th>
                 <th />
               </tr>
             </thead>
@@ -278,7 +290,7 @@ export function AssetTradesTable({ accountId: fixedAccountId }: Props) {
                   {!fixedAccountId && <td>{t.accountName ?? '—'}</td>}
                   <td>
                     {t.instrument ? (
-                      <Link to={`/accounts/${t.accountId}/holdings/${t.holdingId}`}>
+                      <Link to={`/accounts/${t.accountId}/assets/${t.instrumentId}`}>
                         {instrumentLabel(t.instrument)}
                       </Link>
                     ) : (
@@ -288,6 +300,7 @@ export function AssetTradesTable({ accountId: fixedAccountId }: Props) {
                   <td>{t.side}</td>
                   <td>{t.quantity}</td>
                   <td>{formatMoney(t.totalPrice ?? t.pricePerUnit ?? 0, t.currency)}</td>
+                  <td>{formatMoney(t.commission ?? 0, t.currency)}</td>
                   <td>
                     <button
                       type="button"

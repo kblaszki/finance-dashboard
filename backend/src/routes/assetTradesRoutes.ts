@@ -3,6 +3,7 @@ import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import { isHoldingsAccountType } from "../accountTypes";
 import { createUserAssetTradeForAccount, fetchUserAssetTrades } from "../assetTrades";
+import { scheduleMarketSyncAfterBuy } from "../marketDataTrigger";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
 import {
   badRequest,
@@ -109,6 +110,10 @@ export function createAssetTradesRouter(deps: AssetTradesDeps): Router {
       if (!instrument) return res.status(404).json({ error: "Instrument not found" });
 
       const currency = normalizeCurrency(req.body?.currency ?? instrument.currency);
+      const commission =
+        req.body?.commission != null
+          ? parseFiniteNumber(req.body.commission, "commission", { min: 0 })
+          : 0;
 
       const row = await createUserAssetTradeForAccount(
         prisma,
@@ -122,9 +127,16 @@ export function createAssetTradesRouter(deps: AssetTradesDeps): Router {
           tradeDate,
           totalPrice: req.body?.totalPrice,
           pricePerUnit: req.body?.pricePerUnit,
+          commission,
         },
         tradeDeps,
       );
+      if (side === "BUY") {
+        scheduleMarketSyncAfterBuy(prisma, getFxRatesPlnPerUnit, {
+          userId: uid(req),
+          instrumentType: instrument.instrumentType,
+        });
+      }
       res.status(201).json(serializeHoldingLot(row));
     } catch (e: unknown) {
       if (

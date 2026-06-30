@@ -11,6 +11,7 @@ export type HoldingLot = {
   quantity: number;
   quantityAfter: number;
   totalPrice: number | null;
+  commission: number;
   pricePerUnit: number | null;
   currency: string;
   tradeDate: string;
@@ -22,6 +23,7 @@ export type HoldingLotInput = {
   side: "BUY" | "SELL";
   quantity: number;
   totalPrice?: number;
+  commission?: number;
   pricePerUnit?: number;
   currency: string;
   tradeDate: string;

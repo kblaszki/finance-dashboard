@@ -17,6 +17,7 @@ export type Account = {
   cashBalance: number;
   totalBalance: number;
   openingBalance: number;
+  openingCashAsOf: string | null;
   description: string | null;
   createdAt: string;
   updatedAt: string;
@@ -27,6 +28,7 @@ export type AccountInput = {
   name: string;
   currency: string;
   openingBalance?: number;
+  openingCashAsOf?: string | null;
   description?: string | null;
 };
 

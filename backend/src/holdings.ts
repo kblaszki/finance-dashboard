@@ -10,6 +10,7 @@ export type HoldingLotRow = {
   quantity: unknown;
   quantityAfter: unknown;
   totalPrice: unknown | null;
+  commission?: unknown | null;
   pricePerUnit: unknown | null;
   currency: string;
   tradeDate: Date;
@@ -208,14 +209,20 @@ function computeOpenCostBasis(
   let buyTotal = 0;
   let sellTotal = 0;
   for (const lot of lots) {
-    const amount = convertAmount(
+    const gross = convertAmount(
       toNumber(lot.totalPrice ?? 0),
       lot.currency,
       accountCurrency,
       plnPerUnit,
     );
-    if (lot.side === "BUY") buyTotal += amount;
-    else if (lot.side === "SELL") sellTotal += amount;
+    const fee = convertAmount(
+      toNumber(lot.commission ?? 0),
+      lot.currency,
+      accountCurrency,
+      plnPerUnit,
+    );
+    if (lot.side === "BUY") buyTotal += gross + fee;
+    else if (lot.side === "SELL") sellTotal += gross - fee;
   }
   return buyTotal - sellTotal;
 }

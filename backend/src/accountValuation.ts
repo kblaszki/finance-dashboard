@@ -38,9 +38,16 @@ export type CashReplayLot = {
   id: number;
   side: "BUY" | "SELL";
   totalPrice: number;
+  commission?: number;
 };
 
 export type CashReplayEvent = CashReplayTx | CashReplayLot;
+
+export function lotCashDelta(side: "BUY" | "SELL", totalPrice: number, commission = 0): number {
+  const fee = Number.isFinite(commission) ? commission : 0;
+  if (side === "BUY") return -(totalPrice + fee);
+  return totalPrice - fee;
+}
 
 export function replayCashBalance(
   openingBalance: number,
@@ -65,9 +72,9 @@ export function replayCashBalance(
       if (!isValidTransactionType(e.transactionType)) continue;
       cash = computeBalanceAfter(cash, e.transactionType, e.amount, true);
     } else if (e.side === "BUY") {
-      cash -= e.totalPrice;
+      cash += lotCashDelta("BUY", e.totalPrice, e.commission ?? 0);
     } else {
-      cash += e.totalPrice;
+      cash += lotCashDelta("SELL", e.totalPrice, e.commission ?? 0);
     }
   }
   return cash;
@@ -106,6 +113,7 @@ export async function computeCashAsOf(
       id: l.id,
       side: l.side as "BUY" | "SELL",
       totalPrice: toNumber(l.totalPrice ?? 0),
+      commission: toNumber(l.commission ?? 0),
     })),
   ];
 
@@ -244,6 +252,7 @@ export async function recomputeAccountValuationsFrom(
       id: l.id,
       side: l.side as "BUY" | "SELL",
       totalPrice: toNumber(l.totalPrice ?? 0),
+      commission: toNumber(l.commission ?? 0),
     })),
   ];
   const preloadedLots: PreloadedLot[] = allLots.map((lot) => ({

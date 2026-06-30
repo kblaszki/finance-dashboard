@@ -26,6 +26,7 @@ export const accountFixture: Account = {
   cashBalance: 1500.5,
   totalBalance: 1500.5,
   openingBalance: 1000,
+  openingCashAsOf: '2025-01-01T00:00:00.000Z',
   description: null,
   createdAt: '2025-01-01T00:00:00.000Z',
   updatedAt: '2025-01-15T12:00:00.000Z',
@@ -199,6 +200,7 @@ export const holdingLotFixture: HoldingLot = {
   quantity: 10,
   quantityAfter: 10,
   totalPrice: 1000,
+  commission: 5,
   pricePerUnit: 100,
   currency: 'PLN',
   tradeDate: '2025-01-05T12:00:00.000Z',
@@ -250,6 +252,9 @@ function assertAccountShape(value: Account): void {
   if (typeof value.cashBalance !== 'number') throw new Error('account.cashBalance')
   if (typeof value.totalBalance !== 'number') throw new Error('account.totalBalance')
   if (typeof value.openingBalance !== 'number') throw new Error('account.openingBalance')
+  if (value.openingCashAsOf !== null && typeof value.openingCashAsOf !== 'string') {
+    throw new Error('account.openingCashAsOf')
+  }
 }
 
 function assertTransactionShape(value: Transaction): void {
@@ -326,6 +331,7 @@ function assertInstrumentValuationShape(value: InstrumentValuation): void {
 function assertHoldingLotShape(value: HoldingLot): void {
   if (!['BUY', 'SELL'].includes(value.side)) throw new Error('holdingLot.side')
   if (typeof value.quantityAfter !== 'number') throw new Error('holdingLot.quantityAfter')
+  if (typeof value.commission !== 'number') throw new Error('holdingLot.commission')
 }
 
 function assertAccountValuationPointShape(value: AccountValuationPoint): void {

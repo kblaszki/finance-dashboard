@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { replayCashBalance, type CashReplayEvent } from "./accountValuation";
+import { lotCashDelta, replayCashBalance, type CashReplayEvent } from "./accountValuation";
 
 const d = (iso: string) => new Date(iso);
 
@@ -71,4 +71,23 @@ test("replayCashBalance BUY then SELL nets trade cash", () => {
     },
   ];
   assert.equal(replayCashBalance(0, events, d("2025-01-20T12:00:00.000Z")), 9330);
+});
+
+test("lotCashDelta includes commission on buy and sell", () => {
+  assert.equal(lotCashDelta("BUY", 1000, 5), -1005);
+  assert.equal(lotCashDelta("SELL", 1000, 5), 995);
+});
+
+test("replayCashBalance applies lot commission to cash", () => {
+  const events: CashReplayEvent[] = [
+    {
+      kind: "lot",
+      at: d("2025-01-05T12:00:00.000Z"),
+      id: 1,
+      side: "BUY",
+      totalPrice: 1000,
+      commission: 10,
+    },
+  ];
+  assert.equal(replayCashBalance(5000, events, d("2025-01-05T23:59:59.999Z")), 3990);
 });

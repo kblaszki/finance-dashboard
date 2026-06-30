@@ -1759,6 +1759,97 @@ test("GET /api/asset-trades lists buy and sell lots", async () => {
   assert.equal(listRes.body[0].quantity, 5);
 });
 
+test("GET /api/accounts/:accountId/assets/:instrumentId returns holding summary (FR-014)", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BROKERAGE",
+      name: "Asset Route Broker",
+      currency: "PLN",
+      openingBalance: 5000,
+    });
+  const accountId = accountRes.body.id;
+  const instrument = await prisma.instrument.create({
+    data: { instrumentType: "STOCK", symbol: "RTE1", exchange: "TEST", currency: "PLN" },
+  });
+  await request(app)
+    .post("/api/asset-trades")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      instrumentId: instrument.id,
+      side: "BUY",
+      quantity: 2,
+      pricePerUnit: 50,
+      currency: "PLN",
+      tradeDate: "2025-04-01T12:00:00.000Z",
+    });
+
+  const res = await request(app)
+    .get(`/api/accounts/${accountId}/assets/${instrument.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  assert.equal(res.body.instrumentId, instrument.id);
+  assert.equal(res.body.quantity, 2);
+});
+
+test("POST /api/asset-trades stores commission and debits cash (FR-007)", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BROKERAGE",
+      name: "Commission Broker",
+      currency: "PLN",
+      openingBalance: 1000,
+    });
+  const accountId = accountRes.body.id;
+  const instrument = await prisma.instrument.create({
+    data: { instrumentType: "STOCK", symbol: "COM1", exchange: "TEST", currency: "PLN" },
+  });
+
+  const createRes = await request(app)
+    .post("/api/asset-trades")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      instrumentId: instrument.id,
+      side: "BUY",
+      quantity: 10,
+      pricePerUnit: 10,
+      commission: 5,
+      currency: "PLN",
+      tradeDate: "2025-05-01T12:00:00.000Z",
+    });
+  assert.equal(createRes.status, 201);
+  assert.equal(createRes.body.commission, 5);
+
+  const account = await request(app)
+    .get(`/api/accounts/${accountId}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(account.body.cashBalance, 895);
+});
+
+test("POST /api/accounts stores openingCashAsOf (DATA-002)", async () => {
+  const { token } = await createUserAndToken();
+  const res = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BANK",
+      name: "Opening As Of",
+      currency: "PLN",
+      openingBalance: 500,
+      openingCashAsOf: "2024-06-15T00:00:00.000Z",
+    });
+  assert.equal(res.status, 201);
+  assert.ok(res.body.openingCashAsOf);
+  assert.equal(res.body.openingCashAsOf.slice(0, 10), "2024-06-15");
+});
+
 test("GET /api/asset-trades filters by instrumentId", async () => {
   const { token } = await createUserAndToken();
   const accountRes = await request(app)

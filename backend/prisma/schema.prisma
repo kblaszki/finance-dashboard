@@ -25,6 +25,7 @@ model Account {
   currency               String
   cashBalance            Decimal                  @default(0)
   openingBalance         Decimal                  @default(0)
+  openingCashAsOf        DateTime?
   description            String?
   createdAt              DateTime                 @default(now())
   updatedAt              DateTime                 @updatedAt
@@ -93,6 +94,7 @@ model HoldingLot {
   quantity      Decimal
   quantityAfter Decimal
   totalPrice    Decimal?
+  commission    Decimal                  @default(0)
   pricePerUnit  Decimal?
   currency      String
   tradeDate     DateTime

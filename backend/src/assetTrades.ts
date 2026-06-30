@@ -55,6 +55,7 @@ type CreateAssetTradeInput = {
   tradeDate: Date;
   totalPrice?: number | null;
   pricePerUnit?: number | null;
+  commission?: number | null;
 };
 
 type CreateAssetTradeDeps = {
@@ -86,6 +87,7 @@ export async function createUserAssetTrade(
     ...(input.totalPrice !== undefined ? { totalPrice: input.totalPrice } : {}),
     ...(input.pricePerUnit !== undefined ? { pricePerUnit: input.pricePerUnit } : {}),
   });
+  const commission = Math.max(0, deps.toNumber(input.commission ?? 0));
 
   return prisma.$transaction(async (tx) => {
     const existingLots = await tx.holdingLot.findMany({
@@ -109,6 +111,7 @@ export async function createUserAssetTrade(
         quantity: input.quantity,
         quantityAfter: 0,
         totalPrice: prices.totalPrice,
+        commission,
         pricePerUnit: prices.pricePerUnit,
         currency: input.currency,
         tradeDate: input.tradeDate,
@@ -152,6 +155,7 @@ export async function createUserAssetTradeForAccount(
       tradeDate: input.tradeDate,
       ...(input.totalPrice !== undefined ? { totalPrice: input.totalPrice } : {}),
       ...(input.pricePerUnit !== undefined ? { pricePerUnit: input.pricePerUnit } : {}),
+      ...(input.commission !== undefined ? { commission: input.commission } : {}),
     },
     deps,
   );

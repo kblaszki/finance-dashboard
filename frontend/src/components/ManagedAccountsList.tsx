@@ -62,6 +62,7 @@ export function ManagedAccountsList() {
   const [name, setName] = useState('')
   const [currency, setCurrency] = useState('PLN')
   const [openingBalance, setOpeningBalance] = useState(0)
+  const [openingCashAsOf, setOpeningCashAsOf] = useState(() => new Date().toISOString().slice(0, 10))
   const [typeFilter, setTypeFilter] = useState<AccountType | 'ALL'>('ALL')
   const [sortKey, setSortKey] = useState<SortKey>('name')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
@@ -98,6 +99,7 @@ export function ManagedAccountsList() {
         name: name.trim(),
         currency,
         openingBalance,
+        openingCashAsOf: new Date(openingCashAsOf).toISOString(),
       })
       setName('')
       reload()
@@ -156,6 +158,12 @@ export function ManagedAccountsList() {
             value={openingBalance}
             onChange={(e) => setOpeningBalance(Number(e.target.value))}
             placeholder="Opening balance"
+          />
+          <input
+            type="date"
+            value={openingCashAsOf}
+            onChange={(e) => setOpeningCashAsOf(e.target.value)}
+            title="Opening balance as of"
           />
           <button type="submit" className="btn-primary">Add</button>
         </form>

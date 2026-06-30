@@ -66,9 +66,10 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 |--------|------|------|-------------|
 | GET | `/api/accounts/:accountId/holdings` | Yes | Open/closed holdings with metrics (`{ open, closed }`) |
 | POST | `/api/accounts/:accountId/holdings` | Yes | Find-or-create holding for `instrumentId` |
+| GET | `/api/accounts/:accountId/assets/:instrumentId` | Yes | FR-014 account-scoped holding summary by instrument |
 | GET | `/api/holdings/:holdingId` | Yes | Single holding summary (`costBasis`, `unrealizedPnl`, `realizedPnl`) |
 | GET | `/api/holdings/:holdingId/lots` | Yes | Trade history for holding |
-| POST | `/api/holdings/:holdingId/lots` | Yes | BUY/SELL lot |
+| POST | `/api/holdings/:holdingId/lots` | Yes | BUY/SELL lot; optional `commission` |
 | POST | `/api/holdings/:holdingId/split` | Yes | Stock split — `{ ratio, effectiveDate }` scales lot quantities; per-share cost divides |
 | DELETE | `/api/holding-lots/:id` | Yes | Delete lot; syncs holding quantity |
 | GET | `/api/accounts/:accountId/holdings/:instrumentId/valuations` | Yes | Position value history |
@@ -79,7 +80,7 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 |--------|------|------|-------------|
 | GET | `/api/portfolio/positions` | Yes | Cross-account open positions; optional `accountId`, `instrumentType`, `assetBucket` filters |
 | GET | `/api/asset-trades` | Yes | FR-007 buy/sell list; optional `from`, `to`, `accountId`, `instrumentId` |
-| POST | `/api/asset-trades` | Yes | Create buy/sell; body `accountId`, `instrumentId`, `side`, `quantity`, `pricePerUnit` or `totalPrice`, `currency?`, `tradeDate` |
+| POST | `/api/asset-trades` | Yes | Create buy/sell; body `accountId`, `instrumentId`, `side`, `quantity`, `pricePerUnit` or `totalPrice`, `commission?`, `currency?`, `tradeDate`; triggers market sync on BUY when API key set |
 | GET | `/api/internal-transfers` | Yes | FR-011 transfer list; optional `from`, `to`, `accountId` |
 | GET | `/api/internal-transfers/fx-suggestion` | Yes | Suggest FX rate; `fromCurrency`, `toCurrency`, `fromAmount` |
 | POST | `/api/internal-transfers` | Yes | Create paired transfer legs atomically |

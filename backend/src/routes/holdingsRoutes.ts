@@ -123,6 +123,30 @@ export function createHoldingsRouter(deps: HoldingsDeps): Router {
     }
   });
 
+  router.get("/api/accounts/:accountId/assets/:instrumentId", requireAuth, async (req: AuthedRequest, res) => {
+    try {
+      const accountId = parseIdParam(req.params.accountId, "accountId");
+      const instrumentId = parseIdParam(req.params.instrumentId, "instrumentId");
+      const account = await getAccountForUser(prisma, uid(req), accountId);
+      if (!account) return res.status(404).json({ error: "Account not found" });
+
+      const holding = await prisma.holding.findFirst({
+        where: { accountId, instrumentId },
+        include: {
+          instrument: true,
+          lots: { orderBy: [{ tradeDate: "asc" }, { id: "asc" }] },
+        },
+      });
+      if (!holding) return res.status(404).json({ error: "Holding not found" });
+
+      const { plnPerUnit } = await getFxRatesPlnPerUnit();
+      const summary = await buildHoldingSummary(prisma, holding, account.currency, plnPerUnit);
+      res.json(serializeHoldingSummary(summary));
+    } catch (e: unknown) {
+      handleRouteError(res, e, "Failed to load account asset");
+    }
+  });
+
   router.get("/api/holdings/:holdingId", requireAuth, async (req: AuthedRequest, res) => {
     try {
       const holdingId = parseIdParam(req.params.holdingId, "holdingId");
@@ -180,6 +204,10 @@ export function createHoldingsRouter(deps: HoldingsDeps): Router {
         totalPrice: req.body?.totalPrice,
         pricePerUnit: req.body?.pricePerUnit,
       });
+      const commission = Math.max(
+        0,
+        req.body?.commission != null ? Number(req.body.commission) : 0,
+      );
       const { plnPerUnit } = await getFxRatesPlnPerUnit();
       const row = await prisma.$transaction(async (tx) => {
         const existingLots = await tx.holdingLot.findMany({
@@ -203,6 +231,7 @@ export function createHoldingsRouter(deps: HoldingsDeps): Router {
             quantity,
             quantityAfter: 0,
             totalPrice: prices.totalPrice,
+            commission,
             pricePerUnit: prices.pricePerUnit,
             currency,
             tradeDate,

@@ -57,6 +57,7 @@ export function serializeAccount(
     currency: string;
     cashBalance: unknown;
     openingBalance: unknown;
+    openingCashAsOf: Date | null;
     description: string | null;
     createdAt: Date;
     updatedAt: Date;
@@ -71,6 +72,7 @@ export function serializeAccount(
     cashBalance: toNumber(a.cashBalance),
     totalBalance: totalBalance ?? toNumber(a.cashBalance),
     openingBalance: toNumber(a.openingBalance),
+    openingCashAsOf: a.openingCashAsOf?.toISOString() ?? null,
     description: a.description,
     createdAt: a.createdAt.toISOString(),
     updatedAt: a.updatedAt.toISOString(),
@@ -108,6 +110,7 @@ export function serializeHoldingLot(l: {
   quantity: unknown;
   quantityAfter: unknown;
   totalPrice: unknown | null;
+  commission?: unknown | null;
   pricePerUnit: unknown | null;
   currency: string;
   tradeDate: Date;
@@ -141,6 +144,7 @@ export function serializeHoldingLot(l: {
     quantity: toNumber(l.quantity),
     quantityAfter: toNumber(l.quantityAfter),
     totalPrice: l.totalPrice != null ? toNumber(l.totalPrice) : null,
+    commission: toNumber(l.commission ?? 0),
     pricePerUnit: l.pricePerUnit != null ? toNumber(l.pricePerUnit) : null,
     currency: l.currency,
     tradeDate: l.tradeDate.toISOString(),

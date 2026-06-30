@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { fetchAccount } from '../api/accountsApi'
-import { fetchHolding, type HoldingSummary } from '../api/holdingsApi'
+import { fetchAccountAssetHolding, fetchHolding, type HoldingSummary } from '../api/holdingsApi'
 import { fetchHoldingValuations } from '../api/valuationsApi'
 import { HoldingKpiCards } from '../components/HoldingKpiCards'
 import { HoldingLotsTable } from '../components/HoldingLotsTable'
@@ -21,12 +21,17 @@ type HoldingDetailData = {
 }
 
 export function HoldingDetailPage() {
-  const { id, holdingId: holdingIdParam } = useParams()
+  const { id, holdingId: holdingIdParam, instrumentId: instrumentIdParam } = useParams()
   const accountId = Number(id)
-  const holdingId = Number(holdingIdParam)
+  const holdingId = holdingIdParam != null ? Number(holdingIdParam) : NaN
+  const instrumentId = instrumentIdParam != null ? Number(instrumentIdParam) : NaN
+  const useInstrumentRoute = instrumentIdParam != null
   const invalidAccountId = !Number.isFinite(accountId) || accountId < 1
-  const invalidHoldingId = !Number.isFinite(holdingId) || holdingId < 1
-  const invalidId = invalidAccountId || invalidHoldingId
+  const invalidHoldingId =
+    !useInstrumentRoute && (!Number.isFinite(holdingId) || holdingId < 1)
+  const invalidInstrumentId =
+    useInstrumentRoute && (!Number.isFinite(instrumentId) || instrumentId < 1)
+  const invalidId = invalidAccountId || invalidHoldingId || invalidInstrumentId
   const [chartFrom, setChartFrom] = useState(defaultChartRange.from)
   const [chartTo, setChartTo] = useState(defaultChartRange.to)
   const [historyVersion, setHistoryVersion] = useState(0)
@@ -35,7 +40,9 @@ export function HoldingDetailPage() {
     if (invalidId) return null
     void historyVersion
     const [holding, account] = await Promise.all([
-      fetchHolding(holdingId),
+      useInstrumentRoute
+        ? fetchAccountAssetHolding(accountId, instrumentId)
+        : fetchHolding(holdingId),
       fetchAccount(accountId),
     ])
     const positionHistory = await fetchHoldingValuations(
@@ -45,7 +52,7 @@ export function HoldingDetailPage() {
       chartTo,
     )
     return { holding, accountCurrency: account.currency, positionHistory }
-  }, [invalidId, accountId, holdingId, historyVersion, chartFrom, chartTo])
+  }, [invalidId, accountId, holdingId, instrumentId, useInstrumentRoute, historyVersion, chartFrom, chartTo])
 
   const { data, error, loading, reload } = useAsyncData(loader)
 

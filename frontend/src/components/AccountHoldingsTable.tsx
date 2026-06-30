@@ -46,7 +46,7 @@ function HoldingRow({
   holding: HoldingSummary
   mode: 'open' | 'closed'
 }) {
-  const detailPath = `/accounts/${accountId}/holdings/${holding.id}`
+  const detailPath = `/accounts/${accountId}/assets/${holding.instrumentId}`
 
   return (
     <tr>

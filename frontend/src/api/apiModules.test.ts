@@ -31,6 +31,7 @@ import {
 } from './transactionsApi'
 import {
   fetchAccountHoldings,
+  fetchAccountAssetHolding,
   fetchHolding,
   createHolding,
   applyStockSplit,
@@ -193,6 +194,9 @@ describe('API modules', () => {
 
     await fetchHolding(8)
     expect(apiClient.get).toHaveBeenCalledWith('/api/holdings/8')
+
+    await fetchAccountAssetHolding(7, 11)
+    expect(apiClient.get).toHaveBeenCalledWith('/api/accounts/7/assets/11')
 
     await createHolding(2, 11)
     expect(apiClient.post).toHaveBeenCalledWith('/api/accounts/2/holdings', {
@@ -358,6 +362,7 @@ describe('API modules', () => {
       side: 'BUY',
       quantity: 2,
       pricePerUnit: 50,
+      commission: 2.5,
       currency: 'PLN',
       tradeDate: '2025-02-01T00:00:00.000Z',
     })
@@ -367,6 +372,7 @@ describe('API modules', () => {
       side: 'BUY',
       quantity: 2,
       pricePerUnit: 50,
+      commission: 2.5,
       currency: 'PLN',
       tradeDate: '2025-02-01T00:00:00.000Z',
     })

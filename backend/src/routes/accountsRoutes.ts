@@ -76,6 +76,10 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
         min: 0,
       });
       const description = req.body?.description != null ? String(req.body.description) : null;
+      const openingCashAsOf =
+        req.body?.openingCashAsOf != null
+          ? parseDateBody(req.body.openingCashAsOf)
+          : new Date();
       const { plnPerUnit } = await getFxRatesPlnPerUnit();
       const row = await prisma.$transaction(async (tx) => {
         const created = await tx.account.create({
@@ -85,6 +89,7 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
             name,
             currency,
             openingBalance,
+            openingCashAsOf,
             cashBalance: openingBalance,
             description,
           },

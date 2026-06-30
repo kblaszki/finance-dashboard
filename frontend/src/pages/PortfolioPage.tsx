@@ -143,7 +143,7 @@ export function PortfolioPage() {
                   positions.map((row) => (
                     <tr key={row.id}>
                       <td>
-                        <Link to={`/accounts/${row.accountId}/holdings/${row.id}`}>
+                        <Link to={`/accounts/${row.accountId}/assets/${row.instrumentId}`}>
                           {instrumentLabel(row)}
                         </Link>
                         {' · '}

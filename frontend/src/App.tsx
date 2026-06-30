@@ -34,6 +34,7 @@ function App() {
           <Route path="/assets/:id" element={<AssetDetailPage />} />
           <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/accounts/:id" element={<AccountDetailPage />} />
+          <Route path="/accounts/:id/assets/:instrumentId" element={<HoldingDetailPage />} />
           <Route path="/accounts/:id/holdings/:holdingId" element={<HoldingDetailPage />} />
           <Route path="/transactions" element={<TransactionsListPage />} />
           <Route path="/transfers" element={<TransfersPage />} />

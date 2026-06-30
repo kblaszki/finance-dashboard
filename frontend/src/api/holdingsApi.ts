@@ -32,6 +32,13 @@ export async function fetchHolding(holdingId: number): Promise<HoldingSummary> {
   return apiClient.get<HoldingSummary>(`/api/holdings/${holdingId}`);
 }
 
+export async function fetchAccountAssetHolding(
+  accountId: number,
+  instrumentId: number,
+): Promise<HoldingSummary> {
+  return apiClient.get<HoldingSummary>(`/api/accounts/${accountId}/assets/${instrumentId}`);
+}
+
 export async function createHolding(
   accountId: number,
   instrumentId: number,

@@ -16,7 +16,8 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 | `/assets/:id` | Asset price chart | `AssetDetailPage`, `InstrumentPriceChart` (FR-009) |
 | `/accounts` | Accounts | `ManagedAccountsList` — total balance, type filter (FR-012) |
 | `/accounts/:id` | Account detail | `AccountDetailPage`, chart date range, `AccountStatsCards`, `AccountActivityTable` (BROKERAGE), `BrokerImportForm` (BROKERAGE), holdings, `ManualAccountRevalueForm` (MANUAL), `TransactionTable` with bank cash-flow tabs |
-| `/accounts/:id/holdings/:holdingId` | Holding detail | `HoldingDetailPage`, link to `/assets/:id`, `HoldingKpiCards`, `HoldingValuationChart` (date range), `HoldingLotsTable` |
+| `/accounts/:id/assets/:instrumentId` | Holding detail (FR-014) | `HoldingDetailPage`, `HoldingKpiCards`, `HoldingValuationChart`, `HoldingLotsTable`; link to `/assets/:id` |
+| `/accounts/:id/holdings/:holdingId` | Holding detail (legacy URL) | Same as `/accounts/:id/assets/:instrumentId` |
 | `/transactions` | Asset trades | `TransactionsListPage` → `AssetTradesTable` (FR-007; `?accountId=` filter) |
 | `/transfers` | Internal transfers | `TransfersPage` → `InternalTransfersTable` (FR-011; `?accountId=` filter) |
 | `/tax` | PL tax report | `TaxReportPage` — FIFO gains, Belka estimate, CSV export |
