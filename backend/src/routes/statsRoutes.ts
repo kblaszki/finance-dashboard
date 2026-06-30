@@ -24,6 +24,8 @@ import {
   formatTaxReportCsv,
   parseTaxYear,
 } from "../taxReport";
+import { computeTaxOverview, formatCryptoTaxCsv } from "../taxOverview";
+import { simulatePreSellTax } from "../preSellSimulator";
 import { badRequest, handleRouteError } from "./httpSupport";
 
 type StatsDeps = {
@@ -255,11 +257,23 @@ export function createStatsRouter(deps: StatsDeps): Router {
     try {
       const taxYear = parseTaxYear(req.query.year ?? new Date().getUTCFullYear());
       const format = String(req.query.format ?? "csv").toLowerCase();
+      const reportType = String(req.query.reportType ?? "pit38").toLowerCase();
       if (format !== "csv") {
         throw badRequest("format must be csv");
       }
       const currency = normalizeCurrency(req.query.currency ?? "PLN");
       const { plnPerUnit } = await getFxRatesPlnPerUnit();
+      if (reportType === "crypto_pit") {
+        const overview = await computeTaxOverview(prisma, uid(req), taxYear, currency, plnPerUnit);
+        const csv = formatCryptoTaxCsv(overview.crypto.sellRows);
+        res.setHeader("Content-Type", "text/csv; charset=utf-8");
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="crypto-tax-${taxYear}.csv"`,
+        );
+        res.send(csv);
+        return;
+      }
       const report = await computeTaxReport(prisma, uid(req), taxYear, currency, plnPerUnit);
       const csv = formatTaxReportCsv(report.sellRows);
       res.setHeader("Content-Type", "text/csv; charset=utf-8");
@@ -274,6 +288,66 @@ export function createStatsRouter(deps: StatsDeps): Router {
         return;
       }
       handleRouteError(res, e, "Failed to export tax report");
+    }
+  });
+
+  router.get("/api/stats/tax-overview", requireAuth, async (req: AuthedRequest, res) => {
+    try {
+      const taxYear = parseTaxYear(req.query.year ?? new Date().getUTCFullYear());
+      const currency = normalizeCurrency(req.query.currency ?? "PLN");
+      const { plnPerUnit } = await getFxRatesPlnPerUnit();
+      const persist = String(req.query.snapshot ?? "") === "1";
+      const overview = await computeTaxOverview(
+        prisma,
+        uid(req),
+        taxYear,
+        currency,
+        plnPerUnit,
+        { persistSnapshot: persist },
+      );
+      res.json(overview);
+    } catch (e: unknown) {
+      if (e instanceof Error && e.message.startsWith("year must be")) {
+        handleRouteError(res, badRequest(e.message), "Failed to load tax overview");
+        return;
+      }
+      handleRouteError(res, e, "Failed to load tax overview");
+    }
+  });
+
+  router.post("/api/stats/pre-sell-simulator", requireAuth, async (req: AuthedRequest, res) => {
+    try {
+      const currency = normalizeCurrency(req.body?.currency ?? "PLN");
+      const { plnPerUnit } = await getFxRatesPlnPerUnit();
+      const holdingId = Number(req.body?.holdingId);
+      if (!Number.isFinite(holdingId) || holdingId < 1) {
+        throw badRequest("holdingId required");
+      }
+      const quantity = Number(req.body?.quantity);
+      if (!Number.isFinite(quantity) || quantity <= 0) {
+        throw badRequest("quantity must be positive");
+      }
+      const saleDate =
+        req.body?.saleDate != null ? new Date(String(req.body.saleDate)) : undefined;
+      const salePricePerUnit =
+        req.body?.salePricePerUnit != null ? Number(req.body.salePricePerUnit) : undefined;
+      const result = await simulatePreSellTax(
+        prisma,
+        uid(req),
+        {
+          holdingId,
+          quantity,
+          ...(saleDate && !Number.isNaN(saleDate.getTime()) ? { saleDate } : {}),
+          ...(salePricePerUnit != null && Number.isFinite(salePricePerUnit)
+            ? { salePricePerUnit }
+            : {}),
+        },
+        currency,
+        plnPerUnit,
+      );
+      res.json(result);
+    } catch (e: unknown) {
+      handleRouteError(res, e, "Failed to simulate pre-sell tax");
     }
   });
 

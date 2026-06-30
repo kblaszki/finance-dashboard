@@ -24,7 +24,9 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 | `/transactions` | Asset trades | `TransactionsListPage` → `AssetTradesTable` (FR-007; `?accountId=` filter) |
 | `/transfers` | Internal transfers | `TransfersPage` → `InternalTransfersTable` (FR-011; `?accountId=` filter) |
 | `/tax` | PL tax report | `TaxReportPage` — FR-022/023/025–028; `/tax/:year` |
-| `/tax/settings` | Tax prerequisites | `TaxSettingsPage` — FR-039–041 wrappers, transfers, corporate actions |
+| `/tax/:year/overview` | Tax overview | `TaxOverviewPage` — FR-046 consolidated summary |
+| `/tax/calendar` | Tax calendar | `TaxCalendarPage` — FR-045 deadlines + checklist |
+| `/import/presets` | Import presets | `ImportPresetsPage` — FR-047 broker templates |
 | `/liabilities` | Liabilities | `LiabilitiesPage` — FR-029 mortgages, loans, credits |
 | `/income-events` | Income events | `IncomeEventsPage` — FR-024 dividends, interest, coupons |
 | `/settings` | Account settings | `SettingsPage` — username, email, password |
@@ -58,6 +60,12 @@ Preferred async pattern for page/widget data: [`frontend/src/hooks/useAsyncData.
 | `taxWrappersApi.ts` | `/api/tax-wrapper-withdrawals`, `/api/ikze-contributions` |
 | `positionTransfersApi.ts` | `/api/position-transfers` |
 | `corporateActionsApi.ts` | `/api/corporate-actions` |
+| `taxOverviewApi.ts` | `/api/stats/tax-overview`, `/api/stats/pre-sell-simulator` |
+| `taxLossCarryforwardApi.ts` | `/api/tax-loss-carryforward` |
+| `propertySalesApi.ts` | `/api/property-sales` |
+| `taxCalendarApi.ts` | `/api/tax-calendar`, `/api/tax-checklist` |
+| `importPresetsApi.ts` | `/api/import/presets` |
+| `documentAttachmentsApi.ts` | `/api/document-attachments` |
 | `instrumentsApi.ts` | `/api/instruments`, `/api/instruments/:id/valuations` |
 | `importApi.ts` | `POST /api/import/broker-trades`, `POST /api/import/bank-transactions` |
 | `holdingsApi.ts` | `/api/accounts/:id/holdings`, `/api/holdings/:holdingId`, `POST .../split` |

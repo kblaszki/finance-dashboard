@@ -8,6 +8,7 @@ import { computeAccountDetailStats } from "../accountStats";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
 import { parseDateBody, serializeAccount } from "./routeSupport";
 import { parseTaxWrapperType } from "../taxWrapper";
+import { parseRentalTaxMethod } from "../propertySales";
 import { handleRouteError, badRequest, parseIdParam, parseFiniteNumber, parsePositiveNumber, parseRequiredString } from "./httpSupport";
 
 type AccountsDeps = {
@@ -141,6 +142,7 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
         description?: string | null;
         metalGrams?: number | null;
         taxWrapperType?: string;
+        rentalTaxMethod?: string | null;
       } = {};
       if (req.body?.name != null) data.name = String(req.body.name).trim();
       if (req.body?.description !== undefined) {
@@ -160,6 +162,15 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
           throw badRequest("taxWrapperType is only supported for BROKERAGE accounts");
         }
         data.taxWrapperType = parseTaxWrapperType(req.body.taxWrapperType);
+      }
+      if (req.body?.rentalTaxMethod !== undefined) {
+        if (row.accountType !== "REAL_ESTATE") {
+          throw badRequest("rentalTaxMethod is only supported for REAL_ESTATE accounts");
+        }
+        data.rentalTaxMethod =
+          req.body.rentalTaxMethod == null || req.body.rentalTaxMethod === ""
+            ? null
+            : parseRentalTaxMethod(req.body.rentalTaxMethod);
       }
       const updated = await prisma.account.update({ where: { id }, data });
       const totalBalance =

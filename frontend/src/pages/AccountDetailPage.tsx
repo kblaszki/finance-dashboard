@@ -21,6 +21,8 @@ import { BrokerImportForm } from '../components/BrokerImportForm'
 import { InstrumentPicker } from '../components/InstrumentPicker'
 import { ManualAccountRevalueForm } from '../components/ManualAccountRevalueForm'
 import { PropertyCashFlowsSection } from '../components/PropertyCashFlowsSection'
+import { PropertySalesSection } from '../components/PropertySalesSection'
+import { RentalTaxMethodForm } from '../components/RentalTaxMethodForm'
 import { PreciousMetalGramsForm } from '../components/PreciousMetalGramsForm'
 import { TaxWrapperTypeForm } from '../components/TaxWrapperTypeForm'
 import { MarketPricesStatus } from '../components/MarketPricesStatus'
@@ -205,7 +207,15 @@ export function AccountDetailPage() {
       )}
 
       {account.accountType === 'REAL_ESTATE' && (
-        <PropertyCashFlowsSection accountId={accountId} currency={account.currency} />
+        <>
+          <RentalTaxMethodForm
+            accountId={accountId}
+            rentalTaxMethod={account.rentalTaxMethod}
+            onSaved={reload}
+          />
+          <PropertyCashFlowsSection accountId={accountId} currency={account.currency} />
+          <PropertySalesSection accountId={accountId} currency={account.currency} />
+        </>
       )}
 
       {account.accountType === 'PRECIOUS_METAL' && (

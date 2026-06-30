@@ -29,6 +29,7 @@ export const accountFixture: Account = {
   openingCashAsOf: '2025-01-01T00:00:00.000Z',
   metalGrams: null,
   taxWrapperType: 'standard',
+  rentalTaxMethod: null,
   description: null,
   createdAt: '2025-01-01T00:00:00.000Z',
   updatedAt: '2025-01-15T12:00:00.000Z',
@@ -126,6 +127,9 @@ export const taxReportFixture: TaxReport = {
   realizedGains: 500,
   realizedLosses: 100,
   netRealized: 400,
+  netRealizedAfterLosses: 400,
+  lossAppliedTotal: 0,
+  estimatedPit38Tax: 76,
   estimatedBelka: 76,
   dividendsGross: 50,
   byAccount: [{ accountId: 2, name: 'Broker', netRealized: 400 }],
@@ -158,7 +162,15 @@ export const taxReportFixture: TaxReport = {
     available: false,
     rentalIncome: 0,
     maintenanceCosts: 0,
+    taxableBase: 0,
+    byAccount: [],
     message: 'Add rental/maintenance flows on real estate accounts (FR-030).',
+  },
+  lossCarryforward: {
+    rows: [],
+    appliedThisYear: [],
+    remainingTotal: 0,
+    suggestedNewLoss: null,
   },
 }
 

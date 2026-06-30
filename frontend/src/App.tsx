@@ -23,6 +23,9 @@ import { ImportPage } from "./pages/ImportPage";
 import { IncomeEventsPage } from "./pages/IncomeEventsPage";
 import { LiabilitiesPage } from "./pages/LiabilitiesPage";
 import { TaxSettingsPage } from "./pages/TaxSettingsPage";
+import { TaxOverviewPage } from "./pages/TaxOverviewPage";
+import { TaxCalendarPage } from "./pages/TaxCalendarPage";
+import { ImportPresetsPage } from "./pages/ImportPresetsPage";
 import { useAuth } from "./state/auth";
 
 function App() {
@@ -45,12 +48,15 @@ function App() {
           <Route path="/transactions" element={<TransactionsListPage />} />
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/budgets" element={<BudgetsPage />} />
+          <Route path="/import/presets" element={<ImportPresetsPage />} />
           <Route path="/import" element={<ImportPage />} />
           <Route path="/income-events" element={<IncomeEventsPage />} />
           <Route path="/liabilities" element={<LiabilitiesPage />} />
           <Route path="/transfers" element={<TransfersPage />} />
-          <Route path="/tax" element={<TaxReportPage />} />
+          <Route path="/tax/calendar" element={<TaxCalendarPage />} />
           <Route path="/tax/settings" element={<TaxSettingsPage />} />
+          <Route path="/tax/:year/overview" element={<TaxOverviewPage />} />
+          <Route path="/tax" element={<TaxReportPage />} />
           <Route path="/tax/:year" element={<TaxReportPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>

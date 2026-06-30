@@ -177,6 +177,22 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 
 `POST /api/holdings/:holdingId/lots` accepts optional `settlementDate` (FR-007).
 
+## Tax completeness (FR-042–050, DATA-021–022, DATA-025)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/stats/tax-overview` | Yes | Consolidated overview — `year`, `currency`, `snapshot=1` |
+| POST | `/api/stats/pre-sell-simulator` | Yes | FR-050 — `{ holdingId, quantity, salePricePerUnit?, saleDate?, currency? }` |
+| GET | `/api/stats/tax-report/export` | Yes | `reportType=crypto_pit` for crypto CSV (FR-043) |
+| GET/PUT/DELETE | `/api/tax-loss-carryforward` | Yes | Loss carryforward register (FR-042) |
+| GET | `/api/tax-calendar` | Yes | Deadlines + checklist — `year` (FR-045) |
+| PUT | `/api/tax-checklist` | Yes | `{ taxYear, itemKey, completed }` |
+| GET/POST/DELETE | `/api/property-sales` | Yes | Real estate sales (FR-044, DATA-025) |
+| GET/POST/DELETE | `/api/document-attachments` | Yes | Metadata only (FR-049, DATA-022) |
+| GET/POST/DELETE | `/api/import/presets` | Yes | Built-in + custom broker presets (FR-047) |
+
+`PUT /api/accounts/:id` accepts `rentalTaxMethod` (`scale`, `lump_sum_8_5`) on REAL_ESTATE accounts.
+
 ## Market data
 
 | Method | Path | Auth | Description |

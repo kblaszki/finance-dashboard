@@ -11,6 +11,8 @@ export type AccountType =
 
 export type TaxWrapperType = "standard" | "ike" | "ikze" | "ppk";
 
+export type RentalTaxMethod = "scale" | "lump_sum_8_5";
+
 export type Account = {
   id: number;
   accountType: AccountType;
@@ -22,6 +24,7 @@ export type Account = {
   openingCashAsOf: string | null;
   metalGrams: number | null;
   taxWrapperType: TaxWrapperType;
+  rentalTaxMethod: RentalTaxMethod | null;
   description: string | null;
   createdAt: string;
   updatedAt: string;
@@ -87,6 +90,7 @@ export async function updateAccount(
   input: Partial<Pick<AccountInput, "name" | "description">> & {
     metalGrams?: number | null;
     taxWrapperType?: TaxWrapperType;
+    rentalTaxMethod?: RentalTaxMethod | null;
   },
 ): Promise<Account> {
   return apiClient.put<Account>(`/api/accounts/${id}`, input);

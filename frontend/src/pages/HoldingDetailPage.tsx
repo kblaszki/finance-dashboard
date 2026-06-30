@@ -10,6 +10,7 @@ import { HoldingValuationChart } from '../components/HoldingValuationChart'
 import { InstrumentValuationForm } from '../components/InstrumentValuationForm'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { rangeForPreset } from '../state/period'
+import { PreSellSimulatorForm } from '../components/PreSellSimulatorForm'
 import { formatMoney } from '../utils/format'
 
 const defaultChartRange = rangeForPreset('last_12_months')
@@ -136,6 +137,15 @@ export function HoldingDetailPage() {
           onSaved={refreshAfterValuation}
         />
       </section>
+
+      {isOpen ? (
+        <PreSellSimulatorForm
+          holdingId={holding.id}
+          symbol={symbol}
+          maxQuantity={holding.quantity}
+          currency={accountCurrency}
+        />
+      ) : null}
 
       <section className="card">
         <h2>Stock split</h2>

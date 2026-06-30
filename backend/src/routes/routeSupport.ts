@@ -60,6 +60,7 @@ export function serializeAccount(
     openingCashAsOf: Date | null;
     metalGrams?: unknown | null;
     taxWrapperType?: string;
+    rentalTaxMethod?: string | null;
     description: string | null;
     createdAt: Date;
     updatedAt: Date;
@@ -77,6 +78,7 @@ export function serializeAccount(
     openingCashAsOf: a.openingCashAsOf?.toISOString() ?? null,
     metalGrams: a.metalGrams != null ? toNumber(a.metalGrams) : null,
     taxWrapperType: a.taxWrapperType ?? "standard",
+    rentalTaxMethod: a.rentalTaxMethod ?? null,
     description: a.description,
     createdAt: a.createdAt.toISOString(),
     updatedAt: a.updatedAt.toISOString(),

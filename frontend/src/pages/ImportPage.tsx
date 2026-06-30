@@ -88,7 +88,7 @@ export function ImportPage() {
       <h1 className="page-title">Import (FR-019)</h1>
       <p className="muted page-lead">
         Upload bank or brokerage CSV exports. Preview before commit; duplicates are skipped by date,
-        amount, and description.
+        amount, and description. See <Link to="/import/presets">import presets</Link> (FR-047).
       </p>
       {accountsError && <p className="error-banner">{accountsError}</p>}
       {error && <p className="error-banner">{error}</p>}

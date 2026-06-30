@@ -7,6 +7,13 @@ import {
   fetchWithdrawalsForTaxYear,
   isTaxAdvantagedWrapper,
 } from "./taxWrapper";
+import {
+  applyLossCarryforward,
+  listTaxLossCarryforwards,
+  remainingLoss,
+  suggestLossRowForYear,
+} from "./taxLossCarryforward";
+import { computeRentalTaxableBase, parseRentalTaxMethod, type RentalTaxMethod } from "./propertySales";
 import { toNumber } from "./accountValuation";
 
 const BELKA_RATE = 0.19;
@@ -63,11 +70,35 @@ export type DerivativesSection = {
   message: string;
 };
 
+export type RentalAccountRow = {
+  accountId: number;
+  accountName: string;
+  rentalTaxMethod: RentalTaxMethod;
+  rentalIncome: number;
+  maintenanceCosts: number;
+  taxableBase: number;
+};
+
 export type RentalSection = {
   available: boolean;
   rentalIncome: number;
   maintenanceCosts: number;
+  taxableBase: number;
+  byAccount: RentalAccountRow[];
   message: string;
+};
+
+export type LossCarryforwardSection = {
+  rows: Array<{
+    taxYear: number;
+    lossAmount: number;
+    usedAmount: number;
+    remainingAmount: number;
+    note: string | null;
+  }>;
+  appliedThisYear: Array<{ taxYear: number; amount: number }>;
+  remainingTotal: number;
+  suggestedNewLoss: { taxYear: number; lossAmount: number } | null;
 };
 
 export type TaxReport = {
@@ -76,6 +107,9 @@ export type TaxReport = {
   realizedGains: number;
   realizedLosses: number;
   netRealized: number;
+  netRealizedAfterLosses: number;
+  lossAppliedTotal: number;
+  estimatedPit38Tax: number;
   estimatedBelka: number;
   dividendsGross: number;
   byAccount: Array<{ accountId: number; name: string; netRealized: number }>;
@@ -86,6 +120,7 @@ export type TaxReport = {
   pitZg: PitZgRow[];
   derivatives: DerivativesSection;
   rental: RentalSection;
+  lossCarryforward: LossCarryforwardSection;
 };
 
 function taxYearBounds(year: number): { start: Date; end: Date } {
@@ -453,22 +488,75 @@ export async function computeTaxReport(
       occurredOn: { gte: start, lte: end },
       account: { accountType: "REAL_ESTATE" },
     },
+    include: { account: { select: { id: true, name: true, rentalTaxMethod: true } } },
   });
-  let rentalIncome = 0;
-  let maintenanceCosts = 0;
+  const rentalByAccount = new Map<
+    number,
+    { accountName: string; method: RentalTaxMethod; rent: number; maintenance: number }
+  >();
   for (const flow of propertyFlows) {
     const amount = convertGain(toNumber(flow.amount), flow.currency, displayCurrency, plnPerUnit);
-    if (flow.flowType === "rent") rentalIncome += amount;
-    else if (flow.flowType === "maintenance") maintenanceCosts += amount;
+    const method = parseRentalTaxMethod(flow.account.rentalTaxMethod ?? "scale");
+    const entry = rentalByAccount.get(flow.accountId) ?? {
+      accountName: flow.account.name,
+      method,
+      rent: 0,
+      maintenance: 0,
+    };
+    if (flow.flowType === "rent") entry.rent += amount;
+    else if (flow.flowType === "maintenance") entry.maintenance += amount;
+    rentalByAccount.set(flow.accountId, entry);
+  }
+  const rentalByAccountRows: RentalAccountRow[] = [...rentalByAccount.entries()].map(
+    ([accountId, row]) => {
+      const taxableBase = computeRentalTaxableBase(row.method, row.rent, row.maintenance);
+      return {
+        accountId,
+        accountName: row.accountName,
+        rentalTaxMethod: row.method,
+        rentalIncome: row.rent,
+        maintenanceCosts: row.maintenance,
+        taxableBase,
+      };
+    },
+  );
+  let rentalIncome = 0;
+  let maintenanceCosts = 0;
+  let rentalTaxableBase = 0;
+  for (const row of rentalByAccountRows) {
+    rentalIncome += row.rentalIncome;
+    maintenanceCosts += row.maintenanceCosts;
+    rentalTaxableBase += row.taxableBase;
   }
   const hasRentalData = propertyFlows.length > 0;
 
   const totals = aggregateRealizedAmounts(sellRows.map((r) => r.gainLoss));
 
+  const lossRows = await listTaxLossCarryforwards(prisma, userId);
+  const lossInputs = lossRows.map((row) => ({
+    taxYear: row.taxYear,
+    lossAmount: toNumber(row.lossAmount),
+    usedAmount: toNumber(row.usedAmount),
+  }));
+  const { taxableGain: netRealizedAfterLosses, applied } = applyLossCarryforward(
+    totals.netRealized,
+    lossInputs,
+  );
+  const lossAppliedTotal = applied.reduce((sum, row) => sum + row.amount, 0);
+  const remainingTotal = lossInputs.reduce(
+    (sum, row) => sum + remainingLoss(row.lossAmount, row.usedAmount),
+    0,
+  );
+  const estimatedPit38Tax = Math.max(0, netRealizedAfterLosses) * BELKA_RATE;
+
   return {
     taxYear,
     displayCurrency,
     ...totals,
+    netRealizedAfterLosses,
+    lossAppliedTotal,
+    estimatedPit38Tax,
+    estimatedBelka: estimatedPit38Tax,
     dividendsGross,
     byAccount: [...byAccountMap.entries()].map(([accountId, { name, net }]) => ({
       accountId,
@@ -493,9 +581,23 @@ export async function computeTaxReport(
       available: hasRentalData,
       rentalIncome,
       maintenanceCosts,
+      taxableBase: rentalTaxableBase,
+      byAccount: rentalByAccountRows,
       message: hasRentalData
-        ? "PIT-36 rental helper — net rent before tax method (FR-026)."
+        ? "PIT-36 rental helper — respects rental tax method per property (FR-026, FR-044)."
         : "Add rental/maintenance flows on real estate accounts (FR-030).",
+    },
+    lossCarryforward: {
+      rows: lossRows.map((row) => ({
+        taxYear: row.taxYear,
+        lossAmount: toNumber(row.lossAmount),
+        usedAmount: toNumber(row.usedAmount),
+        remainingAmount: remainingLoss(toNumber(row.lossAmount), toNumber(row.usedAmount)),
+        note: row.note,
+      })),
+      appliedThisYear: applied,
+      remainingTotal,
+      suggestedNewLoss: suggestLossRowForYear(taxYear, totals.netRealized),
     },
   };
 }

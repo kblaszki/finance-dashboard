@@ -22,6 +22,12 @@ model User {
   ikzeContributions IkzeContribution[]
   positionTransfers PositionTransfer[]
   corporateActions CorporateAction[]
+  taxLossCarryforwards TaxLossCarryforward[]
+  taxReportSnapshots TaxReportSnapshot[]
+  taxChecklistItems TaxChecklistItem[]
+  propertySales PropertySale[]
+  documentAttachments DocumentAttachment[]
+  importPresets ImportPreset[]
 }
 
 model Account {
@@ -36,6 +42,7 @@ model Account {
   openingCashAsOf        DateTime?
   metalGrams             Decimal?
   taxWrapperType         String                   @default("standard")
+  rentalTaxMethod        String?
   description            String?
   createdAt              DateTime                 @default(now())
   updatedAt              DateTime                 @updatedAt
@@ -52,6 +59,7 @@ model Account {
   positionTransfersFrom  PositionTransfer[]     @relation("PositionTransferFrom")
   positionTransfersTo    PositionTransfer[]     @relation("PositionTransferTo")
   corporateActions       CorporateAction[]
+  propertySales          PropertySale[]
 
   @@unique([userId, name])
   @@index([userId, accountType])
@@ -248,6 +256,92 @@ model PropertyCashFlow {
 
   @@index([userId, occurredOn])
   @@index([accountId, occurredOn])
+}
+
+model TaxLossCarryforward {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taxYear    Int
+  lossAmount Decimal
+  usedAmount Decimal  @default(0)
+  note       String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([userId, taxYear])
+  @@index([userId, taxYear])
+}
+
+model TaxReportSnapshot {
+  id            Int       @id @default(autoincrement())
+  userId        Int
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taxYear       Int
+  computedAt    DateTime  @default(now())
+  payload       String
+  invalidatedAt DateTime?
+
+  @@index([userId, taxYear])
+}
+
+model TaxChecklistItem {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taxYear     Int
+  itemKey     String
+  completedAt DateTime @default(now())
+
+  @@unique([userId, taxYear, itemKey])
+  @@index([userId, taxYear])
+}
+
+model PropertySale {
+  id                Int      @id @default(autoincrement())
+  userId            Int
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId         Int
+  account           Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  soldOn            DateTime
+  proceeds          Decimal
+  acquisitionCost   Decimal
+  improvementsCost  Decimal  @default(0)
+  fiveYearExemption Boolean  @default(false)
+  currency          String
+  description       String?
+  createdAt         DateTime @default(now())
+
+  @@index([userId, soldOn])
+  @@index([accountId, soldOn])
+}
+
+model DocumentAttachment {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entityType  String
+  entityId    Int
+  filename    String
+  mimeType    String?
+  storageRef  String?
+  description String?
+  uploadedAt  DateTime @default(now())
+
+  @@index([userId, entityType, entityId])
+}
+
+model ImportPreset {
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  broker        String
+  targetType    String
+  columnMapping String
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Instrument {

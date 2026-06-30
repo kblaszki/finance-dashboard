@@ -6,6 +6,7 @@ import { recomputeQuantityAfterChain } from "../holdingLot";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
 import { handleRouteError, badRequest, parseFiniteNumber, parseIdParam, parsePositiveNumber } from "./httpSupport";
 import { applyStockSplit } from "../stockSplit";
+import { invalidateTaxYearsForDate } from "../taxReportCache";
 
 type HoldingsDeps = {
   prisma: PrismaClient;
@@ -256,6 +257,7 @@ export function createHoldingsRouter(deps: HoldingsDeps): Router {
           },
         });
       });
+      await invalidateTaxYearsForDate(prisma, uid(req), tradeDate);
       res.status(201).json(serializeHoldingLot(row));
     } catch (e: unknown) {
       if (
@@ -327,6 +329,7 @@ export function createHoldingsRouter(deps: HoldingsDeps): Router {
       await syncBrokerageCashBalance(tx, accountId);
       await recomputeAccountValuationsFrom(tx, accountId, tradeDate, plnPerUnit);
     });
+    await invalidateTaxYearsForDate(prisma, uid(req), tradeDate);
     res.status(204).send();
     } catch (e: unknown) {
       handleRouteError(res, e, "Failed to delete holding lot");

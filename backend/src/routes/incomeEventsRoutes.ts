@@ -11,6 +11,7 @@ import {
   updateUserIncomeEvent,
 } from "../incomeEvents";
 import { handleRouteError, parseFiniteNumber, parseIdParam } from "./httpSupport";
+import { invalidateTaxYearsForDate } from "../taxReportCache";
 
 type IncomeEventsDeps = {
   prisma: PrismaClient;
@@ -75,6 +76,7 @@ export function createIncomeEventsRouter(deps: IncomeEventsDeps): Router {
         );
       }
       const row = await createUserIncomeEvent(prisma, uid(req), createInput);
+      await invalidateTaxYearsForDate(prisma, uid(req), createInput.occurredOn);
       res.status(201).json(serializeIncomeEvent(row));
     } catch (e: unknown) {
       handleRouteError(res, e, "Failed to create income event");
@@ -110,6 +112,9 @@ export function createIncomeEventsRouter(deps: IncomeEventsDeps): Router {
         patch.foreignTaxPaid = parseFiniteNumber(req.body.foreignTaxPaid, "foreignTaxPaid", { min: 0 });
       }
       const row = await updateUserIncomeEvent(prisma, uid(req), id, patch);
+      if (patch.occurredOn) {
+        await invalidateTaxYearsForDate(prisma, uid(req), patch.occurredOn);
+      }
       res.json(serializeIncomeEvent(row));
     } catch (e: unknown) {
       handleRouteError(res, e, "Failed to update income event");
@@ -119,7 +124,11 @@ export function createIncomeEventsRouter(deps: IncomeEventsDeps): Router {
   router.delete("/api/income-events/:id", requireAuth, async (req: AuthedRequest, res) => {
     try {
       const id = parseIdParam(req.params.id, "id");
+      const existing = await prisma.incomeEvent.findFirst({ where: { id, userId: uid(req) } });
       await deleteUserIncomeEvent(prisma, uid(req), id);
+      if (existing) {
+        await invalidateTaxYearsForDate(prisma, uid(req), existing.occurredOn);
+      }
       res.status(204).send();
     } catch (e: unknown) {
       handleRouteError(res, e, "Failed to delete income event");

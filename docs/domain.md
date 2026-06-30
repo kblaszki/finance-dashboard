@@ -112,6 +112,22 @@ User-scoped `Category` tree (`parentId`, `sortOrder`). Defaults seeded on regist
 
 `HoldingLot.settlementDate` — optional; tax report uses it (fallback `tradeDate`) for PIT-38 year assignment.
 
+## Tax completeness (FR-042–050)
+
+`TaxLossCarryforward` — per-year capital loss balance; FR-022 applies oldest-first against net gains.
+
+`TaxReportSnapshot` — optional JSON cache; invalidated when prior-year tax inputs change (FR-048).
+
+`TaxChecklistItem` — local filing checklist completion per year (FR-045).
+
+`PropertySale` — real estate disposal with taxable gain helper (FR-044, DATA-025).
+
+`Account.rentalTaxMethod` — `scale` or `lump_sum_8_5` for FR-026 rental computation.
+
+`DocumentAttachment` — metadata for tax evidence (FR-049); no binary storage.
+
+`ImportPreset` — user-saved broker CSV column maps (FR-047); built-in presets in code.
+
 ## Related docs
 
 - [api.md](api.md) — REST surface

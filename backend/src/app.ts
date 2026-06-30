@@ -65,6 +65,11 @@ import { createPropertyCashFlowsRouter } from "./routes/propertyCashFlowsRoutes"
 import { createTaxWrappersRouter } from "./routes/taxWrappersRoutes";
 import { createPositionTransfersRouter } from "./routes/positionTransfersRoutes";
 import { createCorporateActionsRouter } from "./routes/corporateActionsRoutes";
+import { createTaxLossCarryforwardRouter } from "./routes/taxLossCarryforwardRoutes";
+import { createPropertySalesRouter } from "./routes/propertySalesRoutes";
+import { createDocumentAttachmentsRouter } from "./routes/documentAttachmentsRoutes";
+import { createImportPresetsRouter } from "./routes/importPresetsRoutes";
+import { createTaxCalendarRouter } from "./routes/taxCalendarRoutes";
 import { handleRouteError } from "./routes/httpSupport";
 
 dotenv.config();
@@ -348,6 +353,48 @@ app.use(
     transactionDateFilter,
     getFxRatesPlnPerUnit,
     recomputeAccountValuationsFrom,
+  }),
+);
+
+app.use(
+  createTaxLossCarryforwardRouter({
+    prisma,
+    requireAuth,
+    uid,
+  }),
+);
+
+app.use(
+  createPropertySalesRouter({
+    prisma,
+    requireAuth,
+    uid,
+    parseDateBody,
+    transactionDateFilter,
+  }),
+);
+
+app.use(
+  createDocumentAttachmentsRouter({
+    prisma,
+    requireAuth,
+    uid,
+  }),
+);
+
+app.use(
+  createImportPresetsRouter({
+    prisma,
+    requireAuth,
+    uid,
+  }),
+);
+
+app.use(
+  createTaxCalendarRouter({
+    prisma,
+    requireAuth,
+    uid,
   }),
 );
 

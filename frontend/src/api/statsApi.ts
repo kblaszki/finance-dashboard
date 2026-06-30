@@ -189,6 +189,9 @@ export type TaxReport = {
   realizedGains: number;
   realizedLosses: number;
   netRealized: number;
+  netRealizedAfterLosses: number;
+  lossAppliedTotal: number;
+  estimatedPit38Tax: number;
   estimatedBelka: number;
   dividendsGross: number;
   byAccount: Array<{ accountId: number; name: string; netRealized: number }>;
@@ -235,7 +238,28 @@ export type TaxReport = {
     available: boolean;
     rentalIncome: number;
     maintenanceCosts: number;
+    taxableBase: number;
+    byAccount: Array<{
+      accountId: number;
+      accountName: string;
+      rentalTaxMethod: string;
+      rentalIncome: number;
+      maintenanceCosts: number;
+      taxableBase: number;
+    }>;
     message: string;
+  };
+  lossCarryforward: {
+    rows: Array<{
+      taxYear: number;
+      lossAmount: number;
+      usedAmount: number;
+      remainingAmount: number;
+      note: string | null;
+    }>;
+    appliedThisYear: Array<{ taxYear: number; amount: number }>;
+    remainingTotal: number;
+    suggestedNewLoss: { taxYear: number; lossAmount: number } | null;
   };
 };
 

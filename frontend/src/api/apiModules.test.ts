@@ -101,6 +101,12 @@ import {
 } from './taxWrappersApi'
 import { fetchPositionTransfers, createPositionTransfer } from './positionTransfersApi'
 import { fetchCorporateActions, createCorporateAction } from './corporateActionsApi'
+import { fetchTaxOverview, simulatePreSellTax } from './taxOverviewApi'
+import { fetchTaxLossCarryforwards, upsertTaxLossCarryforward } from './taxLossCarryforwardApi'
+import { fetchPropertySales, createPropertySale } from './propertySalesApi'
+import { fetchTaxCalendar, updateTaxChecklistItem } from './taxCalendarApi'
+import { fetchImportPresets, createImportPreset } from './importPresetsApi'
+import { fetchDocumentAttachments, createDocumentAttachment } from './documentAttachmentsApi'
 
 describe('API modules', () => {
   beforeEach(() => {
@@ -651,6 +657,97 @@ describe('API modules', () => {
       actionType: 'stock_split',
       actionDate: '2026-06-01',
       ratio: 2,
+    })
+  })
+
+  it('taxOverviewApi calls correct endpoints', async () => {
+    await fetchTaxOverview(2026, 'PLN', true)
+    expect(apiClient.get).toHaveBeenCalledWith('/api/stats/tax-overview?year=2026&currency=PLN&snapshot=1')
+
+    await simulatePreSellTax({ holdingId: 3, quantity: 5, currency: 'PLN' })
+    expect(apiClient.post).toHaveBeenCalledWith('/api/stats/pre-sell-simulator', {
+      holdingId: 3,
+      quantity: 5,
+      currency: 'PLN',
+    })
+  })
+
+  it('taxLossCarryforwardApi calls correct endpoints', async () => {
+    await fetchTaxLossCarryforwards()
+    expect(apiClient.get).toHaveBeenCalledWith('/api/tax-loss-carryforward')
+
+    await upsertTaxLossCarryforward({ taxYear: 2024, lossAmount: 1000 })
+    expect(apiClient.put).toHaveBeenCalledWith('/api/tax-loss-carryforward', {
+      taxYear: 2024,
+      lossAmount: 1000,
+    })
+  })
+
+  it('propertySalesApi calls correct endpoints', async () => {
+    await fetchPropertySales({ accountId: 2 })
+    expect(apiClient.get).toHaveBeenCalledWith('/api/property-sales?accountId=2')
+
+    await createPropertySale({
+      accountId: 2,
+      soldOn: '2026-06-01',
+      proceeds: 400000,
+      acquisitionCost: 300000,
+      currency: 'PLN',
+    })
+    expect(apiClient.post).toHaveBeenCalledWith('/api/property-sales', {
+      accountId: 2,
+      soldOn: '2026-06-01',
+      proceeds: 400000,
+      acquisitionCost: 300000,
+      currency: 'PLN',
+    })
+  })
+
+  it('taxCalendarApi calls correct endpoints', async () => {
+    await fetchTaxCalendar(2026)
+    expect(apiClient.get).toHaveBeenCalledWith('/api/tax-calendar?year=2026')
+
+    await updateTaxChecklistItem(2026, 'pit38', true)
+    expect(apiClient.put).toHaveBeenCalledWith('/api/tax-checklist', {
+      taxYear: 2026,
+      itemKey: 'pit38',
+      completed: true,
+    })
+  })
+
+  it('importPresetsApi calls correct endpoints', async () => {
+    await fetchImportPresets()
+    expect(apiClient.get).toHaveBeenCalledWith('/api/import/presets')
+
+    await createImportPreset({
+      name: 'My XTB',
+      broker: 'xtb',
+      targetType: 'asset_transaction',
+      columnMapping: {},
+    })
+    expect(apiClient.post).toHaveBeenCalledWith('/api/import/presets', {
+      name: 'My XTB',
+      broker: 'xtb',
+      targetType: 'asset_transaction',
+      columnMapping: {},
+    })
+  })
+
+  it('documentAttachmentsApi calls correct endpoints', async () => {
+    await fetchDocumentAttachments({ entityType: 'income_event', entityId: 4 })
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/document-attachments?entityType=income_event&entityId=4',
+    )
+
+    await createDocumentAttachment({
+      entityType: 'income_event',
+      entityId: 4,
+      filename: 'invoice.pdf',
+    })
+    expect(apiClient.post).toHaveBeenCalledWith('/api/document-attachments', {
+      entityType: 'income_event',
+      entityId: 4,
+      filename: 'invoice.pdf',
     })
   })
 })

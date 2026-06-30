@@ -62,11 +62,13 @@ export function TaxReportPage() {
         PIT-38 estimates (FR-022), Belka on interest (FR-027), and PIT/ZG helper (FR-028). Not tax
         advice — verify before filing. FX uses latest NBP rates; FIFO includes commissions.
       </p>
-      <p className="muted">
-        Record dividends and interest in <Link to="/income-events">Income events</Link> for accurate
-        Belka and foreign income sections. Configure IKE/IKZE withdrawals and position transfers in{' '}
-        <Link to="/tax/settings">Tax settings</Link>.
-      </p>
+        <p className="muted">
+          Record dividends and interest in <Link to="/income-events">Income events</Link> for accurate
+          Belka and foreign income sections. Configure wrappers in{' '}
+          <Link to="/tax/settings">Tax settings</Link>, view{' '}
+          <Link to={`/tax/${year}/overview`}>annual overview</Link> or{' '}
+          <Link to="/tax/calendar">filing calendar</Link>.
+        </p>
 
       <section className="card">
         <h2>Tax year</h2>
