@@ -1,6 +1,7 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { recomputeAccountValuationsFrom } from "./accountValuation";
 import { fetchEodTimeSeries } from "./marketData";
+import { defaultBackfillDays } from "./marketDataEpoch";
 import { isSyncableInstrumentType, mapInstrumentToProviderSymbol } from "./marketDataSymbols";
 
 type DbClient = PrismaClient | Prisma.TransactionClient;
@@ -39,7 +40,7 @@ export async function syncMarketPrices(
   getFxRatesPlnPerUnit: () => Promise<{ plnPerUnit: Record<string, number> }>,
   opts?: SyncMarketPricesOptions,
 ): Promise<SyncMarketPricesResult> {
-  const backfillDays = Math.max(1, opts?.backfillDays ?? 90);
+  const backfillDays = Math.max(1, opts?.backfillDays ?? defaultBackfillDays());
   const result: SyncMarketPricesResult = {
     synced: 0,
     skipped: 0,
@@ -50,7 +51,7 @@ export async function syncMarketPrices(
 
   const holdings = await prisma.holding.findMany({
     where: {
-      quantity: { gt: 0 },
+      OR: [{ quantity: { gt: 0 } }, { lots: { some: { side: "BUY" } } }],
       ...(opts?.userId != null
         ? { account: { userId: opts.userId } }
         : {}),

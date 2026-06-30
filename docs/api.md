@@ -107,4 +107,4 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/api/market-data/status` | Yes | Last sync time, held instrument count, stale count |
-| POST | `/api/market-data/sync` | Yes | Fetch EOD prices for held STOCK/ETF; body `{ backfillDays? }` |
+| POST | `/api/market-data/sync` | Yes | Fetch EOD prices for ever-bought STOCK/ETF (default backfill since 2020) + NBP FX history; body `{ backfillDays? }` |

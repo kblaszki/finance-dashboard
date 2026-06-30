@@ -130,6 +130,21 @@ test("syncMarketPrices skips unmapped instruments", async () => {
   await prisma.holding.create({
     data: { accountId: account.id, instrumentId: instrument.id, quantity: 1 },
   });
+  const holding = await prisma.holding.findFirstOrThrow({
+    where: { accountId: account.id, instrumentId: instrument.id },
+  });
+  await prisma.holdingLot.create({
+    data: {
+      holdingId: holding.id,
+      side: "BUY",
+      quantity: 1,
+      quantityAfter: 1,
+      pricePerUnit: 100,
+      totalPrice: 100,
+      currency: "PLN",
+      tradeDate: new Date("2025-01-05T12:00:00.000Z"),
+    },
+  });
 
   const result = await syncMarketPrices(prisma, async () => MOCK_FX, { apiKey: "k" });
   assert.equal(result.synced, 0);

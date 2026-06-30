@@ -2,6 +2,7 @@ import { Router } from "express";
 import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import { getMarketDataStatus, syncMarketPrices, type SyncMarketPricesOptions } from "../marketDataSync";
+import { syncFxRatesSinceEpoch } from "../fxHistorySync";
 import { handleRouteError } from "./httpSupport";
 
 type MarketDataDeps = {
@@ -36,7 +37,8 @@ export function createMarketDataRouter(deps: MarketDataDeps): Router {
         syncOpts.backfillDays = backfillDays;
       }
       const result = await syncMarketPrices(prisma, getFxRatesPlnPerUnit, syncOpts);
-      res.json(result);
+      const fxResult = await syncFxRatesSinceEpoch(prisma);
+      res.json({ ...result, fx: fxResult });
     } catch (e: unknown) {
       handleRouteError(res, e, "Market data sync failed");
     }

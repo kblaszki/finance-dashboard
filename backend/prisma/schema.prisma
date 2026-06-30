@@ -115,6 +115,18 @@ model InstrumentValuation {
   @@index([instrumentId, valuationDate])
 }
 
+model FxRateDaily {
+  id            Int      @id @default(autoincrement())
+  rateDate      DateTime
+  baseCurrency  String
+  quoteCurrency String
+  rate          Decimal
+  source        String   @default("nbp")
+
+  @@unique([rateDate, baseCurrency, quoteCurrency, source])
+  @@index([rateDate, baseCurrency, quoteCurrency])
+}
+
 model AccountValuationDaily {
   id              Int      @id @default(autoincrement())
   accountId       Int

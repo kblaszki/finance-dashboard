@@ -7,12 +7,13 @@ Source of truth: [`backend/prisma/schema.prisma`](../backend/prisma/schema.prism
 | Model | Purpose |
 |-------|---------|
 | `User` | `email`, `username`, `passwordHash` |
-| `Account` | Unified account (`BANK`, `BROKERAGE`, `MANUAL`); `cashBalance`, `openingBalance`, `currency` |
+| `Account` | Unified account (`BANK`, `BROKERAGE`, `CRYPTO`, `PRECIOUS_METAL`, `REAL_ESTATE`, `OTHER`, legacy `MANUAL`); `cashBalance`, `openingBalance`, `currency` |
 | `Transaction` | Cash flows with `balanceAfter` snapshot; types include `DIVIDEND` and `INTEREST` for corporate income |
 | `Instrument` | Global instrument catalog (symbol, exchange, type) |
 | `Holding` | Brokerage position per account + instrument; persisted `quantity` (current net shares) |
 | `HoldingLot` | BUY/SELL trade ledger under a `Holding`; `quantityAfter` chain per holding |
 | `InstrumentValuation` | Daily/manual price per instrument |
+| `FxRateDaily` | Historical NBP FX legs (USD/PLN, EUR/PLN) since 2020 (FR-010, DATA-008) |
 | `AccountValuationDaily` | Materialized account value snapshots |
 | `HoldingValuationDaily` | Materialized position value per instrument |
 
