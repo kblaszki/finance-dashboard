@@ -30,12 +30,38 @@ export type AccountValuationPoint = {
   currency: string;
 };
 
+export type AccountDetailStats = {
+  currency: string;
+  ytdIncome: number;
+  ytdExpense: number;
+  ytdNet: number;
+  yoyChangeAbs: number | null;
+  yoyChangePct: number | null;
+  currentTotal: number;
+  breakdown?: {
+    cashValue: number;
+    securitiesValue: number;
+    cashPct: number;
+    securitiesPct: number;
+  };
+};
+
 export async function fetchAccounts(): Promise<Account[]> {
   return apiClient.get<Account[]>("/api/accounts");
 }
 
 export async function fetchAccount(id: number): Promise<Account> {
   return apiClient.get<Account>(`/api/accounts/${id}`);
+}
+
+export async function fetchAccountStats(
+  accountId: number,
+  currency?: string,
+): Promise<AccountDetailStats> {
+  const params = new URLSearchParams();
+  if (currency) params.set("currency", currency);
+  const q = params.toString() ? `?${params}` : "";
+  return apiClient.get<AccountDetailStats>(`/api/accounts/${accountId}/stats${q}`);
 }
 
 export async function createAccount(input: AccountInput): Promise<Account> {

@@ -29,6 +29,7 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 | GET | `/api/accounts` | Yes | List user accounts |
 | POST | `/api/accounts` | Yes | Create account |
 | GET | `/api/accounts/:id` | Yes | Account detail |
+| GET | `/api/accounts/:id/stats` | Yes | YTD cashflow, YoY balance change, brokerage cash/securities split; optional `currency` |
 | PUT | `/api/accounts/:id` | Yes | Update name/description |
 | POST | `/api/accounts/:id/revalue` | Yes | MANUAL only — `{ value, valuationDate? }` updates estimate and chart |
 | DELETE | `/api/accounts/:id` | Yes | Delete account |

@@ -1918,6 +1918,42 @@ test("GET /api/stats/benchmark-comparison requires benchmark", async () => {
   assert.equal(res.status, 400);
 });
 
+test("GET /api/accounts/:id/stats returns YTD cashflow and YoY fields", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BANK",
+      name: "Stats Bank",
+      currency: "PLN",
+      openingBalance: 1000,
+    });
+  const accountId = accountRes.body.id;
+
+  await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId,
+      transactionType: "INCOME",
+      amount: 200,
+      currency: "PLN",
+      category: "SALARY",
+      date: "2026-01-15T12:00:00.000Z",
+    });
+
+  const res = await request(app)
+    .get(`/api/accounts/${accountId}/stats`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  assert.equal(res.body.currency, "PLN");
+  assert.equal(res.body.ytdIncome, 200);
+  assert.equal(res.body.ytdExpense, 0);
+  assert.equal(res.body.ytdNet, 200);
+  assert.ok(typeof res.body.currentTotal === "number");
+});
+
 test("POST /api/accounts/:id/revalue updates MANUAL account", async () => {
   const { token } = await createUserAndToken();
   const accountRes = await request(app)

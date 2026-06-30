@@ -16,6 +16,7 @@ import { register, login, fetchMe, logoutLocal, fetchAuthConfig, updateProfile, 
 import {
   fetchAccounts,
   fetchAccount,
+  fetchAccountStats,
   createAccount,
   updateAccount,
   deleteAccount,
@@ -128,6 +129,9 @@ describe('API modules', () => {
 
     await fetchAccount(3)
     expect(apiClient.get).toHaveBeenCalledWith('/api/accounts/3')
+
+    await fetchAccountStats(3, 'EUR')
+    expect(apiClient.get).toHaveBeenCalledWith('/api/accounts/3/stats?currency=EUR')
 
     await createAccount({
       accountType: 'BANK',

@@ -10,6 +10,7 @@ import {
 import { createHolding, fetchAccountHoldings, type AccountHoldings } from '../api/holdingsApi'
 import { AccountBalanceChart } from '../components/AccountBalanceChart'
 import { AccountHoldingsTable } from '../components/AccountHoldingsTable'
+import { AccountStatsCards } from '../components/AccountStatsCards'
 import { BrokerImportForm } from '../components/BrokerImportForm'
 import { InstrumentPicker } from '../components/InstrumentPicker'
 import { ManualAccountRevalueForm } from '../components/ManualAccountRevalueForm'
@@ -151,6 +152,11 @@ export function AccountDetailPage() {
             <button type="button" className="btn-link" onClick={startEditAccount}>Edit account</button>
           </div>
         )}
+      </section>
+
+      <section className="card">
+        <h2>Statistics</h2>
+        <AccountStatsCards accountId={accountId} accountType={account.accountType} />
       </section>
 
       <section className="card">

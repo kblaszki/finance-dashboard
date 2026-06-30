@@ -2,6 +2,7 @@ import { Router } from "express";
 import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import { revalueManualAccount } from "../manualAccountRevalue";
+import { computeAccountDetailStats } from "../accountStats";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
 import { parseDateBody } from "./routeSupport";
 import { handleRouteError, badRequest, parseIdParam, parseFiniteNumber, parsePositiveNumber, parseRequiredString } from "./httpSupport";
@@ -99,6 +100,20 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
       res.json(serializeAccount(row));
     } catch (e: unknown) {
       handleRouteError(res, e, "Failed to load account");
+    }
+  });
+
+  router.get("/api/accounts/:id/stats", requireAuth, async (req: AuthedRequest, res) => {
+    try {
+      const id = parseIdParam(req.params.id);
+      const row = await getAccountForUser(prisma, uid(req), id);
+      if (!row) return res.status(404).json({ error: "Account not found" });
+      const currency = normalizeCurrency(req.query.currency ?? row.currency);
+      const { plnPerUnit } = await getFxRatesPlnPerUnit();
+      const stats = await computeAccountDetailStats(prisma, row, currency, plnPerUnit);
+      res.json(stats);
+    } catch (e: unknown) {
+      handleRouteError(res, e, "Failed to load account stats");
     }
   });
 
