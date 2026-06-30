@@ -14,6 +14,7 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 | `/statistics` | Statistics | `StatisticsPage` — FR-003 (default: current month), FR-004 cashflow history chart, FR-016 `CategoryBreakdownSection` |
 | `/categories` | Categories | `CategoriesPage` — FR-015 CRUD |
 | `/budgets` | Budgets | `BudgetsPage` — FR-017 monthly limits vs spend |
+| `/import` | Import | `ImportPage` — FR-019 bank (mBank/generic) and brokerage CSV |
 | `/portfolio` | Portfolio (all accounts) | `PortfolioPage` — filters by account, type, bucket (FR-008) |
 | `/assets/:id` | Asset price chart | `AssetDetailPage`, `InstrumentPriceChart` (FR-009) |
 | `/accounts` | Accounts | `ManagedAccountsList` — total balance, type filter (FR-012) |
@@ -49,7 +50,7 @@ Preferred async pattern for page/widget data: [`frontend/src/hooks/useAsyncData.
 | `categoriesApi.ts` | `/api/categories` |
 | `budgetsApi.ts` | `/api/budgets` |
 | `instrumentsApi.ts` | `/api/instruments`, `/api/instruments/:id/valuations` |
-| `importApi.ts` | `POST /api/import/broker-trades` — XTB CSV dry-run / import |
+| `importApi.ts` | `POST /api/import/broker-trades`, `POST /api/import/bank-transactions` |
 | `holdingsApi.ts` | `/api/accounts/:id/holdings`, `/api/holdings/:holdingId`, `POST .../split` |
 | `portfolioApi.ts` | `GET /api/portfolio/positions` |
 | `assetTradesApi.ts` | `GET/POST /api/asset-trades` |

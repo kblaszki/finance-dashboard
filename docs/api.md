@@ -76,6 +76,7 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | POST | `/api/import/broker-trades` | Yes | `?accountId=&broker=xtb&dryRun=true`; body `{ csv, filename? }` — preview or commit XTB CSV |
+| POST | `/api/import/bank-transactions` | Yes | FR-019 — `?accountId=&bank=mbank|generic&dryRun=true`; body `{ csv, filename? }` — bank `Transaction` import with duplicate skip via `import_rows` |
 
 ## Holdings (brokerage)
 

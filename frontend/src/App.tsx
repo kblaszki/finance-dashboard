@@ -19,6 +19,7 @@ import { PortfolioPage } from "./pages/PortfolioPage";
 import { StatisticsPage } from "./pages/StatisticsPage";
 import { CategoriesPage } from "./pages/CategoriesPage";
 import { BudgetsPage } from "./pages/BudgetsPage";
+import { ImportPage } from "./pages/ImportPage";
 import { useAuth } from "./state/auth";
 
 function App() {
@@ -41,6 +42,7 @@ function App() {
           <Route path="/transactions" element={<TransactionsListPage />} />
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/budgets" element={<BudgetsPage />} />
+          <Route path="/import" element={<ImportPage />} />
           <Route path="/transfers" element={<TransfersPage />} />
           <Route path="/tax" element={<TaxReportPage />} />
           <Route path="/settings" element={<SettingsPage />} />

@@ -31,6 +31,32 @@ export type BrokerImportInput = {
   dryRun?: boolean;
 };
 
+export type BankImportPreviewRow = {
+  row: number;
+  date: string;
+  description: string;
+  amount: number;
+  transactionType: "INCOME" | "EXPENSE";
+  currency: string;
+};
+
+export type BankImportResult = {
+  dryRun: boolean;
+  parsed: number;
+  imported: number;
+  skipped: number;
+  errors: ImportError[];
+  preview?: BankImportPreviewRow[];
+};
+
+export type BankImportInput = {
+  accountId: number;
+  bank?: "mbank" | "generic";
+  csv: string;
+  filename?: string;
+  dryRun?: boolean;
+};
+
 export async function importBrokerTrades(input: BrokerImportInput): Promise<ImportResult> {
   const params = new URLSearchParams({
     accountId: String(input.accountId),
@@ -38,6 +64,19 @@ export async function importBrokerTrades(input: BrokerImportInput): Promise<Impo
   });
   if (input.dryRun) params.set("dryRun", "true");
   return apiClient.post<ImportResult>(`/api/import/broker-trades?${params.toString()}`, {
+    csv: input.csv,
+    filename: input.filename,
+    dryRun: input.dryRun,
+  });
+}
+
+export async function importBankTransactions(input: BankImportInput): Promise<BankImportResult> {
+  const params = new URLSearchParams({
+    accountId: String(input.accountId),
+    bank: input.bank ?? "generic",
+  });
+  if (input.dryRun) params.set("dryRun", "true");
+  return apiClient.post<BankImportResult>(`/api/import/bank-transactions?${params.toString()}`, {
     csv: input.csv,
     filename: input.filename,
     dryRun: input.dryRun,

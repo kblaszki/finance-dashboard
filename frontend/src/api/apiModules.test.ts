@@ -63,7 +63,7 @@ import {
   fetchTaxReport,
 } from './statsApi'
 import { fetchMarketDataStatus, triggerMarketSync } from './marketDataApi'
-import { importBrokerTrades } from './importApi'
+import { importBrokerTrades, importBankTransactions } from './importApi'
 import { fetchPortfolioPositions } from './portfolioApi'
 import { createAssetTrade, fetchAssetTrades } from './assetTradesApi'
 import {
@@ -344,6 +344,21 @@ describe('API modules', () => {
       '/api/import/broker-trades?accountId=3&broker=xtb&dryRun=true',
       {
         csv: 'ID;Type;Time;Comment;Symbol;Amount',
+        filename: undefined,
+        dryRun: true,
+      },
+    )
+
+    await importBankTransactions({
+      accountId: 2,
+      bank: 'mbank',
+      csv: 'Date;Amount;-10',
+      dryRun: true,
+    })
+    expect(apiClient.post).toHaveBeenCalledWith(
+      '/api/import/bank-transactions?accountId=2&bank=mbank&dryRun=true',
+      {
+        csv: 'Date;Amount;-10',
         filename: undefined,
         dryRun: true,
       },

@@ -48,6 +48,9 @@ export function AppShell() {
           <NavLink to="/budgets" className={navLinkClass}>
             Budgets
           </NavLink>
+          <NavLink to="/import" className={navLinkClass}>
+            Import
+          </NavLink>
           <NavLink to="/transfers" className={navLinkClass}>
             Transfers
           </NavLink>

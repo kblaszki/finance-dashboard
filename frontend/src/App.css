@@ -229,6 +229,19 @@
   align-items: flex-end;
 }
 
+.inline-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: 0.9rem;
+  color: var(--color-text);
+}
+
+.split-form {
+  flex-basis: 100%;
+  width: 100%;
+}
+
 .inline-form label {
   display: flex;
   align-items: center;

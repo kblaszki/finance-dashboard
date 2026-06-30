@@ -2302,6 +2302,42 @@ test("POST /api/transactions supports categoryId and splits (FR-018)", async () 
   assert.equal(splitRes.body.splits.length, 2);
 });
 
+test("POST /api/import/bank-transactions previews mBank CSV (FR-019)", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BANK",
+      name: "Import Bank",
+      currency: "PLN",
+      openingBalance: 1000,
+    });
+  const csv = `#Data operacji;#Opis operacji;#Kwota;
+15.01.2026;Sklep;-25,00
+16.01.2026;Wypłata;100,00`;
+  const previewRes = await request(app)
+    .post(`/api/import/bank-transactions?accountId=${accountRes.body.id}&bank=mbank&dryRun=true`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv });
+  assert.equal(previewRes.status, 200);
+  assert.equal(previewRes.body.dryRun, true);
+  assert.equal(previewRes.body.parsed, 2);
+
+  const importRes = await request(app)
+    .post(`/api/import/bank-transactions?accountId=${accountRes.body.id}&bank=mbank`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv });
+  assert.equal(importRes.status, 200);
+  assert.equal(importRes.body.imported, 2);
+
+  const dupRes = await request(app)
+    .post(`/api/import/bank-transactions?accountId=${accountRes.body.id}&bank=mbank`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv });
+  assert.equal(dupRes.body.skipped, 2);
+});
+
 test("POST /api/instruments rejects invalid instrumentType", async () => {
   const { token } = await createUserAndToken();
   const res = await request(app)

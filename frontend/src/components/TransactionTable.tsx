@@ -11,6 +11,7 @@ import { fetchAccounts, type Account, type AccountType } from '../api/accountsAp
 import { useAsyncData } from '../hooks/useAsyncData'
 import { SUPPORTED_CURRENCIES } from '../state/currency'
 import { CategoryPicker } from './CategoryPicker'
+import { TransactionSplitFields, type SplitLine } from './TransactionSplitFields'
 import { formatMoney } from '../utils/format'
 
 type Props = {
@@ -96,6 +97,8 @@ export function TransactionTable({
   const [cashFlowTab, setCashFlowTab] = useState<CashFlowTab>('ALL')
   const [filterCategory, setFilterCategory] = useState('')
   const [categoryGrouped, setCategoryGrouped] = useState(groupByCategory)
+  const [useSplits, setUseSplits] = useState(false)
+  const [splits, setSplits] = useState<SplitLine[]>([])
 
   useEffect(() => {
     if (fixedAccountId) {
@@ -135,10 +138,19 @@ export function TransactionTable({
     const currency = accountCurrency ?? accounts?.find((a) => a.id === accountId)?.currency ?? 'PLN'
     setForm(emptyForm(accountId, currency))
     setEditingId(null)
+    setUseSplits(false)
+    setSplits([])
   }
 
   function startEdit(t: Transaction) {
     setEditingId(t.id)
+    if (t.splits?.length) {
+      setUseSplits(true)
+      setSplits(t.splits.map((s) => ({ categoryId: s.categoryId, amount: s.amount })))
+    } else {
+      setUseSplits(false)
+      setSplits([])
+    }
     setForm({
       accountId: t.accountId,
       transactionType: t.transactionType,
@@ -160,14 +172,37 @@ export function TransactionTable({
     }
     setFormError(null)
     try {
+      const splittable =
+        form.transactionType === 'INCOME' || form.transactionType === 'EXPENSE'
+      if (useSplits && splittable) {
+        const validSplits = splits.filter((s) => s.categoryId != null && s.amount > 0)
+        const splitSum = validSplits.reduce((s, line) => s + line.amount, 0)
+        if (validSplits.length < 2) {
+          setFormError('Split transactions need at least two category lines')
+          return
+        }
+        if (Math.abs(splitSum - form.amount) > 0.005) {
+          setFormError('Split amounts must sum to the transaction amount')
+          return
+        }
+      }
+
       const payload = {
         ...form,
         date: new Date(form.date).toISOString(),
-        ...(form.categoryId != null
-          ? { categoryId: form.categoryId }
-          : form.category
-            ? { category: form.category }
-            : { category: 'Uncategorized' }),
+        ...(useSplits && splittable
+          ? {
+              splits: splits
+                .filter((s) => s.categoryId != null && s.amount > 0)
+                .map((s) => ({ categoryId: s.categoryId!, amount: s.amount })),
+              categoryId: undefined,
+              category: undefined,
+            }
+          : form.categoryId != null
+            ? { categoryId: form.categoryId }
+            : form.category
+              ? { category: form.category }
+              : { category: 'Uncategorized' }),
       }
       if (editingId) {
         await updateTransaction(editingId, payload)
@@ -239,6 +274,7 @@ export function TransactionTable({
     accountRows.find((a) => a.id === (fixedAccountId ?? form.accountId)) ?? null
   const effectiveAccountType = fixedAccountType ?? selectedAccount?.accountType
   const transactionTypeOptions = transactionTypesForAccount(effectiveAccountType)
+  const splittable = form.transactionType === 'INCOME' || form.transactionType === 'EXPENSE'
 
   return (
     <div className="page-stack">
@@ -266,11 +302,16 @@ export function TransactionTable({
             onChange={(e) => {
               const transactionType = e.target.value as TransactionType
               const categoryDefault = defaultCategoryForType(transactionType)
+              const nextSplittable = transactionType === 'INCOME' || transactionType === 'EXPENSE'
               setForm({
                 ...form,
                 transactionType,
-                ...(categoryDefault ? { category: categoryDefault } : {}),
+                ...(categoryDefault ? { category: categoryDefault, categoryId: null } : {}),
               })
+              if (!nextSplittable) {
+                setUseSplits(false)
+                setSplits([])
+              }
             }}
           >
             {transactionTypeOptions.map((opt) => (
@@ -279,6 +320,27 @@ export function TransactionTable({
               </option>
             ))}
           </select>
+          {splittable && (
+            <label className="inline-checkbox">
+              <input
+                type="checkbox"
+                checked={useSplits}
+                onChange={(e) => {
+                  const checked = e.target.checked
+                  setUseSplits(checked)
+                  if (checked && splits.length < 2) {
+                    const half = Math.round((form.amount / 2) * 100) / 100
+                    setSplits([
+                      { categoryId: null, amount: half },
+                      { categoryId: null, amount: Math.round((form.amount - half) * 100) / 100 },
+                    ])
+                  }
+                  if (!checked) setSplits([])
+                }}
+              />
+              Split across categories
+            </label>
+          )}
           <input
             type="number"
             step="0.01"
@@ -294,19 +356,24 @@ export function TransactionTable({
               </option>
             ))}
           </select>
-          <CategoryPicker
-            value={form.categoryId ?? null}
-            onChange={(categoryId, categoryName) =>
-              setForm({
-                ...form,
-                categoryId,
-                ...(categoryName ? { category: categoryName } : {}),
-              })
-            }
-            allowEmpty
-          />
+          {!useSplits ? (
+            <CategoryPicker
+              value={form.categoryId ?? null}
+              onChange={(categoryId, categoryName) =>
+                setForm({
+                  ...form,
+                  categoryId,
+                  ...(categoryName ? { category: categoryName } : {}),
+                })
+              }
+              allowEmpty
+            />
+          ) : null}
           <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
           <input value={form.description ?? ''} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Description" />
+          {useSplits && splittable ? (
+            <TransactionSplitFields splits={splits} totalAmount={form.amount} onChange={setSplits} />
+          ) : null}
           <button type="submit" className="btn-primary">{editingId ? 'Save' : 'Add'}</button>
           {editingId && (
             <button type="button" className="btn-link" onClick={resetForm}>Cancel</button>
