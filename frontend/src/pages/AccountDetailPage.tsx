@@ -8,6 +8,11 @@ import {
   type AccountValuationPoint,
 } from '../api/accountsApi'
 import { createHolding, fetchAccountHoldings, type AccountHoldings } from '../api/holdingsApi'
+import {
+  isHoldingsAccountType,
+  isRevalueAccountType,
+  showBrokerageChartSplit,
+} from '../state/accountTypes'
 import { AccountActivityTable } from '../components/AccountActivityTable'
 import { AccountBalanceChart } from '../components/AccountBalanceChart'
 import { AccountHoldingsTable } from '../components/AccountHoldingsTable'
@@ -37,7 +42,7 @@ async function loadAccountDetail(
   const account = await fetchAccount(accountId)
   const history = await fetchAccountValuations(accountId, chartFrom, chartTo)
   const holdings =
-    account.accountType === 'BROKERAGE'
+    isHoldingsAccountType(account.accountType)
       ? await fetchAccountHoldings(accountId)
       : { open: [], closed: [] }
   return { account, history, holdings }
@@ -130,7 +135,8 @@ export function AccountDetailPage() {
     }
   }
 
-  const showTransactions = account.accountType === 'BANK' || account.accountType === 'BROKERAGE'
+  const isHoldings = isHoldingsAccountType(account.accountType)
+  const showTransactions = account.accountType === 'BANK' || isHoldings
 
   return (
     <div className="page">
@@ -142,7 +148,7 @@ export function AccountDetailPage() {
         {account.accountType} · Cash {formatMoney(account.cashBalance, account.currency)}
       </p>
 
-      {account.accountType === 'BROKERAGE' && (
+      {isHoldings && (
         <MarketPricesStatus onSynced={reload} />
       )}
 
@@ -173,7 +179,7 @@ export function AccountDetailPage() {
         <AccountBalanceChart
           points={history}
           currency={account.currency}
-          showComponents={account.accountType === 'BROKERAGE'}
+          showComponents={showBrokerageChartSplit(account.accountType)}
         />
       </section>
 
@@ -182,7 +188,7 @@ export function AccountDetailPage() {
         <AccountStatsCards accountId={accountId} accountType={account.accountType} />
       </section>
 
-      {account.accountType === 'MANUAL' && (
+      {isRevalueAccountType(account.accountType) && (
         <section className="card">
           <h2>Update estimated value</h2>
           <p className="muted">Revalue this asset (e.g. property estimate) without a regular income/expense entry.</p>
@@ -195,14 +201,14 @@ export function AccountDetailPage() {
         </section>
       )}
 
-      {account.accountType === 'BROKERAGE' && (
+      {isHoldings && account.accountType === 'BROKERAGE' && (
         <section className="card">
           <h2>Import trades</h2>
           <BrokerImportForm accountId={accountId} onImported={reload} />
         </section>
       )}
 
-      {account.accountType === 'BROKERAGE' && (
+      {isHoldings && (
         <section className="card">
           <h2>Holdings</h2>
           {holdingError && <p className="error-banner">{holdingError}</p>}
@@ -221,7 +227,7 @@ export function AccountDetailPage() {
         </section>
       )}
 
-      {showTransactions && account.accountType === 'BROKERAGE' && (
+      {showTransactions && isHoldings && (
         <>
           <AccountActivityTable accountId={accountId} accountCurrency={account.currency} />
           <TransactionTable
@@ -243,6 +249,7 @@ export function AccountDetailPage() {
           accountType={account.accountType}
           showFilters
           showBankCashFilters
+          groupByCategory
           showAccountColumn={false}
           title="Cash transactions"
         />

@@ -5,16 +5,54 @@ import {
   deleteAccount,
   fetchAccounts,
   type Account,
-  type AccountType,
 } from '../api/accountsApi'
+import {
+  ACCOUNT_TYPE_OPTIONS,
+  type AccountType,
+  typeLabel,
+} from '../state/accountTypes'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { SUPPORTED_CURRENCIES } from '../state/currency'
 import { formatMoney } from '../utils/format'
 
-const TYPE_LABELS: Record<AccountType, string> = {
-  BANK: 'Bank account',
-  BROKERAGE: 'Brokerage account',
-  MANUAL: 'Manual asset',
+type SortKey = 'name' | 'totalBalance' | 'cashBalance'
+type SortDir = 'asc' | 'desc'
+
+function sortAccounts(rows: Account[], key: SortKey, dir: SortDir): Account[] {
+  const factor = dir === 'asc' ? 1 : -1
+  return [...rows].sort((a, b) => {
+    if (key === 'name') {
+      return factor * a.name.localeCompare(b.name)
+    }
+    const av = key === 'totalBalance' ? a.totalBalance : a.cashBalance
+    const bv = key === 'totalBalance' ? b.totalBalance : b.cashBalance
+    return factor * (av - bv)
+  })
+}
+
+function SortableHeader({
+  label,
+  sortKey,
+  activeKey,
+  dir,
+  onSort,
+}: {
+  label: string
+  sortKey: SortKey
+  activeKey: SortKey
+  dir: SortDir
+  onSort: (key: SortKey) => void
+}) {
+  const active = activeKey === sortKey
+  const indicator = active ? (dir === 'asc' ? ' ↑' : ' ↓') : ''
+  return (
+    <th>
+      <button type="button" className="btn-link sort-header" onClick={() => onSort(sortKey)}>
+        {label}
+        {indicator}
+      </button>
+    </th>
+  )
 }
 
 export function ManagedAccountsList() {
@@ -25,6 +63,17 @@ export function ManagedAccountsList() {
   const [currency, setCurrency] = useState('PLN')
   const [openingBalance, setOpeningBalance] = useState(0)
   const [typeFilter, setTypeFilter] = useState<AccountType | 'ALL'>('ALL')
+  const [sortKey, setSortKey] = useState<SortKey>('name')
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
+
+  function handleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortKey(key)
+      setSortDir('asc')
+    }
+  }
 
   const handleDelete = useCallback(
     async (id: number) => {
@@ -59,7 +108,7 @@ export function ManagedAccountsList() {
 
   const grouped = useMemo(
     () =>
-      (['BANK', 'BROKERAGE', 'MANUAL'] as AccountType[]).map((type) => ({
+      ACCOUNT_TYPE_OPTIONS.map(({ value: type }) => ({
         type,
         rows: (accounts ?? []).filter((a) => a.accountType === type),
       })),
@@ -67,8 +116,14 @@ export function ManagedAccountsList() {
   )
 
   const visibleGroups = useMemo(
-    () => (typeFilter === 'ALL' ? grouped : grouped.filter((g) => g.type === typeFilter)),
-    [grouped, typeFilter],
+    () =>
+      (typeFilter === 'ALL' ? grouped : grouped.filter((g) => g.type === typeFilter)).map(
+        ({ type, rows }) => ({
+          type,
+          rows: sortAccounts(rows, sortKey, sortDir),
+        }),
+      ),
+    [grouped, typeFilter, sortKey, sortDir],
   )
 
   const bannerError = formError ?? error
@@ -81,9 +136,11 @@ export function ManagedAccountsList() {
         <h2>New account</h2>
         <form className="inline-form" onSubmit={(e) => void handleCreate(e)}>
           <select value={formType} onChange={(e) => setFormType(e.target.value as AccountType)}>
-            <option value="BANK">Bank account</option>
-            <option value="BROKERAGE">Brokerage account</option>
-            <option value="MANUAL">Manual asset</option>
+            {ACCOUNT_TYPE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
           </select>
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" required />
           <select value={currency} onChange={(e) => setCurrency(e.target.value)}>
@@ -112,9 +169,11 @@ export function ManagedAccountsList() {
             onChange={(e) => setTypeFilter(e.target.value as AccountType | 'ALL')}
           >
             <option value="ALL">All account types</option>
-            <option value="BANK">Bank accounts</option>
-            <option value="BROKERAGE">Brokerage accounts</option>
-            <option value="MANUAL">Manual assets</option>
+            {ACCOUNT_TYPE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
           </select>
         </div>
       </section>
@@ -124,7 +183,7 @@ export function ManagedAccountsList() {
       ) : (
         visibleGroups.map(({ type, rows }) => (
           <section className="card" key={type}>
-            <h2>{TYPE_LABELS[type]}</h2>
+            <h2>{typeLabel(type)}</h2>
             {!rows.length ? (
               <p className="muted">No accounts in this section.</p>
             ) : (
@@ -132,10 +191,22 @@ export function ManagedAccountsList() {
                 <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Name</th>
+                    <SortableHeader label="Name" sortKey="name" activeKey={sortKey} dir={sortDir} onSort={handleSort} />
                     <th>Currency</th>
-                    <th>Total balance</th>
-                    <th>Cash</th>
+                    <SortableHeader
+                      label="Total balance"
+                      sortKey="totalBalance"
+                      activeKey={sortKey}
+                      dir={sortDir}
+                      onSort={handleSort}
+                    />
+                    <SortableHeader
+                      label="Cash"
+                      sortKey="cashBalance"
+                      activeKey={sortKey}
+                      dir={sortDir}
+                      onSort={handleSort}
+                    />
                     <th />
                   </tr>
                 </thead>

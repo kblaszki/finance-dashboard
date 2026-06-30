@@ -21,6 +21,7 @@ type Props = {
   title?: string
   hideList?: boolean
   showBankCashFilters?: boolean
+  groupByCategory?: boolean
 }
 
 type CashFlowTab = 'ALL' | 'INCOME' | 'EXPENSE'
@@ -82,6 +83,7 @@ export function TransactionTable({
   title = 'Transactions',
   hideList = false,
   showBankCashFilters = false,
+  groupByCategory = false,
 }: Props) {
   const { data: accounts, error: accountsError } = useAsyncData(fetchAccounts)
   const [form, setForm] = useState<TransactionInput>(() => emptyForm(fixedAccountId ?? 0, accountCurrency ?? 'PLN'))
@@ -92,6 +94,7 @@ export function TransactionTable({
   const [filterAccountId, setFilterAccountId] = useState(fixedAccountId ? String(fixedAccountId) : '')
   const [cashFlowTab, setCashFlowTab] = useState<CashFlowTab>('ALL')
   const [filterCategory, setFilterCategory] = useState('')
+  const [categoryGrouped, setCategoryGrouped] = useState(groupByCategory)
 
   useEffect(() => {
     if (fixedAccountId) {
@@ -201,6 +204,28 @@ export function TransactionTable({
       return true
     })
   }, [allTransactionRows, showBankCashFilters, cashFlowTab, filterCategory])
+
+  type CategoryGroup = { category: string; rows: Transaction[]; subtotal: number; currency: string }
+
+  const categoryGroups = useMemo((): CategoryGroup[] | null => {
+    if (!categoryGrouped || !showBankCashFilters) return null
+    const byCategory = new Map<string, Transaction[]>()
+    for (const row of transactionRows) {
+      const key = row.category || 'Uncategorized'
+      const list = byCategory.get(key) ?? []
+      list.push(row)
+      byCategory.set(key, list)
+    }
+    const currency = accountCurrency ?? transactionRows[0]?.currency ?? 'PLN'
+    return [...byCategory.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([category, rows]) => ({
+        category,
+        rows: [...rows].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+        subtotal: rows.reduce((sum, r) => sum + r.amount, 0),
+        currency,
+      }))
+  }, [categoryGrouped, showBankCashFilters, transactionRows, accountCurrency])
   const bannerError = formError ?? transactionsError ?? accountsError
   const lockAccount = fixedAccountId != null
   const selectedAccount =
@@ -320,6 +345,14 @@ export function TransactionTable({
                 </option>
               ))}
             </select>
+            <label className="inline-checkbox">
+              <input
+                type="checkbox"
+                checked={categoryGrouped}
+                onChange={(e) => setCategoryGrouped(e.target.checked)}
+              />
+              Group by category
+            </label>
           </div>
         </section>
       )}
@@ -331,6 +364,46 @@ export function TransactionTable({
             <p className="muted">Loading transactions…</p>
           ) : transactionRows.length === 0 ? (
             <p className="muted">No transactions match the current filters.</p>
+          ) : categoryGroups ? (
+            <div className="table-wrap">
+              {categoryGroups.map((group) => (
+                <div key={group.category} className="category-group">
+                  <h3>
+                    {group.category}{' '}
+                    <span className="muted">
+                      ({group.rows.length} · subtotal {formatMoney(group.subtotal, group.currency)})
+                    </span>
+                  </h3>
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Balance after</th>
+                        <th />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {group.rows.map((t: Transaction) => (
+                        <tr key={t.id}>
+                          <td>{new Date(t.date).toLocaleDateString('en-US')}</td>
+                          <td>{t.transactionType}</td>
+                          <td>{formatMoney(t.amount, t.currency)}</td>
+                          <td>{formatMoney(t.balanceAfter, t.currency)}</td>
+                          <td className="table-actions">
+                            <button type="button" className="btn-link" onClick={() => startEdit(t)}>Edit</button>
+                            <button type="button" className="btn-link danger" onClick={() => void handleDelete(t.id)}>
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ))}
+            </div>
           ) : (
             <div className="table-wrap">
               <table className="data-table">
