@@ -48,24 +48,28 @@ export function transactionDateFilter(
   return date;
 }
 
-export function serializeAccount(a: {
-  id: number;
-  userId: number;
-  accountType: string;
-  name: string;
-  currency: string;
-  cashBalance: unknown;
-  openingBalance: unknown;
-  description: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}) {
+export function serializeAccount(
+  a: {
+    id: number;
+    userId: number;
+    accountType: string;
+    name: string;
+    currency: string;
+    cashBalance: unknown;
+    openingBalance: unknown;
+    description: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  },
+  totalBalance?: number,
+) {
   return {
     id: a.id,
     accountType: a.accountType,
     name: a.name,
     currency: a.currency,
     cashBalance: toNumber(a.cashBalance),
+    totalBalance: totalBalance ?? toNumber(a.cashBalance),
     openingBalance: toNumber(a.openingBalance),
     description: a.description,
     createdAt: a.createdAt.toISOString(),

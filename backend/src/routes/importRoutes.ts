@@ -1,7 +1,7 @@
 import { Router } from "express";
 import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
-import { importBrokerTrades } from "../import/importTrades";
+import { importBrokerTrades, type ImportTradesInput } from "../import/importTrades";
 import type { BrokerId } from "../import/types";
 import { badRequest, handleRouteError, notFound, parseFiniteNumber, parseIdParam, parsePositiveNumber } from "./httpSupport";
 
@@ -42,15 +42,16 @@ export function createImportRouter(deps: ImportDeps): Router {
       }
       const filename = req.body?.filename != null ? String(req.body.filename) : undefined;
       const { plnPerUnit } = await getFxRatesPlnPerUnit();
-      const result = await importBrokerTrades(prisma, {
+      const importInput: ImportTradesInput = {
         accountId,
         userId: uid(req),
         broker,
         csvText,
-        filename,
         dryRun,
         plnPerUnit,
-      });
+      };
+      if (filename) importInput.filename = filename;
+      const result = await importBrokerTrades(prisma, importInput);
       res.json(result);
     } catch (e: unknown) {
       if (e instanceof Error && e.message === "Account not found") {

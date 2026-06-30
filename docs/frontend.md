@@ -13,7 +13,7 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 | `/dashboard` | Dashboard | `DashboardPage` — Portfolio / Budget tabs, `NetWorthSection`, portfolio & budget charts |
 | `/statistics` | Statistics | `StatisticsPage` — FR-003 summary KPIs, FR-004 cashflow history chart |
 | `/portfolio` | Portfolio (all accounts) | `PortfolioPage` — filters by account, type, bucket (FR-008) |
-| `/accounts` | Accounts | `ManagedAccountsList` |
+| `/accounts` | Accounts | `ManagedAccountsList` — total balance per account (FR-012) |
 | `/accounts/:id` | Account detail | `AccountDetailPage`, `AccountStatsCards`, `AccountActivityTable` (BROKERAGE), `BrokerImportForm` (BROKERAGE), holdings, `ManualAccountRevalueForm` (MANUAL), `TransactionTable` |
 | `/accounts/:id/holdings/:holdingId` | Holding detail | `HoldingDetailPage`, `HoldingValuationChart`, `InstrumentValuationForm`, `HoldingSplitForm`, `HoldingLotsTable` |
 | `/transactions` | Asset trades | `TransactionsListPage` → `AssetTradesTable` (FR-007; `?accountId=` filter) |

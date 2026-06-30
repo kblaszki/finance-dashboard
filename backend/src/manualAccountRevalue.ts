@@ -15,7 +15,7 @@ type RevalueDeps = {
 };
 
 export async function revalueManualAccount(
-  prisma: DbClient,
+  prisma: PrismaClient,
   account: { id: number; accountType: string; currency: string; cashBalance: unknown },
   value: number,
   valuationDate: Date,

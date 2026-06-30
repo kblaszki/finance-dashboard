@@ -1,7 +1,7 @@
 import { Router } from "express";
 import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
-import { getMarketDataStatus, syncMarketPrices } from "../marketDataSync";
+import { getMarketDataStatus, syncMarketPrices, type SyncMarketPricesOptions } from "../marketDataSync";
 import { handleRouteError } from "./httpSupport";
 
 type MarketDataDeps = {
@@ -28,11 +28,14 @@ export function createMarketDataRouter(deps: MarketDataDeps): Router {
     try {
       const backfillDays =
         req.body?.backfillDays != null ? Number(req.body.backfillDays) : undefined;
-      const result = await syncMarketPrices(prisma, getFxRatesPlnPerUnit, {
+      const syncOpts: SyncMarketPricesOptions = {
         userId: uid(req),
-        backfillDays: Number.isFinite(backfillDays) ? backfillDays : undefined,
         delayMs: 0,
-      });
+      };
+      if (backfillDays != null && Number.isFinite(backfillDays)) {
+        syncOpts.backfillDays = backfillDays;
+      }
+      const result = await syncMarketPrices(prisma, getFxRatesPlnPerUnit, syncOpts);
       res.json(result);
     } catch (e: unknown) {
       handleRouteError(res, e, "Market data sync failed");

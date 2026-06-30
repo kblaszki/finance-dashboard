@@ -84,11 +84,12 @@ export async function syncMarketPrices(
     }
 
     try {
-      const bars = await fetchEodTimeSeries(providerSymbol, {
+      const fetchOpts: { outputsize: number; apiKey?: string; fetchFn?: typeof fetch } = {
         outputsize: backfillDays,
-        apiKey: opts?.apiKey,
-        fetchFn: opts?.fetchFn,
-      });
+      };
+      if (opts?.apiKey) fetchOpts.apiKey = opts.apiKey;
+      if (opts?.fetchFn) fetchOpts.fetchFn = opts.fetchFn;
+      const bars = await fetchEodTimeSeries(providerSymbol, fetchOpts);
 
       if (!bars.length) {
         result.skipped += 1;

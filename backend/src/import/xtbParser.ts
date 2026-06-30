@@ -86,17 +86,24 @@ function parseTradeFromComment(
 ): { quantity: number; pricePerUnit: number } | null {
   const atMatch = /(\d+(?:[.,]\d+)?)\s*@\s*(\d+(?:[.,]\d+)?)/i.exec(comment);
   if (atMatch) {
-    const quantity = parseNumeric(atMatch[1]);
-    const pricePerUnit = parseNumeric(atMatch[2]);
+    const qtyRaw = atMatch[1];
+    const priceRaw = atMatch[2];
+    if (qtyRaw && priceRaw) {
+      const quantity = parseNumeric(qtyRaw);
+      const pricePerUnit = parseNumeric(priceRaw);
     if (quantity != null && pricePerUnit != null && quantity > 0 && pricePerUnit > 0) {
       return { quantity, pricePerUnit };
+    }
     }
   }
   const qtyMatch = /(\d+(?:[.,]\d+)?)\s*(?:szt|shares|units)/i.exec(comment);
   if (qtyMatch) {
-    const quantity = parseNumeric(qtyMatch[1]);
+    const qtyRaw = qtyMatch[1];
+    if (qtyRaw) {
+      const quantity = parseNumeric(qtyRaw);
     if (quantity != null && quantity > 0) {
       return { quantity, pricePerUnit: amount / quantity };
+    }
     }
   }
   return null;
@@ -120,7 +127,9 @@ function parseClosedPositions(
 
   for (let i = 0; i < rows.length; i++) {
     const rowNum = i + 1;
-    const rec = rowToRecord(headers, rows[i]);
+    const rowData = rows[i];
+    if (!rowData) continue;
+    const rec = rowToRecord(headers, rowData);
     const symbolRaw = rec.symbol ?? "";
     const { symbol, exchange } = splitSymbol(symbolRaw);
     if (!symbol) {
@@ -169,7 +178,7 @@ function parseClosedPositions(
       pricePerUnit,
       totalPrice: quantity * pricePerUnit,
       currency,
-      fee: commission != null && commission > 0 ? commission : undefined,
+      ...(commission != null && commission > 0 ? { fee: commission } : {}),
       externalId: positionId ? `xtb:closed:${positionId}:${side}` : `xtb:closed:${rowNum}:${symbol}:${side}`,
     });
   }
@@ -187,7 +196,9 @@ function parseCashOperations(
 
   for (let i = 0; i < rows.length; i++) {
     const rowNum = i + 1;
-    const rec = rowToRecord(headers, rows[i]);
+    const rowData = rows[i];
+    if (!rowData) continue;
+    const rec = rowToRecord(headers, rowData);
     const type = (rec.type ?? "").trim();
     const id = (rec.id ?? "").trim();
     const date = parseXtbDate(rec.time ?? "");
@@ -244,11 +255,11 @@ function parseCashOperations(
         kind: "dividend",
         row: rowNum,
         date,
-        symbol: symbol || undefined,
         amount,
         currency,
         description: comment || type,
-        externalId,
+        ...(symbol ? { symbol } : {}),
+        ...(externalId ? { externalId } : {}),
       });
       continue;
     }
@@ -261,7 +272,7 @@ function parseCashOperations(
         amount,
         currency: accountCurrency,
         description: comment || type,
-        externalId,
+        ...(externalId ? { externalId } : {}),
       });
       continue;
     }
@@ -274,7 +285,7 @@ function parseCashOperations(
         amount,
         currency: accountCurrency,
         description: comment || type,
-        externalId,
+        ...(externalId ? { externalId } : {}),
       });
       continue;
     }
@@ -287,7 +298,7 @@ function parseCashOperations(
         amount,
         currency: accountCurrency,
         description: comment || type,
-        externalId,
+        ...(externalId ? { externalId } : {}),
       });
       continue;
     }

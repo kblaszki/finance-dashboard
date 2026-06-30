@@ -6,8 +6,9 @@ import {
   deleteInternalTransfer,
   fetchUserInternalTransfers,
   suggestCrossCurrencyTransfer,
+  type CreateInternalTransferInput,
 } from "../internalTransfers";
-import type { TransactionDateFilter } from "./routeSupport";
+import type { DbClient, TransactionDateFilter } from "./routeSupport";
 import {
   badRequest,
   handleRouteError,
@@ -24,7 +25,7 @@ type InternalTransfersDeps = {
   parseDateBody: (value: unknown) => Date;
   transactionDateFilter: TransactionDateFilter;
   getAccountForUser: (
-    prisma: PrismaClient,
+    db: DbClient,
     userId: number,
     accountId: number,
   ) => Promise<{ id: number; currency: string; name: string } | null>;
@@ -93,19 +94,21 @@ export function createInternalTransfersRouter(deps: InternalTransfersDeps): Rout
       const date = parseDateBody(req.body?.date);
       const note = req.body?.note != null ? String(req.body.note) : undefined;
 
+      const transferInput: CreateInternalTransferInput = {
+        fromAccountId,
+        toAccountId,
+        fromAmount,
+        toAmount,
+        date,
+      };
+      if (exchangeRate !== undefined) transferInput.exchangeRate = exchangeRate;
+      if (commission !== undefined) transferInput.commission = commission;
+      if (note !== undefined) transferInput.note = note;
+
       const transfer = await createInternalTransfer(
         prisma,
         uid(req),
-        {
-          fromAccountId,
-          toAccountId,
-          fromAmount,
-          toAmount,
-          exchangeRate,
-          commission,
-          date,
-          note,
-        },
+        transferInput,
         transferDeps,
       );
       res.status(201).json(transfer);

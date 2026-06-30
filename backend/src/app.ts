@@ -40,7 +40,6 @@ import { createTransactionsRouter } from "./routes/transactionsRoutes";
 import {
   getAccountForUser,
   parseDateBody,
-  serializeAccount,
   serializeHoldingLot,
   serializeHoldingSummary,
   serializeInstrument,
@@ -129,7 +128,6 @@ app.use(
     recomputeAccountValuationsFrom,
     getAccountForUser,
     transactionDateFilter,
-    serializeAccount,
     toNumber,
   }),
 );

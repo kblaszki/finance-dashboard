@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchAccounts, type Account } from "../api/accountsApi";
 import {
@@ -40,9 +40,10 @@ export function PortfolioPage() {
   const [instrumentType, setInstrumentType] = useState("");
   const [assetBucket, setAssetBucket] = useState<"" | AssetBucket>("");
 
-  const accountsQuery = useAsyncData(() => fetchAccounts(), []);
+  const accountsLoader = useCallback(() => fetchAccounts(), []);
+  const accountsQuery = useAsyncData(accountsLoader);
 
-  const positionsQuery = useAsyncData(
+  const positionsLoader = useCallback(
     () =>
       fetchPortfolioPositions({
         accountId: accountId === "" ? undefined : accountId,
@@ -51,6 +52,7 @@ export function PortfolioPage() {
       }),
     [accountId, instrumentType, assetBucket],
   );
+  const positionsQuery = useAsyncData(positionsLoader);
 
   const accounts: Account[] = accountsQuery.data ?? [];
   const positions = positionsQuery.data?.positions ?? [];
@@ -108,7 +110,7 @@ export function PortfolioPage() {
       </div>
 
       {positionsQuery.error && (
-        <p className="error-banner">{positionsQuery.error.message}</p>
+        <p className="error-banner">{positionsQuery.error}</p>
       )}
       {positionsQuery.loading && <p className="loading-state">Loading positions…</p>}
 

@@ -2,9 +2,10 @@ import { Router } from "express";
 import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import { revalueManualAccount } from "../manualAccountRevalue";
+import { getLatestAccountTotalValue, getLatestAccountTotalValues, toNumber } from "../accountValuation";
 import { computeAccountDetailStats } from "../accountStats";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
-import { parseDateBody } from "./routeSupport";
+import { parseDateBody, serializeAccount } from "./routeSupport";
 import { handleRouteError, badRequest, parseIdParam, parseFiniteNumber, parsePositiveNumber, parseRequiredString } from "./httpSupport";
 
 const VALID_ACCOUNT_TYPES = new Set(["BANK", "BROKERAGE", "MANUAL"]);
@@ -29,7 +30,6 @@ type AccountsDeps = {
   ) => Promise<void>;
   getAccountForUser: (db: DbClient, userId: number, accountId: number) => Promise<any>;
   transactionDateFilter: TransactionDateFilter;
-  serializeAccount: (row: any) => unknown;
   toNumber: (value: unknown) => number;
 };
 
@@ -46,7 +46,6 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
     recomputeAccountValuationsFrom,
     getAccountForUser,
     transactionDateFilter,
-    serializeAccount,
     toNumber,
   } = deps;
 
@@ -55,7 +54,15 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
       where: { userId: uid(req) },
       orderBy: { name: "asc" },
     });
-    res.json(rows.map(serializeAccount));
+    const totals = await getLatestAccountTotalValues(
+      prisma,
+      rows.map((row) => row.id),
+    );
+    res.json(
+      rows.map((row) =>
+        serializeAccount(row, totals.get(row.id) ?? toNumber(row.cashBalance)),
+      ),
+    );
   });
 
   router.post("/api/accounts", requireAuth, async (req: AuthedRequest, res) => {
@@ -86,7 +93,7 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
         await backfillAccountValuations(tx, created.id, plnPerUnit);
         return created;
       });
-      res.status(201).json(serializeAccount(row));
+      res.status(201).json(serializeAccount(row, openingBalance));
     } catch (e: unknown) {
       handleRouteError(res, e, "Failed to create account");
     }
@@ -97,7 +104,9 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
       const id = parseIdParam(req.params.id);
       const row = await getAccountForUser(prisma, uid(req), id);
       if (!row) return res.status(404).json({ error: "Account not found" });
-      res.json(serializeAccount(row));
+      const totalBalance =
+        (await getLatestAccountTotalValue(prisma, id)) ?? toNumber(row.cashBalance);
+      res.json(serializeAccount(row, totalBalance));
     } catch (e: unknown) {
       handleRouteError(res, e, "Failed to load account");
     }
@@ -128,7 +137,9 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
         data.description = req.body.description != null ? String(req.body.description) : null;
       }
       const updated = await prisma.account.update({ where: { id }, data });
-      res.json(serializeAccount(updated));
+      const totalBalance =
+        (await getLatestAccountTotalValue(prisma, id)) ?? toNumber(updated.cashBalance);
+      res.json(serializeAccount(updated, totalBalance));
     } catch (e: unknown) {
       handleRouteError(res, e, "Failed to update account");
     }
@@ -187,7 +198,9 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
         recalcTransactionBalances,
         recomputeAccountValuationsFrom,
       });
-      res.json(serializeAccount(updated));
+      const totalBalance =
+        (await getLatestAccountTotalValue(prisma, id)) ?? toNumber(updated.cashBalance);
+      res.json(serializeAccount(updated, totalBalance));
     } catch (e: unknown) {
       handleRouteError(res, e, "Failed to revalue account");
     }

@@ -47,7 +47,8 @@ export function parseCsvTable(text: string): CsvTable {
 
   let headerRow = -1;
   for (let i = 0; i < lines.length; i++) {
-    const lower = lines[i].toLowerCase();
+    const line = lines[i]!;
+    const lower = line.toLowerCase();
     if (
       lower.includes("symbol") &&
       (lower.includes("volume") || lower.includes("amount") || lower.startsWith("id"))
@@ -60,11 +61,11 @@ export function parseCsvTable(text: string): CsvTable {
     throw new Error("Could not find CSV header row (expected Symbol column)");
   }
 
-  const delimiter = detectDelimiter(lines[headerRow]);
-  const headers = parseCsvLine(lines[headerRow], delimiter).map((h) => h.trim());
+  const delimiter = detectDelimiter(lines[headerRow]!);
+  const headers = parseCsvLine(lines[headerRow]!, delimiter).map((h) => h.trim());
   const rows: string[][] = [];
   for (let i = headerRow + 1; i < lines.length; i++) {
-    const line = lines[i];
+    const line = lines[i]!;
     if (/^total\b/i.test(line)) continue;
     const fields = parseCsvLine(line, delimiter);
     if (fields.every((f) => f === "")) continue;

@@ -109,6 +109,7 @@ export function ManagedAccountsList() {
                   <tr>
                     <th>Name</th>
                     <th>Currency</th>
+                    <th>Total balance</th>
                     <th>Cash</th>
                     <th />
                   </tr>
@@ -120,7 +121,8 @@ export function ManagedAccountsList() {
                         <Link to={`/accounts/${a.id}`}>{a.name}</Link>
                       </td>
                       <td>{a.currency}</td>
-                      <td>{formatMoney(a.cashBalance, a.currency)}</td>
+                      <td>{formatMoney(a.totalBalance, a.currency)}</td>
+                      <td className="muted">{formatMoney(a.cashBalance, a.currency)}</td>
                       <td className="table-actions">
                         <button type="button" className="btn-link danger" onClick={() => void handleDelete(a.id)}>
                           Delete

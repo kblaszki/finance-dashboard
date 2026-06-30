@@ -48,7 +48,7 @@ export function computeFifoRealizedEvents(lots: FifoLotInput[]): RealizedGainEve
     let remaining = lot.quantity;
     let cost = 0;
     while (remaining > 0 && buyQueue.length > 0) {
-      const head = buyQueue[0];
+      const head = buyQueue[0]!;
       const take = Math.min(remaining, head.quantity);
       cost += take * head.pricePerUnit;
       head.quantity -= take;

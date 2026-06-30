@@ -26,7 +26,7 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/api/accounts` | Yes | List user accounts |
+| GET | `/api/accounts` | Yes | List user accounts; each row includes `totalBalance` (DATA-010 latest valuation or `cashBalance`) |
 | POST | `/api/accounts` | Yes | Create account |
 | GET | `/api/accounts/:id` | Yes | Account detail |
 | GET | `/api/accounts/:id/stats` | Yes | YTD cashflow, YoY balance change, brokerage cash/securities split; optional `currency` |

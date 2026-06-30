@@ -22,6 +22,9 @@ function cacheKey(providerSymbol: string, outputsize: number): string {
 
 function parseDateOnly(value: string): Date {
   const [y, m, d] = value.slice(0, 10).split("-").map(Number);
+  if (y == null || m == null || d == null || !Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) {
+    throw new Error(`Invalid date: ${value}`);
+  }
   return new Date(Date.UTC(y, m - 1, d));
 }
 
@@ -101,7 +104,7 @@ export async function fetchEodBatch(
   const unique = [...new Set(providerSymbols)];
 
   for (let i = 0; i < unique.length; i++) {
-    const symbol = unique[i];
+    const symbol = unique[i]!;
     if (i > 0 && delayMs > 0) {
       await sleep(delayMs);
     }

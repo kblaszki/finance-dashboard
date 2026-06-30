@@ -95,6 +95,72 @@ test("POST /api/auth/register returns 403 when ALLOW_REGISTER=false", async () =
   }
 });
 
+test("GET /api/accounts returns totalBalance per account", async () => {
+  const { token } = await createUserAndToken();
+  await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BANK",
+      name: "Balance List Bank",
+      currency: "PLN",
+      openingBalance: 2500,
+    });
+
+  const res = await request(app)
+    .get("/api/accounts")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  assert.ok(Array.isArray(res.body));
+  const row = res.body.find((a: { name: string }) => a.name === "Balance List Bank");
+  assert.ok(row);
+  assert.equal(row.totalBalance, 2500);
+  assert.equal(row.cashBalance, 2500);
+});
+
+test("GET /api/accounts/:id returns totalBalance", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BANK",
+      name: "Detail Balance Bank",
+      currency: "PLN",
+      openingBalance: 1800,
+    });
+  const accountId = accountRes.body.id;
+
+  const res = await request(app)
+    .get(`/api/accounts/${accountId}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  assert.equal(res.body.totalBalance, 1800);
+  assert.equal(res.body.cashBalance, 1800);
+});
+
+test("PUT /api/accounts/:id returns totalBalance after rename", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BANK",
+      name: "Rename Me",
+      currency: "PLN",
+      openingBalance: 500,
+    });
+  const accountId = accountRes.body.id;
+
+  const res = await request(app)
+    .put(`/api/accounts/${accountId}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Renamed Bank" });
+  assert.equal(res.status, 200);
+  assert.equal(res.body.name, "Renamed Bank");
+  assert.equal(res.body.totalBalance, 500);
+});
+
 test("POST /api/accounts creates account", async () => {
   const { token } = await createUserAndToken();
   const res = await request(app)
@@ -1790,6 +1856,7 @@ test("POST /api/internal-transfers creates paired same-currency transfer", async
       fromAmount: 250,
       toAmount: 250,
       date: "2025-04-01T12:00:00.000Z",
+      note: "Savings move",
     });
   assert.equal(createRes.status, 201);
   assert.equal(createRes.body.fromAmount, 250);
@@ -1800,6 +1867,12 @@ test("POST /api/internal-transfers creates paired same-currency transfer", async
     .set("Authorization", `Bearer ${token}`);
   assert.equal(listRes.status, 200);
   assert.equal(listRes.body.transfers.length, 1);
+
+  const accountFilterRes = await request(app)
+    .get(`/api/internal-transfers?accountId=${from.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(accountFilterRes.status, 200);
+  assert.equal(accountFilterRes.body.transfers.length, 1);
 
   const fromAccount = await request(app)
     .get(`/api/accounts/${from.body.id}`)
@@ -2009,6 +2082,24 @@ test("POST /api/instruments rejects invalid instrumentType", async () => {
   assert.equal(res.status, 400);
 });
 
+test("POST /api/import/broker-trades rejects unsupported broker", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BROKERAGE",
+      name: "Import Broker",
+      currency: "PLN",
+      openingBalance: 0,
+    });
+  const res = await request(app)
+    .post(`/api/import/broker-trades?accountId=${accountRes.body.id}&broker=ibkr`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv: "Symbol;Volume\nAAPL;1" });
+  assert.equal(res.status, 400);
+});
+
 test("POST /api/import/broker-trades dry-run previews XTB CSV", async () => {
   const { readFileSync } = await import("node:fs");
   const { join } = await import("node:path");
@@ -2029,7 +2120,7 @@ test("POST /api/import/broker-trades dry-run previews XTB CSV", async () => {
   const res = await request(app)
     .post(`/api/import/broker-trades?accountId=${accountRes.body.id}&dryRun=true&broker=xtb`)
     .set("Authorization", `Bearer ${token}`)
-    .send({ csv });
+    .send({ csv, filename: "xtb-closed-positions.csv" });
   assert.equal(res.status, 200);
   assert.equal(res.body.dryRun, true);
   assert.equal(res.body.parsed, 3);

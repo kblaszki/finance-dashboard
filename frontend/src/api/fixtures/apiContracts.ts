@@ -24,6 +24,7 @@ export const accountFixture: Account = {
   name: 'Main',
   currency: 'PLN',
   cashBalance: 1500.5,
+  totalBalance: 1500.5,
   openingBalance: 1000,
   description: null,
   createdAt: '2025-01-01T00:00:00.000Z',
@@ -245,6 +246,7 @@ function assertAccountShape(value: Account): void {
   if (typeof value.id !== 'number') throw new Error('account.id')
   if (!['BANK', 'BROKERAGE', 'MANUAL'].includes(value.accountType)) throw new Error('account.accountType')
   if (typeof value.cashBalance !== 'number') throw new Error('account.cashBalance')
+  if (typeof value.totalBalance !== 'number') throw new Error('account.totalBalance')
   if (typeof value.openingBalance !== 'number') throw new Error('account.openingBalance')
 }
 

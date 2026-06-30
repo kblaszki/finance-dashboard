@@ -62,7 +62,11 @@ export function CashflowHistoryChart() {
               <XAxis dataKey="month" />
               <YAxis tickFormatter={(v: number) => formatMoney(v, currency)} width={90} />
               <Tooltip
-                formatter={(value: number, name: string) => [formatMoney(value, currency), name]}
+                formatter={(value, name) =>
+                  typeof value === 'number'
+                    ? [formatMoney(value, currency), String(name)]
+                    : ['—', String(name)]
+                }
               />
               <Legend />
               <Line type="monotone" dataKey="income" name="Income" stroke="var(--chart-1)" dot={false} />

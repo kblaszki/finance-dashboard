@@ -82,8 +82,8 @@ export async function createUserAssetTrade(
   const { plnPerUnit } = await deps.getFxRatesPlnPerUnit();
   const prices = deps.resolveLotPrice({
     quantity: input.quantity,
-    totalPrice: input.totalPrice,
-    pricePerUnit: input.pricePerUnit,
+    ...(input.totalPrice !== undefined ? { totalPrice: input.totalPrice } : {}),
+    ...(input.pricePerUnit !== undefined ? { pricePerUnit: input.pricePerUnit } : {}),
   });
 
   return prisma.$transaction(async (tx) => {
@@ -140,7 +140,6 @@ export async function createUserAssetTradeForAccount(
   deps: CreateAssetTradeDeps,
 ) {
   const holding = await findOrCreateHolding(prisma, account.id, input.instrumentId);
-  const currency = input.currency;
   return createUserAssetTrade(
     prisma,
     holding.id,
@@ -150,8 +149,8 @@ export async function createUserAssetTradeForAccount(
       quantity: input.quantity,
       currency: input.currency,
       tradeDate: input.tradeDate,
-      totalPrice: input.totalPrice,
-      pricePerUnit: input.pricePerUnit,
+      ...(input.totalPrice !== undefined ? { totalPrice: input.totalPrice } : {}),
+      ...(input.pricePerUnit !== undefined ? { pricePerUnit: input.pricePerUnit } : {}),
     },
     deps,
   );

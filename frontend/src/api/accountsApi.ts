@@ -8,6 +8,7 @@ export type Account = {
   name: string;
   currency: string;
   cashBalance: number;
+  totalBalance: number;
   openingBalance: number;
   description: string | null;
   createdAt: string;
