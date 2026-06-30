@@ -1770,6 +1770,146 @@ test("POST /api/asset-trades rejects unknown instrument", async () => {
   assert.equal(res.status, 404);
 });
 
+test("POST /api/internal-transfers creates paired same-currency transfer", async () => {
+  const { token } = await createUserAndToken();
+  const from = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountType: "BANK", name: "From Bank", currency: "PLN", openingBalance: 1000 });
+  const to = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountType: "BANK", name: "To Bank", currency: "PLN", openingBalance: 0 });
+
+  const createRes = await request(app)
+    .post("/api/internal-transfers")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      fromAccountId: from.body.id,
+      toAccountId: to.body.id,
+      fromAmount: 250,
+      toAmount: 250,
+      date: "2025-04-01T12:00:00.000Z",
+    });
+  assert.equal(createRes.status, 201);
+  assert.equal(createRes.body.fromAmount, 250);
+  assert.equal(createRes.body.toAmount, 250);
+
+  const listRes = await request(app)
+    .get("/api/internal-transfers?from=2025-04-01&to=2025-04-30")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(listRes.status, 200);
+  assert.equal(listRes.body.transfers.length, 1);
+
+  const fromAccount = await request(app)
+    .get(`/api/accounts/${from.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(fromAccount.body.cashBalance, 750);
+
+  const cashflowRes = await request(app)
+    .get("/api/stats/cashflow?from=2025-04-01&to=2025-04-30&currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(cashflowRes.body.income, 0);
+  assert.equal(cashflowRes.body.expense, 0);
+});
+
+test("POST /api/internal-transfers supports cross-currency with commission", async () => {
+  const { token } = await createUserAndToken();
+  const from = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountType: "BANK", name: "USD Bank", currency: "USD", openingBalance: 1000 });
+  const to = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountType: "BANK", name: "PLN Bank", currency: "PLN", openingBalance: 0 });
+
+  const createRes = await request(app)
+    .post("/api/internal-transfers")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      fromAccountId: from.body.id,
+      toAccountId: to.body.id,
+      fromAmount: 100,
+      toAmount: 400,
+      exchangeRate: 4,
+      commission: 5,
+      date: "2025-04-20T12:00:00.000Z",
+    });
+  assert.equal(createRes.status, 201);
+  assert.equal(createRes.body.commission, 5);
+  assert.equal(createRes.body.exchangeRate, 4);
+
+  const fromAccount = await request(app)
+    .get(`/api/accounts/${from.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(fromAccount.body.cashBalance, 895);
+});
+
+test("POST /api/internal-transfers rejects same account", async () => {
+  const { token } = await createUserAndToken();
+  const account = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountType: "BANK", name: "Solo", currency: "PLN", openingBalance: 1000 });
+
+  const res = await request(app)
+    .post("/api/internal-transfers")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      fromAccountId: account.body.id,
+      toAccountId: account.body.id,
+      fromAmount: 100,
+      toAmount: 100,
+      date: "2025-04-01T12:00:00.000Z",
+    });
+  assert.equal(res.status, 400);
+});
+
+test("GET /api/internal-transfers/fx-suggestion returns cross rate", async () => {
+  const { token } = await createUserAndToken();
+  const res = await request(app)
+    .get("/api/internal-transfers/fx-suggestion?fromCurrency=USD&toCurrency=PLN&fromAmount=100")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  assert.ok(res.body.exchangeRate > 0);
+  assert.ok(res.body.suggestedToAmount > 0);
+});
+
+test("DELETE /api/internal-transfers/:groupId removes transfer pair", async () => {
+  const { token } = await createUserAndToken();
+  const from = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountType: "BANK", name: "Del From", currency: "PLN", openingBalance: 500 });
+  const to = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountType: "BANK", name: "Del To", currency: "PLN", openingBalance: 0 });
+
+  const created = await request(app)
+    .post("/api/internal-transfers")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      fromAccountId: from.body.id,
+      toAccountId: to.body.id,
+      fromAmount: 50,
+      toAmount: 50,
+      date: "2025-04-15T12:00:00.000Z",
+    });
+  assert.equal(created.status, 201);
+
+  const delRes = await request(app)
+    .delete(`/api/internal-transfers/${created.body.groupId}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(delRes.status, 204);
+
+  const listRes = await request(app)
+    .get("/api/internal-transfers")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(listRes.body.transfers.length, 0);
+});
+
 test("GET /api/stats/benchmark-comparison requires benchmark", async () => {
   const { token } = await createUserAndToken();
   const res = await request(app)

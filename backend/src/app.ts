@@ -55,6 +55,7 @@ import { createInstrumentsRouter } from "./routes/instrumentsRoutes";
 import { createHoldingsRouter } from "./routes/holdingsRoutes";
 import { createPortfolioRouter } from "./routes/portfolioRoutes";
 import { createAssetTradesRouter } from "./routes/assetTradesRoutes";
+import { createInternalTransfersRouter } from "./routes/internalTransfersRoutes";
 import { createMarketDataRouter } from "./routes/marketDataRoutes";
 import { createImportRouter } from "./routes/importRoutes";
 import { handleRouteError } from "./routes/httpSupport";
@@ -215,6 +216,18 @@ app.use(
     recomputeAccountValuationsFrom,
     serializeHoldingLot,
     toNumber,
+  }),
+);
+
+app.use(
+  createInternalTransfersRouter({
+    prisma,
+    requireAuth,
+    uid,
+    parseDateBody,
+    transactionDateFilter,
+    getAccountForUser,
+    getFxRatesPlnPerUnit,
   }),
 );
 

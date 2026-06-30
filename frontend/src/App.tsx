@@ -15,7 +15,7 @@ import { TransactionsListPage } from "./pages/TransactionsListPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { PortfolioPage } from "./pages/PortfolioPage";
 import { StatisticsPage } from "./pages/StatisticsPage";
-import { PlaceholderPage } from "./pages/PlaceholderPage";
+import { TransfersPage } from "./pages/TransfersPage";
 import { useAuth } from "./state/auth";
 
 function App() {
@@ -34,15 +34,7 @@ function App() {
           <Route path="/accounts/:id" element={<AccountDetailPage />} />
           <Route path="/accounts/:id/holdings/:holdingId" element={<HoldingDetailPage />} />
           <Route path="/transactions" element={<TransactionsListPage />} />
-          <Route
-            path="/transfers"
-            element={
-              <PlaceholderPage
-                title="Internal transfers"
-                description="Dedicated transfer form coming soon (FR-011)."
-              />
-            }
-          />
+          <Route path="/transfers" element={<TransfersPage />} />
           <Route path="/tax" element={<TaxReportPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>

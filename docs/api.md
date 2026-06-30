@@ -78,6 +78,10 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 | GET | `/api/portfolio/positions` | Yes | Cross-account open positions; optional `accountId`, `instrumentType`, `assetBucket` filters |
 | GET | `/api/asset-trades` | Yes | FR-007 buy/sell list; optional `from`, `to`, `accountId`, `instrumentId` |
 | POST | `/api/asset-trades` | Yes | Create buy/sell; body `accountId`, `instrumentId`, `side`, `quantity`, `pricePerUnit` or `totalPrice`, `currency?`, `tradeDate` |
+| GET | `/api/internal-transfers` | Yes | FR-011 transfer list; optional `from`, `to`, `accountId` |
+| GET | `/api/internal-transfers/fx-suggestion` | Yes | Suggest FX rate; `fromCurrency`, `toCurrency`, `fromAmount` |
+| POST | `/api/internal-transfers` | Yes | Create paired transfer legs atomically |
+| DELETE | `/api/internal-transfers/:groupId` | Yes | Delete transfer pair by `groupId` |
 
 ## Stats
 

@@ -63,6 +63,12 @@ import { fetchMarketDataStatus, triggerMarketSync } from './marketDataApi'
 import { importBrokerTrades } from './importApi'
 import { fetchPortfolioPositions } from './portfolioApi'
 import { createAssetTrade, fetchAssetTrades } from './assetTradesApi'
+import {
+  createInternalTransfer,
+  deleteInternalTransfer,
+  fetchInternalTransferFxSuggestion,
+  fetchInternalTransfers,
+} from './internalTransfersApi'
 
 describe('API modules', () => {
   beforeEach(() => {
@@ -356,5 +362,39 @@ describe('API modules', () => {
       currency: 'PLN',
       tradeDate: '2025-02-01T00:00:00.000Z',
     })
+  })
+
+  it('internalTransfersApi calls correct endpoints', async () => {
+    await fetchInternalTransfers({ from: '2025-01-01', to: '2025-01-31', accountId: 2 })
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/internal-transfers?from=2025-01-01&to=2025-01-31&accountId=2',
+    )
+
+    await fetchInternalTransferFxSuggestion({
+      fromCurrency: 'USD',
+      toCurrency: 'PLN',
+      fromAmount: 100,
+    })
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/internal-transfers/fx-suggestion?fromCurrency=USD&toCurrency=PLN&fromAmount=100',
+    )
+
+    await createInternalTransfer({
+      fromAccountId: 1,
+      toAccountId: 2,
+      fromAmount: 100,
+      toAmount: 100,
+      date: '2025-02-01T00:00:00.000Z',
+    })
+    expect(apiClient.post).toHaveBeenCalledWith('/api/internal-transfers', {
+      fromAccountId: 1,
+      toAccountId: 2,
+      fromAmount: 100,
+      toAmount: 100,
+      date: '2025-02-01T00:00:00.000Z',
+    })
+
+    await deleteInternalTransfer('group-1')
+    expect(apiClient.delete).toHaveBeenCalledWith('/api/internal-transfers/group-1')
   })
 })
