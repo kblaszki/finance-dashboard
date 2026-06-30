@@ -88,6 +88,17 @@ export function createInstrumentsRouter(deps: InstrumentsDeps): Router {
     }
   });
 
+  router.get("/api/instruments/:id", requireAuth, async (req: AuthedRequest, res) => {
+    try {
+      const id = parseIdParam(req.params.id);
+      const row = await prisma.instrument.findUnique({ where: { id } });
+      if (!row) return res.status(404).json({ error: "Instrument not found" });
+      res.json(serializeInstrument(row));
+    } catch (e: unknown) {
+      handleRouteError(res, e, "Failed to load instrument");
+    }
+  });
+
   router.get("/api/instruments/:id/valuations", requireAuth, async (req: AuthedRequest, res) => {
     try {
       const id = parseIdParam(req.params.id);

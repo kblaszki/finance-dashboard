@@ -42,6 +42,7 @@ import {
 } from './holdingLotsApi'
 import {
   fetchInstruments,
+  fetchInstrument,
   createInstrument,
   fetchInstrumentValuations,
   createInstrumentValuation,
@@ -226,6 +227,9 @@ describe('API modules', () => {
   it('instrumentsApi calls correct endpoints', async () => {
     await fetchInstruments('AAPL')
     expect(apiClient.get).toHaveBeenCalledWith('/api/instruments?q=AAPL')
+
+    await fetchInstrument(4)
+    expect(apiClient.get).toHaveBeenCalledWith('/api/instruments/4')
 
     const instrumentInput = {
       instrumentType: 'STOCK',

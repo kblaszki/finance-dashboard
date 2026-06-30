@@ -10,12 +10,13 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 | `/login` | Login | `pages/LoginPage.tsx` — email or username |
 | `/register` | Register | `pages/RegisterPage.tsx` (username) |
 | `/password-reset` | Password reset stub | `pages/PasswordResetPage.tsx` |
-| `/dashboard` | Dashboard | `DashboardPage` — Portfolio / Budget tabs, `NetWorthSection`, portfolio & budget charts |
-| `/statistics` | Statistics | `StatisticsPage` — FR-003 summary KPIs, FR-004 cashflow history chart |
+| `/dashboard` | Dashboard | `DashboardPage` — `NetWorthSection`, `RollingCashflowKpis`, `AverageReturnKpi` (FR-001/002/005), portfolio/budget tabs |
+| `/statistics` | Statistics | `StatisticsPage` — FR-003 (default: current month), FR-004 cashflow history chart |
 | `/portfolio` | Portfolio (all accounts) | `PortfolioPage` — filters by account, type, bucket (FR-008) |
-| `/accounts` | Accounts | `ManagedAccountsList` — total balance per account (FR-012) |
+| `/assets/:id` | Asset price chart | `AssetDetailPage`, `InstrumentPriceChart` (FR-009) |
+| `/accounts` | Accounts | `ManagedAccountsList` — total balance, type filter (FR-012) |
 | `/accounts/:id` | Account detail | `AccountDetailPage`, chart date range, `AccountStatsCards`, `AccountActivityTable` (BROKERAGE), `BrokerImportForm` (BROKERAGE), holdings, `ManualAccountRevalueForm` (MANUAL), `TransactionTable` with bank cash-flow tabs |
-| `/accounts/:id/holdings/:holdingId` | Holding detail | `HoldingDetailPage`, `HoldingKpiCards`, `HoldingValuationChart` (date range), `InstrumentValuationForm`, `HoldingSplitForm`, `HoldingLotsTable` |
+| `/accounts/:id/holdings/:holdingId` | Holding detail | `HoldingDetailPage`, link to `/assets/:id`, `HoldingKpiCards`, `HoldingValuationChart` (date range), `HoldingLotsTable` |
 | `/transactions` | Asset trades | `TransactionsListPage` → `AssetTradesTable` (FR-007; `?accountId=` filter) |
 | `/transfers` | Internal transfers | `TransfersPage` → `InternalTransfersTable` (FR-011; `?accountId=` filter) |
 | `/tax` | PL tax report | `TaxReportPage` — FIFO gains, Belka estimate, CSV export |

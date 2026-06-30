@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
   createAccount,
@@ -24,6 +24,7 @@ export function ManagedAccountsList() {
   const [name, setName] = useState('')
   const [currency, setCurrency] = useState('PLN')
   const [openingBalance, setOpeningBalance] = useState(0)
+  const [typeFilter, setTypeFilter] = useState<AccountType | 'ALL'>('ALL')
 
   const handleDelete = useCallback(
     async (id: number) => {
@@ -56,10 +57,19 @@ export function ManagedAccountsList() {
     }
   }
 
-  const grouped = (['BANK', 'BROKERAGE', 'MANUAL'] as AccountType[]).map((type) => ({
-    type,
-    rows: (accounts ?? []).filter((a) => a.accountType === type),
-  }))
+  const grouped = useMemo(
+    () =>
+      (['BANK', 'BROKERAGE', 'MANUAL'] as AccountType[]).map((type) => ({
+        type,
+        rows: (accounts ?? []).filter((a) => a.accountType === type),
+      })),
+    [accounts],
+  )
+
+  const visibleGroups = useMemo(
+    () => (typeFilter === 'ALL' ? grouped : grouped.filter((g) => g.type === typeFilter)),
+    [grouped, typeFilter],
+  )
 
   const bannerError = formError ?? error
 
@@ -94,10 +104,25 @@ export function ManagedAccountsList() {
         </form>
       </section>
 
+      <section className="card">
+        <h2>Filter</h2>
+        <div className="inline-form">
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value as AccountType | 'ALL')}
+          >
+            <option value="ALL">All account types</option>
+            <option value="BANK">Bank accounts</option>
+            <option value="BROKERAGE">Brokerage accounts</option>
+            <option value="MANUAL">Manual assets</option>
+          </select>
+        </div>
+      </section>
+
       {loading && !accounts ? (
         <p className="muted">Loading accounts…</p>
       ) : (
-        grouped.map(({ type, rows }) => (
+        visibleGroups.map(({ type, rows }) => (
           <section className="card" key={type}>
             <h2>{TYPE_LABELS[type]}</h2>
             {!rows.length ? (

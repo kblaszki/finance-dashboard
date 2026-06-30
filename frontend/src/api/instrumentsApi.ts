@@ -55,6 +55,10 @@ export async function fetchInstruments(q?: string): Promise<Instrument[]> {
   return apiClient.get<Instrument[]>(`/api/instruments${params}`);
 }
 
+export async function fetchInstrument(id: number): Promise<Instrument> {
+  return apiClient.get<Instrument>(`/api/instruments/${id}`);
+}
+
 export async function createInstrument(input: InstrumentInput): Promise<Instrument> {
   return apiClient.post<Instrument>("/api/instruments", input);
 }

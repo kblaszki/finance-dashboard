@@ -100,6 +100,8 @@ export function HoldingDetailPage() {
         {!isOpen && holding.realizedPnl != null && (
           <> · Realized P&amp;L {formatMoney(holding.realizedPnl, accountCurrency)}</>
         )}
+        {' · '}
+        <Link to={`/assets/${holding.instrumentId}`}>Unit price chart</Link>
       </p>
       {error && <p className="error-banner">{error}</p>}
 

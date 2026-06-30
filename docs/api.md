@@ -49,6 +49,7 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/api/instruments` | Yes | Search; `q` |
+| GET | `/api/instruments/:id` | Yes | Instrument metadata (FR-009) |
 | POST | `/api/instruments` | Yes | Create manual instrument |
 | GET | `/api/instruments/:id/valuations` | Yes | Price history |
 | POST | `/api/instruments/:id/valuations` | Yes | Add manual valuation |

@@ -1101,6 +1101,20 @@ test("POST /api/instruments creates instrument and rejects missing symbol", asyn
   assert.equal(bad.status, 400);
 });
 
+test("GET /api/instruments/:id returns instrument metadata", async () => {
+  const { token } = await createUserAndToken();
+  const instrument = await prisma.instrument.create({
+    data: { instrumentType: "ETF", symbol: "METAHTTP", exchange: "TEST", currency: "USD" },
+  });
+
+  const res = await request(app)
+    .get(`/api/instruments/${instrument.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  assert.equal(res.body.symbol, "METAHTTP");
+  assert.equal(res.body.instrumentType, "ETF");
+});
+
 test("GET and POST /api/instruments/:id/valuations", async () => {
   const { token } = await createUserAndToken();
   const instrument = await prisma.instrument.create({
@@ -1854,6 +1868,11 @@ test("POST /api/internal-transfers creates paired same-currency transfer", async
     .set("Authorization", `Bearer ${token}`)
     .send({ accountType: "BANK", name: "To Bank", currency: "PLN", openingBalance: 0 });
 
+  const nwBefore = await request(app)
+    .get("/api/stats/net-worth?currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(nwBefore.status, 200);
+
   const createRes = await request(app)
     .post("/api/internal-transfers")
     .set("Authorization", `Bearer ${token}`)
@@ -1891,6 +1910,12 @@ test("POST /api/internal-transfers creates paired same-currency transfer", async
     .set("Authorization", `Bearer ${token}`);
   assert.equal(cashflowRes.body.income, 0);
   assert.equal(cashflowRes.body.expense, 0);
+
+  const nwAfter = await request(app)
+    .get("/api/stats/net-worth?currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(nwAfter.status, 200);
+  assert.equal(nwAfter.body.total, nwBefore.body.total);
 });
 
 test("POST /api/internal-transfers supports cross-currency with commission", async () => {

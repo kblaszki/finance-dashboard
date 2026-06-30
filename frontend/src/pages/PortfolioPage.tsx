@@ -146,6 +146,10 @@ export function PortfolioPage() {
                         <Link to={`/accounts/${row.accountId}/holdings/${row.id}`}>
                           {instrumentLabel(row)}
                         </Link>
+                        {' · '}
+                        <Link to={`/assets/${row.instrumentId}`} className="muted">
+                          price chart
+                        </Link>
                       </td>
                       <td>{row.instrument.instrumentType}</td>
                       <td>{row.instrument.exchange ?? "—"}</td>

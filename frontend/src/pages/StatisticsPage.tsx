@@ -6,7 +6,7 @@ import { PeriodProvider } from '../state/period'
 
 export function StatisticsPage() {
   return (
-    <PeriodProvider initialPreset="last_12_months">
+    <PeriodProvider initialPreset="current_month">
       <CashFlowProvider>
         <div className="page">
           <h1 className="page-title">Statistics</h1>

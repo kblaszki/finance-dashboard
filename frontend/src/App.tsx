@@ -10,6 +10,7 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { AccountsPage } from "./pages/AccountsPage";
 import { AccountDetailPage } from "./pages/AccountDetailPage";
 import { HoldingDetailPage } from "./pages/HoldingDetailPage";
+import { AssetDetailPage } from "./pages/AssetDetailPage";
 import { TaxReportPage } from "./pages/TaxReportPage";
 import { TransactionsListPage } from "./pages/TransactionsListPage";
 import { SettingsPage } from "./pages/SettingsPage";
@@ -30,6 +31,7 @@ function App() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/statistics" element={<StatisticsPage />} />
           <Route path="/portfolio" element={<PortfolioPage />} />
+          <Route path="/assets/:id" element={<AssetDetailPage />} />
           <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/accounts/:id" element={<AccountDetailPage />} />
           <Route path="/accounts/:id/holdings/:holdingId" element={<HoldingDetailPage />} />

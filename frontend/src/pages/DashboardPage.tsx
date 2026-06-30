@@ -11,6 +11,7 @@ import { PortfolioKpiCards } from '../components/PortfolioKpiCards'
 import { BenchmarkComparison } from '../components/BenchmarkComparison'
 import { PeriodProvider } from '../state/period'
 import { CashFlowProvider } from '../state/cashflow'
+import { AverageReturnKpi } from '../components/AverageReturnKpi'
 import { NetWorthSection } from '../components/NetWorthSection'
 import { RollingCashflowKpis } from '../components/RollingCashflowKpis'
 
@@ -43,6 +44,16 @@ export function DashboardPage() {
           </div>
           <PeriodFilter />
           <NetWorthSection />
+          <section className="card">
+            <h2>12-month rolling averages</h2>
+            <RollingCashflowKpis />
+          </section>
+          <section className="card">
+            <h2>Portfolio return</h2>
+            <div className="kpi-grid">
+              <AverageReturnKpi />
+            </div>
+          </section>
 
           {tab === 'portfolio' ? (
             <>
@@ -58,10 +69,6 @@ export function DashboardPage() {
             </>
           ) : (
             <>
-              <section className="card">
-                <h2>12-month rolling averages</h2>
-                <RollingCashflowKpis />
-              </section>
               <section className="card">
                 <h2>Cash flows (period)</h2>
                 <KpiCards />
