@@ -8,6 +8,7 @@ import {
   type AccountValuationPoint,
 } from '../api/accountsApi'
 import { createHolding, fetchAccountHoldings, type AccountHoldings } from '../api/holdingsApi'
+import { AccountActivityTable } from '../components/AccountActivityTable'
 import { AccountBalanceChart } from '../components/AccountBalanceChart'
 import { AccountHoldingsTable } from '../components/AccountHoldingsTable'
 import { AccountStatsCards } from '../components/AccountStatsCards'
@@ -155,17 +156,17 @@ export function AccountDetailPage() {
       </section>
 
       <section className="card">
-        <h2>Statistics</h2>
-        <AccountStatsCards accountId={accountId} accountType={account.accountType} />
-      </section>
-
-      <section className="card">
         <h2>Account value history</h2>
         <AccountBalanceChart
           points={history}
           currency={account.currency}
           showComponents={account.accountType === 'BROKERAGE'}
         />
+      </section>
+
+      <section className="card">
+        <h2>Statistics</h2>
+        <AccountStatsCards accountId={accountId} accountType={account.accountType} />
       </section>
 
       {account.accountType === 'MANUAL' && (
@@ -207,7 +208,22 @@ export function AccountDetailPage() {
         </section>
       )}
 
-      {showTransactions && (
+      {showTransactions && account.accountType === 'BROKERAGE' && (
+        <>
+          <AccountActivityTable accountId={accountId} accountCurrency={account.currency} />
+          <TransactionTable
+            accountId={accountId}
+            accountCurrency={account.currency}
+            accountType={account.accountType}
+            showFilters={false}
+            showAccountColumn={false}
+            hideList
+            title="Add cash transaction"
+          />
+        </>
+      )}
+
+      {showTransactions && account.accountType === 'BANK' && (
         <TransactionTable
           accountId={accountId}
           accountCurrency={account.currency}

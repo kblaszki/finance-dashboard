@@ -19,6 +19,7 @@ type Props = {
   showFilters?: boolean
   showAccountColumn?: boolean
   title?: string
+  hideList?: boolean
 }
 
 const BASE_TRANSACTION_TYPES: Array<{ value: TransactionType; label: string }> = [
@@ -66,6 +67,7 @@ export function TransactionTable({
   showFilters = true,
   showAccountColumn = true,
   title = 'Transactions',
+  hideList = false,
 }: Props) {
   const { data: accounts, error: accountsError } = useAsyncData(fetchAccounts)
   const [form, setForm] = useState<TransactionInput>(() => emptyForm(fixedAccountId ?? 0, accountCurrency ?? 'PLN'))
@@ -269,50 +271,52 @@ export function TransactionTable({
         </section>
       )}
 
-      <section className="card">
-        <h2>{title} ({loading ? '…' : transactionRows.length})</h2>
-        {loading && !transactions ? (
-          <p className="muted">Loading transactions…</p>
-        ) : transactionRows.length === 0 ? (
-          <p className="muted">No transactions match the current filters.</p>
-        ) : (
-          <div className="table-wrap">
-            <table className="data-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                {showAccountColumn && !lockAccount && <th>Account</th>}
-                <th>Type</th>
-                <th>Category</th>
-                <th>Amount</th>
-                <th>Balance after</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {transactionRows.map((t: Transaction) => (
-                <tr key={t.id}>
-                  <td>{new Date(t.date).toLocaleDateString('en-US')}</td>
-                  {showAccountColumn && !lockAccount && (
-                    <td>{accountRows.find((a) => a.id === t.accountId)?.name ?? t.accountId}</td>
-                  )}
-                  <td>{t.transactionType}</td>
-                  <td>{t.category}</td>
-                  <td>{formatMoney(t.amount, t.currency)}</td>
-                  <td>{formatMoney(t.balanceAfter, t.currency)}</td>
-                  <td className="table-actions">
-                    <button type="button" className="btn-link" onClick={() => startEdit(t)}>Edit</button>
-                    <button type="button" className="btn-link danger" onClick={() => void handleDelete(t.id)}>
-                      Delete
-                    </button>
-                  </td>
+      {!hideList && (
+        <section className="card">
+          <h2>{title} ({loading ? '…' : transactionRows.length})</h2>
+          {loading && !transactions ? (
+            <p className="muted">Loading transactions…</p>
+          ) : transactionRows.length === 0 ? (
+            <p className="muted">No transactions match the current filters.</p>
+          ) : (
+            <div className="table-wrap">
+              <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  {showAccountColumn && !lockAccount && <th>Account</th>}
+                  <th>Type</th>
+                  <th>Category</th>
+                  <th>Amount</th>
+                  <th>Balance after</th>
+                  <th />
                 </tr>
-              ))}
-            </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+              </thead>
+              <tbody>
+                {transactionRows.map((t: Transaction) => (
+                  <tr key={t.id}>
+                    <td>{new Date(t.date).toLocaleDateString('en-US')}</td>
+                    {showAccountColumn && !lockAccount && (
+                      <td>{accountRows.find((a) => a.id === t.accountId)?.name ?? t.accountId}</td>
+                    )}
+                    <td>{t.transactionType}</td>
+                    <td>{t.category}</td>
+                    <td>{formatMoney(t.amount, t.currency)}</td>
+                    <td>{formatMoney(t.balanceAfter, t.currency)}</td>
+                    <td className="table-actions">
+                      <button type="button" className="btn-link" onClick={() => startEdit(t)}>Edit</button>
+                      <button type="button" className="btn-link danger" onClick={() => void handleDelete(t.id)}>
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      )}
     </div>
   )
 }
