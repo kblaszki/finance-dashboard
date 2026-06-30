@@ -2,6 +2,7 @@ import { Router } from "express";
 import type { PrismaClient, User } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import { isRegisterAllowed } from "../authConfig";
+import { ensureDefaultCategories } from "../categories";
 import { handleRouteError, forbidden } from "./httpSupport";
 
 type AuthDeps = {
@@ -76,6 +77,7 @@ export function createAuthRouter(deps: AuthDeps): Router {
       if (pwdErr) return res.status(400).json({ error: pwdErr });
       const passwordHash = await hashPassword(password);
       const user = await prisma.user.create({ data: { email, username, passwordHash } });
+      await ensureDefaultCategories(prisma, user.id);
       const token = signToken(user.id);
       res.status(201).json({ token, user: userPayload(user) });
     } catch (e: unknown) {

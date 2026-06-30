@@ -13,10 +13,12 @@ import { HoldingDetailPage } from "./pages/HoldingDetailPage";
 import { AssetDetailPage } from "./pages/AssetDetailPage";
 import { TaxReportPage } from "./pages/TaxReportPage";
 import { TransactionsListPage } from "./pages/TransactionsListPage";
+import { TransfersPage } from "./pages/TransfersPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { PortfolioPage } from "./pages/PortfolioPage";
 import { StatisticsPage } from "./pages/StatisticsPage";
-import { TransfersPage } from "./pages/TransfersPage";
+import { CategoriesPage } from "./pages/CategoriesPage";
+import { BudgetsPage } from "./pages/BudgetsPage";
 import { useAuth } from "./state/auth";
 
 function App() {
@@ -37,6 +39,8 @@ function App() {
           <Route path="/accounts/:id/assets/:instrumentId" element={<HoldingDetailPage />} />
           <Route path="/accounts/:id/holdings/:holdingId" element={<HoldingDetailPage />} />
           <Route path="/transactions" element={<TransactionsListPage />} />
+          <Route path="/categories" element={<CategoriesPage />} />
+          <Route path="/budgets" element={<BudgetsPage />} />
           <Route path="/transfers" element={<TransfersPage />} />
           <Route path="/tax" element={<TaxReportPage />} />
           <Route path="/settings" element={<SettingsPage />} />

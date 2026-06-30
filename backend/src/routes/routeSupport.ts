@@ -87,8 +87,15 @@ export function serializeTransaction(t: {
   balanceAfter: unknown;
   currency: string;
   category: string;
+  categoryId?: number | null;
   date: Date;
   description: string | null;
+  splits?: Array<{
+    id: number;
+    categoryId: number;
+    amount: unknown;
+    category?: { name: string };
+  }>;
 }) {
   return {
     id: t.id,
@@ -98,8 +105,15 @@ export function serializeTransaction(t: {
     balanceAfter: toNumber(t.balanceAfter),
     currency: t.currency,
     category: t.category,
+    categoryId: t.categoryId ?? null,
     date: t.date.toISOString(),
     description: t.description,
+    splits: (t.splits ?? []).map((s) => ({
+      id: s.id,
+      categoryId: s.categoryId,
+      categoryName: s.category?.name ?? null,
+      amount: toNumber(s.amount),
+    })),
   };
 }
 

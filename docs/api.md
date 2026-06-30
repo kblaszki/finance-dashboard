@@ -39,10 +39,27 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/api/transactions` | Yes | List; `accountId`, `from`, `to` |
-| POST | `/api/transactions` | Yes | Create; sets `balanceAfter`. Types: `INCOME`, `EXPENSE`, `TRANSFER_IN`, `TRANSFER_OUT`, `DIVIDEND` (brokerage only), `INTEREST` (bank/brokerage) |
-| PUT | `/api/transactions/:id` | Yes | Update; recalculates balances |
+| GET | `/api/transactions` | Yes | List; `accountId`, `from`, `to`; includes `categoryId`, `splits` |
+| POST | `/api/transactions` | Yes | Create; sets `balanceAfter`. Types: `INCOME`, `EXPENSE`, `TRANSFER_IN`, `TRANSFER_OUT`, `DIVIDEND` (brokerage only), `INTEREST` (bank/brokerage). Optional `categoryId` or `splits[]` (`{ categoryId, amount }`) for FR-018 |
+| PUT | `/api/transactions/:id` | Yes | Update; recalculates balances; `categoryId` / `splits` |
 | DELETE | `/api/transactions/:id` | Yes | Delete; recalculates balances |
+
+## Categories (FR-015)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/categories` | Yes | List flat + tree; seeds defaults if empty |
+| POST | `/api/categories` | Yes | Create `{ name, parentId?, sortOrder? }` |
+| PUT | `/api/categories/:id` | Yes | Update name/parent/sort |
+| DELETE | `/api/categories/:id` | Yes | Delete if unused |
+
+## Budgets (FR-017)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/budgets` | Yes | List for month; `month` (YYYY-MM), optional `currency` — includes `spent`, `pctUsed` |
+| PUT | `/api/budgets` | Yes | Upsert `{ categoryId, budgetMonth, amount, currency }` |
+| DELETE | `/api/budgets/:id` | Yes | Remove budget row |
 
 ## Instruments
 

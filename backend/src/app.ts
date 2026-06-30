@@ -57,6 +57,8 @@ import { createAssetTradesRouter } from "./routes/assetTradesRoutes";
 import { createInternalTransfersRouter } from "./routes/internalTransfersRoutes";
 import { createMarketDataRouter } from "./routes/marketDataRoutes";
 import { createImportRouter } from "./routes/importRoutes";
+import { createCategoriesRouter } from "./routes/categoriesRoutes";
+import { createBudgetsRouter } from "./routes/budgetsRoutes";
 import { handleRouteError } from "./routes/httpSupport";
 
 dotenv.config();
@@ -258,6 +260,26 @@ app.use(
     requireAuth,
     uid,
     getFxRatesPlnPerUnit,
+  }),
+);
+
+app.use(
+  createCategoriesRouter({
+    prisma,
+    requireAuth,
+    uid,
+  }),
+);
+
+app.use(
+  createBudgetsRouter({
+    prisma,
+    requireAuth,
+    uid,
+    normalizeCurrency,
+    convertAmount,
+    getFxRatesPlnPerUnit,
+    toNumber,
   }),
 );
 

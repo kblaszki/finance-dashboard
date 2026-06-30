@@ -16,8 +16,15 @@ export interface Transaction {
   balanceAfter: number;
   currency: string;
   category: string;
+  categoryId: number | null;
   date: string;
   description?: string | null;
+  splits?: Array<{
+    id: number;
+    categoryId: number;
+    categoryName: string | null;
+    amount: number;
+  }>;
 }
 
 export interface TransactionInput {
@@ -25,9 +32,11 @@ export interface TransactionInput {
   transactionType: TransactionType;
   amount: number;
   currency: string;
-  category: string;
+  category?: string;
+  categoryId?: number | null;
   date: string;
   description?: string;
+  splits?: Array<{ categoryId: number; amount: number }>;
 }
 
 export type TransactionFilters = {

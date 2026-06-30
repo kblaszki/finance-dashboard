@@ -8,6 +8,11 @@ type TransactionRow = {
   transactionType: string;
   category: string;
   date?: Date;
+  splits?: Array<{
+    amount: unknown;
+    currency?: string;
+    category?: { name: string };
+  }>;
 };
 
 export type CashflowHistoryPoint = {
@@ -180,10 +185,25 @@ export function computeCategoryBreakdown(
 ): Array<{ category: string; amount: number }> {
   const map = new Map<string, number>();
   for (const t of rows) {
+    if (t.splits?.length) {
+      for (const split of t.splits) {
+        const amount = convertAmount(
+          toNumber(split.amount),
+          split.currency ?? t.currency,
+          displayCurrency,
+          plnPerUnit,
+        );
+        const label = split.category?.name ?? "Uncategorized";
+        map.set(label, (map.get(label) ?? 0) + amount);
+      }
+      continue;
+    }
     const amount = convertAmount(toNumber(t.amount), t.currency, displayCurrency, plnPerUnit);
     map.set(t.category, (map.get(t.category) ?? 0) + amount);
   }
-  return [...map.entries()].map(([category, amount]) => ({ category, amount }));
+  return [...map.entries()]
+    .map(([category, amount]) => ({ category, amount }))
+    .sort((a, b) => b.amount - a.amount);
 }
 
 export async function fetchUserTransactions(
@@ -204,6 +224,12 @@ export async function fetchUserTransactions(
       transactionType: true,
       category: true,
       date: true,
+      splits: {
+        select: {
+          amount: true,
+          category: { select: { name: true } },
+        },
+      },
     },
   });
 }

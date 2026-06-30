@@ -2209,6 +2209,99 @@ test("POST /api/accounts/:id/revalue rejects bank accounts", async () => {
   assert.equal(res.status, 400);
 });
 
+test("GET /api/categories seeds defaults and supports CRUD (FR-015)", async () => {
+  const { token } = await createUserAndToken();
+  const listRes = await request(app)
+    .get("/api/categories")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(listRes.status, 200);
+  assert.ok(listRes.body.flat.length >= 8);
+
+  const createRes = await request(app)
+    .post("/api/categories")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Custom Cat" });
+  assert.equal(createRes.status, 201);
+  assert.equal(createRes.body.name, "Custom Cat");
+
+  const updateRes = await request(app)
+    .put(`/api/categories/${createRes.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Renamed Cat" });
+  assert.equal(updateRes.status, 200);
+  assert.equal(updateRes.body.name, "Renamed Cat");
+
+  const delRes = await request(app)
+    .delete(`/api/categories/${createRes.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(delRes.status, 204);
+});
+
+test("PUT /api/budgets tracks monthly limit (FR-017)", async () => {
+  const { token } = await createUserAndToken();
+  const cats = await request(app).get("/api/categories").set("Authorization", `Bearer ${token}`);
+  const food = cats.body.flat.find((c: { name: string }) => c.name === "Food");
+  assert.ok(food);
+
+  const saveRes = await request(app)
+    .put("/api/budgets")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      categoryId: food.id,
+      budgetMonth: "2026-06-01",
+      amount: 500,
+      currency: "PLN",
+    });
+  assert.equal(saveRes.status, 200);
+  assert.equal(saveRes.body.amount, 500);
+
+  const listRes = await request(app)
+    .get("/api/budgets?month=2026-06&currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(listRes.status, 200);
+  assert.equal(listRes.body.length, 1);
+
+  const delRes = await request(app)
+    .delete(`/api/budgets/${saveRes.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(delRes.status, 204);
+});
+
+test("POST /api/transactions supports categoryId and splits (FR-018)", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BANK",
+      name: "Split Bank",
+      currency: "PLN",
+      openingBalance: 1000,
+    });
+  const cats = await request(app).get("/api/categories").set("Authorization", `Bearer ${token}`);
+  const food = cats.body.flat.find((c: { name: string }) => c.name === "Food");
+  const transport = cats.body.flat.find((c: { name: string }) => c.name === "Transport");
+  assert.ok(food && transport);
+
+  const splitRes = await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId: accountRes.body.id,
+      transactionType: "EXPENSE",
+      amount: 100,
+      currency: "PLN",
+      date: "2026-06-10T12:00:00.000Z",
+      splits: [
+        { categoryId: food.id, amount: 60 },
+        { categoryId: transport.id, amount: 40 },
+      ],
+    });
+  assert.equal(splitRes.status, 201);
+  assert.equal(splitRes.body.category, "SPLIT");
+  assert.equal(splitRes.body.splits.length, 2);
+});
+
 test("POST /api/instruments rejects invalid instrumentType", async () => {
   const { token } = await createUserAndToken();
   const res = await request(app)

@@ -11,7 +11,9 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 | `/register` | Register | `pages/RegisterPage.tsx` (username) |
 | `/password-reset` | Password reset stub | `pages/PasswordResetPage.tsx` |
 | `/dashboard` | Dashboard | `DashboardPage` — `NetWorthSection`, `RollingCashflowKpis`, `AverageReturnKpi` (FR-001/002/005), portfolio/budget tabs |
-| `/statistics` | Statistics | `StatisticsPage` — FR-003 (default: current month), FR-004 cashflow history chart |
+| `/statistics` | Statistics | `StatisticsPage` — FR-003 (default: current month), FR-004 cashflow history chart, FR-016 `CategoryBreakdownSection` |
+| `/categories` | Categories | `CategoriesPage` — FR-015 CRUD |
+| `/budgets` | Budgets | `BudgetsPage` — FR-017 monthly limits vs spend |
 | `/portfolio` | Portfolio (all accounts) | `PortfolioPage` — filters by account, type, bucket (FR-008) |
 | `/assets/:id` | Asset price chart | `AssetDetailPage`, `InstrumentPriceChart` (FR-009) |
 | `/accounts` | Accounts | `ManagedAccountsList` — total balance, type filter (FR-012) |
@@ -44,6 +46,8 @@ Preferred async pattern for page/widget data: [`frontend/src/hooks/useAsyncData.
 | `authApi.ts` | `/api/auth/*` |
 | `accountsApi.ts` | `/api/accounts` |
 | `transactionsApi.ts` | `/api/transactions` |
+| `categoriesApi.ts` | `/api/categories` |
+| `budgetsApi.ts` | `/api/budgets` |
 | `instrumentsApi.ts` | `/api/instruments`, `/api/instruments/:id/valuations` |
 | `importApi.ts` | `POST /api/import/broker-trades` — XTB CSV dry-run / import |
 | `holdingsApi.ts` | `/api/accounts/:id/holdings`, `/api/holdings/:holdingId`, `POST .../split` |

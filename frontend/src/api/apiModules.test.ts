@@ -72,6 +72,13 @@ import {
   fetchInternalTransferFxSuggestion,
   fetchInternalTransfers,
 } from './internalTransfersApi'
+import {
+  fetchCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+} from './categoriesApi'
+import { fetchBudgets, upsertBudget, deleteBudget } from './budgetsApi'
 
 describe('API modules', () => {
   beforeEach(() => {
@@ -410,5 +417,44 @@ describe('API modules', () => {
 
     await deleteInternalTransfer('group-1')
     expect(apiClient.delete).toHaveBeenCalledWith('/api/internal-transfers/group-1')
+  })
+
+  it('categoriesApi calls correct endpoints', async () => {
+    await fetchCategories()
+    expect(apiClient.get).toHaveBeenCalledWith('/api/categories')
+
+    await createCategory({ name: 'Food', parentId: null, sortOrder: 1 })
+    expect(apiClient.post).toHaveBeenCalledWith('/api/categories', {
+      name: 'Food',
+      parentId: null,
+      sortOrder: 1,
+    })
+
+    await updateCategory(5, { name: 'Groceries' })
+    expect(apiClient.put).toHaveBeenCalledWith('/api/categories/5', { name: 'Groceries' })
+
+    await deleteCategory(5)
+    expect(apiClient.delete).toHaveBeenCalledWith('/api/categories/5')
+  })
+
+  it('budgetsApi calls correct endpoints', async () => {
+    await fetchBudgets('2026-06', 'PLN')
+    expect(apiClient.get).toHaveBeenCalledWith('/api/budgets?month=2026-06&currency=PLN')
+
+    await upsertBudget({
+      categoryId: 3,
+      budgetMonth: '2026-06-01',
+      amount: 500,
+      currency: 'PLN',
+    })
+    expect(apiClient.put).toHaveBeenCalledWith('/api/budgets', {
+      categoryId: 3,
+      budgetMonth: '2026-06-01',
+      amount: 500,
+      currency: 'PLN',
+    })
+
+    await deleteBudget(7)
+    expect(apiClient.delete).toHaveBeenCalledWith('/api/budgets/7')
   })
 })

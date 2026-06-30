@@ -3,10 +3,28 @@ import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import type { TransactionType } from "../transactionBalance";
 import { validateTransactionForAccount } from "../transactionBalance";
+import {
+  replaceTransactionSplits,
+  resolveTransactionCategory,
+  validateTransactionSplits,
+  type SplitInput,
+} from "../transactionSplits";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
 import { badRequest, handleRouteError, notFound, parseFiniteNumber, parseIdParam, parsePositiveNumber } from "./httpSupport";
 
 const TRANSACTION_DOMAIN_ERRORS = new Set(["Insufficient cash balance"]);
+
+const transactionInclude = {
+  splits: { include: { category: { select: { name: true } } } },
+};
+
+function parseSplitsBody(body: unknown): SplitInput[] | undefined {
+  if (!Array.isArray(body)) return undefined;
+  return body.map((row) => ({
+    categoryId: Number((row as { categoryId?: unknown }).categoryId),
+    amount: Number((row as { amount?: unknown }).amount),
+  }));
+}
 
 type TransactionsDeps = {
   prisma: PrismaClient;
@@ -84,6 +102,7 @@ export function createTransactionsRouter(deps: TransactionsDeps): Router {
       const rows = await prisma.transaction.findMany({
         where: { ...where, ...(date ? { date } : {}) },
         orderBy: [{ date: "desc" }, { id: "desc" }],
+        include: transactionInclude,
       });
       res.json(rows.map(serializeTransaction));
     } catch (e: unknown) {
@@ -97,9 +116,20 @@ export function createTransactionsRouter(deps: TransactionsDeps): Router {
       const transactionType = String(req.body?.transactionType ?? "").trim().toUpperCase();
       const amount = parsePositiveNumber(req.body?.amount, "amount");
       const currency = normalizeCurrency(req.body?.currency);
-      const category = String(req.body?.category ?? "Uncategorized").trim() || "Uncategorized";
       const date = parseDateBody(req.body?.date);
       const description = req.body?.description != null ? String(req.body.description) : null;
+      const userId = uid(req);
+      const rawSplits = parseSplitsBody(req.body?.splits);
+      const splits = await validateTransactionSplits(prisma, userId, amount, rawSplits);
+      const categoryIdBody =
+        req.body?.categoryId != null
+          ? parseFiniteNumber(req.body.categoryId, "categoryId", { min: 1 })
+          : null;
+      const resolved = await resolveTransactionCategory(prisma, userId, {
+        categoryId: categoryIdBody,
+        category: req.body?.category,
+        splits,
+      });
 
       if (!isValidTransactionType(transactionType)) {
         return res.status(400).json({ error: "Invalid transactionType" });
@@ -122,14 +152,19 @@ export function createTransactionsRouter(deps: TransactionsDeps): Router {
             amount,
             balanceAfter: 0,
             currency,
-            category,
+            category: resolved.category,
+            categoryId: resolved.categoryId,
             date,
             description,
           },
         });
+        await replaceTransactionSplits(tx, created.id, splits);
         await recalcTransactionBalances(tx, accountId, date);
         await recomputeAccountValuationsFrom(tx, accountId, date, plnPerUnit);
-        return tx.transaction.findUniqueOrThrow({ where: { id: created.id } });
+        return tx.transaction.findUniqueOrThrow({
+          where: { id: created.id },
+          include: transactionInclude,
+        });
       });
       res.status(201).json(serializeTransaction(row));
     } catch (e: unknown) {
@@ -158,6 +193,12 @@ export function createTransactionsRouter(deps: TransactionsDeps): Router {
       if (req.body?.amount != null) data.amount = parsePositiveNumber(req.body.amount, "amount");
       if (req.body?.currency != null) data.currency = normalizeCurrency(req.body.currency);
       if (req.body?.category != null) data.category = String(req.body.category);
+      if (req.body?.categoryId !== undefined) {
+        data.categoryId =
+          req.body.categoryId == null
+            ? null
+            : parseFiniteNumber(req.body.categoryId, "categoryId", { min: 1 });
+      }
       if (req.body?.date != null) data.date = parseDateBody(req.body.date);
       if (req.body?.description !== undefined) {
         data.description = req.body.description != null ? String(req.body.description) : null;
@@ -175,14 +216,38 @@ export function createTransactionsRouter(deps: TransactionsDeps): Router {
       if (nextCurrency !== account.currency) {
         return res.status(400).json({ error: "Transaction currency must match account currency" });
       }
+      const nextAmount =
+        data.amount != null ? Number(data.amount) : Number(existing.amount);
+      const userId = uid(req);
+      const rawSplits =
+        req.body?.splits !== undefined ? parseSplitsBody(req.body.splits) : undefined;
+      const splits =
+        rawSplits !== undefined
+          ? await validateTransactionSplits(prisma, userId, nextAmount, rawSplits)
+          : undefined;
+      if (splits !== undefined || req.body?.categoryId !== undefined || req.body?.category != null) {
+        const resolved = await resolveTransactionCategory(prisma, userId, {
+          categoryId:
+            data.categoryId !== undefined
+              ? (data.categoryId as number | null)
+              : existing.categoryId,
+          category: (data.category as string | undefined) ?? existing.category,
+          splits: splits ?? null,
+        });
+        data.category = resolved.category;
+        data.categoryId = resolved.categoryId;
+      }
       const { plnPerUnit } = await getFxRatesPlnPerUnit();
       const updated = await prisma.$transaction(async (tx) => {
         const row = await tx.transaction.update({ where: { id }, data });
+        if (splits !== undefined) {
+          await replaceTransactionSplits(tx, id, splits);
+        }
         const recalcFrom =
           row.date.getTime() < existing.date.getTime() ? row.date : existing.date;
         await recalcTransactionBalances(tx, existing.accountId, recalcFrom);
         await recomputeAccountValuationsFrom(tx, existing.accountId, recalcFrom, plnPerUnit);
-        return row;
+        return tx.transaction.findUniqueOrThrow({ where: { id }, include: transactionInclude });
       });
       res.json(serializeTransaction(updated));
     } catch (e: unknown) {

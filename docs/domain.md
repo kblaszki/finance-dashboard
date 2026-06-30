@@ -68,9 +68,15 @@ Annual estimates via `GET /api/stats/tax-report` — FIFO realized gains on SELL
 - **BROKERAGE** — cash via transactions; securities via `Holding` / `HoldingLot`; `AccountValuationDaily.cashValue` replays transactions **and** lot trade cash impact (BUY/SELL).
 - **MANUAL** — tracked account value (`openingBalance` / `cashBalance`); no holdings. Revalue via `POST /api/accounts/:id/revalue` (creates internal `REVALUATION` ledger entry for chart step).
 
-## Categories
+## Categories (FR-015, DATA-011)
 
-`Transaction.category` is a plain string (no `Category` tree).
+User-scoped `Category` tree (`parentId`, `sortOrder`). Defaults seeded on register (`ensureDefaultCategories`). `Transaction.categoryId` optional FK; legacy `Transaction.category` string kept for dividends/interest and display fallback.
+
+`TransactionSplit` rows (`transactionId`, `categoryId`, `amount`) enable split expenses; when present, stats breakdown uses splits instead of the parent category string.
+
+## Budgets (FR-017, DATA-012)
+
+`Budget` — per user, per `categoryId`, per calendar month (`budgetMonth`), `amount` + `currency`. Unique on `(userId, categoryId, budgetMonth)`.
 
 ## Related docs
 

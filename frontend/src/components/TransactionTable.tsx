@@ -10,6 +10,7 @@ import {
 import { fetchAccounts, type Account, type AccountType } from '../api/accountsApi'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { SUPPORTED_CURRENCIES } from '../state/currency'
+import { CategoryPicker } from './CategoryPicker'
 import { formatMoney } from '../utils/format'
 
 type Props = {
@@ -68,7 +69,7 @@ function emptyForm(accountId: number, currency: string): TransactionInput {
     transactionType: 'EXPENSE',
     amount: 0,
     currency,
-    category: 'Uncategorized',
+    categoryId: null,
     date: new Date().toISOString().slice(0, 10),
     description: '',
   }
@@ -143,6 +144,7 @@ export function TransactionTable({
       transactionType: t.transactionType,
       amount: t.amount,
       currency: t.currency,
+      categoryId: t.categoryId,
       category: t.category,
       date: t.date.slice(0, 10),
       description: t.description ?? '',
@@ -161,6 +163,11 @@ export function TransactionTable({
       const payload = {
         ...form,
         date: new Date(form.date).toISOString(),
+        ...(form.categoryId != null
+          ? { categoryId: form.categoryId }
+          : form.category
+            ? { category: form.category }
+            : { category: 'Uncategorized' }),
       }
       if (editingId) {
         await updateTransaction(editingId, payload)
@@ -287,7 +294,17 @@ export function TransactionTable({
               </option>
             ))}
           </select>
-          <input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="Category" />
+          <CategoryPicker
+            value={form.categoryId ?? null}
+            onChange={(categoryId, categoryName) =>
+              setForm({
+                ...form,
+                categoryId,
+                ...(categoryName ? { category: categoryName } : {}),
+              })
+            }
+            allowEmpty
+          />
           <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
           <input value={form.description ?? ''} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Description" />
           <button type="submit" className="btn-primary">{editingId ? 'Save' : 'Add'}</button>

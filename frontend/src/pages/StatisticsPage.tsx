@@ -1,4 +1,5 @@
 import { CashflowHistoryChart } from '../components/Charts/CashflowHistoryChart'
+import { CategoryBreakdownSection } from '../components/CategoryBreakdownSection'
 import { KpiCards } from '../components/KpiCards'
 import { PeriodFilter } from '../components/PeriodFilter'
 import { CashFlowProvider } from '../state/cashflow'
@@ -20,6 +21,7 @@ export function StatisticsPage() {
             <KpiCards />
           </section>
           <CashflowHistoryChart />
+          <CategoryBreakdownSection />
         </div>
       </CashFlowProvider>
     </PeriodProvider>

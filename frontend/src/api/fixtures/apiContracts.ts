@@ -40,6 +40,7 @@ export const transactionFixture: Transaction = {
   balanceAfter: 1458.25,
   currency: 'PLN',
   category: 'FOOD',
+  categoryId: null,
   date: '2025-01-10T12:00:00.000Z',
   description: 'Lunch',
 }
