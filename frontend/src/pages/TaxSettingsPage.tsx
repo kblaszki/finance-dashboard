@@ -26,6 +26,7 @@ import {
 } from '../api/taxWrappersApi'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { formatMoney } from '../utils/format'
+import { TaxLossCarryforwardSection } from '../components/TaxLossCarryforwardSection'
 
 const WITHDRAWAL_TYPES: WithdrawalType[] = ['partial', 'full', 'securities_transfer']
 const ACTION_TYPES: CorporateActionType[] = ['stock_split', 'reverse_split', 'merger', 'spinoff']
@@ -378,6 +379,8 @@ export function TaxSettingsPage() {
         </form>
         {aLoading ? <p>Loading…</p> : <ActionTable rows={actions ?? []} />}
       </section>
+
+      <TaxLossCarryforwardSection />
     </div>
   )
 }

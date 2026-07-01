@@ -1,37 +1,69 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { matchCategorizationRule } from "../src/categorizationRules";
+import { matchCategorizationRule, parseMatchType } from "./categorizationRules";
 
-const rules = [
-  {
-    pattern: "BIEDRONKA",
-    matchType: "contains",
-    priority: 10,
-    active: true,
-    categoryId: 1,
-    category: { name: "Groceries" },
-  },
-  {
-    pattern: "^ORLEN",
-    matchType: "regex",
-    priority: 5,
-    active: true,
-    categoryId: 2,
-    category: { name: "Fuel" },
-  },
-];
-
-test("matchCategorizationRule matches contains by priority", () => {
-  const match = matchCategorizationRule("PAYMENT BIEDRONKA 123", rules);
-  assert.equal(match?.categoryName, "Groceries");
-  assert.equal(match?.categoryId, 1);
+test("matchCategorizationRule prefers higher priority among matching rules", () => {
+  const result = matchCategorizationRule("PAYMENT AT ORLEN STATION", [
+    {
+      pattern: "ORLEN",
+      matchType: "contains",
+      priority: 1,
+      active: true,
+      categoryId: 1,
+      category: { name: "Fuel" },
+    },
+    {
+      pattern: "ORLEN",
+      matchType: "contains",
+      priority: 10,
+      active: true,
+      categoryId: 2,
+      category: { name: "Fuel premium" },
+    },
+  ]);
+  assert.equal(result?.categoryName, "Fuel premium");
 });
 
-test("matchCategorizationRule matches regex", () => {
-  const match = matchCategorizationRule("ORLEN STATION", rules);
-  assert.equal(match?.categoryName, "Fuel");
+test("matchCategorizationRule skips inactive rules", () => {
+  const result = matchCategorizationRule("ORLEN", [
+    {
+      pattern: "ORLEN",
+      matchType: "contains",
+      priority: 5,
+      active: false,
+      categoryId: 1,
+      category: { name: "Fuel" },
+    },
+  ]);
+  assert.equal(result, null);
 });
 
-test("matchCategorizationRule returns null when no match", () => {
-  assert.equal(matchCategorizationRule("UNKNOWN SHOP", rules), null);
+test("matchCategorizationRule supports regex and ignores invalid patterns", () => {
+  const ok = matchCategorizationRule("Invoice 123", [
+    {
+      pattern: "invoice \\d+",
+      matchType: "regex",
+      priority: 0,
+      active: true,
+      categoryId: 3,
+      category: { name: "Bills" },
+    },
+  ]);
+  assert.equal(ok?.categoryId, 3);
+
+  const badRegex = matchCategorizationRule("text", [
+    {
+      pattern: "[invalid",
+      matchType: "regex",
+      priority: 0,
+      active: true,
+      categoryId: 1,
+      category: { name: "X" },
+    },
+  ]);
+  assert.equal(badRegex, null);
+});
+
+test("parseMatchType rejects unknown values", () => {
+  assert.throws(() => parseMatchType("fuzzy"), /Invalid matchType/);
 });

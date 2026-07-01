@@ -139,6 +139,59 @@ export function TaxReportPage() {
           </section>
 
           <section className="card">
+            <h2>Loss carryforward (PIT-38)</h2>
+            <p>
+              Remaining from prior years:{' '}
+              {formatMoney(report.lossCarryforward.remainingTotal, report.displayCurrency)}
+            </p>
+            {report.lossCarryforward.appliedThisYear.length > 0 ? (
+              <p className="muted">
+                Applied this year:{' '}
+                {report.lossCarryforward.appliedThisYear
+                  .map((r) => `${r.taxYear}: ${formatMoney(r.amount, report.displayCurrency)}`)
+                  .join('; ')}
+              </p>
+            ) : (
+              <p className="muted">No prior losses applied to this tax year.</p>
+            )}
+            {report.lossCarryforward.suggestedNewLoss ? (
+              <p className="muted">
+                Net loss this year — consider recording carryforward for{' '}
+                {report.lossCarryforward.suggestedNewLoss.taxYear}:{' '}
+                {formatMoney(
+                  report.lossCarryforward.suggestedNewLoss.lossAmount,
+                  report.displayCurrency,
+                )}
+                . Manage rows in <Link to="/tax/settings">Tax settings</Link>.
+              </p>
+            ) : null}
+            {report.lossCarryforward.rows.length > 0 && (
+              <div className="table-wrap">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Origin year</th>
+                      <th>Loss</th>
+                      <th>Used</th>
+                      <th>Remaining</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {report.lossCarryforward.rows.map((row) => (
+                      <tr key={row.taxYear}>
+                        <td>{row.taxYear}</td>
+                        <td>{formatMoney(row.lossAmount, report.displayCurrency)}</td>
+                        <td>{formatMoney(row.usedAmount, report.displayCurrency)}</td>
+                        <td>{formatMoney(row.remainingAmount, report.displayCurrency)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
+          <section className="card">
             <h2>Belka — deposits &amp; bonds (FR-027)</h2>
             <div className="kpi-grid">
               <div>

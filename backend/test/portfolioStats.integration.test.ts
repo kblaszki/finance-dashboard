@@ -182,3 +182,62 @@ test("computeUserAverageHoldingReturn skips holdings without market price", asyn
   assert.ok(result.averageReturnPct != null);
   assert.ok(Math.abs(result.averageReturnPct - 10) < 0.01);
 });
+
+test("computePortfolioHistory aggregates account valuation dailies", async () => {
+  const user = await prisma.user.create({
+    data: { email: "hist@test.local", username: "histuser", passwordHash: "x" },
+  });
+  const account = await prisma.account.create({
+    data: {
+      userId: user.id,
+      accountType: "BROKERAGE",
+      name: "Broker",
+      currency: "PLN",
+      openingBalance: 0,
+      cashBalance: 0,
+    },
+  });
+  await prisma.accountValuationDaily.createMany({
+    data: [
+      {
+        accountId: account.id,
+        valuationDate: new Date("2025-06-01T12:00:00.000Z"),
+        totalValue: 1000,
+        cashValue: 200,
+        securitiesValue: 800,
+        currency: "PLN",
+      },
+      {
+        accountId: account.id,
+        valuationDate: new Date("2025-06-15T12:00:00.000Z"),
+        totalValue: 1100,
+        cashValue: 250,
+        securitiesValue: 850,
+        currency: "PLN",
+      },
+    ],
+  });
+
+  const { computePortfolioHistory, computeBenchmarkComparison } = await import("../src/portfolioStats");
+  const history = await computePortfolioHistory(
+    prisma,
+    user.id,
+    new Date("2025-06-01T00:00:00.000Z"),
+    new Date("2025-06-30T00:00:00.000Z"),
+    "PLN",
+    MOCK_FX.plnPerUnit,
+  );
+  assert.equal(history.points.length, 2);
+  assert.equal(history.points[0].totalValue, 1000);
+
+  const bench = await computeBenchmarkComparison(
+    prisma,
+    user.id,
+    "WIG",
+    new Date("2025-06-01T00:00:00.000Z"),
+    new Date("2025-06-30T00:00:00.000Z"),
+    "PLN",
+    MOCK_FX.plnPerUnit,
+  );
+  assert.ok("portfolioReturnPct" in bench);
+});

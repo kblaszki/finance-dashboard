@@ -23,14 +23,16 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 | `/accounts/:id/holdings/:holdingId` | Holding detail (legacy URL) | Same as `/accounts/:id/assets/:instrumentId` |
 | `/transactions` | Asset trades | `TransactionsListPage` → `AssetTradesTable` (FR-007; `?accountId=` filter) |
 | `/transfers` | Internal transfers | `TransfersPage` → `InternalTransfersTable` (FR-011; `?accountId=` filter) |
-| `/tax` | PL tax report | `TaxReportPage` — FR-022/023/025–028; `/tax/:year` |
-| `/tax/settings` | Tax prerequisites | `TaxSettingsPage` — FR-039–041 wrappers, transfers, corporate actions |
+| `/tax` | PL tax report | `TaxReportPage` — FR-022/023/025–028; loss carryforward section; `/tax/:year` |
+| `/tax/settings` | Tax prerequisites | `TaxSettingsPage` — FR-039–041; `TaxLossCarryforwardSection` |
 | `/tax/:year/overview` | Tax overview | `TaxOverviewPage` — FR-046 consolidated summary |
 | `/tax/calendar` | Tax calendar | `TaxCalendarPage` — FR-045 deadlines + checklist |
 | `/import/presets` | Import presets | `ImportPresetsPage` — FR-047 broker templates |
 | `/liabilities` | Liabilities | `LiabilitiesPage` — FR-029 mortgages, loans, credits |
 | `/income-events` | Income events | `IncomeEventsPage` — FR-024 dividends, interest, coupons; FR-033 coupon schedule |
-| `/settings` | Account settings | `SettingsPage` — profile; NFR-002 export, FR-035/036 sync stubs, NFR-003 audit |
+| `/settings` | Account settings | `SettingsPage` — profile; `DocumentAttachmentsSection`; NFR-002 export, FR-035/036 sync stubs, NFR-003 audit |
+
+Sidebar (`AppShell`): Import presets, Tax settings, Tax calendar linked alongside primary nav.
 
 Protected shell: `ProtectedRoute` → `AppShell`.
 

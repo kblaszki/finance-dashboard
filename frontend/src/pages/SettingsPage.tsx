@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../state/auth";
 import { updateEmail, updatePassword, updateProfile } from "../api/authApi";
 import { DataAutomationSection } from "../components/DataAutomationSection";
+import { DocumentAttachmentsSection } from "../components/DocumentAttachmentsSection";
 
 export function SettingsPage() {
   const { user, refreshUser } = useAuth();
@@ -171,6 +172,7 @@ export function SettingsPage() {
       </section>
 
       <DataAutomationSection />
+      <DocumentAttachmentsSection />
     </div>
   );
 }

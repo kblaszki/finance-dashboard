@@ -1,5 +1,5 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-import { badRequest } from "./routes/httpSupport";
+import { badRequest, notFound } from "./routes/httpSupport";
 import { getCategoryForUser } from "./categories";
 
 type DbClient = PrismaClient | Prisma.TransactionClient;
@@ -108,7 +108,7 @@ export async function updateCategorizationRule(
   input: Partial<CategorizationRuleInput>,
 ) {
   const existing = await getCategorizationRuleForUser(db, userId, id);
-  if (!existing) throw badRequest("Rule not found");
+  if (!existing) throw notFound("Rule not found");
   if (input.categoryId != null) {
     const category = await getCategoryForUser(db, userId, input.categoryId);
     if (!category) throw badRequest("Invalid categoryId");
@@ -129,7 +129,7 @@ export async function updateCategorizationRule(
 
 export async function deleteCategorizationRule(db: DbClient, userId: number, id: number): Promise<void> {
   const existing = await getCategorizationRuleForUser(db, userId, id);
-  if (!existing) throw badRequest("Rule not found");
+  if (!existing) throw notFound("Rule not found");
   await db.categorizationRule.delete({ where: { id } });
 }
 

@@ -1,5 +1,5 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-import { badRequest } from "./routes/httpSupport";
+import { badRequest, notFound } from "./routes/httpSupport";
 
 type DbClient = PrismaClient | Prisma.TransactionClient;
 
@@ -12,7 +12,7 @@ export type BankConnectionInput = {
 
 async function assertBankAccount(db: DbClient, userId: number, accountId: number) {
   const account = await db.account.findFirst({ where: { id: accountId, userId } });
-  if (!account) throw badRequest("Invalid accountId");
+  if (!account) throw notFound("Account not found");
   if (account.accountType !== "BANK") {
     throw badRequest("PSD2 connections require a BANK account");
   }
@@ -55,7 +55,7 @@ export async function createBankConnection(
 
 export async function authorizeBankConnectionStub(db: DbClient, userId: number, id: number) {
   const row = await db.bankConnection.findFirst({ where: { id, userId } });
-  if (!row) throw badRequest("Bank connection not found");
+  if (!row) throw notFound("Bank connection not found");
 
   const consentExpiresAt = new Date();
   consentExpiresAt.setUTCDate(consentExpiresAt.getUTCDate() + 90);
@@ -73,7 +73,7 @@ export async function authorizeBankConnectionStub(db: DbClient, userId: number, 
 
 export async function deleteBankConnection(db: DbClient, userId: number, id: number): Promise<void> {
   const row = await db.bankConnection.findFirst({ where: { id, userId } });
-  if (!row) throw badRequest("Bank connection not found");
+  if (!row) throw notFound("Bank connection not found");
   await db.bankConnection.delete({ where: { id } });
 }
 

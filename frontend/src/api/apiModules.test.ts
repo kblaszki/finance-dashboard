@@ -123,6 +123,7 @@ import {
   fetchCategorizationRules,
   createCategorizationRule,
   deleteCategorizationRule,
+  updateCategorizationRule,
 } from './categorizationRulesApi'
 import { fetchBudgetAlerts } from './budgetsApi'
 import { fetchAccountSyncSettings, upsertAccountSyncSetting, runAccountSync } from './accountSyncApi'
@@ -888,6 +889,9 @@ describe('API modules', () => {
 
     await deleteDocumentAttachment(5)
     expect(apiClient.delete).toHaveBeenCalledWith('/api/document-attachments/5')
+
+    await updateCategorizationRule(7, { active: false })
+    expect(apiClient.put).toHaveBeenCalledWith('/api/categorization-rules/7', { active: false })
 
     await deleteBankConnection(6)
     expect(apiClient.delete).toHaveBeenCalledWith('/api/bank-connections/6')

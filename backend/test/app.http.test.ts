@@ -2371,10 +2371,26 @@ test("GET/POST /api/income-events supports CRUD (FR-024)", async () => {
   assert.equal(createRes.body.taxType, "belka");
 
   const listRes = await request(app)
-    .get("/api/income-events")
+    .get(`/api/income-events?accountId=${accountRes.body.id}&from=2026-01-01&to=2026-12-31`)
     .set("Authorization", `Bearer ${token}`);
   assert.equal(listRes.status, 200);
   assert.equal(listRes.body.length, 1);
+
+  const divRes = await request(app)
+    .post("/api/income-events")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId: accountRes.body.id,
+      eventType: "dividend",
+      taxType: "pit38",
+      amount: 200,
+      currency: "PLN",
+      date: "2026-05-01T12:00:00.000Z",
+      sourceCountry: "US",
+      foreignTaxPaid: 30,
+      withheldTax: 0,
+    });
+  assert.equal(divRes.status, 201);
 
   const taxRes = await request(app)
     .get("/api/stats/tax-report?year=2026&currency=PLN")
@@ -2385,13 +2401,17 @@ test("GET/POST /api/income-events supports CRUD (FR-024)", async () => {
   const updateRes = await request(app)
     .put(`/api/income-events/${createRes.body.id}`)
     .set("Authorization", `Bearer ${token}`)
-    .send({ amount: 150 });
+    .send({ amount: 150, withheldTax: 25, description: "Updated interest" });
   assert.equal(updateRes.status, 200);
 
   const delRes = await request(app)
     .delete(`/api/income-events/${createRes.body.id}`)
     .set("Authorization", `Bearer ${token}`);
   assert.equal(delRes.status, 204);
+
+  await request(app)
+    .delete(`/api/income-events/${divRes.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
 });
 
 test("GET/POST /api/liabilities and net worth subtracts balance (FR-029)", async () => {
@@ -2412,6 +2432,19 @@ test("GET/POST /api/liabilities and net worth subtracts balance (FR-029)", async
     .set("Authorization", `Bearer ${token}`);
   assert.equal(nwBefore.status, 200);
   assert.equal(nwBefore.body.totalLiabilities, 200000);
+
+  const listRes = await request(app)
+    .get("/api/liabilities")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(listRes.status, 200);
+  assert.equal(listRes.body.length, 1);
+
+  const updateRes = await request(app)
+    .put(`/api/liabilities/${createRes.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ balance: 180000, name: "Mortgage updated" });
+  assert.equal(updateRes.status, 200);
+  assert.equal(updateRes.body.balance, 180000);
 
   const delRes = await request(app)
     .delete(`/api/liabilities/${createRes.body.id}`)
@@ -2443,12 +2476,268 @@ test("POST /api/property-cash-flows on REAL_ESTATE account (FR-030)", async () =
     });
   assert.equal(flowRes.status, 201);
 
+  const listRes = await request(app)
+    .get(`/api/property-cash-flows?accountId=${accountRes.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(listRes.status, 200);
+  assert.equal(listRes.body.length, 1);
+
+  const updateRes = await request(app)
+    .put(`/api/property-cash-flows/${flowRes.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ amount: 3200 });
+  assert.equal(updateRes.status, 200);
+  assert.equal(updateRes.body.amount, 3200);
+
   const taxRes = await request(app)
     .get("/api/stats/tax-report?year=2026&currency=PLN")
     .set("Authorization", `Bearer ${token}`);
   assert.equal(taxRes.status, 200);
   assert.equal(taxRes.body.rental.available, true);
-  assert.equal(taxRes.body.rental.rentalIncome, 3000);
+  assert.equal(taxRes.body.rental.rentalIncome, 3200);
+
+  const delFlowRes = await request(app)
+    .delete(`/api/property-cash-flows/${flowRes.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(delFlowRes.status, 204);
+});
+
+test("auxiliary routes: attachments, presets, property sales, tax loss, sync, calendar", async () => {
+  const { token } = await createUserAndToken();
+  const realEstate = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "REAL_ESTATE",
+      name: "Sale property",
+      currency: "PLN",
+      openingBalance: 500000,
+    });
+  const bank = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountType: "BANK", name: "Bank aux", currency: "PLN", openingBalance: 1000 });
+  const broker = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountType: "BROKERAGE", name: "Broker aux", currency: "PLN", openingBalance: 0 });
+
+  const attachRes = await request(app)
+    .post("/api/document-attachments")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      entityType: "income_event",
+      entityId: 1,
+      filename: "note.pdf",
+      description: "Aux test",
+    });
+  assert.equal(attachRes.status, 201);
+
+  const attachList = await request(app)
+    .get("/api/document-attachments?entityType=income_event")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(attachList.status, 200);
+  assert.equal(attachList.body.length, 1);
+
+  const presetsRes = await request(app).get("/api/import/presets").set("Authorization", `Bearer ${token}`);
+  assert.equal(presetsRes.status, 200);
+  assert.ok(Array.isArray(presetsRes.body.builtin));
+
+  const presetCreate = await request(app)
+    .post("/api/import/presets")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      name: "Custom",
+      broker: "csv",
+      targetType: "cash_flow",
+      columnMapping: { date: "Date" },
+    });
+  assert.equal(presetCreate.status, 201);
+
+  const saleRes = await request(app)
+    .post("/api/property-sales")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId: realEstate.body.id,
+      soldOn: "2026-03-01T12:00:00.000Z",
+      proceeds: 600000,
+      acquisitionCost: 500000,
+      improvementsCost: 10000,
+      currency: "PLN",
+    });
+  assert.equal(saleRes.status, 201);
+
+  const salesList = await request(app)
+    .get(`/api/property-sales?accountId=${realEstate.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(salesList.status, 200);
+  assert.equal(salesList.body.length, 1);
+
+  const lossRes = await request(app)
+    .put("/api/tax-loss-carryforward")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ taxYear: 2025, lossAmount: 1500, note: "Carry" });
+  assert.equal(lossRes.status, 200);
+
+  const lossList = await request(app)
+    .get("/api/tax-loss-carryforward")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(lossList.status, 200);
+  assert.equal(lossList.body.length, 1);
+
+  const syncPut = await request(app)
+    .put(`/api/account-sync/${broker.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ syncEnabled: true, provider: "stub" });
+  assert.equal(syncPut.status, 200);
+
+  const syncRun = await request(app)
+    .post(`/api/account-sync/${broker.body.id}/run`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({});
+  assert.equal(syncRun.status, 200);
+
+  await request(app)
+    .put(`/api/account-sync/${bank.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ syncEnabled: true });
+  const bankSyncRun = await request(app)
+    .post(`/api/account-sync/${bank.body.id}/run`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({});
+  assert.equal(bankSyncRun.status, 200);
+  assert.equal(bankSyncRun.body.status, "stub");
+
+  const badAttach = await request(app)
+    .post("/api/document-attachments")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ entityType: "account", entityId: 1, filename: "x.pdf" });
+  assert.equal(badAttach.status, 400);
+
+  const exemptSale = await request(app)
+    .post("/api/property-sales")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId: realEstate.body.id,
+      soldOn: "2026-04-01T12:00:00.000Z",
+      proceeds: 100,
+      acquisitionCost: 50,
+      fiveYearExemption: true,
+      currency: "PLN",
+    });
+  assert.equal(exemptSale.status, 201);
+  assert.equal(exemptSale.body.taxableGain, 0);
+
+  const calRes = await request(app)
+    .get("/api/tax-calendar?year=2026")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(calRes.status, 200);
+  assert.ok(calRes.body.checklist);
+
+  const checklistRes = await request(app)
+    .put("/api/tax-checklist")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ taxYear: 2026, itemKey: "pit38", completed: true });
+  assert.equal(checklistRes.status, 200);
+
+  const badExport = await request(app)
+    .get("/api/export/full?format=csv")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(badExport.status, 400);
+
+  await request(app)
+    .delete(`/api/tax-loss-carryforward/${lossList.body[0].id}`)
+    .set("Authorization", `Bearer ${token}`);
+  await request(app)
+    .delete(`/api/property-sales/${saleRes.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  await request(app)
+    .delete(`/api/property-sales/${exemptSale.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  await request(app)
+    .delete(`/api/import/presets/${presetCreate.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  await request(app)
+    .delete(`/api/document-attachments/${attachRes.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+});
+
+test("cross-user account-sync and bank-connection return 404", async () => {
+  const { token: tokenA } = await createUserAndToken();
+  const { token: tokenB } = await createSecondUser();
+
+  const bankRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${tokenA}`)
+    .send({ accountType: "BANK", name: "A Bank", currency: "PLN", openingBalance: 100 });
+  const brokerRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${tokenA}`)
+    .send({ accountType: "BROKERAGE", name: "A Broker", currency: "PLN", openingBalance: 0 });
+
+  const syncRes = await request(app)
+    .put(`/api/account-sync/${brokerRes.body.id}`)
+    .set("Authorization", `Bearer ${tokenB}`)
+    .send({ syncEnabled: true });
+  assert.equal(syncRes.status, 404);
+
+  const connRes = await request(app)
+    .post("/api/bank-connections")
+    .set("Authorization", `Bearer ${tokenA}`)
+    .send({ accountId: bankRes.body.id, bankCode: "MBANK" });
+
+  const crossConn = await request(app)
+    .post(`/api/bank-connections/${connRes.body.id}/authorize`)
+    .set("Authorization", `Bearer ${tokenB}`)
+    .send({});
+  assert.equal(crossConn.status, 404);
+
+  const crossBankAccount = await request(app)
+    .post("/api/bank-connections")
+    .set("Authorization", `Bearer ${tokenB}`)
+    .send({ accountId: bankRes.body.id, bankCode: "MBANK" });
+  assert.equal(crossBankAccount.status, 404);
+});
+
+test("validation errors on auxiliary routes return 4xx", async () => {
+  const { token } = await createUserAndToken();
+
+  const badRule = await request(app)
+    .post("/api/categorization-rules")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ categoryId: 99999, pattern: "X" });
+  assert.equal(badRule.status, 400);
+
+  const badPreset = await request(app)
+    .post("/api/import/presets")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "", broker: "", targetType: "invalid" });
+  assert.equal(badPreset.status, 400);
+
+  const badAttach = await request(app)
+    .post("/api/document-attachments")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ entityType: "bad", entityId: 1, filename: "x.pdf" });
+  assert.equal(badAttach.status, 400);
+
+  const badCoupon = await request(app)
+    .post("/api/coupon-schedules")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId: 1,
+      instrumentId: 1,
+      scheduleType: "invalid",
+      amount: 10,
+      currency: "PLN",
+      date: "2026-01-01T12:00:00.000Z",
+    });
+  assert.equal(badCoupon.status, 400);
+
+  const badPreSell = await request(app)
+    .post("/api/stats/pre-sell-simulator")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ holdingId: 1, quantity: 0 });
+  assert.equal(badPreSell.status, 400);
 });
 
 test("POST /api/asset-valuations on REAL_ESTATE account (DATA-024)", async () => {
@@ -2542,6 +2831,12 @@ test("coupon schedule and record income (FR-033)", async () => {
     .set("Authorization", `Bearer ${token}`);
   assert.equal(incomeRes.status, 200);
   assert.ok(incomeRes.body.some((e: { eventType: string }) => e.eventType === "coupon"));
+
+  const listSched = await request(app)
+    .get(`/api/coupon-schedules?accountId=${accountRes.body.id}&from=2026-01-01&to=2026-12-31`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(listSched.status, 200);
+  assert.equal(listSched.body.length, 1);
 });
 
 test("Phase D automation: rules, alerts, export, audit (FR-034–038, NFR-002–003)", async () => {
@@ -2629,6 +2924,19 @@ test("Phase D automation: rules, alerts, export, audit (FR-034–038, NFR-002–
     .send({});
   assert.equal(authRes.status, 200);
   assert.equal(authRes.body.status, "connected");
+
+  const updateRuleRes = await request(app)
+    .put(`/api/categorization-rules/${ruleRes.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ priority: 5, active: false });
+  assert.equal(updateRuleRes.status, 200);
+  assert.equal(updateRuleRes.body.priority, 5);
+  assert.equal(updateRuleRes.body.active, false);
+
+  const delConnRes = await request(app)
+    .delete(`/api/bank-connections/${connRes.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(delConnRes.status, 204);
 });
 
 test("tax wrappers, position transfers, corporate actions (FR-039–041)", async () => {
@@ -2721,6 +3029,43 @@ test("tax wrappers, position transfers, corporate actions (FR-039–041)", async
     .set("Authorization", `Bearer ${token}`);
   assert.equal(listRes.status, 200);
   assert.equal(listRes.body.length, 1);
+
+  const withdrawalsList = await request(app)
+    .get(`/api/tax-wrapper-withdrawals?accountId=${brokerA.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(withdrawalsList.status, 200);
+  assert.equal(withdrawalsList.body.length, 1);
+
+  const ikzeAccount = await request(app)
+    .put(`/api/accounts/${brokerB.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ taxWrapperType: "ikze" });
+  assert.equal(ikzeAccount.status, 200);
+
+  const ikzeRes = await request(app)
+    .post("/api/ikze-contributions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId: brokerB.body.id,
+      taxYear: 2026,
+      amount: 8000,
+      currency: "PLN",
+      contributedOn: "2026-02-15T12:00:00.000Z",
+    });
+  assert.equal(ikzeRes.status, 201);
+
+  const ikzeList = await request(app)
+    .get("/api/ikze-contributions?taxYear=2026")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(ikzeList.status, 200);
+  assert.ok(ikzeList.body.length >= 1);
+
+  await request(app)
+    .delete(`/api/ikze-contributions/${ikzeRes.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  await request(app)
+    .delete(`/api/tax-wrapper-withdrawals/${withdrawalRes.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
 });
 
 test("POST /api/import/bank-transactions previews mBank CSV (FR-019)", async () => {
@@ -2908,4 +3253,103 @@ test("GET /api/stats/tax-report/export rejects invalid year", async () => {
     .set("Authorization", `Bearer ${token}`);
   assert.equal(res.status, 400);
   assert.match(res.body.error ?? "", /year must be/);
+});
+
+test("GET /api/stats extended: portfolio-history, benchmark, tax-overview, pre-sell", async () => {
+  const { token } = await createUserAndToken();
+  const broker = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountType: "BROKERAGE", name: "Stats broker", currency: "PLN", openingBalance: 10000 });
+
+  await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId: broker.body.id,
+      transactionType: "TRANSFER_IN",
+      amount: 5000,
+      currency: "PLN",
+      category: "FUNDING",
+      date: "2025-06-01T12:00:00.000Z",
+    });
+
+  const instrument = await prisma.instrument.create({
+    data: { instrumentType: "STOCK", symbol: "STATS", exchange: "TEST", currency: "PLN" },
+  });
+
+  const holdingRes = await request(app)
+    .post(`/api/accounts/${broker.body.id}/holdings`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ instrumentId: instrument.id });
+  assert.equal(holdingRes.status, 201);
+
+  await request(app)
+    .post(`/api/holdings/${holdingRes.body.id}/lots`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      side: "BUY",
+      quantity: 10,
+      pricePerUnit: 100,
+      currency: "PLN",
+      tradeDate: "2025-06-02T12:00:00.000Z",
+    });
+
+  const histRes = await request(app)
+    .get("/api/stats/portfolio-history?from=2025-06-01&to=2025-06-30&currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(histRes.status, 200);
+  assert.ok(Array.isArray(histRes.body.points));
+
+  const benchRes = await request(app)
+    .get("/api/stats/benchmark-comparison?from=2025-06-01&to=2025-06-30&benchmark=WIG&currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(benchRes.status, 200);
+
+  const overviewRes = await request(app)
+    .get("/api/stats/tax-overview?year=2025&currency=PLN&snapshot=1")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(overviewRes.status, 200);
+  assert.ok(overviewRes.body.pit38);
+
+  const cryptoCsv = await request(app)
+    .get("/api/stats/tax-report/export?year=2025&format=csv&reportType=crypto_pit")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(cryptoCsv.status, 200);
+  assert.match(cryptoCsv.headers["content-type"] ?? "", /text\/csv/);
+
+  const simRes = await request(app)
+    .post("/api/stats/pre-sell-simulator")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      holdingId: holdingRes.body.id,
+      quantity: 2,
+      salePricePerUnit: 120,
+      saleDate: "2025-12-01T12:00:00.000Z",
+      currency: "PLN",
+    });
+  assert.equal(simRes.status, 200);
+  assert.ok(typeof simRes.body.pit38TaxableAfterLosses === "number");
+
+  const marketStatus = await request(app)
+    .get("/api/market-data/status")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(marketStatus.status, 200);
+
+  const marketSync = await request(app)
+    .post("/api/market-data/sync")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ backfillDays: 1 });
+  assert.equal(marketSync.status, 200);
+
+  const badPreSell = await request(app)
+    .post("/api/stats/pre-sell-simulator")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ holdingId: 99999, quantity: 1 });
+  assert.equal(badPreSell.status, 404);
+
+  const docFilter = await request(app)
+    .get("/api/document-attachments?entityType=transaction&entityId=1")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(docFilter.status, 200);
 });

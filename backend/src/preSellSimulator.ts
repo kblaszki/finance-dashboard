@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { convertAmount } from "./fx";
+import { badRequest, notFound } from "./routes/httpSupport";
 import { computeFifoRealizedEvents } from "./fifoRealizedPnl";
 import { toNumber } from "./accountValuation";
 import {
@@ -50,10 +51,10 @@ export async function simulatePreSellTax(
     },
   });
   if (!holding) {
-    throw new Error("Holding not found");
+    throw notFound("Holding not found");
   }
   if (!Number.isFinite(input.quantity) || input.quantity <= 0) {
-    throw new Error("quantity must be positive");
+    throw badRequest("quantity must be positive");
   }
 
   const account = holding.account;
@@ -102,7 +103,7 @@ export async function simulatePreSellTax(
     toNumber(holding.lots[holding.lots.length - 1]?.pricePerUnit ?? 0) ??
     0;
   if (!Number.isFinite(salePrice) || salePrice <= 0) {
-    throw new Error("salePricePerUnit required when no price history");
+    throw badRequest("salePricePerUnit required when no price history");
   }
 
   const currency = holding.lots[0]?.currency ?? account.currency;

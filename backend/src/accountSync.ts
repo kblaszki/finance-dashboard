@@ -1,5 +1,5 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-import { badRequest } from "./routes/httpSupport";
+import { badRequest, notFound } from "./routes/httpSupport";
 import { syncMarketPrices } from "./marketDataSync";
 
 type DbClient = PrismaClient | Prisma.TransactionClient;
@@ -16,7 +16,7 @@ export type AccountSyncInput = {
 
 async function assertAccountOwned(db: DbClient, userId: number, accountId: number) {
   const account = await db.account.findFirst({ where: { id: accountId, userId } });
-  if (!account) throw badRequest("Invalid accountId");
+  if (!account) throw notFound("Account not found");
   return account;
 }
 

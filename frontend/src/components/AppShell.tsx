@@ -51,6 +51,9 @@ export function AppShell() {
           <NavLink to="/import" className={navLinkClass}>
             Import
           </NavLink>
+          <NavLink to="/import/presets" className={navLinkClass}>
+            Import presets
+          </NavLink>
           <NavLink to="/liabilities" className={navLinkClass}>
             Liabilities
           </NavLink>
@@ -62,6 +65,12 @@ export function AppShell() {
           </NavLink>
           <NavLink to="/tax" className={navLinkClass}>
             Tax (PL)
+          </NavLink>
+          <NavLink to="/tax/settings" className={navLinkClass}>
+            Tax settings
+          </NavLink>
+          <NavLink to="/tax/calendar" className={navLinkClass}>
+            Tax calendar
           </NavLink>
           <NavLink to="/settings" className={navLinkClass}>
             Settings

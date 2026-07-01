@@ -3,6 +3,7 @@ import {
   createCategorizationRule,
   deleteCategorizationRule,
   fetchCategorizationRules,
+  updateCategorizationRule,
   type CategorizationRule,
   type CategorizationRuleInput,
 } from '../api/categorizationRulesApi'
@@ -42,6 +43,15 @@ export function CategorizationRulesSection() {
     },
     [form, reload],
   )
+
+  async function handleToggleActive(row: CategorizationRule) {
+    try {
+      await updateCategorizationRule(row.id, { active: !row.active })
+      await reload()
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'Failed to update')
+    }
+  }
 
   async function handleDelete(row: CategorizationRule) {
     if (!window.confirm(`Delete rule "${row.pattern}"?`)) return
@@ -101,6 +111,7 @@ export function CategorizationRulesSection() {
               <th>Category</th>
               <th>Type</th>
               <th>Priority</th>
+              <th>Active</th>
               <th />
             </tr>
           </thead>
@@ -111,6 +122,15 @@ export function CategorizationRulesSection() {
                 <td>{row.categoryName}</td>
                 <td>{row.matchType}</td>
                 <td>{row.priority}</td>
+                <td>
+                  <button
+                    type="button"
+                    className="btn-link"
+                    onClick={() => void handleToggleActive(row)}
+                  >
+                    {row.active ? 'On' : 'Off'}
+                  </button>
+                </td>
                 <td>
                   <button type="button" className="btn-link danger" onClick={() => void handleDelete(row)}>
                     Delete
