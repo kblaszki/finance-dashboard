@@ -29,7 +29,7 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 | `/tax/calendar` | Tax calendar | `TaxCalendarPage` — FR-045 deadlines + checklist |
 | `/import/presets` | Import presets | `ImportPresetsPage` — FR-047 broker templates |
 | `/liabilities` | Liabilities | `LiabilitiesPage` — FR-029 mortgages, loans, credits |
-| `/income-events` | Income events | `IncomeEventsPage` — FR-024 dividends, interest, coupons |
+| `/income-events` | Income events | `IncomeEventsPage` — FR-024 dividends, interest, coupons; FR-033 coupon schedule |
 | `/settings` | Account settings | `SettingsPage` — username, email, password |
 
 Protected shell: `ProtectedRoute` → `AppShell`.
@@ -58,6 +58,8 @@ Preferred async pattern for page/widget data: [`frontend/src/hooks/useAsyncData.
 | `incomeEventsApi.ts` | `/api/income-events` |
 | `liabilitiesApi.ts` | `/api/liabilities` |
 | `propertyCashFlowsApi.ts` | `/api/property-cash-flows` |
+| `assetValuationsApi.ts` | `/api/asset-valuations` |
+| `couponSchedulesApi.ts` | `/api/coupon-schedules` |
 | `taxWrappersApi.ts` | `/api/tax-wrapper-withdrawals`, `/api/ikze-contributions` |
 | `positionTransfersApi.ts` | `/api/position-transfers` |
 | `corporateActionsApi.ts` | `/api/corporate-actions` |

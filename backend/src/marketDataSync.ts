@@ -2,7 +2,12 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import { recomputeAccountValuationsFrom } from "./accountValuation";
 import { fetchEodTimeSeries } from "./marketData";
 import { defaultBackfillDays } from "./marketDataEpoch";
-import { isSyncableInstrumentType, mapInstrumentToProviderSymbol } from "./marketDataSymbols";
+import {
+  isCryptoInstrument,
+  isSyncableInstrumentType,
+  mapCryptoToProviderSymbol,
+  mapInstrumentToProviderSymbol,
+} from "./marketDataSymbols";
 
 type DbClient = PrismaClient | Prisma.TransactionClient;
 
@@ -56,24 +61,32 @@ export async function syncMarketPrices(
         ? { account: { userId: opts.userId } }
         : {}),
     },
-    include: { instrument: true, account: { select: { id: true, userId: true } } },
+    include: { instrument: true, account: { select: { id: true, userId: true, accountType: true } } },
   });
 
   const instrumentById = new Map<number, (typeof holdings)[0]["instrument"]>();
+  const cryptoInstrumentIds = new Set<number>();
   for (const h of holdings) {
     instrumentById.set(h.instrumentId, h.instrument);
+    if (isCryptoInstrument(h.account.accountType, h.instrument.instrumentType)) {
+      cryptoInstrumentIds.add(h.instrumentId);
+    }
   }
 
   const affectedAccountIds = new Set<number>();
   let earliestValuationDate: Date | null = null;
 
   for (const instrument of instrumentById.values()) {
-    if (!isSyncableInstrumentType(instrument.instrumentType)) {
+    const isCrypto = cryptoInstrumentIds.has(instrument.id);
+    const isEquity = isSyncableInstrumentType(instrument.instrumentType);
+    if (!isCrypto && !isEquity) {
       result.skipped += 1;
       continue;
     }
 
-    const providerSymbol = mapInstrumentToProviderSymbol(instrument);
+    const providerSymbol = isCrypto
+      ? mapCryptoToProviderSymbol(instrument.symbol, instrument.currency)
+      : mapInstrumentToProviderSymbol(instrument);
     if (!providerSymbol) {
       result.skipped += 1;
       result.errors.push({

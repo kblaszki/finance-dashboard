@@ -94,6 +94,14 @@ User-scoped `Category` tree (`parentId`, `sortOrder`). Defaults seeded on regist
 
 `Account.metalGrams` — optional grams on `PRECIOUS_METAL` accounts (FR-032).
 
+## Asset valuations (DATA-024)
+
+`AssetValuation` — dated manual value for `REAL_ESTATE`, `MANUAL`, `OTHER`, or `PRECIOUS_METAL` accounts (optional `instrumentId`). Creating a row with `accountId` updates `cashBalance` and valuation snapshots like manual revalue.
+
+## Coupon schedules (FR-033)
+
+`CouponSchedule` — planned bond/ETF `coupon` or `amortization` payment on a brokerage holding. `record-income` creates a linked `IncomeEvent` (`coupon` or `interest`).
+
 ## Tax wrappers (FR-039, DATA-018/023)
 
 `Account.taxWrapperType` — `standard`, `ike`, `ikze`, `ppk` on brokerage accounts. IKE/IKZE/PPK holdings are excluded from PIT-38 unless a `TaxWrapperWithdrawal` with `includeInPit38` exists in the sell tax year.

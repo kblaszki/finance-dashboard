@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mapInstrumentToProviderSymbol, isSyncableInstrumentType } from "./marketDataSymbols";
+import { mapInstrumentToProviderSymbol, isSyncableInstrumentType, isCryptoInstrument, mapCryptoToProviderSymbol } from "./marketDataSymbols";
 
 test("isSyncableInstrumentType allows STOCK and ETF only", () => {
   assert.equal(isSyncableInstrumentType("STOCK"), true);
@@ -47,4 +47,12 @@ test("mapInstrumentToProviderSymbol returns null for bonds and unknown exchanges
     mapInstrumentToProviderSymbol({ symbol: "FOO", exchange: "UNKNOWN", instrumentType: "STOCK" }),
     null,
   );
+});
+
+test("isCryptoInstrument and mapCryptoToProviderSymbol", () => {
+  assert.equal(isCryptoInstrument("CRYPTO", "STOCK"), true);
+  assert.equal(isCryptoInstrument("BROKERAGE", "CRYPTO"), true);
+  assert.equal(isCryptoInstrument("BROKERAGE", "STOCK"), false);
+  assert.equal(mapCryptoToProviderSymbol("btc", "USD"), "BTC/USD");
+  assert.equal(mapCryptoToProviderSymbol("ETH/EUR", "PLN"), "ETH/EUR");
 });

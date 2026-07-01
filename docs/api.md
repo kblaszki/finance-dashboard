@@ -148,6 +148,25 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 | PUT | `/api/property-cash-flows/:id` | Yes | Update |
 | DELETE | `/api/property-cash-flows/:id` | Yes | Delete |
 
+## Asset valuations (DATA-024)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/asset-valuations` | Yes | List timeline; `accountId`, `instrumentId`, `from`, `to` |
+| POST | `/api/asset-valuations` | Yes | Create — `{ accountId?, instrumentId?, value, currency, date, source?, description? }`; updates account balance when `accountId` is REAL_ESTATE/MANUAL/OTHER/PRECIOUS_METAL |
+| DELETE | `/api/asset-valuations/:id` | Yes | Delete record (does not revert account balance) |
+
+## Coupon schedules (FR-033)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/coupon-schedules` | Yes | List; `accountId`, `instrumentId`, `from`, `to` |
+| POST | `/api/coupon-schedules` | Yes | Create on BOND/ETF holding — `{ accountId, instrumentId, scheduleType, amount, currency, date, description? }` (`scheduleType`: `coupon`, `amortization`) |
+| POST | `/api/coupon-schedules/:id/record-income` | Yes | Create linked `IncomeEvent` and mark recorded |
+| DELETE | `/api/coupon-schedules/:id` | Yes | Delete if not yet recorded |
+
+Market sync (`POST /api/market-data/sync`) includes **crypto** holdings on `CRYPTO` accounts (FR-031) using Twelve Data pair symbols (e.g. `BTC/USD`).
+
 ## Tax wrappers (FR-039, DATA-018/023)
 
 | Method | Path | Auth | Description |
@@ -198,4 +217,4 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | `/api/market-data/status` | Yes | Last sync time, held instrument count, stale count |
-| POST | `/api/market-data/sync` | Yes | Fetch EOD prices for ever-bought STOCK/ETF (default backfill since 2020) + NBP FX history; body `{ backfillDays? }` |
+| POST | `/api/market-data/sync` | Yes | Fetch EOD prices for ever-bought STOCK/ETF and crypto on CRYPTO accounts (FR-031; default backfill since 2020) + NBP FX history; body `{ backfillDays? }` |

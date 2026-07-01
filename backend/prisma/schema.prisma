@@ -28,6 +28,8 @@ model User {
   propertySales PropertySale[]
   documentAttachments DocumentAttachment[]
   importPresets ImportPreset[]
+  assetValuations AssetValuation[]
+  couponSchedules CouponSchedule[]
 }
 
 model Account {
@@ -60,6 +62,8 @@ model Account {
   positionTransfersTo    PositionTransfer[]     @relation("PositionTransferTo")
   corporateActions       CorporateAction[]
   propertySales          PropertySale[]
+  assetValuations        AssetValuation[]
+  couponSchedules        CouponSchedule[]
 
   @@unique([userId, name])
   @@index([userId, accountType])
@@ -146,6 +150,7 @@ model IncomeEvent {
   sourceCountry  String?
   foreignTaxPaid Decimal     @default(0)
   createdAt      DateTime    @default(now())
+  couponSchedule CouponSchedule?
 
   @@index([userId, occurredOn])
   @@index([accountId, occurredOn])
@@ -360,6 +365,8 @@ model Instrument {
   incomeEvents           IncomeEvent[]
   corporateActions       CorporateAction[]
   positionTransfers      PositionTransfer[]
+  assetValuations        AssetValuation[]
+  couponSchedules        CouponSchedule[]
 
   @@unique([symbol, exchange, source])
   @@index([symbol])
@@ -477,4 +484,44 @@ model ImportRow {
 
   @@unique([accountId, externalHash])
   @@index([batchId])
+}
+
+model AssetValuation {
+  id           Int         @id @default(autoincrement())
+  userId       Int
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId    Int?
+  account      Account?    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  instrumentId Int?
+  instrument   Instrument? @relation(fields: [instrumentId], references: [id], onDelete: SetNull)
+  valuedOn     DateTime
+  value        Decimal
+  currency     String
+  source       String      @default("manual")
+  description  String?
+  createdAt    DateTime    @default(now())
+
+  @@index([userId, accountId, valuedOn])
+  @@index([userId, instrumentId, valuedOn])
+}
+
+model CouponSchedule {
+  id            Int          @id @default(autoincrement())
+  userId        Int
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId     Int
+  account       Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  instrumentId  Int
+  instrument    Instrument   @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  scheduleType  String
+  paymentOn     DateTime
+  amount        Decimal
+  currency      String
+  description   String?
+  incomeEventId Int?         @unique
+  incomeEvent   IncomeEvent? @relation(fields: [incomeEventId], references: [id], onDelete: SetNull)
+  createdAt     DateTime     @default(now())
+
+  @@index([userId, paymentOn])
+  @@index([accountId, instrumentId])
 }

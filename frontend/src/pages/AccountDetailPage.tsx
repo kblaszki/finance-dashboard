@@ -21,6 +21,7 @@ import { BrokerImportForm } from '../components/BrokerImportForm'
 import { InstrumentPicker } from '../components/InstrumentPicker'
 import { ManualAccountRevalueForm } from '../components/ManualAccountRevalueForm'
 import { PropertyCashFlowsSection } from '../components/PropertyCashFlowsSection'
+import { AssetValuationsSection } from '../components/AssetValuationsSection'
 import { PropertySalesSection } from '../components/PropertySalesSection'
 import { RentalTaxMethodForm } from '../components/RentalTaxMethodForm'
 import { PreciousMetalGramsForm } from '../components/PreciousMetalGramsForm'
@@ -194,16 +195,23 @@ export function AccountDetailPage() {
       </section>
 
       {isRevalueAccountType(account.accountType) && (
-        <section className="card">
-          <h2>Update estimated value</h2>
-          <p className="muted">Revalue this asset (e.g. property estimate) without a regular income/expense entry.</p>
-          <ManualAccountRevalueForm
+        <>
+          <section className="card">
+            <h2>Update estimated value</h2>
+            <p className="muted">Revalue this asset (e.g. property estimate) without a regular income/expense entry.</p>
+            <ManualAccountRevalueForm
+              accountId={accountId}
+              currentValue={account.cashBalance}
+              currency={account.currency}
+              onSaved={reload}
+            />
+          </section>
+          <AssetValuationsSection
             accountId={accountId}
-            currentValue={account.cashBalance}
             currency={account.currency}
             onSaved={reload}
           />
-        </section>
+        </>
       )}
 
       {account.accountType === 'REAL_ESTATE' && (

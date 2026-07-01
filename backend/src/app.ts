@@ -70,6 +70,8 @@ import { createPropertySalesRouter } from "./routes/propertySalesRoutes";
 import { createDocumentAttachmentsRouter } from "./routes/documentAttachmentsRoutes";
 import { createImportPresetsRouter } from "./routes/importPresetsRoutes";
 import { createTaxCalendarRouter } from "./routes/taxCalendarRoutes";
+import { createAssetValuationsRouter } from "./routes/assetValuationsRoutes";
+import { createCouponSchedulesRouter } from "./routes/couponSchedulesRoutes";
 import { handleRouteError } from "./routes/httpSupport";
 
 dotenv.config();
@@ -314,6 +316,27 @@ app.use(
 
 app.use(
   createPropertyCashFlowsRouter({
+    prisma,
+    requireAuth,
+    uid,
+    parseDateBody,
+    transactionDateFilter,
+  }),
+);
+
+app.use(
+  createAssetValuationsRouter({
+    prisma,
+    requireAuth,
+    uid,
+    parseDateBody,
+    transactionDateFilter,
+    getFxRatesPlnPerUnit,
+  }),
+);
+
+app.use(
+  createCouponSchedulesRouter({
     prisma,
     requireAuth,
     uid,

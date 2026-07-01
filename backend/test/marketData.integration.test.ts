@@ -151,3 +151,67 @@ test("syncMarketPrices skips unmapped instruments", async () => {
   assert.equal(result.skipped, 1);
   assert.equal(result.errors.length, 0);
 });
+
+test("syncMarketPrices syncs crypto holdings on CRYPTO account (FR-031)", async () => {
+  const passwordHash = await hashPassword("testpass123");
+  const user = await prisma.user.create({
+    data: { email: "crypto@test.local", username: "cryptouser", passwordHash },
+  });
+  const account = await prisma.account.create({
+    data: {
+      userId: user.id,
+      accountType: "CRYPTO",
+      name: "Wallet",
+      currency: "USD",
+      openingBalance: 0,
+      cashBalance: 0,
+    },
+  });
+  const instrument = await prisma.instrument.create({
+    data: {
+      instrumentType: "OTHER",
+      symbol: "BTC",
+      exchange: null,
+      currency: "USD",
+      source: "manual",
+    },
+  });
+  const holding = await prisma.holding.create({
+    data: { accountId: account.id, instrumentId: instrument.id, quantity: 0.5 },
+  });
+  await prisma.holdingLot.create({
+    data: {
+      holdingId: holding.id,
+      side: "BUY",
+      quantity: 0.5,
+      quantityAfter: 0.5,
+      pricePerUnit: 40000,
+      totalPrice: 20000,
+      currency: "USD",
+      tradeDate: new Date("2025-01-05T12:00:00.000Z"),
+    },
+  });
+
+  const mockFetch = async (url: string) => {
+    assert.ok(url.includes("BTC%2FUSD") || url.includes("BTC/USD"));
+    return {
+      ok: true,
+      json: async () => ({
+        values: [{ datetime: "2025-01-10", close: "45000.00" }],
+      }),
+    } as Response;
+  };
+
+  const result = await syncMarketPrices(prisma, async () => MOCK_FX, {
+    apiKey: "test-key",
+    fetchFn: mockFetch,
+    backfillDays: 1,
+  });
+
+  assert.equal(result.synced, 1);
+  const valuations = await prisma.instrumentValuation.findMany({
+    where: { instrumentId: instrument.id, source: MARKET_DATA_SOURCE },
+  });
+  assert.equal(valuations.length, 1);
+  assert.equal(Number(valuations[0].price), 45000);
+});

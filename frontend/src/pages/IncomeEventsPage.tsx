@@ -13,6 +13,7 @@ import {
 import { useAsyncData } from '../hooks/useAsyncData'
 import { SUPPORTED_CURRENCIES } from '../state/currency'
 import { formatMoney } from '../utils/format'
+import { CouponSchedulesSection } from '../components/CouponSchedulesSection'
 
 const EVENT_TYPES: IncomeEventType[] = [
   'dividend',
@@ -253,6 +254,8 @@ export function IncomeEventsPage() {
           </div>
         )}
       </section>
+
+      <CouponSchedulesSection />
     </div>
   )
 }

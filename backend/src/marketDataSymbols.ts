@@ -2,12 +2,26 @@ export type InstrumentSymbolInput = {
   symbol: string;
   exchange: string | null;
   instrumentType: string;
+  currency?: string;
 };
 
 const SYNCABLE_TYPES = new Set(["STOCK", "ETF"]);
 
 export function isSyncableInstrumentType(instrumentType: string): boolean {
   return SYNCABLE_TYPES.has(instrumentType.trim().toUpperCase());
+}
+
+export function isCryptoInstrument(accountType: string, instrumentType: string): boolean {
+  return accountType === "CRYPTO" || instrumentType.trim().toUpperCase() === "CRYPTO";
+}
+
+/** Maps crypto symbol to Twelve Data pair format (e.g. BTC/USD). */
+export function mapCryptoToProviderSymbol(symbol: string, currency: string): string | null {
+  const base = symbol.trim().toUpperCase();
+  if (!base) return null;
+  if (base.includes("/")) return base;
+  const quote = currency.trim().toUpperCase() || "USD";
+  return `${base}/${quote}`;
 }
 
 /** Maps internal instrument metadata to a Twelve Data symbol (MIC suffix when needed). */

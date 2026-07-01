@@ -107,6 +107,17 @@ import { fetchPropertySales, createPropertySale } from './propertySalesApi'
 import { fetchTaxCalendar, updateTaxChecklistItem } from './taxCalendarApi'
 import { fetchImportPresets, createImportPreset } from './importPresetsApi'
 import { fetchDocumentAttachments, createDocumentAttachment } from './documentAttachmentsApi'
+import {
+  fetchAssetValuations,
+  createAssetValuation,
+  deleteAssetValuation,
+} from './assetValuationsApi'
+import {
+  fetchCouponSchedules,
+  createCouponSchedule,
+  recordCouponScheduleIncome,
+  deleteCouponSchedule,
+} from './couponSchedulesApi'
 
 describe('API modules', () => {
   beforeEach(() => {
@@ -749,5 +760,54 @@ describe('API modules', () => {
       entityId: 4,
       filename: 'invoice.pdf',
     })
+  })
+
+  it('assetValuationsApi calls correct endpoints', async () => {
+    await fetchAssetValuations({ accountId: 3 })
+    expect(apiClient.get).toHaveBeenCalledWith('/api/asset-valuations?accountId=3')
+
+    await createAssetValuation({
+      accountId: 3,
+      value: 500000,
+      currency: 'PLN',
+      date: '2026-01-01',
+    })
+    expect(apiClient.post).toHaveBeenCalledWith('/api/asset-valuations', {
+      accountId: 3,
+      value: 500000,
+      currency: 'PLN',
+      date: '2026-01-01',
+    })
+
+    await deleteAssetValuation(9)
+    expect(apiClient.delete).toHaveBeenCalledWith('/api/asset-valuations/9')
+  })
+
+  it('couponSchedulesApi calls correct endpoints', async () => {
+    await fetchCouponSchedules({ accountId: 2 })
+    expect(apiClient.get).toHaveBeenCalledWith('/api/coupon-schedules?accountId=2')
+
+    await createCouponSchedule({
+      accountId: 2,
+      instrumentId: 7,
+      scheduleType: 'coupon',
+      amount: 50,
+      currency: 'PLN',
+      date: '2026-06-01',
+    })
+    expect(apiClient.post).toHaveBeenCalledWith('/api/coupon-schedules', {
+      accountId: 2,
+      instrumentId: 7,
+      scheduleType: 'coupon',
+      amount: 50,
+      currency: 'PLN',
+      date: '2026-06-01',
+    })
+
+    await recordCouponScheduleIncome(4)
+    expect(apiClient.post).toHaveBeenCalledWith('/api/coupon-schedules/4/record-income', {})
+
+    await deleteCouponSchedule(4)
+    expect(apiClient.delete).toHaveBeenCalledWith('/api/coupon-schedules/4')
   })
 })

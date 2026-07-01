@@ -2409,6 +2409,99 @@ test("POST /api/property-cash-flows on REAL_ESTATE account (FR-030)", async () =
   assert.equal(taxRes.body.rental.rentalIncome, 3000);
 });
 
+test("POST /api/asset-valuations on REAL_ESTATE account (DATA-024)", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "REAL_ESTATE",
+      name: "House",
+      currency: "PLN",
+      openingBalance: 800000,
+    });
+  assert.equal(accountRes.status, 201);
+
+  const valRes = await request(app)
+    .post("/api/asset-valuations")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId: accountRes.body.id,
+      value: 850000,
+      currency: "PLN",
+      date: "2026-01-15T12:00:00.000Z",
+      description: "Market estimate",
+    });
+  assert.equal(valRes.status, 201);
+  assert.equal(valRes.body.value, 850000);
+
+  const listRes = await request(app)
+    .get(`/api/asset-valuations?accountId=${accountRes.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(listRes.status, 200);
+  assert.equal(listRes.body.length, 1);
+
+  const accountGet = await request(app)
+    .get(`/api/accounts/${accountRes.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(accountGet.body.cashBalance, 850000);
+});
+
+test("coupon schedule and record income (FR-033)", async () => {
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountType: "BROKERAGE", name: "Bond broker", currency: "PLN", openingBalance: 5000 });
+  const instrumentRes = await request(app)
+    .post("/api/instruments")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ instrumentType: "ETF", symbol: "AGBD", currency: "PLN" });
+  const holdingRes = await request(app)
+    .post(`/api/accounts/${accountRes.body.id}/holdings`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ instrumentId: instrumentRes.body.id });
+  assert.equal(holdingRes.status, 201);
+
+  await request(app)
+    .post(`/api/holdings/${holdingRes.body.id}/lots`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      side: "BUY",
+      quantity: 10,
+      pricePerUnit: 100,
+      currency: "PLN",
+      tradeDate: "2025-01-10T12:00:00.000Z",
+    });
+
+  const schedRes = await request(app)
+    .post("/api/coupon-schedules")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId: accountRes.body.id,
+      instrumentId: instrumentRes.body.id,
+      scheduleType: "coupon",
+      amount: 45,
+      currency: "PLN",
+      date: "2026-04-01T12:00:00.000Z",
+    });
+  assert.equal(schedRes.status, 201);
+  assert.equal(schedRes.body.recorded, false);
+
+  const recordRes = await request(app)
+    .post(`/api/coupon-schedules/${schedRes.body.id}/record-income`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({});
+  assert.equal(recordRes.status, 200);
+  assert.equal(recordRes.body.recorded, true);
+
+  const incomeRes = await request(app)
+    .get("/api/income-events")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(incomeRes.status, 200);
+  assert.ok(incomeRes.body.some((e: { eventType: string }) => e.eventType === "coupon"));
+});
+
 test("tax wrappers, position transfers, corporate actions (FR-039–041)", async () => {
   const { token } = await createUserAndToken();
   const brokerA = await request(app)
