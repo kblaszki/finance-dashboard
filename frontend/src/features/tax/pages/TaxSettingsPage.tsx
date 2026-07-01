@@ -1,18 +1,18 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { fetchAccounts, type Account } from '../api/accountsApi'
-import { fetchInstruments, type Instrument } from '../api/instrumentsApi'
+import { fetchAccounts, type Account } from '../../../api/accountsApi'
+import { fetchInstruments, type Instrument } from '../../../api/instrumentsApi'
 import {
   createCorporateAction,
   fetchCorporateActions,
   type CorporateAction,
   type CorporateActionType,
-} from '../api/corporateActionsApi'
+} from '../../../api/corporateActionsApi'
 import {
   createPositionTransfer,
   fetchPositionTransfers,
   type PositionTransfer,
-} from '../api/positionTransfersApi'
+} from '../../../api/positionTransfersApi'
 import {
   createIkzeContribution,
   createTaxWrapperWithdrawal,
@@ -23,9 +23,9 @@ import {
   type IkzeContribution,
   type TaxWrapperWithdrawal,
   type WithdrawalType,
-} from '../api/taxWrappersApi'
-import { useAsyncData } from '../hooks/useAsyncData'
-import { formatMoney } from '../utils/format'
+} from '../../../api/taxWrappersApi'
+import { useAsyncData } from '../../../hooks/useAsyncData'
+import { formatMoney } from '../../../utils/format'
 import { TaxLossCarryforwardSection } from '../components/TaxLossCarryforwardSection'
 
 const WITHDRAWAL_TYPES: WithdrawalType[] = ['partial', 'full', 'securities_transfer']

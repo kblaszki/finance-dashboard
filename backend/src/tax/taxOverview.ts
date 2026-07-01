@@ -1,8 +1,8 @@
 import type { PrismaClient } from "@prisma/client";
-import { toNumber } from "./accountValuation";
-import { convertAmount } from "./fx";
+import { toNumber } from "../accountValuation";
+import { convertAmount } from "../fx";
 import { computeCryptoTaxSection } from "./cryptoTax";
-import { aggregatePropertySalesForYear } from "./propertySales";
+import { aggregatePropertySalesForYear } from "../propertySales";
 import { computeTaxReport, type TaxReport } from "./taxReport";
 import {
   correctionBannerMessage,

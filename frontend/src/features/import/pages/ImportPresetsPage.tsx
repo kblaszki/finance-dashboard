@@ -4,8 +4,8 @@ import {
   createImportPreset,
   deleteImportPreset,
   fetchImportPresets,
-} from '../api/importPresetsApi'
-import { useAsyncData } from '../hooks/useAsyncData'
+} from '../../../api/importPresetsApi'
+import { useAsyncData } from '../../../hooks/useAsyncData'
 
 export function ImportPresetsPage() {
   const { data, reload } = useAsyncData(fetchImportPresets)

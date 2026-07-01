@@ -40,4 +40,18 @@ describe('useAsyncData', () => {
     expect(result.current.data).toBeNull()
     expect(result.current.error).toBe('boom')
   })
+
+  it('maps non-Error rejections to a generic message', async () => {
+    const loader = vi.fn(async () => {
+      throw 'nope'
+    })
+
+    const { result } = renderHook(() => useAsyncData(loader))
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false)
+    })
+
+    expect(result.current.error).toBe('Failed to load')
+  })
 })

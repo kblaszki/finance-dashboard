@@ -132,13 +132,17 @@ backend/src/
   routes/                  # HTTP: thin handlers, wired from app.ts
   routes/routeSupport.ts   # serialization, getAccountForUser, date filters
   routes/httpSupport.ts    # HttpError, parsers, handleRouteError
-  *.ts                     # domain logic (no Express imports)
+  tax/                     # PL tax domain (report, overview, wrappers, calendar)
+  import/                  # CSV import parsers and commit logic
+  *.ts                     # other domain logic (hubs: accountValuation, holdings, fx)
   *.test.ts                # unit tests next to domain code
 backend/test/              # HTTP, golden, schema integration
 
 frontend/src/
   api/                     # client.ts + one module per backend area
-  pages/                   # routable screens
+  features/tax/            # tax pages + tax-only components
+  features/import/         # import pages + BrokerImportForm
+  pages/                   # other routable screens
   components/              # shared UI
   state/                   # global or feature React context
   hooks/                   # shared hooks (useAsyncData)

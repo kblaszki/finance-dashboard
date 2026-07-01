@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import type { PrismaClient } from "@prisma/client";
 import { createIkzeContribution, createTaxWrapperWithdrawal } from "./taxWrapper";
-import { createTestPrisma, disconnectTestPrisma, resetDatabase } from "../test/prismaTestClient";
+import { createTestPrisma, disconnectTestPrisma, resetDatabase } from "../../test/prismaTestClient";
 
 let prisma: PrismaClient;
 

@@ -7,7 +7,7 @@ import {
   listPropertySales,
   serializePropertySale,
 } from "../propertySales";
-import { invalidateTaxYearsForDate } from "../taxReportCache";
+import { invalidateTaxYearsForDate } from "../tax/taxReportCache";
 import { handleRouteError, parseFiniteNumber, parseIdParam, parsePositiveNumber } from "./httpSupport";
 
 type PropertySalesDeps = {

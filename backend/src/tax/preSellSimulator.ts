@@ -1,8 +1,8 @@
 import type { PrismaClient } from "@prisma/client";
-import { convertAmount } from "./fx";
-import { badRequest, notFound } from "./routes/httpSupport";
-import { computeFifoRealizedEvents } from "./fifoRealizedPnl";
-import { toNumber } from "./accountValuation";
+import { convertAmount } from "../fx";
+import { badRequest, notFound } from "../routes/httpSupport";
+import { computeFifoRealizedEvents } from "../fifoRealizedPnl";
+import { toNumber } from "../accountValuation";
 import {
   accountIncludedInPit38,
   fetchWithdrawalsForTaxYear,

@@ -1,7 +1,7 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-import { badRequest, notFound } from "./routes/httpSupport";
-import { normalizeCurrency } from "./fx";
-import { toNumber } from "./accountValuation";
+import { badRequest, notFound } from "../routes/httpSupport";
+import { normalizeCurrency } from "../fx";
+import { toNumber } from "../accountValuation";
 
 type DbClient = PrismaClient | Prisma.TransactionClient;
 

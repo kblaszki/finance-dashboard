@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
-import { convertAmount } from "./fx";
-import { computeFifoRealizedEvents, type RealizedGainEvent } from "./fifoRealizedPnl";
-import { isBelkaIncomeEvent } from "./incomeEvents";
+import { convertAmount } from "../fx";
+import { computeFifoRealizedEvents, type RealizedGainEvent } from "../fifoRealizedPnl";
+import { isBelkaIncomeEvent } from "../incomeEvents";
 import {
   accountIncludedInPit38,
   fetchWithdrawalsForTaxYear,
@@ -13,8 +13,8 @@ import {
   remainingLoss,
   suggestLossRowForYear,
 } from "./taxLossCarryforward";
-import { computeRentalTaxableBase, parseRentalTaxMethod, type RentalTaxMethod } from "./propertySales";
-import { toNumber } from "./accountValuation";
+import { computeRentalTaxableBase, parseRentalTaxMethod, type RentalTaxMethod } from "../propertySales";
+import { toNumber } from "../accountValuation";
 
 const BELKA_RATE = 0.19;
 const DERIVATIVE_TYPES = new Set(["FUTURES", "OPTION", "OPTIONS", "CFD", "CFDS"]);

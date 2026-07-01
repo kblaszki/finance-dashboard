@@ -11,7 +11,7 @@ import { AccountsPage } from "./pages/AccountsPage";
 import { AccountDetailPage } from "./pages/AccountDetailPage";
 import { HoldingDetailPage } from "./pages/HoldingDetailPage";
 import { AssetDetailPage } from "./pages/AssetDetailPage";
-import { TaxReportPage } from "./pages/TaxReportPage";
+import { TaxReportPage } from "./features/tax/pages/TaxReportPage";
 import { TransactionsListPage } from "./pages/TransactionsListPage";
 import { TransfersPage } from "./pages/TransfersPage";
 import { SettingsPage } from "./pages/SettingsPage";
@@ -19,13 +19,13 @@ import { PortfolioPage } from "./pages/PortfolioPage";
 import { StatisticsPage } from "./pages/StatisticsPage";
 import { CategoriesPage } from "./pages/CategoriesPage";
 import { BudgetsPage } from "./pages/BudgetsPage";
-import { ImportPage } from "./pages/ImportPage";
+import { ImportPage } from "./features/import/pages/ImportPage";
 import { IncomeEventsPage } from "./pages/IncomeEventsPage";
 import { LiabilitiesPage } from "./pages/LiabilitiesPage";
-import { TaxSettingsPage } from "./pages/TaxSettingsPage";
-import { TaxOverviewPage } from "./pages/TaxOverviewPage";
-import { TaxCalendarPage } from "./pages/TaxCalendarPage";
-import { ImportPresetsPage } from "./pages/ImportPresetsPage";
+import { TaxSettingsPage } from "./features/tax/pages/TaxSettingsPage";
+import { TaxOverviewPage } from "./features/tax/pages/TaxOverviewPage";
+import { TaxCalendarPage } from "./features/tax/pages/TaxCalendarPage";
+import { ImportPresetsPage } from "./features/import/pages/ImportPresetsPage";
 import { useAuth } from "./state/auth";
 
 function App() {

@@ -6,7 +6,7 @@ import { recomputeQuantityAfterChain } from "../holdingLot";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
 import { handleRouteError, badRequest, parseFiniteNumber, parseIdParam, parsePositiveNumber } from "./httpSupport";
 import { applyStockSplit } from "../stockSplit";
-import { invalidateTaxYearsForDate } from "../taxReportCache";
+import { invalidateTaxYearsForDate } from "../tax/taxReportCache";
 import { writeAuditLog } from "../auditLog";
 import { scheduleMarketSyncAfterBuy } from "../marketDataTrigger";
 

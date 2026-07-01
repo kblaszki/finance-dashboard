@@ -12,5 +12,11 @@ describe('formatMoney', () => {
 
   it('treats non-finite values as zero', () => {
     expect(formatMoney(Number.NaN, 'USD')).toMatch(/0\.00/)
+    expect(formatMoney(Number.POSITIVE_INFINITY, 'USD')).toMatch(/0\.00/)
+  })
+
+  it('uses default locale and empty currency fallback', () => {
+    expect(formatMoney(10, 'NOT_A_CURRENCY')).toBe('10.00 NOT_A_CURRENCY')
+    expect(formatMoney(5, 'PLN')).toMatch(/5\.00/)
   })
 })

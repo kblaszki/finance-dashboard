@@ -12,7 +12,7 @@ import {
   parseWithdrawalType,
   serializeIkzeContribution,
   serializeTaxWrapperWithdrawal,
-} from "../taxWrapper";
+} from "../tax/taxWrapper";
 import { handleRouteError, parseFiniteNumber, parseIdParam } from "./httpSupport";
 
 type TaxWrappersDeps = {

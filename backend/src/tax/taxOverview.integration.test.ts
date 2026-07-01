@@ -2,10 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import type { PrismaClient } from "@prisma/client";
 import { computeTaxOverview } from "./taxOverview";
-import { createPropertySale } from "./propertySales";
+import { createPropertySale } from "../propertySales";
 import { upsertTaxLossCarryforward } from "./taxLossCarryforward";
-import { MOCK_FX } from "../test/helpers/seedFromFixture";
-import { createTestPrisma, disconnectTestPrisma, resetDatabase } from "../test/prismaTestClient";
+import { MOCK_FX } from "../../test/helpers/seedFromFixture";
+import { createTestPrisma, disconnectTestPrisma, resetDatabase } from "../../test/prismaTestClient";
 
 let prisma: PrismaClient;
 

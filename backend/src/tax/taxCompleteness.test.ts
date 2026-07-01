@@ -8,7 +8,7 @@ import {
 import {
   computePropertySaleTaxableGain,
   computeRentalTaxableBase,
-} from "./propertySales";
+} from "../propertySales";
 
 test("applyLossCarryforward consumes oldest losses first", () => {
   const result = applyLossCarryforward(100, [

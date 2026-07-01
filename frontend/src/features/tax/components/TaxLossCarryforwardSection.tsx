@@ -4,9 +4,9 @@ import {
   fetchTaxLossCarryforwards,
   upsertTaxLossCarryforward,
   type TaxLossCarryforward,
-} from '../api/taxLossCarryforwardApi'
-import { useAsyncData } from '../hooks/useAsyncData'
-import { formatMoney } from '../utils/format'
+} from '../../../api/taxLossCarryforwardApi'
+import { useAsyncData } from '../../../hooks/useAsyncData'
+import { formatMoney } from '../../../utils/format'
 
 export function TaxLossCarryforwardSection() {
   const { data: rows, error, loading, reload } = useAsyncData(fetchTaxLossCarryforwards)

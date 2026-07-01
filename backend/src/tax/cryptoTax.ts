@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
-import { convertAmount } from "./fx";
-import { computeFifoRealizedEvents } from "./fifoRealizedPnl";
-import { toNumber } from "./accountValuation";
+import { convertAmount } from "../fx";
+import { computeFifoRealizedEvents } from "../fifoRealizedPnl";
+import { toNumber } from "../accountValuation";
 
 export type CryptoSellRow = {
   saleDate: string;

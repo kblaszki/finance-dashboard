@@ -896,4 +896,28 @@ describe('API modules', () => {
     await deleteBankConnection(6)
     expect(apiClient.delete).toHaveBeenCalledWith('/api/bank-connections/6')
   })
+
+  it('builds minimal query strings when optional params are omitted', async () => {
+    const { importBrokerTrades, importBankTransactions } = await import('./importApi')
+    const { fetchPortfolioPositions } = await import('./portfolioApi')
+    const { fetchAuditLogs } = await import('./exportApi')
+
+    await importBrokerTrades({ accountId: 1, csv: 'x', dryRun: true })
+    expect(apiClient.post).toHaveBeenCalledWith(
+      '/api/import/broker-trades?accountId=1&broker=xtb&dryRun=true',
+      { csv: 'x', filename: undefined, dryRun: true },
+    )
+
+    await importBankTransactions({ accountId: 2, csv: 'y' })
+    expect(apiClient.post).toHaveBeenCalledWith(
+      '/api/import/bank-transactions?accountId=2&bank=generic',
+      { csv: 'y', dryRun: undefined, filename: undefined },
+    )
+
+    await fetchPortfolioPositions()
+    expect(apiClient.get).toHaveBeenCalledWith('/api/portfolio/positions')
+
+    await fetchAuditLogs()
+    expect(apiClient.get).toHaveBeenCalledWith('/api/audit-logs')
+  })
 })

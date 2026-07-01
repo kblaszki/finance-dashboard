@@ -30,6 +30,9 @@ sequenceDiagram
 | Valuations | `backend/src/accountValuation.ts` | Daily snapshots, backfill |
 | Market data | `backend/src/marketData.ts`, `marketDataSync.ts` | Twelve Data EOD fetch, sync job |
 | Net worth | `backend/src/netWorth.ts` | Aggregated stats for dashboard |
+| Tax (PL) | `backend/src/tax/*` | PIT-38 report, overview, wrappers, calendar, pre-sell simulator |
+
+Domain modules live under `backend/src/` (flat hubs such as `accountValuation.ts`, `holdings.ts`) and grouped folders where cohesion is high (`tax/`, `import/`, `routes/`). See [fullstack-architecture-practices.md](fullstack-architecture-practices.md) §12.
 
 ## Auth
 

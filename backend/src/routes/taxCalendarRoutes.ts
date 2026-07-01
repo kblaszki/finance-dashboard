@@ -1,9 +1,9 @@
 import { Router } from "express";
 import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
-import { buildTaxCalendarResponse, setTaxChecklistItem } from "../taxChecklist";
+import { buildTaxCalendarResponse, setTaxChecklistItem } from "../tax/taxChecklist";
 import { handleRouteError, parseFiniteNumber } from "./httpSupport";
-import { parseTaxYear } from "../taxReport";
+import { parseTaxYear } from "../tax/taxReport";
 
 type TaxCalendarDeps = {
   prisma: PrismaClient;

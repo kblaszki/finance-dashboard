@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { fetchAccounts, type Account } from '../api/accountsApi'
+import { fetchAccounts, type Account } from '../../../api/accountsApi'
 import {
   importBankTransactions,
   importBrokerTrades,
   type BankImportResult,
   type ImportResult,
-} from '../api/importApi'
-import { useAsyncData } from '../hooks/useAsyncData'
+} from '../../../api/importApi'
+import { useAsyncData } from '../../../hooks/useAsyncData'
 
 type ImportTarget = 'bank' | 'broker'
 

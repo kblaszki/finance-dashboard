@@ -6,7 +6,7 @@ import {
   parseTaxWrapperType,
   parseWithdrawalType,
 } from "./taxWrapper";
-import { computeOpenBuySlices } from "./positionTransfers";
+import { computeOpenBuySlices } from "../positionTransfers";
 
 test("parseTaxWrapperType accepts known values", () => {
   assert.equal(parseTaxWrapperType("ike"), "ike");

@@ -11,7 +11,7 @@ import {
   updateUserIncomeEvent,
 } from "../incomeEvents";
 import { handleRouteError, parseFiniteNumber, parseIdParam } from "./httpSupport";
-import { invalidateTaxYearsForDate } from "../taxReportCache";
+import { invalidateTaxYearsForDate } from "../tax/taxReportCache";
 
 type IncomeEventsDeps = {
   prisma: PrismaClient;

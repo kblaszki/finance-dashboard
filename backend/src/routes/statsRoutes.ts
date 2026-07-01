@@ -23,9 +23,9 @@ import {
   computeTaxReport,
   formatTaxReportCsv,
   parseTaxYear,
-} from "../taxReport";
-import { computeTaxOverview, formatCryptoTaxCsv } from "../taxOverview";
-import { simulatePreSellTax } from "../preSellSimulator";
+} from "../tax/taxReport";
+import { computeTaxOverview, formatCryptoTaxCsv } from "../tax/taxOverview";
+import { simulatePreSellTax } from "../tax/preSellSimulator";
 import { badRequest, handleRouteError } from "./httpSupport";
 
 type StatsDeps = {

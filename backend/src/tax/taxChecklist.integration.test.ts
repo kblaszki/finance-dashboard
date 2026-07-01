@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { buildTaxCalendarResponse } from "./taxChecklist";
 import type { PrismaClient } from "@prisma/client";
-import { createTestPrisma, disconnectTestPrisma, resetDatabase } from "../test/prismaTestClient";
+import { createTestPrisma, disconnectTestPrisma, resetDatabase } from "../../test/prismaTestClient";
 
 let prisma: PrismaClient;
 

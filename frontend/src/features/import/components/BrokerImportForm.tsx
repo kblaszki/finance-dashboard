@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { importBrokerTrades, type ImportResult } from '../api/importApi'
+import { importBrokerTrades, type ImportResult } from '../../../api/importApi'
 
 type Props = {
   accountId: number

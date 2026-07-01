@@ -6,8 +6,8 @@ import {
   listTaxLossCarryforwards,
   serializeTaxLossCarryforward,
   upsertTaxLossCarryforward,
-} from "../taxLossCarryforward";
-import { invalidateTaxReportSnapshots } from "../taxReportCache";
+} from "../tax/taxLossCarryforward";
+import { invalidateTaxReportSnapshots } from "../tax/taxReportCache";
 import { handleRouteError, parseFiniteNumber, parseIdParam } from "./httpSupport";
 
 type TaxLossDeps = {

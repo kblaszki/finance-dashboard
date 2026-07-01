@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import type { PrismaClient } from "@prisma/client";
-import { computeTaxReport } from "../src/taxReport";
+import { computeTaxReport } from "../src/tax/taxReport";
 import { findOrCreateHolding, syncHoldingQuantity } from "../src/holdings";
 import { MOCK_FX } from "./helpers/seedFromFixture";
 import { createTestPrisma, disconnectTestPrisma, resetDatabase } from "./prismaTestClient";

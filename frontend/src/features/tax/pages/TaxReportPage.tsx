@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { fetchTaxReport, type TaxReport } from '../api/statsApi'
-import { downloadTaxReportCsv } from '../api/taxReportApi'
-import { useAsyncData } from '../hooks/useAsyncData'
-import { useCurrency } from '../state/currency'
-import { formatMoney } from '../utils/format'
+import { fetchTaxReport, type TaxReport } from '../../../api/statsApi'
+import { downloadTaxReportCsv } from '../../../api/taxReportApi'
+import { useAsyncData } from '../../../hooks/useAsyncData'
+import { useCurrency } from '../../../state/currency'
+import { formatMoney } from '../../../utils/format'
 
 const CURRENT_YEAR = new Date().getFullYear();
 

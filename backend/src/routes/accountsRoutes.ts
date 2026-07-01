@@ -7,7 +7,7 @@ import { getLatestAccountTotalValue, getLatestAccountTotalValues, toNumber } fro
 import { computeAccountDetailStats } from "../accountStats";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
 import { parseDateBody, serializeAccount } from "./routeSupport";
-import { parseTaxWrapperType } from "../taxWrapper";
+import { parseTaxWrapperType } from "../tax/taxWrapper";
 import { parseRentalTaxMethod } from "../propertySales";
 import { handleRouteError, badRequest, parseIdParam, parseFiniteNumber, parsePositiveNumber, parseRequiredString } from "./httpSupport";
 

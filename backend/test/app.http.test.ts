@@ -2699,6 +2699,92 @@ test("cross-user account-sync and bank-connection return 404", async () => {
   assert.equal(crossBankAccount.status, 404);
 });
 
+test("holdings split and account metadata PUT branches", async () => {
+  const { token } = await createUserAndToken();
+
+  const broker = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountType: "BROKERAGE", name: "Split broker", currency: "PLN", openingBalance: 5000 });
+  const instrument = await request(app)
+    .post("/api/instruments")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ instrumentType: "STOCK", symbol: "SPL", currency: "PLN" });
+  const holding = await request(app)
+    .post(`/api/accounts/${broker.body.id}/holdings`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ instrumentId: instrument.body.id });
+  await request(app)
+    .post(`/api/holdings/${holding.body.id}/lots`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      side: "BUY",
+      quantity: 6,
+      pricePerUnit: 10,
+      currency: "PLN",
+      tradeDate: "2026-01-10T12:00:00.000Z",
+    });
+  const splitRes = await request(app)
+    .post(`/api/holdings/${holding.body.id}/split`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ ratio: 2, effectiveDate: "2026-02-01T12:00:00.000Z" });
+  assert.equal(splitRes.status, 200);
+  assert.equal(splitRes.body.quantity, 12);
+
+  const metal = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "PRECIOUS_METAL",
+      name: "Gold",
+      currency: "PLN",
+      openingBalance: 0,
+    });
+  const metalUpd = await request(app)
+    .put(`/api/accounts/${metal.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ metalGrams: 31.1 });
+  assert.equal(metalUpd.status, 200);
+  assert.equal(metalUpd.body.metalGrams, 31.1);
+
+  const realEstate = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "REAL_ESTATE",
+      name: "Rental flat",
+      currency: "PLN",
+      openingBalance: 300000,
+    });
+  const rentalUpd = await request(app)
+    .put(`/api/accounts/${realEstate.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ rentalTaxMethod: "lump_sum_8_5" });
+  assert.equal(rentalUpd.status, 200);
+  assert.equal(rentalUpd.body.rentalTaxMethod, "lump_sum_8_5");
+
+  const bank = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountType: "BANK", name: "No metal", currency: "PLN", openingBalance: 0 });
+  const badMetal = await request(app)
+    .put(`/api/accounts/${bank.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ metalGrams: 10 });
+  assert.equal(badMetal.status, 400);
+
+  const badPreSell = await request(app)
+    .post("/api/stats/pre-sell-simulator")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ quantity: 1 });
+  assert.equal(badPreSell.status, 400);
+
+  const badYear = await request(app)
+    .get("/api/stats/tax-overview?year=1999")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(badYear.status, 400);
+});
+
 test("route branch coverage: optional filters and body fields across routers", async () => {
   const { readFileSync } = await import("node:fs");
   const { join } = await import("node:path");

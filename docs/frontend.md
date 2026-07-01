@@ -2,6 +2,18 @@
 
 Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`frontend/src/App.tsx`](../frontend/src/App.tsx).
 
+## Layout
+
+| Layer | Path | Role |
+|-------|------|------|
+| Pages | `pages/` | Routable screens (most domains) |
+| Feature folders | `features/tax/`, `features/import/` | Co-located pages + components for nav-isolated domains |
+| Components | `components/` | Shared UI (charts, account widgets, shell) |
+| API | `api/` | `client.ts` + one module per backend area |
+| State / hooks | `state/`, `hooks/` | Global context and `useAsyncData` |
+
+Tax screens live under `features/tax/pages/`; import under `features/import/pages/`. Account-linked widgets (e.g. `BrokerImportForm` on account detail) stay importable from `features/import/components/`.
+
 ## Routes
 
 | Path | Page | Key components |
@@ -14,7 +26,7 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 | `/statistics` | Statistics | `StatisticsPage` — FR-003 (default: current month), FR-004 cashflow history chart, FR-016 `CategoryBreakdownSection` |
 | `/categories` | Categories | `CategoriesPage` — FR-015 CRUD; FR-034 categorization rules |
 | `/budgets` | Budgets | `BudgetsPage` — FR-017 monthly limits vs spend |
-| `/import` | Import | `ImportPage` — FR-019 bank (mBank/generic) and brokerage CSV |
+| `/import` | Import | `features/import/pages/ImportPage` — FR-019 bank (mBank/generic) and brokerage CSV |
 | `/portfolio` | Portfolio (all accounts) | `PortfolioPage` — filters by account, type, bucket (FR-008) |
 | `/assets/:id` | Asset price chart | `AssetDetailPage`, `InstrumentPriceChart` (FR-009) |
 | `/accounts` | Accounts | `ManagedAccountsList` — total balance, type filter (FR-012) |
@@ -23,11 +35,11 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 | `/accounts/:id/holdings/:holdingId` | Holding detail (legacy URL) | Same as `/accounts/:id/assets/:instrumentId` |
 | `/transactions` | Asset trades | `TransactionsListPage` → `AssetTradesTable` (FR-007; `?accountId=` filter) |
 | `/transfers` | Internal transfers | `TransfersPage` → `InternalTransfersTable` (FR-011; `?accountId=` filter) |
-| `/tax` | PL tax report | `TaxReportPage` — FR-022/023/025–028; loss carryforward section; `/tax/:year` |
-| `/tax/settings` | Tax prerequisites | `TaxSettingsPage` — FR-039–041; `TaxLossCarryforwardSection` |
-| `/tax/:year/overview` | Tax overview | `TaxOverviewPage` — FR-046 consolidated summary |
-| `/tax/calendar` | Tax calendar | `TaxCalendarPage` — FR-045 deadlines + checklist |
-| `/import/presets` | Import presets | `ImportPresetsPage` — FR-047 broker templates |
+| `/tax` | PL tax report | `features/tax/pages/TaxReportPage` — FR-022/023/025–028; loss carryforward section; `/tax/:year` |
+| `/tax/settings` | Tax prerequisites | `features/tax/pages/TaxSettingsPage` — FR-039–041; `TaxLossCarryforwardSection` |
+| `/tax/:year/overview` | Tax overview | `features/tax/pages/TaxOverviewPage` — FR-046 consolidated summary |
+| `/tax/calendar` | Tax calendar | `features/tax/pages/TaxCalendarPage` — FR-045 deadlines + checklist |
+| `/import/presets` | Import presets | `features/import/pages/ImportPresetsPage` — FR-047 broker templates |
 | `/liabilities` | Liabilities | `LiabilitiesPage` — FR-029 mortgages, loans, credits |
 | `/income-events` | Income events | `IncomeEventsPage` — FR-024 dividends, interest, coupons; FR-033 coupon schedule |
 | `/settings` | Account settings | `SettingsPage` — profile; `DocumentAttachmentsSection`; NFR-002 export, FR-035/036 sync stubs, NFR-003 audit |
@@ -43,7 +55,7 @@ Protected shell: `ProtectedRoute` → `AppShell`.
 | `frontend/src/state/auth.tsx` | Session + `username` on register |
 | `frontend/src/state/currency.tsx` | Display currency |
 | `frontend/src/state/theme.tsx` | Light/dark theme |
-| `frontend/src/state/period.tsx` | Dashboard date range (`PeriodProvider` on dashboard only) |
+| `frontend/src/state/period.tsx` | Dashboard and statistics date range (`PeriodProvider` on dashboard and `/statistics`) |
 | `frontend/src/state/cashflow.tsx` | Dashboard cashflow stats (`CashFlowProvider`; uses `useAsyncData`) |
 
 Preferred async pattern for page/widget data: [`frontend/src/hooks/useAsyncData.ts`](../frontend/src/hooks/useAsyncData.ts).
