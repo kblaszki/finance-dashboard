@@ -39,7 +39,7 @@ export function mapInstrumentToProviderSymbol(instrument: InstrumentSymbolInput)
   }
 
   if (exchange === "GPW" || exchange === "WAR" || exchange === "WSE" || exchange === "NEWCONNECT") {
-    return `${symbol}:WAR`;
+    return `${symbol}:GPW`;
   }
 
   if (exchange === "XETRA" || exchange === "XETR" || exchange === "FWB") {

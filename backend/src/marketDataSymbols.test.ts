@@ -20,10 +20,10 @@ test("mapInstrumentToProviderSymbol maps US exchanges to bare symbol", () => {
   );
 });
 
-test("mapInstrumentToProviderSymbol maps GPW to WAR suffix", () => {
+test("mapInstrumentToProviderSymbol maps GPW to GPW suffix", () => {
   assert.equal(
     mapInstrumentToProviderSymbol({ symbol: "pko", exchange: "GPW", instrumentType: "STOCK" }),
-    "PKO:WAR",
+    "PKO:GPW",
   );
 });
 

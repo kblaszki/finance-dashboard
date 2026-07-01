@@ -1,6 +1,6 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { recomputeAccountValuationsFrom } from "./accountValuation";
-import { fetchEodTimeSeries } from "./marketData";
+import { fetchEodTimeSeries, type EodBar } from "./marketData";
 import { defaultBackfillDays } from "./marketDataEpoch";
 import {
   isCryptoInstrument,
@@ -12,6 +12,41 @@ import {
 type DbClient = PrismaClient | Prisma.TransactionClient;
 
 export const MARKET_DATA_SOURCE = "twelve_data";
+
+export async function upsertInstrumentEodBars(
+  prisma: DbClient,
+  instrumentId: number,
+  currency: string,
+  bars: EodBar[],
+  source: string = MARKET_DATA_SOURCE,
+): Promise<number> {
+  let count = 0;
+  for (const bar of bars) {
+    await prisma.instrumentValuation.upsert({
+      where: {
+        instrumentId_valuationDate_source: {
+          instrumentId,
+          valuationDate: bar.date,
+          source,
+        },
+      },
+      create: {
+        instrumentId,
+        valuationDate: bar.date,
+        price: bar.close,
+        currency,
+        source,
+      },
+      update: {
+        price: bar.close,
+        currency,
+        fetchedAt: new Date(),
+      },
+    });
+    count += 1;
+  }
+  return count;
+}
 
 export type SyncMarketPricesOptions = {
   userId?: number;
@@ -115,29 +150,14 @@ export async function syncMarketPrices(
         continue;
       }
 
+      const upserted = await upsertInstrumentEodBars(
+        prisma,
+        instrument.id,
+        instrument.currency,
+        bars,
+      );
+      result.valuationsUpserted += upserted;
       for (const bar of bars) {
-        await prisma.instrumentValuation.upsert({
-          where: {
-            instrumentId_valuationDate_source: {
-              instrumentId: instrument.id,
-              valuationDate: bar.date,
-              source: MARKET_DATA_SOURCE,
-            },
-          },
-          create: {
-            instrumentId: instrument.id,
-            valuationDate: bar.date,
-            price: bar.close,
-            currency: instrument.currency,
-            source: MARKET_DATA_SOURCE,
-          },
-          update: {
-            price: bar.close,
-            currency: instrument.currency,
-            fetchedAt: new Date(),
-          },
-        });
-        result.valuationsUpserted += 1;
         if (!earliestValuationDate || bar.date.getTime() < earliestValuationDate.getTime()) {
           earliestValuationDate = bar.date;
         }

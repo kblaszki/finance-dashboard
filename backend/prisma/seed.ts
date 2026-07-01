@@ -2,46 +2,88 @@ import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { backfillAccountValuations } from "../src/accountValuation";
+import { ensureDefaultCategories } from "../src/categories";
 import { getFxRatesPlnPerUnit } from "../src/fx";
+import { syncFxRatesSinceEpoch } from "../src/fxHistorySync";
 import {
-  BROKERAGE_HISTORY_DAYS,
+  BANK_HISTORY_MONTHS,
+  DEMO_EMAIL,
+  DEMO_HISTORY_DAYS,
+  DEMO_PASSWORD,
+  DEMO_USERNAME,
+  EU_INSTRUMENTS,
+  GOLD_PROVIDER_SYMBOL,
+  GPW_BOND_INSTRUMENT,
+  GPW_INSTRUMENTS,
+  IKZE_INSTRUMENTS,
+  SEED_MARKET_OUTPUTSIZE,
+  UNIQUE_DEMO_STOCK_SYMBOLS,
+  US_INSTRUMENTS,
+} from "./demo/seedConfig";
+import {
+  fetchDemoMarketHistory,
+  providerSymbolForInstrument,
+} from "./demo/marketHistory";
+import { daysAgo } from "./demo/tradePlanner";
+import {
   buildBankMonthTemplates,
-  daysAgo,
-  EU_BROKERAGE_INSTRUMENTS,
+  loadCategoryIdMap,
   seedBankTransactions,
-  seedBrokerageDemo,
-  US_BROKERAGE_INSTRUMENTS,
-} from "./seedBuilders";
+  seedBrokerageFromMarket,
+  seedManualBondValuations,
+  seedMvpExtras,
+  seedPreciousMetalAccount,
+  seedQuarterlyBrokerInvestments,
+  seedRealEstateAccount,
+  upsertInstrument,
+} from "./demo/seedBuilders";
+import { cleanupManualInstrumentValuations, deleteDemoUser } from "./demo/wipe";
 
 const prisma = new PrismaClient();
 
-const DEMO_EMAIL = "demo@finance.local";
-const DEMO_USERNAME = "demo";
-const DEMO_PASSWORD = "demo12345";
-
-async function clearUserData(userId: number): Promise<void> {
-  await prisma.accountValuationDaily.deleteMany({
-    where: { account: { userId } },
-  });
-  await prisma.holdingValuationDaily.deleteMany({
-    where: { account: { userId } },
-  });
-  await prisma.holdingLot.deleteMany({ where: { holding: { account: { userId } } } });
-  await prisma.holding.deleteMany({ where: { account: { userId } } });
-  await prisma.transaction.deleteMany({ where: { account: { userId } } });
-  await prisma.account.deleteMany({ where: { userId } });
-}
-
 async function main() {
-  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
+  const apiKey = process.env.MARKET_DATA_API_KEY?.trim();
+  if (!apiKey) {
+    // eslint-disable-next-line no-console
+    console.error(
+      "MARKET_DATA_API_KEY is required for demo seed (Twelve Data EOD prices).\n" +
+        "Set it in backend/.env — see README Demo data section.",
+    );
+    process.exit(1);
+  }
 
-  const user = await prisma.user.upsert({
-    where: { email: DEMO_EMAIL },
-    update: { username: DEMO_USERNAME, passwordHash },
-    create: { email: DEMO_EMAIL, username: DEMO_USERNAME, passwordHash },
+  await cleanupManualInstrumentValuations(prisma, [
+    ...UNIQUE_DEMO_STOCK_SYMBOLS,
+    "XAU",
+  ]);
+  await deleteDemoUser(prisma);
+
+  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
+  const user = await prisma.user.create({
+    data: { email: DEMO_EMAIL, username: DEMO_USERNAME, passwordHash },
   });
 
-  await clearUserData(user.id);
+  await ensureDefaultCategories(prisma, user.id);
+  const categoryIds = await loadCategoryIdMap(prisma, user.id);
+
+  const providerSymbols = [
+    ...GPW_INSTRUMENTS,
+    ...US_INSTRUMENTS,
+    ...EU_INSTRUMENTS,
+    ...IKZE_INSTRUMENTS,
+  ]
+    .map(providerSymbolForInstrument)
+    .filter((s): s is string => s != null);
+  providerSymbols.push(GOLD_PROVIDER_SYMBOL);
+
+  // eslint-disable-next-line no-console
+  console.log(
+    `Fetching EOD history (${SEED_MARKET_OUTPUTSIZE} bars) for ${providerSymbols.length} symbols…`,
+  );
+  const barsByProvider = await fetchDemoMarketHistory(providerSymbols, {
+    apiKey,
+    outputsize: SEED_MARKET_OUTPUTSIZE,
+  });
 
   const bank = await prisma.account.create({
     data: {
@@ -49,12 +91,63 @@ async function main() {
       accountType: "BANK",
       name: "Main PLN",
       currency: "PLN",
-      openingBalance: 5000,
-      cashBalance: 5000,
-      createdAt: daysAgo(90),
+      openingBalance: 35_000,
+      cashBalance: 35_000,
+      createdAt: daysAgo(BANK_HISTORY_MONTHS * 30),
     },
   });
-  await seedBankTransactions(prisma, bank.id, "PLN", 5000, buildBankMonthTemplates());
+  await seedBankTransactions(
+    prisma,
+    bank.id,
+    "PLN",
+    35_000,
+    buildBankMonthTemplates(BANK_HISTORY_MONTHS),
+    categoryIds,
+  );
+
+  const gpwBroker = await prisma.account.create({
+    data: {
+      userId: user.id,
+      accountType: "BROKERAGE",
+      name: "GPW Stocks",
+      currency: "PLN",
+      openingBalance: 0,
+      cashBalance: 0,
+      createdAt: daysAgo(DEMO_HISTORY_DAYS + 20),
+    },
+  });
+  await seedBrokerageFromMarket(
+    prisma,
+    gpwBroker.id,
+    150_000,
+    "PLN",
+    DEMO_HISTORY_DAYS + 10,
+    GPW_INSTRUMENTS,
+    barsByProvider,
+    providerSymbolForInstrument,
+  );
+
+  const bondInstrument = await upsertInstrument(prisma, GPW_BOND_INSTRUMENT);
+  await seedManualBondValuations(prisma, bondInstrument.id, "PLN", 100);
+  const gpwAfterStocks = await prisma.account.findUniqueOrThrow({ where: { id: gpwBroker.id } });
+  const bondDeploy = Math.floor(Number(gpwAfterStocks.cashBalance) * 0.18);
+  if (bondDeploy > 1_000) {
+    await seedQuarterlyBrokerInvestments(
+      prisma,
+      0,
+      DEMO_HISTORY_DAYS - 45,
+      [
+        {
+          accountId: gpwBroker.id,
+          currency: "PLN",
+          amount: bondDeploy,
+          instrument: GPW_BOND_INSTRUMENT,
+        },
+      ],
+      barsByProvider,
+      providerSymbolForInstrument,
+    );
+  }
 
   const usBroker = await prisma.account.create({
     data: {
@@ -64,16 +157,18 @@ async function main() {
       currency: "USD",
       openingBalance: 0,
       cashBalance: 0,
-      createdAt: daysAgo(BROKERAGE_HISTORY_DAYS + 20),
+      createdAt: daysAgo(DEMO_HISTORY_DAYS + 20),
     },
   });
-  await seedBrokerageDemo(
+  await seedBrokerageFromMarket(
     prisma,
     usBroker.id,
-    150_000,
+    130_000,
     "USD",
-    BROKERAGE_HISTORY_DAYS + 10,
-    US_BROKERAGE_INSTRUMENTS,
+    DEMO_HISTORY_DAYS + 10,
+    US_INSTRUMENTS,
+    barsByProvider,
+    providerSymbolForInstrument,
   );
 
   const euBroker = await prisma.account.create({
@@ -84,33 +179,147 @@ async function main() {
       currency: "EUR",
       openingBalance: 0,
       cashBalance: 0,
-      createdAt: daysAgo(BROKERAGE_HISTORY_DAYS + 20),
+      createdAt: daysAgo(DEMO_HISTORY_DAYS + 20),
     },
   });
-  await seedBrokerageDemo(
+  await seedBrokerageFromMarket(
     prisma,
     euBroker.id,
-    100_000,
+    95_000,
     "EUR",
-    BROKERAGE_HISTORY_DAYS + 10,
-    EU_BROKERAGE_INSTRUMENTS,
+    DEMO_HISTORY_DAYS + 10,
+    EU_INSTRUMENTS,
+    barsByProvider,
+    providerSymbolForInstrument,
   );
 
-  const manual = await prisma.account.create({
+  const ikzeBroker = await prisma.account.create({
     data: {
       userId: user.id,
-      accountType: "MANUAL",
-      name: "Apartment Warsaw",
-      currency: "PLN",
-      openingBalance: 850000,
-      cashBalance: 850000,
-      description: "Estimated market value — manual tracking",
-      createdAt: daysAgo(120),
+      accountType: "BROKERAGE",
+      name: "IKZE",
+      currency: "USD",
+      openingBalance: 0,
+      cashBalance: 0,
+      taxWrapperType: "ikze",
+      createdAt: daysAgo(DEMO_HISTORY_DAYS + 20),
+    },
+  });
+  await seedBrokerageFromMarket(
+    prisma,
+    ikzeBroker.id,
+    32_000,
+    "USD",
+    DEMO_HISTORY_DAYS + 10,
+    IKZE_INSTRUMENTS,
+    barsByProvider,
+    providerSymbolForInstrument,
+  );
+
+  const goldAccount = await prisma.account.create({
+    data: {
+      userId: user.id,
+      accountType: "PRECIOUS_METAL",
+      name: "Gold",
+      currency: "USD",
+      openingBalance: 0,
+      cashBalance: 0,
+      createdAt: daysAgo(DEMO_HISTORY_DAYS + 20),
     },
   });
 
+  const realEstate = await prisma.account.create({
+    data: {
+      userId: user.id,
+      accountType: "REAL_ESTATE",
+      name: "Apartment Warsaw",
+      currency: "PLN",
+      openingBalance: 0,
+      cashBalance: 0,
+      rentalTaxMethod: "lump_sum_8_5",
+      description: "Rental property — Mokotów",
+      createdAt: daysAgo(DEMO_HISTORY_DAYS + 20),
+    },
+  });
+
+  const quarters = Math.floor(BANK_HISTORY_MONTHS / 3);
+  for (let q = 0; q < quarters; q++) {
+    const bump = (q % 3) * 500;
+    await seedQuarterlyBrokerInvestments(
+      prisma,
+      q,
+      q * 90 + 26,
+      [
+        {
+          accountId: gpwBroker.id,
+          currency: "PLN",
+          amount: 10_500 + bump,
+          instrument: GPW_INSTRUMENTS[0]!,
+        },
+        {
+          accountId: gpwBroker.id,
+          currency: "PLN",
+          amount: 4_500 + Math.round(bump * 0.4),
+          instrument: GPW_BOND_INSTRUMENT,
+        },
+        {
+          accountId: usBroker.id,
+          currency: "USD",
+          amount: 3_900 + q * 120,
+          instrument: US_INSTRUMENTS[2]!,
+        },
+        {
+          accountId: euBroker.id,
+          currency: "EUR",
+          amount: 1_700 + q * 70,
+          instrument: EU_INSTRUMENTS[0]!,
+        },
+        {
+          accountId: ikzeBroker.id,
+          currency: "USD",
+          amount: 1_300 + q * 40,
+          instrument: IKZE_INSTRUMENTS[0]!,
+        },
+      ],
+      barsByProvider,
+      providerSymbolForInstrument,
+    );
+  }
+
+  await syncFxRatesSinceEpoch(prisma).catch(() => {});
   const { plnPerUnit } = await getFxRatesPlnPerUnit();
-  for (const accountId of [bank.id, usBroker.id, euBroker.id, manual.id]) {
+
+  const xauBars = barsByProvider.get(GOLD_PROVIDER_SYMBOL);
+  if (!xauBars?.length) {
+    throw new Error(`No EOD bars for ${GOLD_PROVIDER_SYMBOL}`);
+  }
+  await seedPreciousMetalAccount(prisma, goldAccount.id, xauBars, plnPerUnit);
+  await seedRealEstateAccount(prisma, user.id, realEstate.id, plnPerUnit);
+
+  const euEtf = await upsertInstrument(prisma, EU_INSTRUMENTS[0]!);
+
+  await seedMvpExtras(prisma, user.id, {
+    bankAccountId: bank.id,
+    usBrokerId: usBroker.id,
+    euBrokerId: euBroker.id,
+    ikzeBrokerId: ikzeBroker.id,
+    realEstateAccountId: realEstate.id,
+    categoryIds,
+    euInstrumentId: euEtf.id,
+    gpwBondInstrumentId: bondInstrument.id,
+    gpwBrokerId: gpwBroker.id,
+  });
+
+  const accountIds = [
+    bank.id,
+    gpwBroker.id,
+    usBroker.id,
+    euBroker.id,
+    ikzeBroker.id,
+    goldAccount.id,
+    realEstate.id,
+  ];
+  for (const accountId of accountIds) {
     await backfillAccountValuations(prisma, accountId, plnPerUnit);
   }
 
@@ -121,7 +330,6 @@ async function main() {
     // eslint-disable-next-line no-console
     console.log(`  ${a.accountType} ${a.name}: cash=${Number(a.cashBalance)} ${a.currency}`);
   }
-  void manual;
 }
 
 main()

@@ -127,7 +127,7 @@ Or trigger from the dashboard / brokerage account page (**Sync prices now**). Fo
 
 ## Demo data (optional)
 
-Load sample data for a demo user:
+Load sample data for a demo user. **Requires `MARKET_DATA_API_KEY`** in `backend/.env` (Twelve Data EOD prices). The seed fetches real market history (~500 trading days per symbol) and takes about 30–60 seconds depending on API rate limits.
 
 ```bash
 cd backend
@@ -136,7 +136,18 @@ npm run db:seed
 
 Login: `demo@finance.local` / `demo12345` (username: `demo`)
 
-The seed creates four accounts: PLN bank (~90 days of transactions), USD brokerage (AAPL, VT), EUR brokerage (IWDA), and a MANUAL property account.
+The seed creates a full MVP portfolio with **~2 years** of history:
+
+- **BANK** — PLN, 24 months of categorized transactions
+- **GPW Stocks** — PKO (PLN; Twelve Data `PKO:GPW`)
+- **US Stocks** — AAPL, MSFT, VT, VOO (USD)
+- **EU Stocks** — ASML, SAP, NVO (EUR; bare symbols on free tier)
+- **IKZE** — tax-advantaged brokerage (VT)
+- **Gold** — `PRECIOUS_METAL` with XAU/USD valuations
+- **Apartment Warsaw** — `REAL_ESTATE` with cash flows and quarterly valuations
+- Liabilities, budgets, income events, tax loss carryforward, coupon schedule
+
+Instrument prices use `source: twelve_data` (same as live market sync). Free Twelve Data tiers allow **8 API credits per minute** and cover major US symbols plus `PKO:GPW` and `XAU/USD`; the seed waits between requests and retries on rate limits (~2–3 minutes total). GPW/EU symbols behind paid tiers (PZU, IWDA, etc.) are omitted on the free plan.
 
 ## Tests
 

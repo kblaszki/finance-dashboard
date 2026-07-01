@@ -66,9 +66,6 @@ export async function fetchEodTimeSeries(
   url.searchParams.set("apikey", apiKey);
 
   const res = await fetchFn(url.toString(), { headers: { Accept: "application/json" } });
-  if (!res.ok) {
-    throw new Error(`Market data request failed (status ${res.status})`);
-  }
 
   const body = (await res.json()) as {
     status?: string;
@@ -77,8 +74,9 @@ export async function fetchEodTimeSeries(
     values?: Array<{ datetime?: string; close?: string }>;
   };
 
-  if (body.status === "error" || body.code) {
-    throw new Error(body.message ?? "Market data provider error");
+  if (!res.ok || body.status === "error" || body.code) {
+    const detail = body.message ?? `HTTP ${res.status}`;
+    throw new Error(`Market data request failed for ${providerSymbol}: ${detail}`);
   }
 
   const values = body.values ?? [];

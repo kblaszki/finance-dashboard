@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
-import { toNumber } from "./accountValuation";
+import { toNumber, utcDateOnly } from "./accountValuation";
 import { BENCHMARKS, type BenchmarkId } from "./benchmarks";
 import { convertAmount } from "./fx";
 import { priceAsOf } from "./holdingLot";
@@ -348,6 +348,74 @@ export async function computePortfolioSummary(
   };
 }
 
+export type AccountValuationRow = {
+  valuationDate: Date;
+  totalValue: number;
+  cashValue: number;
+  securitiesValue: number;
+  currency: string;
+};
+
+/** Last valuation on or before `asOf` (forward-fill). */
+export function accountValuationAsOf(
+  rows: AccountValuationRow[],
+  asOf: Date,
+): AccountValuationRow | null {
+  let best: AccountValuationRow | null = null;
+  for (const row of rows) {
+    if (row.valuationDate.getTime() > asOf.getTime()) break;
+    best = row;
+  }
+  return best;
+}
+
+/**
+ * Builds a daily portfolio series: each account contributes its last known
+ * valuation on or before that day (same semantics as sumBrokerageSnapshotAsOf).
+ */
+export function buildPortfolioHistoryPoints(
+  accounts: Array<{ id: number; currency: string }>,
+  rowsByAccountId: Map<number, AccountValuationRow[]>,
+  from: Date,
+  to: Date,
+  displayCurrency: string,
+  plnPerUnit: Record<string, number>,
+): PortfolioHistoryPoint[] {
+  const toDay = utcDateOnly(to);
+  const fromDay = utcDateOnly(from);
+  const points: PortfolioHistoryPoint[] = [];
+
+  for (let d = new Date(fromDay); d.getTime() <= toDay.getTime(); d.setUTCDate(d.getUTCDate() + 1)) {
+    const dayEnd = utcEndOfDay(d);
+    let totalValue = 0;
+    let cashValue = 0;
+    let securitiesValue = 0;
+
+    for (const account of accounts) {
+      const snap = accountValuationAsOf(rowsByAccountId.get(account.id) ?? [], dayEnd);
+      if (!snap) continue;
+      const nativeCurrency = snap.currency || account.currency;
+      totalValue += convertAmount(snap.totalValue, nativeCurrency, displayCurrency, plnPerUnit);
+      cashValue += convertAmount(snap.cashValue, nativeCurrency, displayCurrency, plnPerUnit);
+      securitiesValue += convertAmount(
+        snap.securitiesValue,
+        nativeCurrency,
+        displayCurrency,
+        plnPerUnit,
+      );
+    }
+
+    points.push({
+      date: dateKey(d),
+      totalValue,
+      cashValue,
+      securitiesValue,
+    });
+  }
+
+  return points;
+}
+
 export async function computePortfolioHistory(
   prisma: PrismaClient,
   userId: number,
@@ -360,41 +428,37 @@ export async function computePortfolioHistory(
   if (!accounts.length) return { points: [] };
 
   const accountIds = accounts.map((a) => a.id);
-  const currencyByAccount = new Map(accounts.map((a) => [a.id, a.currency]));
   const toEnd = utcEndOfDay(to);
 
   const rows = await prisma.accountValuationDaily.findMany({
     where: {
       accountId: { in: accountIds },
-      valuationDate: { gte: from, lte: toEnd },
+      valuationDate: { lte: toEnd },
     },
-    orderBy: { valuationDate: "asc" },
+    orderBy: [{ accountId: "asc" }, { valuationDate: "asc" }],
   });
 
-  const byDate = new Map<string, { total: number; cash: number; securities: number }>();
+  const rowsByAccountId = new Map<number, AccountValuationRow[]>();
   for (const row of rows) {
-    const key = dateKey(row.valuationDate);
-    const accCurrency = currencyByAccount.get(row.accountId) ?? row.currency;
-    const bucket = byDate.get(key) ?? { total: 0, cash: 0, securities: 0 };
-    bucket.total += convertAmount(toNumber(row.totalValue), accCurrency, displayCurrency, plnPerUnit);
-    bucket.cash += convertAmount(toNumber(row.cashValue), accCurrency, displayCurrency, plnPerUnit);
-    bucket.securities += convertAmount(
-      toNumber(row.securitiesValue),
-      accCurrency,
-      displayCurrency,
-      plnPerUnit,
-    );
-    byDate.set(key, bucket);
+    const series = rowsByAccountId.get(row.accountId) ?? [];
+    series.push({
+      valuationDate: row.valuationDate,
+      totalValue: toNumber(row.totalValue),
+      cashValue: toNumber(row.cashValue),
+      securitiesValue: toNumber(row.securitiesValue),
+      currency: row.currency,
+    });
+    rowsByAccountId.set(row.accountId, series);
   }
 
-  const points = [...byDate.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, v]) => ({
-      date,
-      totalValue: v.total,
-      cashValue: v.cash,
-      securitiesValue: v.securities,
-    }));
+  const points = buildPortfolioHistoryPoints(
+    accounts,
+    rowsByAccountId,
+    from,
+    to,
+    displayCurrency,
+    plnPerUnit,
+  );
 
   return { points };
 }

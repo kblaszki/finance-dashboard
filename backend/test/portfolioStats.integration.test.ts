@@ -227,8 +227,11 @@ test("computePortfolioHistory aggregates account valuation dailies", async () =>
     "PLN",
     MOCK_FX.plnPerUnit,
   );
-  assert.equal(history.points.length, 2);
-  assert.equal(history.points[0].totalValue, 1000);
+  assert.equal(history.points.length, 30);
+  assert.equal(history.points[0]!.totalValue, 1000);
+  assert.equal(history.points[13]!.totalValue, 1000);
+  assert.equal(history.points[14]!.totalValue, 1100);
+  assert.equal(history.points[29]!.totalValue, 1100);
 
   const bench = await computeBenchmarkComparison(
     prisma,

@@ -1,6 +1,82 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { computeSimpleReturnPct, computeValueWeightedAverageReturnPct } from "./portfolioStats";
+import {
+  accountValuationAsOf,
+  buildPortfolioHistoryPoints,
+  computeSimpleReturnPct,
+  computeValueWeightedAverageReturnPct,
+} from "./portfolioStats";
+
+test("buildPortfolioHistoryPoints forward-fills sparse account valuations", () => {
+  const accounts = [
+    { id: 1, currency: "PLN" },
+    { id: 2, currency: "PLN" },
+  ];
+  const rowsByAccountId = new Map([
+    [
+      1,
+      [
+        {
+          valuationDate: new Date("2025-06-01T12:00:00.000Z"),
+          totalValue: 1000,
+          cashValue: 100,
+          securitiesValue: 900,
+          currency: "PLN",
+        },
+      ],
+    ],
+    [
+      2,
+      [
+        {
+          valuationDate: new Date("2025-06-15T12:00:00.000Z"),
+          totalValue: 500,
+          cashValue: 50,
+          securitiesValue: 450,
+          currency: "PLN",
+        },
+      ],
+    ],
+  ]);
+
+  const points = buildPortfolioHistoryPoints(
+    accounts,
+    rowsByAccountId,
+    new Date("2025-06-01T00:00:00.000Z"),
+    new Date("2025-06-16T00:00:00.000Z"),
+    "PLN",
+    { PLN: 1, USD: 4, EUR: 4.3 },
+  );
+
+  assert.equal(points.length, 16);
+  assert.equal(points[0]!.totalValue, 1000);
+  assert.equal(points[13]!.totalValue, 1000);
+  assert.equal(points[14]!.totalValue, 1500);
+  assert.equal(points[15]!.totalValue, 1500);
+});
+
+test("accountValuationAsOf returns latest row on or before date", () => {
+  const rows = [
+    {
+      valuationDate: new Date("2025-06-01T12:00:00.000Z"),
+      totalValue: 100,
+      cashValue: 10,
+      securitiesValue: 90,
+      currency: "PLN",
+    },
+    {
+      valuationDate: new Date("2025-06-10T12:00:00.000Z"),
+      totalValue: 200,
+      cashValue: 20,
+      securitiesValue: 180,
+      currency: "PLN",
+    },
+  ];
+  const mid = accountValuationAsOf(rows, new Date("2025-06-05T23:59:59.999Z"));
+  assert.equal(mid?.totalValue, 100);
+  const later = accountValuationAsOf(rows, new Date("2025-06-10T23:59:59.999Z"));
+  assert.equal(later?.totalValue, 200);
+});
 
 test("computeSimpleReturnPct returns null when base is zero", () => {
   assert.equal(computeSimpleReturnPct(0, 100, 0), null);
