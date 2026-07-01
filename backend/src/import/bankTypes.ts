@@ -26,4 +26,5 @@ export type BankImportResult = {
   skipped: number;
   errors: Array<{ row: number; message: string }>;
   preview?: BankImportPreviewRow[];
+  batchId?: number;
 };

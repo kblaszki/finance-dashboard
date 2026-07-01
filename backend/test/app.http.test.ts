@@ -2751,6 +2751,13 @@ test("POST /api/import/bank-transactions previews mBank CSV (FR-019)", async () 
     .send({ csv });
   assert.equal(importRes.status, 200);
   assert.equal(importRes.body.imported, 2);
+  assert.ok(importRes.body.batchId);
+
+  const auditRes = await request(app)
+    .get("/api/audit-logs?entityType=import_batch")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(auditRes.status, 200);
+  assert.ok(auditRes.body.some((row: { action: string }) => row.action === "create"));
 
   const dupRes = await request(app)
     .post(`/api/import/bank-transactions?accountId=${accountRes.body.id}&bank=mbank`)

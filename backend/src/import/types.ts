@@ -51,4 +51,5 @@ export type ImportResult = {
   skipped: number;
   errors: ImportError[];
   preview?: ImportPreviewRow[];
+  batchId?: number;
 };

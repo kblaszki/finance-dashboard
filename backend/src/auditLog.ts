@@ -4,7 +4,7 @@ type DbClient = PrismaClient | Prisma.TransactionClient;
 
 export type AuditAction = "create" | "update" | "delete";
 
-export type AuditEntityType = "transaction" | "asset_trade" | "internal_transfer";
+export type AuditEntityType = "transaction" | "asset_trade" | "internal_transfer" | "import_batch";
 
 function snapshotJson(value: unknown): string | null {
   if (value == null) return null;

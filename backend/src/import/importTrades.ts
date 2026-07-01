@@ -180,6 +180,7 @@ export async function importBrokerTrades(
   let imported = 0;
   let skipped = 0;
   let earliestDate: Date | null = null;
+  let batchId: number | undefined;
 
   await prisma.$transaction(async (tx) => {
     const batch = await tx.importBatch.create({
@@ -189,6 +190,7 @@ export async function importBrokerTrades(
         filename: input.filename ?? null,
       },
     });
+    batchId = batch.id;
 
     for (const row of parsedRows) {
       const hash = rowExternalHash(input.accountId, input.broker, row);
@@ -249,5 +251,6 @@ export async function importBrokerTrades(
     skipped,
     errors,
     preview,
+    ...(batchId != null ? { batchId } : {}),
   };
 }

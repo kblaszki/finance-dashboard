@@ -70,6 +70,7 @@ export async function importBankTransactions(
   let imported = 0;
   let skipped = 0;
   let earliestDate: Date | null = null;
+  let batchId: number | undefined;
   const rules = await loadActiveRulesForUser(prisma, input.userId);
 
   await prisma.$transaction(async (tx) => {
@@ -80,6 +81,7 @@ export async function importBankTransactions(
         filename: input.filename ?? null,
       },
     });
+    batchId = batch.id;
 
     for (const row of parsedRows) {
       const hash = bankExternalHash(input.accountId, input.bank, row);
@@ -134,5 +136,6 @@ export async function importBankTransactions(
     skipped,
     errors,
     preview,
+    ...(batchId != null ? { batchId } : {}),
   };
 }

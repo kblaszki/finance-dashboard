@@ -6,6 +6,7 @@ import { importBankTransactions, type ImportBankInput } from "../import/importBa
 import type { BrokerId } from "../import/types";
 import type { BankId } from "../import/bankTypes";
 import { badRequest, handleRouteError, notFound, parseFiniteNumber, parseIdParam, parsePositiveNumber } from "./httpSupport";
+import { writeAuditLog } from "../auditLog";
 
 type ImportDeps = {
   prisma: PrismaClient;
@@ -63,6 +64,17 @@ export function createImportRouter(deps: ImportDeps): Router {
       };
       if (filename) importInput.filename = filename;
       const result = await importBrokerTrades(prisma, importInput);
+      if (!dryRun && result.batchId != null && result.imported > 0) {
+        await writeAuditLog(prisma, uid(req), "import_batch", result.batchId, "create", null, {
+          batchId: result.batchId,
+          accountId,
+          source: "broker",
+          broker,
+          imported: result.imported,
+          skipped: result.skipped,
+          parsed: result.parsed,
+        });
+      }
       res.json(result);
     } catch (e: unknown) {
       if (e instanceof Error && e.message === "Account not found") {
@@ -101,6 +113,17 @@ export function createImportRouter(deps: ImportDeps): Router {
       };
       if (filename) importInput.filename = filename;
       const result = await importBankTransactions(prisma, importInput);
+      if (!dryRun && result.batchId != null && result.imported > 0) {
+        await writeAuditLog(prisma, uid(req), "import_batch", result.batchId, "create", null, {
+          batchId: result.batchId,
+          accountId,
+          source: "bank",
+          bank,
+          imported: result.imported,
+          skipped: result.skipped,
+          parsed: result.parsed,
+        });
+      }
       res.json(result);
     } catch (e: unknown) {
       if (e instanceof Error && e.message === "Account not found") {
