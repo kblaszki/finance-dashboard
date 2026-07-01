@@ -7,6 +7,8 @@ const prisma = new PrismaClient();
 
 test("parsePropertyFlowType accepts rent", () => {
   assert.equal(parsePropertyFlowType("rent"), "rent");
+  assert.equal(parsePropertyFlowType("maintenance"), "maintenance");
+  assert.equal(parsePropertyFlowType("other"), "other");
   assert.throws(() => parsePropertyFlowType("sale"));
 });
 

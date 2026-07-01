@@ -2699,6 +2699,384 @@ test("cross-user account-sync and bank-connection return 404", async () => {
   assert.equal(crossBankAccount.status, 404);
 });
 
+test("route branch coverage: optional filters and body fields across routers", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  const { token } = await createUserAndToken();
+
+  const parentCat = await request(app)
+    .post("/api/categories")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Parent coverage", sortOrder: 1 });
+  assert.equal(parentCat.status, 201);
+  const childCat = await request(app)
+    .post("/api/categories")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Child coverage", parentId: parentCat.body.id });
+  assert.equal(childCat.status, 201);
+  const unparent = await request(app)
+    .put(`/api/categories/${childCat.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ parentId: null, sortOrder: 2 });
+  assert.equal(unparent.status, 200);
+
+  const budgetsPlain = await request(app)
+    .get("/api/budgets?currency=EUR")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(budgetsPlain.status, 200);
+
+  const catForBudget = await request(app)
+    .post("/api/categories")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Budget cov" });
+  assert.equal(catForBudget.status, 201);
+  await request(app)
+    .put("/api/budgets")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      categoryId: catForBudget.body.id,
+      budgetMonth: "2026-03",
+      amount: 500,
+      currency: "PLN",
+    });
+  const budgetsMonth = await request(app)
+    .get("/api/budgets?month=2026-03&currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(budgetsMonth.status, 200);
+  assert.ok(budgetsMonth.body.length >= 1);
+
+  const bank = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountType: "BANK", name: "Cov bank", currency: "PLN", openingBalance: 5000 });
+  const liability = await request(app)
+    .post("/api/liabilities")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      name: "Linked loan",
+      liabilityType: "loan",
+      balance: 1000,
+      currency: "PLN",
+      accountId: bank.body.id,
+    });
+  assert.equal(liability.status, 201);
+
+  const realEstate = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "REAL_ESTATE",
+      name: "Cov flat",
+      currency: "PLN",
+      openingBalance: 200000,
+    });
+  const flow = await request(app)
+    .post("/api/property-cash-flows")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId: realEstate.body.id,
+      flowType: "rent",
+      amount: 2000,
+      currency: "PLN",
+      date: "2026-03-01T12:00:00.000Z",
+      description: "Rent",
+    });
+  assert.equal(flow.status, 201);
+  const flowUpd = await request(app)
+    .put(`/api/property-cash-flows/${flow.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      flowType: "maintenance",
+      amount: 500,
+      currency: "PLN",
+      date: "2026-04-01T12:00:00.000Z",
+      description: "Repair",
+    });
+  assert.equal(flowUpd.status, 200);
+  assert.equal(flowUpd.body.flowType, "maintenance");
+
+  const flowList = await request(app)
+    .get(
+      `/api/property-cash-flows?accountId=${realEstate.body.id}&from=2026-01-01&to=2026-12-31`,
+    )
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(flowList.status, 200);
+  assert.ok(flowList.body.length >= 1);
+
+  const realEstate2 = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "REAL_ESTATE",
+      name: "Cov flat 2",
+      currency: "PLN",
+      openingBalance: 100000,
+    });
+  const flowMove = await request(app)
+    .put(`/api/property-cash-flows/${flow.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountId: realEstate2.body.id, description: "" });
+  assert.equal(flowMove.status, 200);
+  assert.equal(flowMove.body.accountId, realEstate2.body.id);
+
+  const instrument = await request(app)
+    .post("/api/instruments")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ instrumentType: "ETF", symbol: "COV", currency: "PLN" });
+  const valuation = await request(app)
+    .post("/api/asset-valuations")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId: realEstate.body.id,
+      instrumentId: instrument.body.id,
+      value: 210000,
+      currency: "PLN",
+      date: "2026-02-01T12:00:00.000Z",
+      source: "manual",
+      description: "Appraisal",
+    });
+  assert.equal(valuation.status, 201);
+  const valList = await request(app)
+    .get(
+      `/api/asset-valuations?accountId=${realEstate.body.id}&instrumentId=${instrument.body.id}&from=2026-01-01&to=2026-12-31`,
+    )
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(valList.status, 200);
+  assert.equal(valList.body.length, 1);
+
+  await request(app)
+    .put("/api/tax-loss-carryforward")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ taxYear: 2024, lossAmount: 300, usedAmount: 50, note: "Partial" });
+
+  const auditLimited = await request(app)
+    .get("/api/audit-logs?limit=25")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(auditLimited.status, 200);
+
+  const brokerA = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountType: "BROKERAGE", name: "Cov A", currency: "PLN", openingBalance: 10000 });
+  const brokerB = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountType: "BROKERAGE", name: "Cov B", currency: "PLN", openingBalance: 0 });
+  const holding = await request(app)
+    .post(`/api/accounts/${brokerA.body.id}/holdings`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ instrumentId: instrument.body.id });
+  await request(app)
+    .post(`/api/holdings/${holding.body.id}/lots`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      side: "BUY",
+      quantity: 5,
+      pricePerUnit: 10,
+      currency: "PLN",
+      tradeDate: "2026-01-10T12:00:00.000Z",
+    });
+  const transfer = await request(app)
+    .post("/api/position-transfers")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      fromAccountId: brokerA.body.id,
+      toAccountId: brokerB.body.id,
+      instrumentId: instrument.body.id,
+      quantity: 2,
+      transferDate: "2026-02-15T12:00:00.000Z",
+    });
+  assert.equal(transfer.status, 201);
+  const ptList = await request(app)
+    .get(
+      `/api/position-transfers?accountId=${brokerA.body.id}&from=2026-01-01&to=2026-12-31`,
+    )
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(ptList.status, 200);
+  assert.ok(ptList.body.length >= 1);
+
+  const merger = await request(app)
+    .post("/api/corporate-actions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId: brokerB.body.id,
+      instrumentId: instrument.body.id,
+      actionType: "merger",
+      actionDate: "2026-05-01T12:00:00.000Z",
+      notes: "Coverage merger",
+      quantityDelta: 1,
+    });
+  assert.equal(merger.status, 201);
+  const caList = await request(app)
+    .get(
+      `/api/corporate-actions?accountId=${brokerB.body.id}&from=2026-01-01&to=2026-12-31`,
+    )
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(caList.status, 200);
+
+  const withdrawal = await request(app)
+    .post("/api/tax-wrapper-withdrawals")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId: brokerA.body.id,
+      amount: 100,
+      currency: "PLN",
+      withdrawnOn: "2026-03-01T12:00:00.000Z",
+      withdrawalType: "partial",
+      includeInPit38: false,
+      description: "Cov withdrawal",
+    });
+  assert.equal(withdrawal.status, 201);
+  const wList = await request(app)
+    .get(
+      `/api/tax-wrapper-withdrawals?accountId=${brokerA.body.id}&from=2026-01-01&to=2026-12-31`,
+    )
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(wList.status, 200);
+
+  await request(app)
+    .put(`/api/accounts/${brokerA.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ taxWrapperType: "ikze" });
+  const ikze = await request(app)
+    .post("/api/ikze-contributions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId: brokerA.body.id,
+      taxYear: 2026,
+      amount: 200,
+      currency: "PLN",
+      contributedOn: "2026-04-01T12:00:00.000Z",
+    });
+  assert.equal(ikze.status, 201);
+  const ikzeList = await request(app)
+    .get(`/api/ikze-contributions?accountId=${brokerA.body.id}&taxYear=2026`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(ikzeList.status, 200);
+  assert.ok(ikzeList.body.length >= 1);
+
+  const couponSched = await request(app)
+    .post("/api/coupon-schedules")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId: brokerA.body.id,
+      instrumentId: instrument.body.id,
+      scheduleType: "coupon",
+      amount: 20,
+      currency: "PLN",
+      date: "2026-07-01T12:00:00.000Z",
+    });
+  assert.equal(couponSched.status, 201);
+  const couponList = await request(app)
+    .get(
+      `/api/coupon-schedules?accountId=${brokerA.body.id}&instrumentId=${instrument.body.id}&from=2026-01-01&to=2026-12-31`,
+    )
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(couponList.status, 200);
+
+  const income = await request(app)
+    .post("/api/income-events")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId: bank.body.id,
+      eventType: "interest",
+      taxType: "exempt",
+      amount: 10,
+      currency: "PLN",
+      date: "2026-06-01T12:00:00.000Z",
+      description: "Exempt interest",
+    });
+  assert.equal(income.status, 201);
+  const incomeUpd = await request(app)
+    .put(`/api/income-events/${income.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ instrumentId: null, taxType: "belka", withheldTax: 1.9 });
+  assert.equal(incomeUpd.status, 200);
+
+  const csv = readFileSync(join(__dirname, "fixtures", "import", "xtb-closed-positions.csv"), "utf8");
+  const importBroker = await request(app)
+    .post(`/api/import/broker-trades?accountId=${brokerA.body.id}&broker=xtb`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv, filename: "xtb-closed-positions.csv" });
+  assert.equal(importBroker.status, 200);
+  assert.ok(importBroker.body.imported > 0);
+  assert.ok(importBroker.body.batchId);
+
+  const importAudit = await request(app)
+    .get("/api/audit-logs?entityType=import_batch")
+    .set("Authorization", `Bearer ${token}`);
+  assert.ok(importAudit.body.some((r: { action: string }) => r.action === "create"));
+
+  const liabilityUpd = await request(app)
+    .put(`/api/liabilities/${liability.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      name: "Updated loan",
+      balance: 800,
+      currency: "PLN",
+      liabilityType: "credit",
+      accountId: null,
+    });
+  assert.equal(liabilityUpd.status, 200);
+  assert.equal(liabilityUpd.body.accountId, null);
+
+  const sale = await request(app)
+    .post("/api/property-sales")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId: realEstate.body.id,
+      soldOn: "2026-05-01T12:00:00.000Z",
+      proceeds: 10000,
+      acquisitionCost: 8000,
+      improvementsCost: 500,
+      fiveYearExemption: true,
+      currency: "PLN",
+      description: "Garage sale",
+    });
+  assert.equal(sale.status, 201);
+  const salesFiltered = await request(app)
+    .get(
+      `/api/property-sales?accountId=${realEstate.body.id}&from=2026-01-01&to=2026-12-31`,
+    )
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(salesFiltered.status, 200);
+  assert.ok(salesFiltered.body.length >= 1);
+
+  const split = await request(app)
+    .post("/api/corporate-actions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId: brokerA.body.id,
+      instrumentId: instrument.body.id,
+      holdingId: holding.body.id,
+      actionType: "stock_split",
+      actionDate: "2026-06-01T12:00:00.000Z",
+      ratio: 2,
+      notes: "2:1 split",
+    });
+  assert.equal(split.status, 201);
+
+  await request(app)
+    .delete(`/api/tax-wrapper-withdrawals/${withdrawal.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  await request(app)
+    .delete(`/api/ikze-contributions/${ikze.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  await request(app)
+    .delete(`/api/property-cash-flows/${flow.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  await request(app)
+    .delete(`/api/property-sales/${sale.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+
+  await request(app)
+    .delete(`/api/asset-valuations/${valuation.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  await request(app)
+    .delete(`/api/liabilities/${liability.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+});
+
 test("validation errors on auxiliary routes return 4xx", async () => {
   const { token } = await createUserAndToken();
 
@@ -3167,6 +3545,82 @@ test("POST /api/import/broker-trades dry-run previews XTB CSV", async () => {
   assert.equal(res.body.dryRun, true);
   assert.equal(res.body.parsed, 3);
   assert.equal(res.body.preview.length, 3);
+});
+
+test("POST /api/import/broker-trades commits XTB CSV and writes audit", async () => {
+  const { readFileSync } = await import("node:fs");
+  const { join } = await import("node:path");
+  const { token } = await createUserAndToken();
+  const accountRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountType: "BROKERAGE",
+      name: "Import Broker commit",
+      currency: "PLN",
+      openingBalance: 0,
+    });
+  const csv = readFileSync(
+    join(__dirname, "fixtures", "import", "xtb-closed-positions.csv"),
+    "utf8",
+  );
+  const res = await request(app)
+    .post(`/api/import/broker-trades?accountId=${accountRes.body.id}&broker=xtb`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv });
+  assert.equal(res.status, 200);
+  assert.equal(res.body.dryRun, false);
+  assert.ok(res.body.batchId);
+});
+
+test("POST /api/import routes validate account and payload", async () => {
+  const { token } = await createUserAndToken();
+  const bank = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountType: "BANK", name: "Import guard bank", currency: "PLN", openingBalance: 0 });
+  const csv = "Position;Symbol;Type;Volume;Open time;Open price\n1;PKO.PL;BUY;1;2025-01-10 10:00:00;10";
+
+  const brokerOnBank = await request(app)
+    .post(`/api/import/broker-trades?accountId=${bank.body.id}&broker=xtb`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv });
+  assert.equal(brokerOnBank.status, 400);
+
+  const bankOnBroker = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountType: "BROKERAGE", name: "Import guard broker", currency: "PLN", openingBalance: 0 });
+  const bankCsv = "Date;Amount;Description\n2026-01-01;-10;Test";
+  const bankWrongType = await request(app)
+    .post(`/api/import/bank-transactions?accountId=${bankOnBroker.body.id}&bank=mbank`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv: bankCsv });
+  assert.equal(bankWrongType.status, 400);
+
+  const missingAccount = await request(app)
+    .post("/api/import/bank-transactions?accountId=999999&bank=mbank")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv: bankCsv });
+  assert.equal(missingAccount.status, 404);
+
+  const emptyCsv = await request(app)
+    .post(`/api/import/broker-trades?accountId=${bankOnBroker.body.id}&broker=xtb`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv: "   " });
+  assert.equal(emptyCsv.status, 400);
+
+  const badBroker = await request(app)
+    .post(`/api/import/broker-trades?accountId=${bankOnBroker.body.id}&broker=unknown`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv });
+  assert.equal(badBroker.status, 400);
+
+  const badBank = await request(app)
+    .post(`/api/import/bank-transactions?accountId=${bank.body.id}&bank=revolut`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv: bankCsv });
+  assert.equal(badBank.status, 400);
 });
 
 test("GET /api/stats/tax-report returns annual summary", async () => {
