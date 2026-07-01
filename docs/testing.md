@@ -77,6 +77,8 @@ Before marking work complete when logic under `backend/src/`, routes, or testabl
 2. **frontend-checks** — build, frontend tests, lint
 3. **coverage** — backend (`c8`) and frontend (`vitest --coverage`) with threshold enforcement; uploads HTML/lcov artifacts
 
+Backend tests preload `backend/test/setupTestEnv.ts` (via `tsx --import`) so CI gets an ephemeral SQLite `DATABASE_URL` and schema without `backend/.env`. Integration tests use `backend/test/prismaTestClient.ts` (`createTestPrisma`, `resetDatabase`). Tests run with `--test-concurrency=1` to avoid SQLite contention.
+
 ## Related docs
 
 - [fullstack-architecture-practices.md](fullstack-architecture-practices.md) §10 — why tests are structured this way

@@ -11,8 +11,8 @@
     "db:backup": "tsx src/scripts/backupDb.ts",
     "create-user": "tsx src/scripts/createUser.ts",
     "market:sync": "tsx src/scripts/marketSync.ts",
-    "test": "tsx --test \"src/**/*.test.ts\" \"test/**/*.test.ts\"",
-    "test:coverage": "c8 tsx --test \"src/**/*.test.ts\" \"test/**/*.test.ts\""
+    "test": "tsx --import ./test/setupTestEnv.ts --test --test-concurrency=1 \"src/**/*.test.ts\" \"test/**/*.test.ts\"",
+    "test:coverage": "c8 tsx --import ./test/setupTestEnv.ts --test --test-concurrency=1 \"src/**/*.test.ts\" \"test/**/*.test.ts\""
   },
   "prisma": {
     "seed": "ts-node --transpile-only prisma/seed.ts"

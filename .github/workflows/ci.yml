@@ -34,7 +34,7 @@ jobs:
         shell: bash
         run: |
           shopt -s globstar
-          npx tsx --test src/**/*.test.ts test/**/*.test.ts
+          npx tsx --import ./test/setupTestEnv.ts --test --test-concurrency=1 src/**/*.test.ts test/**/*.test.ts
 
   frontend-checks:
     runs-on: ubuntu-latest
@@ -94,7 +94,7 @@ jobs:
         shell: bash
         run: |
           shopt -s globstar
-          npx c8 --reporter=text --reporter=html --reporter=lcov --include='src/**/*.ts' --exclude='**/*.test.ts' tsx --test src/**/*.test.ts test/**/*.test.ts
+          npx c8 --reporter=text --reporter=html --reporter=lcov --include='src/**/*.ts' --exclude='**/*.test.ts' tsx --import ./test/setupTestEnv.ts --test --test-concurrency=1 src/**/*.test.ts test/**/*.test.ts
 
       - name: Install frontend dependencies
         working-directory: frontend

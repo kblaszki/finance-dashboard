@@ -6,6 +6,8 @@ import { PrismaClient } from "@prisma/client";
 const TMP_DIR = path.join(__dirname, "tmp");
 const BACKEND_ROOT = path.join(__dirname, "..");
 
+const pushedUrls = new Set<string>();
+
 export function getTestDatabaseUrl(): string {
   if (!fs.existsSync(TMP_DIR)) {
     fs.mkdirSync(TMP_DIR, { recursive: true });
@@ -14,21 +16,32 @@ export function getTestDatabaseUrl(): string {
   return `file:${dbPath.replace(/\\/g, "/")}`;
 }
 
-let schemaPushed = false;
+function pushSchema(url: string): void {
+  execSync("npx prisma db push --skip-generate", {
+    cwd: BACKEND_ROOT,
+    env: { ...process.env, DATABASE_URL: url },
+    stdio: "pipe",
+  });
+}
+
+function ensureSchemaForUrl(url: string): void {
+  if (pushedUrls.has(url)) return;
+  pushSchema(url);
+  pushedUrls.add(url);
+}
+
+/** Ensures DATABASE_URL and schema exist (CI has no backend/.env). */
+export function ensureTestDatabaseEnv(): void {
+  if (!process.env.DATABASE_URL) {
+    process.env.DATABASE_URL = getTestDatabaseUrl();
+  }
+  ensureSchemaForUrl(process.env.DATABASE_URL);
+}
 
 export async function createTestPrisma(): Promise<PrismaClient> {
   const url = getTestDatabaseUrl();
   process.env.DATABASE_URL = url;
-
-  if (!schemaPushed) {
-    execSync("npx prisma db push --skip-generate", {
-      cwd: BACKEND_ROOT,
-      env: { ...process.env, DATABASE_URL: url },
-      stdio: "pipe",
-    });
-    schemaPushed = true;
-  }
-
+  ensureSchemaForUrl(url);
   return new PrismaClient({ datasources: { db: { url } } });
 }
 
