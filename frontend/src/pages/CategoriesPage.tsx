@@ -7,6 +7,7 @@ import {
   type Category,
 } from '../api/categoriesApi'
 import { useAsyncData } from '../hooks/useAsyncData'
+import { CategorizationRulesSection } from '../components/CategorizationRulesSection'
 
 export function CategoriesPage() {
   const { data, error, loading, reload } = useAsyncData(fetchCategories)
@@ -118,6 +119,8 @@ export function CategoriesPage() {
           </div>
         )}
       </section>
+
+      <CategorizationRulesSection />
     </div>
   )
 }

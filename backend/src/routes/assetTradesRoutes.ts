@@ -3,6 +3,7 @@ import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import { isHoldingsAccountType } from "../accountTypes";
 import { createUserAssetTradeForAccount, fetchUserAssetTrades } from "../assetTrades";
+import { writeAuditLog } from "../auditLog";
 import { scheduleMarketSyncAfterBuy } from "../marketDataTrigger";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
 import {
@@ -137,6 +138,15 @@ export function createAssetTradesRouter(deps: AssetTradesDeps): Router {
           instrumentType: instrument.instrumentType,
         });
       }
+      await writeAuditLog(prisma, uid(req), "asset_trade", row.id, "create", null, {
+        id: row.id,
+        accountId,
+        instrumentId,
+        side,
+        quantity,
+        currency,
+        tradeDate: tradeDate.toISOString(),
+      });
       res.status(201).json(serializeHoldingLot(row));
     } catch (e: unknown) {
       if (

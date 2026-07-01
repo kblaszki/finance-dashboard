@@ -146,8 +146,10 @@ export async function computeNetWorth(
   byBucket: NetWorthBucketRow[];
   accounts: Array<{ id: number; name: string; accountType: string; value: number }>;
   liabilities: ReturnType<typeof serializeLiability>[];
+  consolidatedCurrency: string;
+  fxRatesAsOf: string | null;
 }> {
-  const { plnPerUnit } = await getFxRatesPlnPerUnit();
+  const { plnPerUnit, asOf } = await getFxRatesPlnPerUnit();
   const accounts = await prisma.account.findMany({ where: { userId } });
   const latestValues = await getLatestAccountTotalValues(
     prisma,
@@ -182,5 +184,7 @@ export async function computeNetWorth(
     byBucket: bucketSummary.byBucket,
     accounts: legacy.accounts,
     liabilities: liabilityRows.map(serializeLiability),
+    consolidatedCurrency: displayCurrency,
+    fxRatesAsOf: asOf ?? null,
   };
 }

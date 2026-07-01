@@ -2502,6 +2502,92 @@ test("coupon schedule and record income (FR-033)", async () => {
   assert.ok(incomeRes.body.some((e: { eventType: string }) => e.eventType === "coupon"));
 });
 
+test("Phase D automation: rules, alerts, export, audit (FR-034–038, NFR-002–003)", async () => {
+  const { token } = await createUserAndToken();
+  const catRes = await request(app)
+    .post("/api/categories")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Groceries PhaseD" });
+  assert.equal(catRes.status, 201);
+
+  const ruleRes = await request(app)
+    .post("/api/categorization-rules")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ categoryId: catRes.body.id, pattern: "SHOP", matchType: "contains", priority: 1 });
+  assert.equal(ruleRes.status, 201);
+
+  const bankRes = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountType: "BANK", name: "Main bank", currency: "PLN", openingBalance: 1000 });
+  assert.equal(bankRes.status, 201);
+
+  await request(app)
+    .put("/api/budgets")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      categoryId: catRes.body.id,
+      budgetMonth: "2026-06-01",
+      amount: 100,
+      currency: "PLN",
+    });
+
+  const nwRes = await request(app)
+    .get("/api/stats/net-worth?currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(nwRes.status, 200);
+  assert.equal(nwRes.body.consolidatedCurrency, "PLN");
+  assert.ok(nwRes.body.fxRatesAsOf);
+
+  const alertsRes = await request(app)
+    .get("/api/budgets/alerts?month=2026-06&currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(alertsRes.status, 200);
+  assert.ok(Array.isArray(alertsRes.body));
+
+  const exportRes = await request(app)
+    .get("/api/export/full?format=json")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(exportRes.status, 200);
+  assert.ok(exportRes.body.user);
+  assert.ok(Array.isArray(exportRes.body.accounts));
+
+  const txRes = await request(app)
+    .post("/api/transactions")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      accountId: bankRes.body.id,
+      transactionType: "EXPENSE",
+      amount: 50,
+      currency: "PLN",
+      category: "Groceries PhaseD",
+      categoryId: catRes.body.id,
+      date: "2026-06-10T12:00:00.000Z",
+      description: "Test",
+    });
+  assert.equal(txRes.status, 201);
+
+  const auditRes = await request(app)
+    .get("/api/audit-logs?entityType=transaction")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(auditRes.status, 200);
+  assert.ok(auditRes.body.some((row: { action: string }) => row.action === "create"));
+
+  const connRes = await request(app)
+    .post("/api/bank-connections")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountId: bankRes.body.id, bankCode: "MBANK" });
+  assert.equal(connRes.status, 201);
+  assert.equal(connRes.body.status, "pending");
+
+  const authRes = await request(app)
+    .post(`/api/bank-connections/${connRes.body.id}/authorize`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({});
+  assert.equal(authRes.status, 200);
+  assert.equal(authRes.body.status, "connected");
+});
+
 test("tax wrappers, position transfers, corporate actions (FR-039–041)", async () => {
   const { token } = await createUserAndToken();
   const brokerA = await request(app)

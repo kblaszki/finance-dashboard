@@ -72,6 +72,10 @@ import { createImportPresetsRouter } from "./routes/importPresetsRoutes";
 import { createTaxCalendarRouter } from "./routes/taxCalendarRoutes";
 import { createAssetValuationsRouter } from "./routes/assetValuationsRoutes";
 import { createCouponSchedulesRouter } from "./routes/couponSchedulesRoutes";
+import { createCategorizationRulesRouter } from "./routes/categorizationRulesRoutes";
+import { createAccountSyncRouter } from "./routes/accountSyncRoutes";
+import { createBankConnectionsRouter } from "./routes/bankConnectionsRoutes";
+import { createExportRouter } from "./routes/exportRoutes";
 import { handleRouteError } from "./routes/httpSupport";
 
 dotenv.config();
@@ -415,6 +419,39 @@ app.use(
 
 app.use(
   createTaxCalendarRouter({
+    prisma,
+    requireAuth,
+    uid,
+  }),
+);
+
+app.use(
+  createCategorizationRulesRouter({
+    prisma,
+    requireAuth,
+    uid,
+  }),
+);
+
+app.use(
+  createAccountSyncRouter({
+    prisma,
+    requireAuth,
+    uid,
+    getFxRatesPlnPerUnit,
+  }),
+);
+
+app.use(
+  createBankConnectionsRouter({
+    prisma,
+    requireAuth,
+    uid,
+  }),
+);
+
+app.use(
+  createExportRouter({
     prisma,
     requireAuth,
     uid,

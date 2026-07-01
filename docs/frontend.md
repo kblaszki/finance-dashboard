@@ -12,7 +12,7 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 | `/password-reset` | Password reset stub | `pages/PasswordResetPage.tsx` |
 | `/dashboard` | Dashboard | `DashboardPage` — `NetWorthSection`, `RollingCashflowKpis`, `AverageReturnKpi` (FR-001/002/005), portfolio/budget tabs |
 | `/statistics` | Statistics | `StatisticsPage` — FR-003 (default: current month), FR-004 cashflow history chart, FR-016 `CategoryBreakdownSection` |
-| `/categories` | Categories | `CategoriesPage` — FR-015 CRUD |
+| `/categories` | Categories | `CategoriesPage` — FR-015 CRUD; FR-034 categorization rules |
 | `/budgets` | Budgets | `BudgetsPage` — FR-017 monthly limits vs spend |
 | `/import` | Import | `ImportPage` — FR-019 bank (mBank/generic) and brokerage CSV |
 | `/portfolio` | Portfolio (all accounts) | `PortfolioPage` — filters by account, type, bucket (FR-008) |
@@ -30,7 +30,7 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 | `/import/presets` | Import presets | `ImportPresetsPage` — FR-047 broker templates |
 | `/liabilities` | Liabilities | `LiabilitiesPage` — FR-029 mortgages, loans, credits |
 | `/income-events` | Income events | `IncomeEventsPage` — FR-024 dividends, interest, coupons; FR-033 coupon schedule |
-| `/settings` | Account settings | `SettingsPage` — username, email, password |
+| `/settings` | Account settings | `SettingsPage` — profile; NFR-002 export, FR-035/036 sync stubs, NFR-003 audit |
 
 Protected shell: `ProtectedRoute` → `AppShell`.
 
@@ -60,6 +60,10 @@ Preferred async pattern for page/widget data: [`frontend/src/hooks/useAsyncData.
 | `propertyCashFlowsApi.ts` | `/api/property-cash-flows` |
 | `assetValuationsApi.ts` | `/api/asset-valuations` |
 | `couponSchedulesApi.ts` | `/api/coupon-schedules` |
+| `categorizationRulesApi.ts` | `/api/categorization-rules` |
+| `accountSyncApi.ts` | `/api/account-sync` |
+| `bankConnectionsApi.ts` | `/api/bank-connections` |
+| `exportApi.ts` | `/api/export/full`, `/api/audit-logs` |
 | `taxWrappersApi.ts` | `/api/tax-wrapper-withdrawals`, `/api/ikze-contributions` |
 | `positionTransfersApi.ts` | `/api/position-transfers` |
 | `corporateActionsApi.ts` | `/api/corporate-actions` |

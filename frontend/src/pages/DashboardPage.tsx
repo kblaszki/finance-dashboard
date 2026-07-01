@@ -13,6 +13,7 @@ import { PeriodProvider } from '../state/period'
 import { CashFlowProvider } from '../state/cashflow'
 import { AverageReturnKpi } from '../components/AverageReturnKpi'
 import { NetWorthSection } from '../components/NetWorthSection'
+import { BudgetAlertsBanner } from '../components/BudgetAlertsBanner'
 import { RollingCashflowKpis } from '../components/RollingCashflowKpis'
 
 type DashboardTab = 'portfolio' | 'budget'
@@ -44,6 +45,7 @@ export function DashboardPage() {
           </div>
           <PeriodFilter />
           <NetWorthSection />
+          <BudgetAlertsBanner />
           <section className="card">
             <h2>12-month rolling averages</h2>
             <RollingCashflowKpis />

@@ -167,6 +167,27 @@ Implementation: [`backend/src/routes/`](../backend/src/routes/) (wired in [`back
 
 Market sync (`POST /api/market-data/sync`) includes **crypto** holdings on `CRYPTO` accounts (FR-031) using Twelve Data pair symbols (e.g. `BTC/USD`).
 
+## Phase D — Automation (FR-034–038, NFR-002–003)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/api/categorization-rules` | Yes | List auto-categorization rules (FR-034) |
+| POST | `/api/categorization-rules` | Yes | Create — `{ categoryId, pattern, matchType?, priority?, active? }` |
+| PUT | `/api/categorization-rules/:id` | Yes | Update |
+| DELETE | `/api/categorization-rules/:id` | Yes | Delete |
+| GET | `/api/budgets/alerts` | Yes | Threshold alerts (80%/100%) — `month`, `currency` (FR-037) |
+| GET | `/api/account-sync` | Yes | List per-account sync settings (FR-035) |
+| PUT | `/api/account-sync/:accountId` | Yes | Upsert — `{ provider?, syncEnabled?, syncIntervalHours?, configJson? }` |
+| POST | `/api/account-sync/:accountId/run` | Yes | Run sync (brokerage/crypto → market prices; bank → stub) |
+| GET | `/api/bank-connections` | Yes | List PSD2 connections (FR-036 stub) |
+| POST | `/api/bank-connections` | Yes | Create — `{ accountId, bankCode }` on BANK account |
+| POST | `/api/bank-connections/:id/authorize` | Yes | Stub OAuth consent |
+| DELETE | `/api/bank-connections/:id` | Yes | Remove connection |
+| GET | `/api/export/full` | Yes | Full user data JSON export (NFR-002) — `format=json` |
+| GET | `/api/audit-logs` | Yes | Financial edit audit trail (NFR-003) — `entityType`, `limit` |
+
+`GET /api/stats/net-worth?currency=PLN` returns `consolidatedCurrency` and `fxRatesAsOf` for FR-038 dashboard PLN rollup.
+
 ## Tax wrappers (FR-039, DATA-018/023)
 
 | Method | Path | Auth | Description |

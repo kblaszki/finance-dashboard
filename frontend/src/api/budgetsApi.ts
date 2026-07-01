@@ -35,3 +35,23 @@ export function upsertBudget(input: BudgetInput): Promise<Budget> {
 export function deleteBudget(id: number): Promise<void> {
   return apiClient.delete(`/api/budgets/${id}`);
 }
+
+export type BudgetAlert = {
+  categoryId: number;
+  categoryName: string;
+  budgetMonth: string;
+  budgetAmount: number;
+  spent: number;
+  currency: string;
+  pctUsed: number;
+  threshold: number;
+  severity: "warning" | "exceeded";
+};
+
+export function fetchBudgetAlerts(month?: string, currency?: string): Promise<BudgetAlert[]> {
+  const q = new URLSearchParams();
+  if (month) q.set("month", month);
+  if (currency) q.set("currency", currency);
+  const s = q.toString();
+  return apiClient.get<BudgetAlert[]>(`/api/budgets/alerts${s ? `?${s}` : ""}`);
+}

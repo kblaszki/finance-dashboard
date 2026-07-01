@@ -8,6 +8,7 @@ import {
   suggestCrossCurrencyTransfer,
   type CreateInternalTransferInput,
 } from "../internalTransfers";
+import { writeAuditLog } from "../auditLog";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
 import {
   badRequest,
@@ -110,6 +111,15 @@ export function createInternalTransfersRouter(deps: InternalTransfersDeps): Rout
         uid(req),
         transferInput,
         transferDeps,
+      );
+      await writeAuditLog(
+        prisma,
+        uid(req),
+        "internal_transfer",
+        transfer.outTransactionId,
+        "create",
+        null,
+        transfer,
       );
       res.status(201).json(transfer);
     } catch (e: unknown) {

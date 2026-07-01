@@ -9,6 +9,7 @@ import {
   validateTransactionSplits,
   type SplitInput,
 } from "../transactionSplits";
+import { writeAuditLog } from "../auditLog";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
 import { badRequest, handleRouteError, notFound, parseFiniteNumber, parseIdParam, parsePositiveNumber } from "./httpSupport";
 
@@ -17,6 +18,30 @@ const TRANSACTION_DOMAIN_ERRORS = new Set(["Insufficient cash balance"]);
 const transactionInclude = {
   splits: { include: { category: { select: { name: true } } } },
 };
+
+function transactionAuditSnapshot(row: {
+  id: number;
+  accountId: number;
+  transactionType: string;
+  amount: unknown;
+  currency: string;
+  category: string;
+  categoryId?: number | null;
+  date: Date;
+  description: string | null;
+}) {
+  return {
+    id: row.id,
+    accountId: row.accountId,
+    transactionType: row.transactionType,
+    amount: Number(row.amount),
+    currency: row.currency,
+    category: row.category,
+    categoryId: row.categoryId ?? null,
+    date: row.date.toISOString(),
+    description: row.description,
+  };
+}
 
 function parseSplitsBody(body: unknown): SplitInput[] | undefined {
   if (!Array.isArray(body)) return undefined;
@@ -166,6 +191,15 @@ export function createTransactionsRouter(deps: TransactionsDeps): Router {
           include: transactionInclude,
         });
       });
+      await writeAuditLog(
+        prisma,
+        userId,
+        "transaction",
+        row.id,
+        "create",
+        null,
+        transactionAuditSnapshot(row),
+      );
       res.status(201).json(serializeTransaction(row));
     } catch (e: unknown) {
       if (e instanceof Error && TRANSACTION_DOMAIN_ERRORS.has(e.message)) {
@@ -249,6 +283,15 @@ export function createTransactionsRouter(deps: TransactionsDeps): Router {
         await recomputeAccountValuationsFrom(tx, existing.accountId, recalcFrom, plnPerUnit);
         return tx.transaction.findUniqueOrThrow({ where: { id }, include: transactionInclude });
       });
+      await writeAuditLog(
+        prisma,
+        uid(req),
+        "transaction",
+        id,
+        "update",
+        transactionAuditSnapshot(existing),
+        transactionAuditSnapshot(updated),
+      );
       res.json(serializeTransaction(updated));
     } catch (e: unknown) {
       if (e instanceof Error && TRANSACTION_DOMAIN_ERRORS.has(e.message)) {
@@ -272,6 +315,15 @@ export function createTransactionsRouter(deps: TransactionsDeps): Router {
         await recalcTransactionBalances(tx, existing.accountId, existing.date);
         await recomputeAccountValuationsFrom(tx, existing.accountId, existing.date, plnPerUnit);
       });
+      await writeAuditLog(
+        prisma,
+        uid(req),
+        "transaction",
+        id,
+        "delete",
+        transactionAuditSnapshot(existing),
+        null,
+      );
       res.status(204).send();
     } catch (e: unknown) {
       handleRouteError(res, e, "Failed to delete transaction");

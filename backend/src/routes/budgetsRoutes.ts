@@ -8,6 +8,7 @@ import {
   serializeBudget,
   upsertUserBudget,
 } from "../budgets";
+import { computeBudgetAlerts } from "../budgetAlerts";
 import { getCategoryForUser } from "../categories";
 import { computeCategoryBreakdown, fetchUserTransactions } from "../stats";
 import { handleRouteError, parseFiniteNumber, parseIdParam, parsePositiveNumber } from "./httpSupport";
@@ -104,6 +105,31 @@ export function createBudgetsRouter(deps: BudgetsDeps): Router {
       res.json(serializeBudget(row, cat?.name));
     } catch (e: unknown) {
       handleRouteError(res, e, "Failed to save budget");
+    }
+  });
+
+  router.get("/api/budgets/alerts", requireAuth, async (req: AuthedRequest, res) => {
+    try {
+      const userId = uid(req);
+      const now = new Date();
+      const defaultMonth = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+      const budgetMonth = parseBudgetMonth(
+        req.query.month != null ? String(req.query.month) : defaultMonth,
+      );
+      const currency = normalizeCurrency(req.query.currency ?? "PLN");
+      const { plnPerUnit } = await getFxRatesPlnPerUnit();
+      const alerts = await computeBudgetAlerts(
+        prisma,
+        userId,
+        budgetMonth,
+        currency,
+        plnPerUnit,
+        convertAmount,
+        toNumber,
+      );
+      res.json(alerts);
+    } catch (e: unknown) {
+      handleRouteError(res, e, "Failed to load budget alerts");
     }
   });
 

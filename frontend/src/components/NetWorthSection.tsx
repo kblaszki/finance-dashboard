@@ -2,7 +2,6 @@ import { useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { fetchNetWorth, type NetWorthBucket } from '../api/statsApi'
 import { useAsyncData } from '../hooks/useAsyncData'
-import { useCurrency } from '../state/currency'
 import { formatMoney } from '../utils/format'
 
 const BUCKET_LABELS: Record<NetWorthBucket, string> = {
@@ -14,8 +13,8 @@ const BUCKET_LABELS: Record<NetWorthBucket, string> = {
 }
 
 export function NetWorthSection() {
-  const { currency } = useCurrency()
-  const loader = useCallback(() => fetchNetWorth(currency), [currency])
+  const consolidatedCurrency = 'PLN'
+  const loader = useCallback(() => fetchNetWorth(consolidatedCurrency), [])
   const { data: stats, error, loading } = useAsyncData(loader)
 
   if (error) {
@@ -39,10 +38,14 @@ export function NetWorthSection() {
   return (
     <section className="card">
       <h2>Net worth</h2>
-      <p className="kpi-highlight">{formatMoney(stats.total, currency)}</p>
       <p className="muted">
-        Assets {formatMoney(stats.totalAssets, currency)} − liabilities{' '}
-        {formatMoney(stats.totalLiabilities, currency)}
+        Consolidated in PLN using latest NBP rates
+        {stats.fxRatesAsOf ? ` (as of ${stats.fxRatesAsOf})` : ''}.
+      </p>
+      <p className="kpi-highlight">{formatMoney(stats.total, consolidatedCurrency)}</p>
+      <p className="muted">
+        Assets {formatMoney(stats.totalAssets, consolidatedCurrency)} − liabilities{' '}
+        {formatMoney(stats.totalLiabilities, consolidatedCurrency)}
         {stats.totalLiabilities > 0 && (
           <>
             {' '}
@@ -54,7 +57,7 @@ export function NetWorthSection() {
         {stats.byBucket.map((row) => (
           <div className="kpi-card" key={row.bucket}>
             <h3>{BUCKET_LABELS[row.bucket]}</h3>
-            <p>{formatMoney(row.value, currency)}</p>
+            <p>{formatMoney(row.value, consolidatedCurrency)}</p>
             <p className="muted">{row.pct.toFixed(1)}%</p>
           </div>
         ))}
@@ -101,7 +104,7 @@ export function NetWorthSection() {
                   <tr key={a.id}>
                     <td>{a.name}</td>
                     <td>{a.accountType}</td>
-                    <td>{formatMoney(a.value, currency)}</td>
+                    <td>{formatMoney(a.value, consolidatedCurrency)}</td>
                   </tr>
                 ))}
               </tbody>

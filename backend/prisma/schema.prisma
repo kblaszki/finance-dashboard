@@ -30,6 +30,9 @@ model User {
   importPresets ImportPreset[]
   assetValuations AssetValuation[]
   couponSchedules CouponSchedule[]
+  categorizationRules CategorizationRule[]
+  auditLogs AuditLog[]
+  bankConnections BankConnection[]
 }
 
 model Account {
@@ -64,6 +67,8 @@ model Account {
   propertySales          PropertySale[]
   assetValuations        AssetValuation[]
   couponSchedules        CouponSchedule[]
+  syncSetting            AccountSyncSetting?
+  bankConnection         BankConnection?
 
   @@unique([userId, name])
   @@index([userId, accountType])
@@ -101,6 +106,7 @@ model Category {
   budgets      Budget[]
   transactions Transaction[]
   splits       TransactionSplit[]
+  categorizationRules CategorizationRule[]
 
   @@index([userId])
   @@index([userId, parentId])
@@ -524,4 +530,67 @@ model CouponSchedule {
 
   @@index([userId, paymentOn])
   @@index([accountId, instrumentId])
+}
+
+model CategorizationRule {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  pattern    String
+  matchType  String   @default("contains")
+  priority   Int      @default(0)
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  @@index([userId, active, priority])
+}
+
+model AccountSyncSetting {
+  id                Int      @id @default(autoincrement())
+  userId            Int
+  accountId         Int      @unique
+  account           Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  provider          String   @default("stub")
+  syncEnabled       Boolean  @default(false)
+  syncIntervalHours Int      @default(24)
+  lastSyncAt        DateTime?
+  lastSyncStatus    String?
+  configJson        String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model BankConnection {
+  id               Int       @id @default(autoincrement())
+  userId           Int
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId        Int       @unique
+  account          Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  bankCode         String
+  status           String    @default("pending")
+  consentExpiresAt DateTime?
+  errorMessage     String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([userId, status])
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entityType String
+  entityId   Int
+  action     String
+  beforeJson String?
+  afterJson  String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId, entityType, createdAt])
+  @@index([userId, entityId])
 }

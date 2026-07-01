@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { recalcTransactionBalances } from "../accountValuation";
+import { loadActiveRulesForUser, matchCategorizationRule } from "../categorizationRules";
 import { parseBankCsv } from "./bankParser";
 import type { BankId, BankImportPreviewRow, BankImportResult, ParsedBankRow } from "./bankTypes";
 
@@ -69,6 +70,7 @@ export async function importBankTransactions(
   let imported = 0;
   let skipped = 0;
   let earliestDate: Date | null = null;
+  const rules = await loadActiveRulesForUser(prisma, input.userId);
 
   await prisma.$transaction(async (tx) => {
     const batch = await tx.importBatch.create({
@@ -90,6 +92,7 @@ export async function importBankTransactions(
       }
 
       try {
+        const categoryMatch = matchCategorizationRule(row.description, rules);
         const created = await tx.transaction.create({
           data: {
             accountId: input.accountId,
@@ -97,7 +100,8 @@ export async function importBankTransactions(
             amount: row.amount,
             balanceAfter: 0,
             currency: row.currency,
-            category: "Uncategorized",
+            category: categoryMatch?.categoryName ?? "Uncategorized",
+            categoryId: categoryMatch?.categoryId ?? null,
             date: row.date,
             description: row.description,
           },

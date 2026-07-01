@@ -35,6 +35,8 @@ export type NetWorthStats = {
     accountId: number | null;
     accountName: string | null;
   }>;
+  consolidatedCurrency?: string;
+  fxRatesAsOf?: string | null;
 };
 
 export type CategoryAmount = {

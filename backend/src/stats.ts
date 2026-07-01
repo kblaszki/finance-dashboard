@@ -1,6 +1,8 @@
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import type { TransactionDateFilter } from "./routes/routeSupport";
 import { badRequest } from "./routes/httpSupport";
+
+type DbClient = PrismaClient | Prisma.TransactionClient;
 
 type TransactionRow = {
   amount: unknown;
@@ -207,7 +209,7 @@ export function computeCategoryBreakdown(
 }
 
 export async function fetchUserTransactions(
-  prisma: PrismaClient,
+  prisma: DbClient,
   userId: number,
   date: { gte?: Date; lte?: Date },
   transactionTypes?: string[],

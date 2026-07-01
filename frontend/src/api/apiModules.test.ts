@@ -118,6 +118,19 @@ import {
   recordCouponScheduleIncome,
   deleteCouponSchedule,
 } from './couponSchedulesApi'
+import {
+  fetchCategorizationRules,
+  createCategorizationRule,
+  deleteCategorizationRule,
+} from './categorizationRulesApi'
+import { fetchBudgetAlerts } from './budgetsApi'
+import { fetchAccountSyncSettings, upsertAccountSyncSetting, runAccountSync } from './accountSyncApi'
+import {
+  fetchBankConnections,
+  createBankConnection,
+  authorizeBankConnection,
+} from './bankConnectionsApi'
+import { fetchFullExport, fetchAuditLogs } from './exportApi'
 
 describe('API modules', () => {
   beforeEach(() => {
@@ -809,5 +822,52 @@ describe('API modules', () => {
 
     await deleteCouponSchedule(4)
     expect(apiClient.delete).toHaveBeenCalledWith('/api/coupon-schedules/4')
+  })
+
+  it('categorizationRulesApi calls correct endpoints', async () => {
+    await fetchCategorizationRules()
+    expect(apiClient.get).toHaveBeenCalledWith('/api/categorization-rules')
+
+    await createCategorizationRule({ categoryId: 2, pattern: 'SHOP', matchType: 'contains' })
+    expect(apiClient.post).toHaveBeenCalledWith('/api/categorization-rules', {
+      categoryId: 2,
+      pattern: 'SHOP',
+      matchType: 'contains',
+    })
+
+    await deleteCategorizationRule(5)
+    expect(apiClient.delete).toHaveBeenCalledWith('/api/categorization-rules/5')
+  })
+
+  it('budgetAlerts and automation APIs call correct endpoints', async () => {
+    await fetchBudgetAlerts('2026-06', 'PLN')
+    expect(apiClient.get).toHaveBeenCalledWith('/api/budgets/alerts?month=2026-06&currency=PLN')
+
+    await fetchAccountSyncSettings()
+    expect(apiClient.get).toHaveBeenCalledWith('/api/account-sync')
+
+    await upsertAccountSyncSetting(3, { syncEnabled: true })
+    expect(apiClient.put).toHaveBeenCalledWith('/api/account-sync/3', { syncEnabled: true })
+
+    await runAccountSync(3)
+    expect(apiClient.post).toHaveBeenCalledWith('/api/account-sync/3/run', {})
+
+    await fetchBankConnections()
+    expect(apiClient.get).toHaveBeenCalledWith('/api/bank-connections')
+
+    await createBankConnection({ accountId: 1, bankCode: 'MBANK' })
+    expect(apiClient.post).toHaveBeenCalledWith('/api/bank-connections', {
+      accountId: 1,
+      bankCode: 'MBANK',
+    })
+
+    await authorizeBankConnection(2)
+    expect(apiClient.post).toHaveBeenCalledWith('/api/bank-connections/2/authorize', {})
+
+    await fetchFullExport()
+    expect(apiClient.get).toHaveBeenCalledWith('/api/export/full?format=json')
+
+    await fetchAuditLogs({ entityType: 'transaction', limit: 10 })
+    expect(apiClient.get).toHaveBeenCalledWith('/api/audit-logs?entityType=transaction&limit=10')
   })
 })

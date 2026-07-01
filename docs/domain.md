@@ -102,6 +102,16 @@ User-scoped `Category` tree (`parentId`, `sortOrder`). Defaults seeded on regist
 
 `CouponSchedule` — planned bond/ETF `coupon` or `amortization` payment on a brokerage holding. `record-income` creates a linked `IncomeEvent` (`coupon` or `interest`).
 
+## Automation (FR-034–038, NFR-002–003)
+
+`CategorizationRule` — pattern (`contains` / `regex`) → `categoryId`; applied on bank CSV import.
+
+`AccountSyncSetting` — per-account sync toggle and last run (FR-035 stub; brokerage runs market sync).
+
+`BankConnection` — PSD2 stub on BANK accounts (FR-036).
+
+`AuditLog` — create/update/delete snapshots for transactions, asset trades, internal transfers.
+
 ## Tax wrappers (FR-039, DATA-018/023)
 
 `Account.taxWrapperType` — `standard`, `ike`, `ikze`, `ppk` on brokerage accounts. IKE/IKZE/PPK holdings are excluded from PIT-38 unless a `TaxWrapperWithdrawal` with `includeInPit38` exists in the sell tax year.
