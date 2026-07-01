@@ -7,6 +7,8 @@ import type { DbClient, TransactionDateFilter } from "./routeSupport";
 import { handleRouteError, badRequest, parseFiniteNumber, parseIdParam, parsePositiveNumber } from "./httpSupport";
 import { applyStockSplit } from "../stockSplit";
 import { invalidateTaxYearsForDate } from "../taxReportCache";
+import { writeAuditLog } from "../auditLog";
+import { scheduleMarketSyncAfterBuy } from "../marketDataTrigger";
 
 type HoldingsDeps = {
   prisma: PrismaClient;
@@ -257,6 +259,21 @@ export function createHoldingsRouter(deps: HoldingsDeps): Router {
           },
         });
       });
+      if (side === "BUY") {
+        scheduleMarketSyncAfterBuy(prisma, getFxRatesPlnPerUnit, {
+          userId: uid(req),
+          instrumentType: row.holding.instrument.instrumentType,
+        });
+      }
+      await writeAuditLog(prisma, uid(req), "asset_trade", row.id, "create", null, {
+        id: row.id,
+        holdingId,
+        instrumentId: holding.instrumentId,
+        side,
+        quantity,
+        currency,
+        tradeDate: tradeDate.toISOString(),
+      });
       await invalidateTaxYearsForDate(prisma, uid(req), tradeDate);
       res.status(201).json(serializeHoldingLot(row));
     } catch (e: unknown) {
@@ -328,6 +345,14 @@ export function createHoldingsRouter(deps: HoldingsDeps): Router {
       await syncHoldingQuantity(tx, holdingId);
       await syncBrokerageCashBalance(tx, accountId);
       await recomputeAccountValuationsFrom(tx, accountId, tradeDate, plnPerUnit);
+      await writeAuditLog(tx, uid(req), "asset_trade", id, "delete", {
+        id: existing.id,
+        holdingId: existing.holdingId,
+        instrumentId: existing.holding.instrumentId,
+        side: existing.side,
+        quantity: Number(existing.quantity),
+        tradeDate: existing.tradeDate.toISOString(),
+      }, null);
     });
     await invalidateTaxYearsForDate(prisma, uid(req), tradeDate);
     res.status(204).send();
