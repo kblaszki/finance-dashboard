@@ -9,10 +9,12 @@ type TransactionRow = {
   currency: string;
   transactionType: string;
   category: string;
+  categoryId?: number | null;
   date?: Date;
   splits?: Array<{
     amount: unknown;
     currency?: string;
+    categoryId?: number;
     category?: { name: string };
   }>;
 };
@@ -208,6 +210,40 @@ export function computeCategoryBreakdown(
     .sort((a, b) => b.amount - a.amount);
 }
 
+export function computeSpendByCategoryId(
+  rows: TransactionRow[],
+  displayCurrency: string,
+  convertAmount: (
+    amount: number,
+    fromCurrency: string,
+    toCurrency: string,
+    plnPerUnit: Record<string, number>,
+  ) => number,
+  toNumber: (value: unknown) => number,
+  plnPerUnit: Record<string, number>,
+): Map<number, number> {
+  const map = new Map<number, number>();
+  for (const t of rows) {
+    if (t.splits?.length) {
+      for (const split of t.splits) {
+        if (split.categoryId == null) continue;
+        const amount = convertAmount(
+          toNumber(split.amount),
+          split.currency ?? t.currency,
+          displayCurrency,
+          plnPerUnit,
+        );
+        map.set(split.categoryId, (map.get(split.categoryId) ?? 0) + amount);
+      }
+      continue;
+    }
+    if (t.categoryId == null) continue;
+    const amount = convertAmount(toNumber(t.amount), t.currency, displayCurrency, plnPerUnit);
+    map.set(t.categoryId, (map.get(t.categoryId) ?? 0) + amount);
+  }
+  return map;
+}
+
 export async function fetchUserTransactions(
   prisma: DbClient,
   userId: number,
@@ -225,10 +261,12 @@ export async function fetchUserTransactions(
       currency: true,
       transactionType: true,
       category: true,
+      categoryId: true,
       date: true,
       splits: {
         select: {
           amount: true,
+          categoryId: true,
           category: { select: { name: true } },
         },
       },

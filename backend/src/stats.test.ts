@@ -4,6 +4,7 @@ import {
   computeCashflowStats,
   computeCashflowHistory,
   computeCategoryBreakdown,
+  computeSpendByCategoryId,
   computeRollingMonthlyAverages,
   enumerateCalendarMonths,
   isCashflowExpenseType,
@@ -131,6 +132,23 @@ test("computeCategoryBreakdown groups by category", () => {
     { category: "FOOD", amount: 15 },
     { category: "TRAVEL", amount: 3 },
   ]);
+});
+
+test("computeSpendByCategoryId uses categoryId not legacy string", () => {
+  const plnPerUnit = { PLN: 1 };
+  const convert = (amount: number, from: string, to: string) => (from === to ? amount : amount);
+  const spent = computeSpendByCategoryId(
+    [
+      { amount: 10, currency: "PLN", transactionType: "EXPENSE", category: "Stale", categoryId: 7 },
+      { amount: 5, currency: "PLN", transactionType: "EXPENSE", category: "FOOD", categoryId: 7 },
+    ],
+    "PLN",
+    convert,
+    Number,
+    plnPerUnit,
+  );
+  assert.equal(spent.get(7), 15);
+  assert.equal(spent.size, 1);
 });
 
 test("enumerateCalendarMonths lists inclusive months", () => {

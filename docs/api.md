@@ -183,7 +183,7 @@ Market sync (`POST /api/market-data/sync`) includes **crypto** holdings on `CRYP
 | POST | `/api/bank-connections` | Yes | Create — `{ accountId, bankCode }` on BANK account |
 | POST | `/api/bank-connections/:id/authorize` | Yes | Stub OAuth consent |
 | DELETE | `/api/bank-connections/:id` | Yes | Remove connection |
-| GET | `/api/export/full` | Yes | Full user data JSON export (NFR-002) — `format=json` |
+| GET | `/api/export/full` | Yes | Full user data JSON export (NFR-002) — `format=json`; `formatVersion: 2` bundle |
 | GET | `/api/audit-logs` | Yes | Financial edit audit trail (NFR-003) — `entityType`, `limit` |
 
 `GET /api/stats/net-worth?currency=PLN` returns `consolidatedCurrency` and `fxRatesAsOf` for FR-038 dashboard PLN rollup.

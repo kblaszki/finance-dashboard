@@ -31,10 +31,11 @@ Allowed `Instrument.instrumentType` values: `STOCK`, `ETF`, `BOND`, `FUND`, `OTH
 | Type | Typical valuation source |
 |------|-------------------------|
 | STOCK, ETF | `twelve_data` (EOD sync) when exchange is mapped; else manual |
+| Crypto (CRYPTO account or instrument) | `twelve_data` pair symbol (e.g. `BTC/USD`) |
 | BOND, FUND | `manual_nav` — user enters NAV/price from broker or fund manager |
 | OTHER | manual |
 
-Market sync (`POST /api/market-data/sync`) processes **STOCK** and **ETF** only; BOND/FUND are skipped without error.
+Market sync (`POST /api/market-data/sync`) processes **STOCK**, **ETF**, and **crypto** holdings; BOND/FUND are skipped without error.
 
 ## Global instrument catalog
 

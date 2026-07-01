@@ -10,7 +10,7 @@ import {
 } from "../budgets";
 import { computeBudgetAlerts } from "../budgetAlerts";
 import { getCategoryForUser } from "../categories";
-import { computeCategoryBreakdown, fetchUserTransactions } from "../stats";
+import { computeSpendByCategoryId, fetchUserTransactions } from "../stats";
 import { handleRouteError, parseFiniteNumber, parseIdParam, parsePositiveNumber } from "./httpSupport";
 
 type BudgetsDeps = {
@@ -60,19 +60,13 @@ export function createBudgetsRouter(deps: BudgetsDeps): Router {
           { gte: budgetMonth, lte: monthEnd },
           ["EXPENSE"],
         );
-        const breakdown = computeCategoryBreakdown(
+        spentByCategory = computeSpendByCategoryId(
           txRows,
           currency,
           convertAmount,
           toNumber,
           plnPerUnit,
         );
-        const categories = await prisma.category.findMany({ where: { userId } });
-        const nameToId = new Map(categories.map((c) => [c.name, c.id]));
-        for (const row of breakdown) {
-          const id = nameToId.get(row.category);
-          if (id != null) spentByCategory.set(id, row.amount);
-        }
       }
 
       const categories = await prisma.category.findMany({ where: { userId } });

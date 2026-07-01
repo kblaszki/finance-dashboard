@@ -52,6 +52,15 @@ export async function listAuditLogs(
   });
 }
 
+function safeJsonParse(raw: string | null): unknown {
+  if (raw == null) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return raw;
+  }
+}
+
 export function serializeAuditLog(row: {
   id: number;
   entityType: string;
@@ -66,8 +75,8 @@ export function serializeAuditLog(row: {
     entityType: row.entityType,
     entityId: row.entityId,
     action: row.action,
-    before: row.beforeJson ? JSON.parse(row.beforeJson) : null,
-    after: row.afterJson ? JSON.parse(row.afterJson) : null,
+    before: safeJsonParse(row.beforeJson),
+    after: safeJsonParse(row.afterJson),
     createdAt: row.createdAt.toISOString(),
   };
 }

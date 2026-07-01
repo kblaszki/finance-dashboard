@@ -10,7 +10,7 @@ Stack: Vite + React + TypeScript. Entry: `frontend/src/main.tsx`, routes in [`fr
 | `/login` | Login | `pages/LoginPage.tsx` — email or username |
 | `/register` | Register | `pages/RegisterPage.tsx` (username) |
 | `/password-reset` | Password reset stub | `pages/PasswordResetPage.tsx` |
-| `/dashboard` | Dashboard | `DashboardPage` — `NetWorthSection`, `RollingCashflowKpis`, `AverageReturnKpi` (FR-001/002/005), portfolio/budget tabs |
+| `/dashboard` | Dashboard | `DashboardPage` — `NetWorthSection` (PLN rollup FR-038), `BudgetAlertsBanner`, `RollingCashflowKpis`, `AverageReturnKpi`, portfolio/budget tabs |
 | `/statistics` | Statistics | `StatisticsPage` — FR-003 (default: current month), FR-004 cashflow history chart, FR-016 `CategoryBreakdownSection` |
 | `/categories` | Categories | `CategoriesPage` — FR-015 CRUD; FR-034 categorization rules |
 | `/budgets` | Budgets | `BudgetsPage` — FR-017 monthly limits vs spend |

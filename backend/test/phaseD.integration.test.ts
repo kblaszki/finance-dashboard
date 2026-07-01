@@ -122,6 +122,9 @@ test("exportUserData includes user accounts", async () => {
   const data = await exportUserData(prisma, user.id);
   assert.equal(data.user?.id, user.id);
   assert.equal(data.accounts.length, 1);
+  assert.equal(data.formatVersion, 2);
+  assert.ok(Array.isArray(data.categorizationRules));
+  assert.ok(Array.isArray(data.auditLogs));
 });
 
 test("writeAuditLog stores transaction create", async () => {

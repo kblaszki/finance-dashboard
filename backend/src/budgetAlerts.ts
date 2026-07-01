@@ -1,6 +1,6 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { listUserBudgets, formatBudgetMonth } from "./budgets";
-import { computeCategoryBreakdown, fetchUserTransactions } from "./stats";
+import { computeSpendByCategoryId, fetchUserTransactions } from "./stats";
 
 type DbClient = PrismaClient | Prisma.TransactionClient;
 
@@ -45,7 +45,7 @@ export async function computeBudgetAlerts(
     { gte: budgetMonth, lte: monthEnd },
     ["EXPENSE"],
   );
-  const breakdown = computeCategoryBreakdown(
+  const spentByCategory = computeSpendByCategoryId(
     txRows,
     displayCurrency,
     convertAmount,
@@ -55,12 +55,6 @@ export async function computeBudgetAlerts(
 
   const categories = await prisma.category.findMany({ where: { userId } });
   const nameById = new Map(categories.map((c) => [c.id, c.name]));
-  const nameToId = new Map(categories.map((c) => [c.name, c.id]));
-  const spentByCategory = new Map<number, number>();
-  for (const row of breakdown) {
-    const id = nameToId.get(row.category);
-    if (id != null) spentByCategory.set(id, row.amount);
-  }
 
   const monthKey = formatBudgetMonth(budgetMonth);
   const alerts: BudgetAlert[] = [];

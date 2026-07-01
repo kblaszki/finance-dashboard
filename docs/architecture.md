@@ -50,7 +50,7 @@ Env (see [README.md](../README.md)): `DATABASE_URL`, `JWT_SECRET` (≥32 chars),
 
 ## Market data (EOD)
 
-- `MARKET_DATA_API_KEY` enables Twelve Data EOD quotes for held **STOCK** and **ETF** instruments.
+- `MARKET_DATA_API_KEY` enables Twelve Data EOD quotes for held **STOCK**, **ETF**, and **crypto** (holdings on `CRYPTO` accounts or `instrumentType=CRYPTO`; pair format e.g. `BTC/USD`).
 - `POST /api/market-data/sync` (or `npm run market:sync` in `backend/`) upserts `InstrumentValuation` with `source: twelve_data` and recomputes affected brokerage account snapshots via `recomputeAccountValuationsFrom`.
 - Symbol mapping (`marketDataSymbols.ts`): US exchanges use bare ticker; GPW → `:WAR`, XETRA → `:XETR`, etc. Unmapped types/exchanges are skipped (use manual valuation UI).
 - Scheduled sync: run `npm run market:sync` from cron on weekdays after market close (see [README.md](../README.md)).

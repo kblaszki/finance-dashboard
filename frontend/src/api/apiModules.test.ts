@@ -90,6 +90,7 @@ import {
   fetchPropertyCashFlows,
   createPropertyCashFlow,
   deletePropertyCashFlow,
+  updatePropertyCashFlow,
 } from './propertyCashFlowsApi'
 import {
   fetchTaxWrapperWithdrawals,
@@ -102,11 +103,11 @@ import {
 import { fetchPositionTransfers, createPositionTransfer } from './positionTransfersApi'
 import { fetchCorporateActions, createCorporateAction } from './corporateActionsApi'
 import { fetchTaxOverview, simulatePreSellTax } from './taxOverviewApi'
-import { fetchTaxLossCarryforwards, upsertTaxLossCarryforward } from './taxLossCarryforwardApi'
-import { fetchPropertySales, createPropertySale } from './propertySalesApi'
+import { fetchTaxLossCarryforwards, upsertTaxLossCarryforward, deleteTaxLossCarryforward } from './taxLossCarryforwardApi'
+import { fetchPropertySales, createPropertySale, deletePropertySale } from './propertySalesApi'
 import { fetchTaxCalendar, updateTaxChecklistItem } from './taxCalendarApi'
-import { fetchImportPresets, createImportPreset } from './importPresetsApi'
-import { fetchDocumentAttachments, createDocumentAttachment } from './documentAttachmentsApi'
+import { fetchImportPresets, createImportPreset, deleteImportPreset } from './importPresetsApi'
+import { fetchDocumentAttachments, createDocumentAttachment, deleteDocumentAttachment } from './documentAttachmentsApi'
 import {
   fetchAssetValuations,
   createAssetValuation,
@@ -129,6 +130,7 @@ import {
   fetchBankConnections,
   createBankConnection,
   authorizeBankConnection,
+  deleteBankConnection,
 } from './bankConnectionsApi'
 import { fetchFullExport, fetchAuditLogs } from './exportApi'
 
@@ -869,5 +871,25 @@ describe('API modules', () => {
 
     await fetchAuditLogs({ entityType: 'transaction', limit: 10 })
     expect(apiClient.get).toHaveBeenCalledWith('/api/audit-logs?entityType=transaction&limit=10')
+  })
+
+  it('covers delete/update exports on domain API clients', async () => {
+    await updatePropertyCashFlow(1, { amount: 100 })
+    expect(apiClient.put).toHaveBeenCalledWith('/api/property-cash-flows/1', { amount: 100 })
+
+    await deleteImportPreset(2)
+    expect(apiClient.delete).toHaveBeenCalledWith('/api/import/presets/2')
+
+    await deletePropertySale(3)
+    expect(apiClient.delete).toHaveBeenCalledWith('/api/property-sales/3')
+
+    await deleteTaxLossCarryforward(4)
+    expect(apiClient.delete).toHaveBeenCalledWith('/api/tax-loss-carryforward/4')
+
+    await deleteDocumentAttachment(5)
+    expect(apiClient.delete).toHaveBeenCalledWith('/api/document-attachments/5')
+
+    await deleteBankConnection(6)
+    expect(apiClient.delete).toHaveBeenCalledWith('/api/bank-connections/6')
   })
 })

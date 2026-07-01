@@ -2026,6 +2026,48 @@ test("POST /api/internal-transfers creates paired same-currency transfer", async
   assert.equal(nwAfter.body.total, nwBefore.body.total);
 });
 
+test("PUT/DELETE /api/transactions reject internal transfer legs", async () => {
+  const { token } = await createUserAndToken();
+  const from = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountType: "BANK", name: "Leg From", currency: "PLN", openingBalance: 1000 });
+  const to = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ accountType: "BANK", name: "Leg To", currency: "PLN", openingBalance: 0 });
+
+  const createRes = await request(app)
+    .post("/api/internal-transfers")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      fromAccountId: from.body.id,
+      toAccountId: to.body.id,
+      fromAmount: 100,
+      toAmount: 100,
+      date: "2025-05-01T12:00:00.000Z",
+    });
+  assert.equal(createRes.status, 201);
+
+  const listRes = await request(app)
+    .get("/api/internal-transfers")
+    .set("Authorization", `Bearer ${token}`);
+  const legId = listRes.body.transfers[0].outTransactionId as number;
+
+  const putRes = await request(app)
+    .put(`/api/transactions/${legId}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ amount: 1 });
+  assert.equal(putRes.status, 400);
+  assert.match(putRes.body.error, /cannot be edited/i);
+
+  const delRes = await request(app)
+    .delete(`/api/transactions/${legId}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(delRes.status, 400);
+  assert.match(delRes.body.error, /cannot be deleted/i);
+});
+
 test("POST /api/internal-transfers supports cross-currency with commission", async () => {
   const { token } = await createUserAndToken();
   const from = await request(app)
@@ -2550,6 +2592,7 @@ test("Phase D automation: rules, alerts, export, audit (FR-034–038, NFR-002–
     .set("Authorization", `Bearer ${token}`);
   assert.equal(exportRes.status, 200);
   assert.ok(exportRes.body.user);
+  assert.equal(exportRes.body.formatVersion, 2);
   assert.ok(Array.isArray(exportRes.body.accounts));
 
   const txRes = await request(app)

@@ -5,6 +5,8 @@ import {
   createInternalTransfer,
   deleteInternalTransfer,
   fetchUserInternalTransfers,
+  INTERNAL_TRANSFER_CATEGORY,
+  parseTransferDescription,
   suggestCrossCurrencyTransfer,
   type CreateInternalTransferInput,
 } from "../internalTransfers";
@@ -139,7 +141,20 @@ export function createInternalTransfersRouter(deps: InternalTransfersDeps): Rout
     try {
       const groupId = String(req.params.groupId ?? "").trim();
       if (!groupId) return res.status(400).json({ error: "groupId is required" });
-      await deleteInternalTransfer(prisma, uid(req), groupId, { getFxRatesPlnPerUnit });
+      const userId = uid(req);
+      const outRow = await prisma.transaction.findFirst({
+        where: {
+          category: INTERNAL_TRANSFER_CATEGORY,
+          transactionType: "TRANSFER_OUT",
+          account: { userId },
+          description: { contains: `"groupId":"${groupId}"` },
+        },
+      });
+      const beforeMeta = outRow ? parseTransferDescription(outRow.description) : null;
+      await deleteInternalTransfer(prisma, userId, groupId, { getFxRatesPlnPerUnit });
+      if (outRow && beforeMeta) {
+        await writeAuditLog(prisma, userId, "internal_transfer", outRow.id, "delete", beforeMeta, null);
+      }
       res.status(204).send();
     } catch (e: unknown) {
       if (e instanceof Error && e.message === "Transfer not found") {

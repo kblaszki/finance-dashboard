@@ -10,6 +10,7 @@ import {
   type SplitInput,
 } from "../transactionSplits";
 import { writeAuditLog } from "../auditLog";
+import { INTERNAL_TRANSFER_CATEGORY } from "../internalTransfers";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
 import { badRequest, handleRouteError, notFound, parseFiniteNumber, parseIdParam, parsePositiveNumber } from "./httpSupport";
 
@@ -186,20 +187,20 @@ export function createTransactionsRouter(deps: TransactionsDeps): Router {
         await replaceTransactionSplits(tx, created.id, splits);
         await recalcTransactionBalances(tx, accountId, date);
         await recomputeAccountValuationsFrom(tx, accountId, date, plnPerUnit);
+        await writeAuditLog(
+          tx,
+          userId,
+          "transaction",
+          created.id,
+          "create",
+          null,
+          transactionAuditSnapshot(created),
+        );
         return tx.transaction.findUniqueOrThrow({
           where: { id: created.id },
           include: transactionInclude,
         });
       });
-      await writeAuditLog(
-        prisma,
-        userId,
-        "transaction",
-        row.id,
-        "create",
-        null,
-        transactionAuditSnapshot(row),
-      );
       res.status(201).json(serializeTransaction(row));
     } catch (e: unknown) {
       if (e instanceof Error && TRANSACTION_DOMAIN_ERRORS.has(e.message)) {
@@ -217,6 +218,11 @@ export function createTransactionsRouter(deps: TransactionsDeps): Router {
         where: { id, account: { userId: uid(req) } },
       });
       if (!existing) return res.status(404).json({ error: "Transaction not found" });
+      if (existing.category === INTERNAL_TRANSFER_CATEGORY) {
+        return res.status(400).json({
+          error: "Internal transfer legs cannot be edited; delete the transfer group instead",
+        });
+      }
 
       const data: Record<string, unknown> = {};
       if (req.body?.transactionType != null) {
@@ -281,17 +287,18 @@ export function createTransactionsRouter(deps: TransactionsDeps): Router {
           row.date.getTime() < existing.date.getTime() ? row.date : existing.date;
         await recalcTransactionBalances(tx, existing.accountId, recalcFrom);
         await recomputeAccountValuationsFrom(tx, existing.accountId, recalcFrom, plnPerUnit);
-        return tx.transaction.findUniqueOrThrow({ where: { id }, include: transactionInclude });
+        const full = await tx.transaction.findUniqueOrThrow({ where: { id }, include: transactionInclude });
+        await writeAuditLog(
+          tx,
+          uid(req),
+          "transaction",
+          id,
+          "update",
+          transactionAuditSnapshot(existing),
+          transactionAuditSnapshot(full),
+        );
+        return full;
       });
-      await writeAuditLog(
-        prisma,
-        uid(req),
-        "transaction",
-        id,
-        "update",
-        transactionAuditSnapshot(existing),
-        transactionAuditSnapshot(updated),
-      );
       res.json(serializeTransaction(updated));
     } catch (e: unknown) {
       if (e instanceof Error && TRANSACTION_DOMAIN_ERRORS.has(e.message)) {
@@ -309,21 +316,26 @@ export function createTransactionsRouter(deps: TransactionsDeps): Router {
         where: { id, account: { userId: uid(req) } },
       });
       if (!existing) return res.status(404).json({ error: "Transaction not found" });
+      if (existing.category === INTERNAL_TRANSFER_CATEGORY) {
+        return res.status(400).json({
+          error: "Internal transfer legs cannot be deleted; use DELETE /api/internal-transfers/:groupId",
+        });
+      }
       const { plnPerUnit } = await getFxRatesPlnPerUnit();
       await prisma.$transaction(async (tx) => {
         await tx.transaction.delete({ where: { id } });
         await recalcTransactionBalances(tx, existing.accountId, existing.date);
         await recomputeAccountValuationsFrom(tx, existing.accountId, existing.date, plnPerUnit);
+        await writeAuditLog(
+          tx,
+          uid(req),
+          "transaction",
+          id,
+          "delete",
+          transactionAuditSnapshot(existing),
+          null,
+        );
       });
-      await writeAuditLog(
-        prisma,
-        uid(req),
-        "transaction",
-        id,
-        "delete",
-        transactionAuditSnapshot(existing),
-        null,
-      );
       res.status(204).send();
     } catch (e: unknown) {
       handleRouteError(res, e, "Failed to delete transaction");
