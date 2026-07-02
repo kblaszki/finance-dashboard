@@ -7,7 +7,7 @@ Source of truth: [`backend/prisma/schema.prisma`](../backend/prisma/schema.prism
 | Model | Purpose |
 |-------|---------|
 | `User` | `email`, `username`, `passwordHash` |
-| `Account` | Unified account (`BANK`, `BROKERAGE`, `CRYPTO`, `PRECIOUS_METAL`, `REAL_ESTATE`, `OTHER`, legacy `MANUAL`); `cashBalance`, `openingBalance`, `openingCashAsOf` (DATA-002), `currency` |
+| `Account` | Unified account (`BANK`, `BROKERAGE`, `CRYPTO`, `PRECIOUS_METAL`, `REAL_ESTATE`, `OTHER`, legacy `MANUAL`); `cashBalance`, `openingBalance`, `openingCashAsOf` (DATA-002), `metalGrams` (PRECIOUS_METAL), `taxWrapperType` (BROKERAGE: `standard`, `ike`, `ikze`, `ppk`), `rentalTaxMethod` (REAL_ESTATE: `scale`, `lump_sum_8_5`), `currency` |
 | `Transaction` | Cash flows with `balanceAfter` snapshot; types include `DIVIDEND` and `INTEREST` for corporate income |
 | `Instrument` | Global instrument catalog (symbol, exchange, type) |
 | `Holding` | Brokerage position per account + instrument; persisted `quantity` (current net shares) |

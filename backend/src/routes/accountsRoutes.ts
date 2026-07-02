@@ -9,7 +9,36 @@ import type { DbClient, TransactionDateFilter } from "./routeSupport";
 import { parseDateBody, serializeAccount } from "./routeSupport";
 import { parseTaxWrapperType } from "../tax/taxWrapper";
 import { parseRentalTaxMethod } from "../propertySales";
+import { buildAccountValuationSeries, type AccountValuationRow } from "../portfolioStats";
 import { handleRouteError, badRequest, parseIdParam, parseFiniteNumber, parsePositiveNumber, parseRequiredString } from "./httpSupport";
+
+function toAccountValuationRows(
+  rows: Array<{
+    valuationDate: Date;
+    totalValue: unknown;
+    cashValue: unknown;
+    securitiesValue: unknown;
+    currency: string;
+  }>,
+): AccountValuationRow[] {
+  return rows.map((r) => ({
+    valuationDate: r.valuationDate,
+    totalValue: toNumber(r.totalValue),
+    cashValue: toNumber(r.cashValue),
+    securitiesValue: toNumber(r.securitiesValue),
+    currency: r.currency,
+  }));
+}
+
+function serializeAccountValuationPoint(r: AccountValuationRow) {
+  return {
+    valuationDate: r.valuationDate.toISOString(),
+    totalValue: r.totalValue,
+    cashValue: r.cashValue,
+    securitiesValue: r.securitiesValue,
+    currency: r.currency,
+  };
+}
 
 type AccountsDeps = {
   prisma: PrismaClient;
@@ -199,19 +228,24 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
       const row = await getAccountForUser(prisma, uid(req), id);
       if (!row) return res.status(404).json({ error: "Account not found" });
       const date = transactionDateFilter(req.query.from, req.query.to);
+      const where: { accountId: number; valuationDate?: { gte?: Date; lte?: Date } } = {
+        accountId: id,
+      };
+      if (date?.gte && date?.lte) {
+        where.valuationDate = { lte: date.lte };
+      } else if (date) {
+        where.valuationDate = date;
+      }
       const rows = await prisma.accountValuationDaily.findMany({
-        where: { accountId: id, ...(date ? { valuationDate: date } : {}) },
+        where,
         orderBy: { valuationDate: "asc" },
       });
-      res.json(
-        rows.map((r) => ({
-          valuationDate: r.valuationDate.toISOString(),
-          totalValue: toNumber(r.totalValue),
-          cashValue: toNumber(r.cashValue),
-          securitiesValue: toNumber(r.securitiesValue),
-          currency: r.currency,
-        })),
-      );
+      const mapped = toAccountValuationRows(rows);
+      const series =
+        date?.gte && date?.lte
+          ? buildAccountValuationSeries(mapped, date.gte, date.lte)
+          : mapped;
+      res.json(series.map(serializeAccountValuationPoint));
     } catch (e: unknown) {
       handleRouteError(res, e, "Failed to load account valuations");
     }

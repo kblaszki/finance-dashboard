@@ -7,7 +7,7 @@ A full-stack app for tracking personal finances: bank accounts, brokerage positi
 
 ## Requirements
 
-- Node.js 18+
+- Node.js 20+ (CI tests on Node 24)
 - npm
 
 ## Installation

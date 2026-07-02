@@ -369,6 +369,32 @@ export function accountValuationAsOf(
   return best;
 }
 
+/** Daily account valuation series with forward-fill (same semantics as portfolio history). */
+export function buildAccountValuationSeries(
+  rows: AccountValuationRow[],
+  from: Date,
+  to: Date,
+): AccountValuationRow[] {
+  const toDay = utcDateOnly(to);
+  const fromDay = utcDateOnly(from);
+  const points: AccountValuationRow[] = [];
+
+  for (let d = new Date(fromDay); d.getTime() <= toDay.getTime(); d.setUTCDate(d.getUTCDate() + 1)) {
+    const dayEnd = utcEndOfDay(d);
+    const snap = accountValuationAsOf(rows, dayEnd);
+    if (!snap) continue;
+    points.push({
+      valuationDate: new Date(d.getTime()),
+      totalValue: snap.totalValue,
+      cashValue: snap.cashValue,
+      securitiesValue: snap.securitiesValue,
+      currency: snap.currency,
+    });
+  }
+
+  return points;
+}
+
 /**
  * Builds a daily portfolio series: each account contributes its last known
  * valuation on or before that day (same semantics as sumBrokerageSnapshotAsOf).

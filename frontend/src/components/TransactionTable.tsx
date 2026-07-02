@@ -229,7 +229,7 @@ export function TransactionTable({
   }
 
   const accountRows = accounts ?? []
-  const allTransactionRows = transactions ?? []
+  const allTransactionRows = useMemo(() => transactions ?? [], [transactions])
   const categoryOptions = useMemo(() => {
     const categories = new Set<string>()
     for (const row of allTransactionRows) {

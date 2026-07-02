@@ -55,6 +55,13 @@ Token-aware index — use `@docs/...` for domain detail; do not duplicate [READM
 
 **Tests** — [docs/testing.md](docs/testing.md) (`npm test`, `npm run test:coverage`, file layout, checklist).
 
+**Demo seed**
+
+1. Requires `MARKET_DATA_API_KEY` in `backend/.env` — see [README.md](README.md) (demo user section).
+2. Entry: `backend/prisma/seed.ts`; modules under `backend/prisma/demo/` (`seedConfig.ts`, `marketHistory.ts`, `tradePlanner.ts`, `seedBuilders.ts`, `wipe.ts`).
+3. Re-seed wipes demo user data and cleans demo `InstrumentValuation` rows; symbol mapping must match `backend/src/marketDataSymbols.ts`.
+4. After schema changes: `npx prisma migrate dev` (or `migrate reset`) before `npm run db:seed`.
+
 ## Do not commit
 
 - `backend/.env`, `**/dev.db`, local SQLite files

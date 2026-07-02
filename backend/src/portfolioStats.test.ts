@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   accountValuationAsOf,
+  buildAccountValuationSeries,
   buildPortfolioHistoryPoints,
   computeSimpleReturnPct,
   computeValueWeightedAverageReturnPct,
@@ -53,6 +54,37 @@ test("buildPortfolioHistoryPoints forward-fills sparse account valuations", () =
   assert.equal(points[13]!.totalValue, 1000);
   assert.equal(points[14]!.totalValue, 1500);
   assert.equal(points[15]!.totalValue, 1500);
+});
+
+test("buildAccountValuationSeries forward-fills sparse rows for one account", () => {
+  const rows = [
+    {
+      valuationDate: new Date("2025-06-01T12:00:00.000Z"),
+      totalValue: 1000,
+      cashValue: 100,
+      securitiesValue: 900,
+      currency: "PLN",
+    },
+    {
+      valuationDate: new Date("2025-06-10T12:00:00.000Z"),
+      totalValue: 1100,
+      cashValue: 100,
+      securitiesValue: 1000,
+      currency: "PLN",
+    },
+  ];
+
+  const series = buildAccountValuationSeries(
+    rows,
+    new Date("2025-06-01T00:00:00.000Z"),
+    new Date("2025-06-12T00:00:00.000Z"),
+  );
+
+  assert.equal(series.length, 12);
+  assert.equal(series[0]!.totalValue, 1000);
+  assert.equal(series[8]!.totalValue, 1000);
+  assert.equal(series[9]!.totalValue, 1100);
+  assert.equal(series[11]!.totalValue, 1100);
 });
 
 test("accountValuationAsOf returns latest row on or before date", () => {

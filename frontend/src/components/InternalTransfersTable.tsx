@@ -32,7 +32,7 @@ export function InternalTransfersTable({ accountId: fixedAccountId }: Props) {
   const [note, setNote] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
 
-  const accountList = accounts ?? []
+  const accountList = useMemo(() => accounts ?? [], [accounts])
   const fromAccount = accountList.find((a) => a.id === fromAccountId)
   const toAccount = accountList.find((a) => a.id === toAccountId)
   const crossCurrency = Boolean(
