@@ -1,8 +1,8 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { applyStockSplit } from "./stockSplit";
 import { syncHoldingQuantity } from "./holdings";
-import { badRequest, notFound } from "./routes/httpSupport";
-import type { DbClient } from "./routes/routeSupport";
+import { badRequest, notFound } from "./lib/errors";
+import type { DbClient } from "./lib/db";
 
 type DbClientLike = PrismaClient | Prisma.TransactionClient;
 

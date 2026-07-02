@@ -2,8 +2,8 @@ import { randomUUID } from "node:crypto";
 import type { PrismaClient } from "@prisma/client";
 import { recalcTransactionBalances, recomputeAccountValuationsFrom } from "./accountValuation";
 import { convertAmount } from "./fx";
-import type { DbClient } from "./routes/routeSupport";
-import { notFound } from "./routes/httpSupport";
+import type { DbClient } from "./lib/db";
+import { notFound } from "./lib/errors";
 
 export const INTERNAL_TRANSFER_CATEGORY = "INTERNAL_TRANSFER";
 

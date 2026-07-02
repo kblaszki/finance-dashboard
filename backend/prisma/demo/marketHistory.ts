@@ -1,8 +1,8 @@
 import type { PrismaClient } from "@prisma/client";
-import type { EodBar } from "../../src/marketData";
-import { fetchEodTimeSeries } from "../../src/marketData";
-import { mapInstrumentToProviderSymbol } from "../../src/marketDataSymbols";
-import { upsertInstrumentEodBars } from "../../src/marketDataSync";
+import type { EodBar } from "../../src/marketData/marketData";
+import { fetchEodTimeSeries } from "../../src/marketData/marketData";
+import { mapInstrumentToProviderSymbol } from "../../src/marketData/marketDataSymbols";
+import { upsertInstrumentEodBars } from "../../src/marketData/marketDataSync";
 import {
   type DemoInstrumentSpec,
   SEED_API_DELAY_MS,

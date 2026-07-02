@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { convertAmount } from "../fx";
-import { badRequest, notFound } from "../routes/httpSupport";
+import { badRequest, notFound } from "../lib/errors";
 import { computeFifoRealizedEvents } from "../fifoRealizedPnl";
 import { toNumber } from "../accountValuation";
 import {

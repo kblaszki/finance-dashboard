@@ -1,7 +1,7 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { recalcTransactionBalances, recomputeAccountValuationsFrom } from "./accountValuation";
 import { revalueManualAccount } from "./manualAccountRevalue";
-import { badRequest } from "./routes/httpSupport";
+import { badRequest } from "./lib/errors";
 import { normalizeCurrency } from "./fx";
 
 type DbClient = PrismaClient | Prisma.TransactionClient;

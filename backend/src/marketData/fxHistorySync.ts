@@ -1,6 +1,6 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { MVP_MARKET_DATA_EPOCH, defaultBackfillDays } from "./marketDataEpoch";
-import { normalizeCurrency } from "./fx";
+import { normalizeCurrency } from "../fx";
 
 type DbClient = PrismaClient | Prisma.TransactionClient;
 

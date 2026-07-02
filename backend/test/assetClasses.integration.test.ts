@@ -114,7 +114,7 @@ test("bond and fund holdings use manual NAV in market sync skip", async () => {
     },
   });
 
-  const { syncMarketPrices } = await import("../src/marketDataSync");
+  const { syncMarketPrices } = await import("../src/marketData/marketDataSync");
   const result = await syncMarketPrices(prisma, async () => MOCK_FX, { apiKey: "k" });
   assert.equal(result.synced, 0);
   assert.equal(result.skipped, 2);

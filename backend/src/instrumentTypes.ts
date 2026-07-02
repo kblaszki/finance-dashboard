@@ -1,4 +1,4 @@
-import { badRequest } from "./routes/httpSupport";
+import { badRequest } from "./lib/errors";
 
 export const INSTRUMENT_TYPES = ["STOCK", "ETF", "BOND", "FUND", "OTHER"] as const;
 export type InstrumentTypeName = (typeof INSTRUMENT_TYPES)[number];

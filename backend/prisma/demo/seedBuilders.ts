@@ -8,7 +8,7 @@ import { computeBalanceAfter, type TransactionType } from "../../src/transaction
 import { computeQuantityAfter, resolveLotPrice } from "../../src/holdingLot";
 import { findOrCreateHolding, syncHoldingQuantity } from "../../src/holdings";
 import { revalueManualAccount } from "../../src/manualAccountRevalue";
-import type { EodBar } from "../../src/marketData";
+import type { EodBar } from "../../src/marketData/marketData";
 import {
   BANK_HISTORY_MONTHS,
   BROKER_CASH_RESERVE_FRACTION,

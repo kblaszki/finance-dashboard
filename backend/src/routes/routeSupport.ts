@@ -1,15 +1,11 @@
-import type { Prisma, PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import { toNumber } from "../accountValuation";
 import { buildHoldingSummary } from "../holdings";
-import { badRequest } from "./httpSupport";
+import { badRequest } from "../lib/errors";
+import type { DbClient } from "../lib/db";
+import type { TransactionDateFilter } from "../lib/dates";
 
-export type DbClient = PrismaClient | Prisma.TransactionClient;
-
-export type TransactionDateFilter = (
-  from?: unknown,
-  to?: unknown,
-) => { gte?: Date; lte?: Date } | undefined;
+export type { DbClient, TransactionDateFilter };
 
 export function uid(req: AuthedRequest): number {
   return req.userId!;

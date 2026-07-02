@@ -1,6 +1,6 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-import { badRequest, notFound } from "./routes/httpSupport";
-import { syncMarketPrices } from "./marketDataSync";
+import { badRequest, notFound } from "./lib/errors";
+import { syncMarketPrices } from "./marketData/marketDataSync";
 
 type DbClient = PrismaClient | Prisma.TransactionClient;
 

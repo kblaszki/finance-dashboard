@@ -4,7 +4,7 @@ import type { AuthedRequest } from "../auth";
 import { isHoldingsAccountType } from "../accountTypes";
 import { createUserAssetTradeForAccount, fetchUserAssetTrades } from "../assetTrades";
 import { writeAuditLog } from "../auditLog";
-import { scheduleMarketSyncAfterBuy } from "../marketDataTrigger";
+import { scheduleMarketSyncAfterBuy } from "../marketData/marketDataTrigger";
 import type { DbClient, TransactionDateFilter } from "./routeSupport";
 import {
   badRequest,

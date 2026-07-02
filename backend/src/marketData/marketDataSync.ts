@@ -1,5 +1,5 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-import { recomputeAccountValuationsFrom } from "./accountValuation";
+import { recomputeAccountValuationsFrom } from "../accountValuation";
 import { fetchEodTimeSeries, type EodBar } from "./marketData";
 import { defaultBackfillDays } from "./marketDataEpoch";
 import {

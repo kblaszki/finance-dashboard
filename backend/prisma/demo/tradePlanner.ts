@@ -1,4 +1,4 @@
-import type { EodBar } from "../../src/marketData";
+import type { EodBar } from "../../src/marketData/marketData";
 import { closeOnDate, utcDateOnly } from "./marketHistory";
 
 export type PlannedLot = {

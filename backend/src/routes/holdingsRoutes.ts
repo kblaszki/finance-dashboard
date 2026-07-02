@@ -8,7 +8,7 @@ import { handleRouteError, badRequest, parseFiniteNumber, parseIdParam, parsePos
 import { applyStockSplit } from "../stockSplit";
 import { invalidateTaxYearsForDate } from "../tax/taxReportCache";
 import { writeAuditLog } from "../auditLog";
-import { scheduleMarketSyncAfterBuy } from "../marketDataTrigger";
+import { scheduleMarketSyncAfterBuy } from "../marketData/marketDataTrigger";
 
 type HoldingsDeps = {
   prisma: PrismaClient;

@@ -1,5 +1,5 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-import { badRequest } from "./routes/httpSupport";
+import { badRequest } from "./lib/errors";
 import { getCategoryForUser } from "./categories";
 
 type DbClient = PrismaClient | Prisma.TransactionClient;

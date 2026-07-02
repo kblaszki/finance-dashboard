@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import { backfillAccountValuations } from "../src/accountValuation";
 import { ensureDefaultCategories } from "../src/categories";
 import { getFxRatesPlnPerUnit } from "../src/fx";
-import { syncFxRatesSinceEpoch } from "../src/fxHistorySync";
+import { syncFxRatesSinceEpoch } from "../src/marketData/fxHistorySync";
 import {
   BANK_HISTORY_MONTHS,
   DEMO_EMAIL,

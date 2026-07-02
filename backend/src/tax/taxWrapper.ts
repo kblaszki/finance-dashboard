@@ -1,5 +1,5 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
-import { badRequest, notFound } from "../routes/httpSupport";
+import { badRequest, notFound } from "../lib/errors";
 import { normalizeCurrency } from "../fx";
 import { toNumber } from "../accountValuation";
 

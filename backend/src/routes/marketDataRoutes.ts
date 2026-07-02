@@ -1,8 +1,8 @@
 import { Router } from "express";
 import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
-import { getMarketDataStatus, syncMarketPrices, type SyncMarketPricesOptions } from "../marketDataSync";
-import { syncFxRatesSinceEpoch } from "../fxHistorySync";
+import { getMarketDataStatus, syncMarketPrices, type SyncMarketPricesOptions } from "../marketData/marketDataSync";
+import { syncFxRatesSinceEpoch } from "../marketData/fxHistorySync";
 import { handleRouteError } from "./httpSupport";
 
 type MarketDataDeps = {

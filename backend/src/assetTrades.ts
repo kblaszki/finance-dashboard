@@ -2,7 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 import { HOLDINGS_ACCOUNT_TYPES } from "./accountTypes";
 import { recomputeQuantityAfterChain } from "./holdingLot";
 import { findOrCreateHolding, recalcLotQuantityChain, syncHoldingQuantity } from "./holdings";
-import type { DbClient } from "./routes/routeSupport";
+import type { DbClient } from "./lib/db";
 import { syncBrokerageCashBalance } from "./accountValuation";
 
 export type AssetTradeFilters = {

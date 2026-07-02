@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import type { PrismaClient } from "@prisma/client";
 import { hashPassword } from "../src/auth";
-import { syncMarketPrices, MARKET_DATA_SOURCE } from "../src/marketDataSync";
+import { syncMarketPrices, MARKET_DATA_SOURCE } from "../src/marketData/marketDataSync";
 import { MOCK_FX } from "./helpers/seedFromFixture";
 import { createTestPrisma, disconnectTestPrisma, resetDatabase } from "./prismaTestClient";
 

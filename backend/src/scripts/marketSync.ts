@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import { getFxRatesPlnPerUnit } from "../fx";
-import { syncMarketPrices } from "../marketDataSync";
+import { syncMarketPrices } from "../marketData/marketDataSync";
 
 dotenv.config();
 
