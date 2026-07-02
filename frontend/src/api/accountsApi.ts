@@ -1,13 +1,7 @@
 import { apiClient } from "./client";
+import type { AccountType } from "../state/accountTypes";
 
-export type AccountType =
-  | "BANK"
-  | "BROKERAGE"
-  | "CRYPTO"
-  | "PRECIOUS_METAL"
-  | "REAL_ESTATE"
-  | "OTHER"
-  | "MANUAL";
+export type { AccountType } from "../state/accountTypes";
 
 export type TaxWrapperType = "standard" | "ike" | "ikze" | "ppk";
 

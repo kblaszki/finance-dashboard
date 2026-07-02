@@ -15,7 +15,7 @@ export function RegisterPage() {
   useEffect(() => {
     void fetchAuthConfig()
       .then((cfg) => setAllowRegister(cfg.allowRegister))
-      .catch(() => setAllowRegister(true));
+      .catch(() => setAllowRegister(false));
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {

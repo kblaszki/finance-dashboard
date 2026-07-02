@@ -1,4 +1,5 @@
 import type { Account, AccountValuationPoint } from '../accountsApi'
+import { ACCOUNT_TYPE_OPTIONS } from '../../state/accountTypes'
 import type { AuthConfig, AuthUser } from '../authApi'
 import type { Transaction } from '../transactionsApi'
 import type {
@@ -33,6 +34,24 @@ export const accountFixture: Account = {
   description: null,
   createdAt: '2025-01-01T00:00:00.000Z',
   updatedAt: '2025-01-15T12:00:00.000Z',
+}
+
+export const realEstateAccountFixture: Account = {
+  ...accountFixture,
+  id: 3,
+  accountType: 'REAL_ESTATE',
+  name: 'Apartment',
+  rentalTaxMethod: 'scale',
+  totalBalance: 850000,
+  cashBalance: 0,
+}
+
+export const cryptoAccountFixture: Account = {
+  ...accountFixture,
+  id: 4,
+  accountType: 'CRYPTO',
+  name: 'Exchange wallet',
+  currency: 'USD',
 }
 
 export const transactionFixture: Transaction = {
@@ -292,7 +311,8 @@ export const authConfigFixture: AuthConfig = {
 
 function assertAccountShape(value: Account): void {
   if (typeof value.id !== 'number') throw new Error('account.id')
-  if (!['BANK', 'BROKERAGE', 'MANUAL'].includes(value.accountType)) throw new Error('account.accountType')
+  const validTypes = ACCOUNT_TYPE_OPTIONS.map((o) => o.value)
+  if (!validTypes.includes(value.accountType)) throw new Error('account.accountType')
   if (typeof value.cashBalance !== 'number') throw new Error('account.cashBalance')
   if (typeof value.totalBalance !== 'number') throw new Error('account.totalBalance')
   if (typeof value.openingBalance !== 'number') throw new Error('account.openingBalance')
@@ -406,6 +426,8 @@ function assertAuthConfigShape(value: AuthConfig): void {
 
 export function validateApiContractFixtures(): void {
   assertAccountShape(accountFixture)
+  assertAccountShape(realEstateAccountFixture)
+  assertAccountShape(cryptoAccountFixture)
   assertTransactionShape(transactionFixture)
   assertCashflowShape(cashflowFixture)
   assertNetWorthShape(netWorthFixture)

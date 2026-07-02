@@ -29,8 +29,8 @@ export function CategoryBreakdownSection() {
     [params],
   )
 
-  const { data: expenses, loading: loadingExp } = useAsyncData(expenseLoader)
-  const { data: income, loading: loadingInc } = useAsyncData(incomeLoader)
+  const { data: expenses, loading: loadingExp, error: expenseError } = useAsyncData(expenseLoader)
+  const { data: income, loading: loadingInc, error: incomeError } = useAsyncData(incomeLoader)
 
   const topExpenses = (expenses ?? []).slice(0, 8)
   const topIncome = (income ?? []).slice(0, 5)
@@ -42,6 +42,8 @@ export function CategoryBreakdownSection() {
       <p className="muted">
         Period net: {stats ? formatMoney(stats.net, stats.currency) : '…'}
       </p>
+      {expenseError ? <p className="error-banner">{expenseError}</p> : null}
+      {incomeError ? <p className="error-banner">{incomeError}</p> : null}
       <div className="two-col-grid">
         <div>
           <h3>Top expenses</h3>

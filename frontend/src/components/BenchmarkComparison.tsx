@@ -3,12 +3,7 @@ import { fetchBenchmarkComparison } from '../api/statsApi'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { useCurrency } from '../state/currency'
 import { usePeriod } from '../state/period'
-
-function formatReturnPct(value: number | null): string {
-  if (value == null || !Number.isFinite(value)) return '—'
-  const sign = value >= 0 ? '+' : ''
-  return `${sign}${value.toFixed(2)}%`
-}
+import { formatPercent } from '../utils/format'
 
 export function BenchmarkComparison() {
   const { currency } = useCurrency()
@@ -42,13 +37,13 @@ export function BenchmarkComparison() {
           <li className="stat-row">
             <span className="stat-row-label">Your portfolio</span>
             <span className={`stat-row-value ${(data.portfolioReturnPct ?? 0) >= 0 ? 'positive' : 'negative'}`}>
-              {formatReturnPct(data.portfolioReturnPct)}
+              {formatPercent(data.portfolioReturnPct, { signed: true })}
             </span>
           </li>
           <li className="stat-row">
             <span className="stat-row-label">{data.benchmarkLabel}</span>
             <span className={`stat-row-value ${(data.benchmarkReturnPct ?? 0) >= 0 ? 'positive' : 'negative'}`}>
-              {formatReturnPct(data.benchmarkReturnPct)}
+              {formatPercent(data.benchmarkReturnPct, { signed: true })}
             </span>
           </li>
         </ul>

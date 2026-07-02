@@ -15,3 +15,14 @@ export function formatMoney(value: number, currency: string, locale = 'en-US') {
   }
 }
 
+export function formatPercent(
+  value: number | null | undefined,
+  options?: { decimals?: number; signed?: boolean },
+): string {
+  if (value == null || !Number.isFinite(value)) return '—'
+  const decimals = options?.decimals ?? 2
+  const signed = options?.signed ?? false
+  const sign = signed && value >= 0 ? '+' : ''
+  return `${sign}${value.toFixed(decimals)}%`
+}
+

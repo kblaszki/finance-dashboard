@@ -3,13 +3,7 @@ import { useAsyncData } from '../hooks/useAsyncData'
 import { fetchAverageHoldingReturn, fetchPortfolioSummary } from '../api/statsApi'
 import { useCurrency } from '../state/currency'
 import { usePeriod } from '../state/period'
-import { formatMoney } from '../utils/format'
-
-function formatReturnPct(value: number | null): string {
-  if (value == null || !Number.isFinite(value)) return '—'
-  const sign = value >= 0 ? '+' : ''
-  return `${sign}${value.toFixed(2)}%`
-}
+import { formatMoney, formatPercent } from '../utils/format'
 
 export function PortfolioKpiCards() {
   const { currency } = useCurrency()
@@ -62,7 +56,7 @@ export function PortfolioKpiCards() {
               : 'negative'
           }
         >
-          {formatReturnPct(averageReturn.averageReturnPct)}
+          {formatPercent(averageReturn.averageReturnPct, { signed: true })}
         </p>
       </div>
     </div>

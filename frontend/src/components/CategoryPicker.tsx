@@ -9,7 +9,7 @@ type Props = {
 }
 
 export function CategoryPicker({ value, onChange, allowEmpty = false }: Props) {
-  const { data, loading } = useAsyncData(fetchCategories)
+  const { data, loading, error } = useAsyncData(fetchCategories)
   const options = useMemo(() => data?.flat ?? [], [data])
 
   function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
@@ -24,7 +24,9 @@ export function CategoryPicker({ value, onChange, allowEmpty = false }: Props) {
   }
 
   return (
-    <select value={value ?? ''} onChange={handleChange} disabled={loading && !data}>
+    <>
+      {error ? <p className="error-banner">{error}</p> : null}
+      <select value={value ?? ''} onChange={handleChange} disabled={(loading && !data) || !!error}>
       {allowEmpty && <option value="">—</option>}
       {loading && !options.length ? <option value="">Loading…</option> : null}
       {options.map((c: Category) => (
@@ -33,5 +35,6 @@ export function CategoryPicker({ value, onChange, allowEmpty = false }: Props) {
         </option>
       ))}
     </select>
+    </>
   )
 }

@@ -46,7 +46,7 @@ export function TaxWrapperTypeForm({ accountId, taxWrapperType, onSaved }: Props
             ))}
           </select>
         </label>
-        {error ? <p className="error">{error}</p> : null}
+        {error ? <p className="error-banner">{error}</p> : null}
         <button type="submit" disabled={saving}>
           {saving ? 'Saving…' : 'Save wrapper type'}
         </button>

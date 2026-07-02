@@ -109,6 +109,9 @@ export function PortfolioPage() {
         </label>
       </div>
 
+      {accountsQuery.error && (
+        <p className="error-banner">{accountsQuery.error}</p>
+      )}
       {positionsQuery.error && (
         <p className="error-banner">{positionsQuery.error}</p>
       )}

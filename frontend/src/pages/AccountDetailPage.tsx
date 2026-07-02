@@ -83,7 +83,7 @@ export function AccountDetailPage() {
     )
   }
 
-  if (loading) {
+  if (loading && !data) {
     return (
       <div className="page">
         <p className="muted">{error ?? 'Loading…'}</p>
@@ -182,6 +182,7 @@ export function AccountDetailPage() {
           <input type="date" value={chartFrom} onChange={(e) => setChartFrom(e.target.value)} />
           <input type="date" value={chartTo} onChange={(e) => setChartTo(e.target.value)} />
         </div>
+        {loading ? <p className="muted">Updating chart…</p> : null}
         <AccountBalanceChart
           points={history}
           currency={account.currency}

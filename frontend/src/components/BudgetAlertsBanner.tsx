@@ -13,7 +13,18 @@ export function BudgetAlertsBanner() {
   const { currency } = useCurrency()
   const month = currentMonthKey()
   const loader = useCallback(() => fetchBudgetAlerts(month, currency), [month, currency])
-  const { data: alerts } = useAsyncData(loader)
+  const { data: alerts, error, loading } = useAsyncData(loader)
+
+  if (error) {
+    return (
+      <section className="card">
+        <h2>Budget alerts</h2>
+        <p className="error-banner">{error}</p>
+      </section>
+    )
+  }
+
+  if (loading) return null
 
   if (!alerts?.length) return null
 

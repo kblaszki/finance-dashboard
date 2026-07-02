@@ -3,7 +3,9 @@ import {
   accountFixture,
   cashflowFixture,
   categoryAmountFixture,
+  cryptoAccountFixture,
   netWorthFixture,
+  realEstateAccountFixture,
   transactionFixture,
   validateApiContractFixtures,
 } from './fixtures/apiContracts'
@@ -20,6 +22,15 @@ describe('API contract fixtures', () => {
     const account: Account = accountFixture
     expect(account.accountType).toBe('BANK')
     expect(typeof account.cashBalance).toBe('number')
+  })
+
+  it('extended account fixtures cover REAL_ESTATE and CRYPTO types', () => {
+    const realEstate: Account = realEstateAccountFixture
+    expect(realEstate.accountType).toBe('REAL_ESTATE')
+    expect(realEstate.rentalTaxMethod).toBe('scale')
+
+    const crypto: Account = cryptoAccountFixture
+    expect(crypto.accountType).toBe('CRYPTO')
   })
 
   it('transaction fixture uses numeric Decimal fields from backend', () => {

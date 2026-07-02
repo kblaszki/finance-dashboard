@@ -9,12 +9,12 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [allowRegister, setAllowRegister] = useState(true);
+  const [allowRegister, setAllowRegister] = useState<boolean | null>(null);
 
   useEffect(() => {
     void fetchAuthConfig()
       .then((cfg) => setAllowRegister(cfg.allowRegister))
-      .catch(() => setAllowRegister(true));
+      .catch(() => setAllowRegister(false));
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -64,7 +64,7 @@ export function LoginPage() {
         <p className="auth-switch">
           <Link to="/password-reset">Forgot password?</Link>
         </p>
-        {allowRegister && (
+        {allowRegister === true && (
           <p className="auth-switch">
             Don&apos;t have an account? <Link to="/register">Sign up</Link>
           </p>

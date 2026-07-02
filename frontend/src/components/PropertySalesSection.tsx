@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import {
   createPropertySale,
   deletePropertySale,
@@ -14,7 +14,8 @@ type Props = {
 }
 
 export function PropertySalesSection({ accountId, currency }: Props) {
-  const { data: sales, reload } = useAsyncData(() => fetchPropertySales({ accountId }))
+  const loader = useCallback(() => fetchPropertySales({ accountId }), [accountId])
+  const { data: sales, reload, error: listError, loading: listLoading } = useAsyncData(loader)
   const [form, setForm] = useState({
     soldOn: new Date().toISOString().slice(0, 10),
     proceeds: 0,
@@ -99,6 +100,8 @@ export function PropertySalesSection({ accountId, currency }: Props) {
         </button>
       </form>
       {error ? <p className="error-banner">{error}</p> : null}
+      {listError ? <p className="error-banner">{listError}</p> : null}
+      {listLoading && !sales ? <p className="muted">Loading…</p> : null}
       <SalesTable rows={sales ?? []} currency={currency} onDelete={handleDelete} />
     </section>
   )

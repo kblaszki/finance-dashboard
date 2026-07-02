@@ -2,12 +2,7 @@ import { useCallback } from 'react'
 import { fetchAverageHoldingReturn } from '../api/statsApi'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { useCurrency } from '../state/currency'
-
-function formatReturnPct(value: number | null): string {
-  if (value == null || !Number.isFinite(value)) return '—'
-  const sign = value >= 0 ? '+' : ''
-  return `${sign}${value.toFixed(2)}%`
-}
+import { formatPercent } from '../utils/format'
 
 export function AverageReturnKpi() {
   const { currency } = useCurrency()
@@ -27,7 +22,7 @@ export function AverageReturnKpi() {
           data.averageReturnPct != null && data.averageReturnPct >= 0 ? 'positive' : 'negative'
         }
       >
-        {formatReturnPct(data.averageReturnPct)}
+        {formatPercent(data.averageReturnPct, { signed: true })}
       </p>
     </div>
   )

@@ -1,15 +1,9 @@
 import type { HoldingSummary } from '../api/holdingsApi'
-import { formatMoney } from '../utils/format'
+import { formatMoney, formatPercent } from '../utils/format'
 
 type Props = {
   holding: HoldingSummary
   currency: string
-}
-
-function formatGainPct(value: number | null): string {
-  if (value == null || !Number.isFinite(value)) return '—'
-  const sign = value >= 0 ? '+' : ''
-  return `${sign}${value.toFixed(2)}%`
 }
 
 export function HoldingKpiCards({ holding, currency }: Props) {
@@ -44,7 +38,7 @@ export function HoldingKpiCards({ holding, currency }: Props) {
             <p className={holding.unrealizedPnl != null && holding.unrealizedPnl >= 0 ? 'positive' : 'negative'}>
               {holding.unrealizedPnl != null ? formatMoney(holding.unrealizedPnl, currency) : '—'}
               {gainPct != null && (
-                <span className="muted"> ({formatGainPct(gainPct)})</span>
+                <span className="muted"> ({formatPercent(gainPct, { signed: true })})</span>
               )}
             </p>
           </div>

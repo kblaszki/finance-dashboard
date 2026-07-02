@@ -41,7 +41,7 @@ export function IncomeByCategoryChart() {
     return (
       <div className="card">
         <h2>Income by category</h2>
-        <p className="auth-error">{error}</p>
+        <p className="error-banner">{error}</p>
       </div>
     )
   }

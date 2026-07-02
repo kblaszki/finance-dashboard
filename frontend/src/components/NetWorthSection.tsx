@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { fetchNetWorth, type NetWorthBucket } from '../api/statsApi'
 import { useAsyncData } from '../hooks/useAsyncData'
-import { formatMoney } from '../utils/format'
+import { formatMoney, formatPercent } from '../utils/format'
 
 const BUCKET_LABELS: Record<NetWorthBucket, string> = {
   cash: 'Cash',
@@ -13,6 +13,7 @@ const BUCKET_LABELS: Record<NetWorthBucket, string> = {
 }
 
 export function NetWorthSection() {
+  /** FR-038: consolidated net worth is always in PLN (NBP FX), not the display-currency selector. */
   const consolidatedCurrency = 'PLN'
   const loader = useCallback(() => fetchNetWorth(consolidatedCurrency), [])
   const { data: stats, error, loading } = useAsyncData(loader)
@@ -21,7 +22,7 @@ export function NetWorthSection() {
     return (
       <section className="card">
         <h2>Net worth</h2>
-        <p className="auth-error">{error}</p>
+        <p className="error-banner">{error}</p>
       </section>
     )
   }
@@ -58,7 +59,7 @@ export function NetWorthSection() {
           <div className="kpi-card" key={row.bucket}>
             <h3>{BUCKET_LABELS[row.bucket]}</h3>
             <p>{formatMoney(row.value, consolidatedCurrency)}</p>
-            <p className="muted">{row.pct.toFixed(1)}%</p>
+            <p className="muted">{formatPercent(row.pct, { decimals: 1 })}</p>
           </div>
         ))}
       </div>

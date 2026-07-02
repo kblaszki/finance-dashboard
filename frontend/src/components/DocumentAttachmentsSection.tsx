@@ -14,7 +14,8 @@ const ENTITY_TYPES = [
 ] as const
 
 export function DocumentAttachmentsSection() {
-  const { data: rows, error, loading, reload } = useAsyncData(() => fetchDocumentAttachments())
+  const loader = useCallback(() => fetchDocumentAttachments(), [])
+  const { data: rows, error, loading, reload } = useAsyncData(loader)
   const [form, setForm] = useState({
     entityType: 'transaction' as (typeof ENTITY_TYPES)[number]['value'],
     entityId: 0,
