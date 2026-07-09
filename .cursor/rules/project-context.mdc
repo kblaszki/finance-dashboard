@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Finance Dashboard — project context
 
-Behavioral rules: [golden-rule.mdc](mdc:.cursor/rules/golden-rule.mdc). Agent index: [AGENTS.md](mdc:AGENTS.md). Deep docs: `docs/` (on-demand, not duplicated here).
+Behavioral rules (including commit-after-chunk): [golden-rule.mdc](mdc:.cursor/rules/golden-rule.mdc). Agent index: [AGENTS.md](mdc:AGENTS.md). Deep docs: `docs/` (on-demand, not duplicated here).
 
 ## Layout
 

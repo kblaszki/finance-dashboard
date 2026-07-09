@@ -1,11 +1,11 @@
 ---
-description: Behavioral guidelines to reduce common LLM coding mistakes. Use when writing, reviewing, or refactoring code to avoid overcomplication, make surgical changes, surface assumptions, and define verifiable success criteria.
+description: Finance Dashboard behavioral guidelines — Karpathy principles, repo-specific habits, and commit-after-chunk discipline. Complements project-context and verification.
 alwaysApply: true
 ---
 
-# Karpathy behavioral guidelines
+# Finance Dashboard — behavioral guidelines
 
-Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-specific instructions as needed.
+Karpathy-style habits adapted for this monorepo. Complements [project-context.mdc](mdc:.cursor/rules/project-context.mdc) (layout, commands) and [verification.mdc](mdc:.cursor/rules/verification.mdc) (test gates).
 
 **Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
@@ -15,9 +15,14 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 
 Before implementing:
 - State your assumptions explicitly. If uncertain, ask.
-- If multiple interpretations exist, present them - don't pick silently.
+- If multiple interpretations exist, present them — don't pick silently.
 - If a simpler approach exists, say so. Push back when warranted.
 - If something is unclear, stop. Name what's confusing. Ask.
+
+Repo-specific checks:
+- **Tenancy:** accounts, transactions, and holdings are user-scoped; instruments are shared — confirm scope before new queries.
+- **Money and FX:** balances, valuations, and conversions belong in backend domain modules (`fx.ts`, `accountValuation.ts`, etc.), not in route handlers or UI.
+- **API contract:** frontend `*Api.ts` types must match backend serializers; ask when the contract is ambiguous.
 
 ## 2. Simplicity First
 
@@ -29,6 +34,11 @@ Before implementing:
 - No error handling for impossible scenarios.
 - If you write 200 lines and it could be 50, rewrite it.
 
+Repo-specific:
+- Routes in `backend/src/routes/*`; clients in `frontend/src/api/`; UI in `frontend/src/components/` or `pages/`.
+- Prefer `useAsyncData` with stable `useCallback` loaders — no React Query, global fetch cache, or feature folders unless asked.
+- Do not add speculative providers, helpers, or refactors "for later."
+
 Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
 
 ## 3. Surgical Changes
@@ -39,32 +49,72 @@ When editing existing code:
 - Don't "improve" adjacent code, comments, or formatting.
 - Don't refactor things that aren't broken.
 - Match existing style, even if you'd do it differently.
-- If you notice unrelated dead code, mention it - don't delete it.
+- If you notice unrelated dead code, mention it — don't delete it.
 
 When your changes create orphans:
 - Remove imports/variables/functions that YOUR changes made unused.
 - Don't remove pre-existing dead code unless asked.
 
-The test: Every changed line should trace directly to the user's request.
+Repo-specific:
+- **LF only** — see [line-endings.mdc](mdc:.cursor/rules/line-endings.mdc).
+- Match patterns in `routeSupport.ts` / `httpSupport.ts`, `frontend/src/api/client.ts`, `format.ts`, and existing component CSS classes (`error-banner`, `btn-primary`).
+- Every changed line should trace directly to the user's request.
 
 ## 4. Goal-Driven Execution
 
 **Define success criteria. Loop until verified.**
 
 Transform tasks into verifiable goals:
-- "Add validation" → "Write tests for invalid inputs, then make them pass"
-- "Fix the bug" → "Write a test that reproduces it, then make it pass"
-- "Refactor X" → "Ensure tests pass before and after"
+- "New route" → handler in `backend/src/routes/*`, row in `docs/api.md`, HTTP test → `npm test`
+- "New API client" → `frontend/src/api/*Api.ts`, `apiModules.test.ts` → `npm run test:coverage`
+- "Schema change" → `prisma migrate dev`, update `docs/domain.md` if meaning changed
+- "Fix the bug" → regression test first when practical, then fix
+- "Refactor X" → tests pass before and after
 
 For multi-step tasks, state a brief plan:
+
 ```
 1. [Step] → verify: [check]
 2. [Step] → verify: [check]
 3. [Step] → verify: [check]
 ```
 
+Before marking logic work complete, follow [verification.mdc](mdc:.cursor/rules/verification.mdc) and report results explicitly (`npm test`, `npm run test:coverage` when applicable).
+
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
+## 5. Commit logical chunks
+
+**Default: commit locally after each reviewable unit of work.** Do not leave large uncommitted diffs across unrelated areas. Do not push unless the user explicitly asks.
+
+### When to commit
+
+After each logical chunk — one feature slice, one bugfix, or one refactor scope. Examples for this repo:
+- Backend route + tests → commit
+- Matching frontend client + tests → separate commit when done as a distinct step
+- Docs-only follow-up → separate commit (verification skippable per verification.mdc)
+
+### Gate before commit
+
+Run checks from the repo root per [verification.mdc](mdc:.cursor/rules/verification.mdc):
+- `npm test` (includes frontend lint) — required when backend/frontend logic changed
+- `npm run test:coverage` — required when counted logic changed
+- Fix failures and re-run until green; report pass/fail in your message before committing
+
+### How to commit
+
+1. Run `git status` and `git diff`; stage only files for the current chunk.
+2. Write an imperative message (1–2 sentences, focus on *why*); match recent history (`Fix …`, `Add …`, `Refactor …`).
+3. Commit locally. **Never push** unless explicitly requested.
+4. **Never commit** secrets or local DB files (`backend/.env`, `**/dev.db`, test SQLite artifacts).
+5. Avoid destructive git commands (`push --force`, `reset --hard`). Avoid `commit --amend` unless hooks or explicit user request require it.
+
+### Workflow
+
+```
+implement chunk → verify (npm test [+ coverage]) → commit → next chunk
+```
 
 ---
 
-**These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
+**These guidelines are working if:** smaller focused diffs, fewer rewrites, clarifying questions before implementation, and a clean `git log` of logical commits after each task.
