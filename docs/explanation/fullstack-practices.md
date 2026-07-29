@@ -136,14 +136,16 @@ Place new code where its primary job is obvious:
 
 ```text
 backend/src/
-  routes/                  # HTTP: thin handlers, wired from app.ts
+  routes/                  # HTTP: thin handlers, wired via mountRouters.ts from app.ts
   routes/routeSupport.ts   # serialization, getAccountForUser, date filters
   routes/httpSupport.ts    # HttpError, parsers, handleRouteError
   tax/                     # PL tax domain (report, overview, wrappers, calendar)
   import/                  # CSV import parsers and commit logic
+  marketData/              # Twelve Data EOD sync, symbols, FX history helpers
   *.ts                     # other domain logic (hubs: accountValuation, holdings, fx)
-  *.test.ts                # unit tests next to domain code
-backend/test/              # HTTP, golden, schema integration
+  **/*.test.ts             # unit tests next to domain code (including nested folders)
+  **/*.integration.test.ts # some integrations co-located under src/
+backend/test/              # HTTP, golden, and other integration suites
 
 frontend/src/
   api/                     # client.ts + one module per backend area

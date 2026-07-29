@@ -45,14 +45,14 @@ Metrics include only:
 - `frontend/src/utils/**/*.ts`
 - `frontend/src/state/period.tsx`
 
-**Excluded:** pages, components, and other UI — new API logic must be tested in the scoped layers (especially `apiModules.test.ts`), not only in React components.
+**Excluded:** pages, components, other UI, and `frontend/src/api/fixtures/**` — new API logic must be tested in the scoped layers (especially `apiModules.test.ts`), not only in React components.
 
 ## Test pyramid
 
 | Level | Where | Examples |
 |-------|--------|----------|
-| Unit | `backend/src/*.test.ts` | `transactionBalance.test.ts`, `marketData.test.ts` |
-| Integration | `backend/test/*.integration.test.ts` | `accountValuation.integration.test.ts`, `marketData.integration.test.ts` |
+| Unit | `backend/src/**/*.test.ts` (excl. `*.integration.test.ts`) | `transactionBalance.test.ts`, `marketData/marketData.test.ts` |
+| Integration | `backend/test/*.integration.test.ts` and `backend/src/**/*.integration.test.ts` | `accountValuation.integration.test.ts`, `tax/taxWrapper.integration.test.ts` |
 | HTTP / workflow | `backend/test/app.http.test.ts` | auth, cross-user IDOR, brokerage cash, market-data status |
 | Golden | `backend/test/golden.integration.test.ts` | ledger scenarios |
 | Frontend unit | `frontend/src/**/*.test.ts` | `apiModules.test.ts`, `client.test.ts`, `useAsyncData.test.tsx`, `apiContracts.test.ts` |
@@ -63,8 +63,9 @@ Prioritize: money and balance rules, auth and tenancy, write flows that update d
 
 | Change | Add tests in |
 |--------|----------------|
-| New backend domain module | `backend/src/<name>.test.ts` |
-| New or changed route / workflow | `backend/test/app.http.test.ts` and/or `backend/test/*.integration.test.ts` |
+| New backend domain module | `backend/src/<name>.test.ts` or next to nested module (e.g. `marketData/*.test.ts`) |
+| Domain integration | `backend/test/*.integration.test.ts` and/or `backend/src/**/*.integration.test.ts` |
+| New or changed route / workflow | `backend/test/app.http.test.ts` and/or integration tests |
 | New `frontend/src/api/<area>Api.ts` | `frontend/src/api/apiModules.test.ts` |
 | New or changed JSON response shape | `frontend/src/api/apiContracts.test.ts` (+ fixtures under `api/fixtures/` when needed) |
 

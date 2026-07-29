@@ -31,16 +31,16 @@ sequenceDiagram
 |-------|--------|------|
 | Frontend | `frontend/src/api/client.ts` | `fetch` + `Authorization: Bearer` from `localStorage` |
 | Auth | `backend/src/auth.ts` | Register/login, `requireAuth` middleware |
-| HTTP | `backend/src/app.ts` + `backend/src/routes/*` | Router wiring; domain handlers in route modules |
+| HTTP | `backend/src/app.ts` + `backend/src/routes/mountRouters.ts` | Router wiring; domain handlers in route modules |
 | FX | `backend/src/fx.ts` | NBP rates, PLN hub, in-memory TTL cache |
 | Holdings | `backend/src/holdingLot.ts` | `quantityAfter`, lot price resolution |
 | Cash ledger | `backend/src/transactionBalance.ts` | `balanceAfter`, transaction types |
 | Valuations | `backend/src/accountValuation.ts` | Daily snapshots, backfill |
-| Market data | `backend/src/marketData.ts`, `marketDataSync.ts` | Twelve Data EOD fetch, sync job |
+| Market data | `backend/src/marketData/` | Twelve Data EOD fetch, sync, symbols (`marketData.ts`, `marketDataSync.ts`, …) |
 | Net worth | `backend/src/netWorth.ts` | Aggregated stats for dashboard |
 | Tax (PL) | `backend/src/tax/*` | PIT-38 report, overview, wrappers, calendar, pre-sell simulator |
 
-Domain modules live under `backend/src/` (flat hubs such as `accountValuation.ts`, `holdings.ts`) and grouped folders where cohesion is high (`tax/`, `import/`, `routes/`). See [fullstack-architecture-practices.md](./fullstack-practices.md) §12.
+Domain modules live under `backend/src/` (flat hubs such as `accountValuation.ts`, `holdings.ts`) and grouped folders where cohesion is high (`tax/`, `import/`, `marketData/`, `routes/`). See [fullstack-practices.md](./fullstack-practices.md) §12.
 
 ## Auth
 
@@ -48,7 +48,7 @@ Domain modules live under `backend/src/` (flat hubs such as `accountValuation.ts
 - Protected routes use `requireAuth`: header `Authorization: Bearer <token>`.
 - `AuthedRequest.userId` is set on success; queries must filter by `userId`.
 - Public (no JWT): `POST /api/auth/register` (when `ALLOW_REGISTER` is not false), `POST /api/auth/login`, `GET /api/auth/config`, `GET /api/health`.
-- Private deploy: set `ALLOW_REGISTER=false`; create users via `npm run create-user`. Backups: `npm run db:backup`. See [private-ops.md](../how-to/private-deploy.md).
+- Private deploy: set `ALLOW_REGISTER=false`; create users via `npm run create-user`. Backups: `npm run db:backup`. See [private-deploy.md](../how-to/private-deploy.md).
 
 Env (see [README.md](../../README.md)): `DATABASE_URL`, `JWT_SECRET` (≥32 chars), optional `ALLOW_REGISTER`, `MARKET_DATA_API_KEY`. Do not commit `.env` or `*.db`.
 
@@ -61,9 +61,9 @@ Env (see [README.md](../../README.md)): `DATABASE_URL`, `JWT_SECRET` (≥32 char
 
 ## Market data (EOD)
 
-- `MARKET_DATA_API_KEY` enables Twelve Data EOD quotes for held **STOCK**, **ETF**, and **crypto** (holdings on `CRYPTO` accounts or `instrumentType=CRYPTO`; pair format e.g. `BTC/USD`).
+- `MARKET_DATA_API_KEY` enables Twelve Data EOD quotes for held **STOCK** / **ETF**, and for holdings on **CRYPTO** accounts (pair format e.g. `BTC/USD`). Crypto is not a separate allowed `instrumentType`.
 - `POST /api/market-data/sync` (or `npm run market:sync` in `backend/`) upserts `InstrumentValuation` with `source: twelve_data` and recomputes affected brokerage account snapshots via `recomputeAccountValuationsFrom`.
-- Symbol mapping (`marketDataSymbols.ts`): US exchanges use bare ticker; GPW → `:GPW` (e.g. `PKO:GPW` on Twelve Data free tier), XETRA → `:XETR`, etc. Unmapped types/exchanges are skipped (use manual valuation UI).
+- Symbol mapping (`backend/src/marketData/marketDataSymbols.ts`): US exchanges use bare ticker; GPW → `:GPW` (e.g. `PKO:GPW` on Twelve Data free tier), XETRA → `:XETR`, etc. Unmapped types/exchanges are skipped (use manual valuation UI).
 - Scheduled sync: run `npm run market:sync` from cron on weekdays after market close (see [README.md](../../README.md)).
 
 Demo seed (`npm run db:seed`) reuses the same Twelve Data EOD path and symbol mapping; orchestration lives in `backend/prisma/demo/` (see [tutorials/demo-seed.md](../tutorials/demo-seed.md)).
