@@ -45,7 +45,8 @@ Tax screens live under `features/tax/pages/`; import under `features/import/page
 | `/accounts/:id/holdings/:holdingId` | Holding detail (legacy URL) | Same as `/accounts/:id/assets/:instrumentId` |
 | `/transactions` | Asset trades | `TransactionsListPage` → `AssetTradesTable` (FR-007; `?accountId=` filter) |
 | `/transfers` | Internal transfers | `TransfersPage` → `InternalTransfersTable` (FR-011; `?accountId=` filter) |
-| `/tax` | PL tax report | `features/tax/pages/TaxReportPage` — FR-022/023/025–028; loss carryforward section; `/tax/:year` |
+| `/tax` | PL tax report (current year default) | `features/tax/pages/TaxReportPage` — FR-022/023/025–028; loss carryforward section |
+| `/tax/:year` | PL tax report for year | Same `TaxReportPage` with path year |
 | `/tax/settings` | Tax prerequisites | `features/tax/pages/TaxSettingsPage` — FR-039–041; `TaxLossCarryforwardSection` |
 | `/tax/:year/overview` | Tax overview | `features/tax/pages/TaxOverviewPage` — FR-046 consolidated summary |
 | `/tax/calendar` | Tax calendar | `features/tax/pages/TaxCalendarPage` — FR-045 deadlines + checklist |

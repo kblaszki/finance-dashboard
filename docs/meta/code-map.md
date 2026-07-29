@@ -21,14 +21,14 @@ Curated domain → code entry points. Cap kept small on purpose — update a row
 | Transactions | `backend/src/routes/transactionsRoutes.ts`, `backend/src/transactionBalance.ts`, `frontend/src/api/transactionsApi.ts` | [api](../reference/api.md) |
 | Holdings / lots | `backend/src/routes/holdingsRoutes.ts`, `backend/src/holdingLot.ts`, `backend/src/holdings.ts`, `frontend/src/api/holdingsApi.ts` | [domain](../reference/domain.md) |
 | Asset trades | `backend/src/routes/assetTradesRoutes.ts`, `backend/src/assetTrades.ts`, `frontend/src/api/assetTradesApi.ts` | [api](../reference/api.md) |
-| Internal transfers | `backend/src/routes/internalTransfersRoutes.ts`, `backend/src/internalTransfers.ts` | [api](../reference/api.md) |
+| Internal transfers | `backend/src/routes/internalTransfersRoutes.ts`, `backend/src/internalTransfers.ts`, `frontend/src/api/internalTransfersApi.ts` | [internal-transfers](../how-to/internal-transfers.md), [api](../reference/api.md) |
 | Portfolio | `backend/src/routes/portfolioRoutes.ts`, `backend/src/portfolio.ts`, `frontend/src/api/portfolioApi.ts` | [frontend](../reference/frontend.md) |
 | FX | `backend/src/fx.ts` only | [architecture](../explanation/architecture.md) |
 | Valuations | `backend/src/accountValuation.ts`, `frontend/src/api/valuationsApi.ts` | [domain](../reference/domain.md) |
 | Net worth / stats | `backend/src/netWorth.ts`, `backend/src/stats.ts`, `backend/src/routes/statsRoutes.ts`, `frontend/src/api/statsApi.ts` | [api](../reference/api.md) |
 | Market data | `backend/src/marketData/`, `backend/src/routes/marketDataRoutes.ts`, `frontend/src/api/marketDataApi.ts` | [architecture](../explanation/architecture.md) |
-| Import (broker/bank) | `backend/src/import/`, `backend/src/routes/` import routes, `frontend/src/api/importApi.ts`, `frontend/src/features/import/` | [domain](../reference/domain.md) |
-| Tax (PL) | `backend/src/tax/`, tax routes under `backend/src/routes/`, `frontend/src/features/tax/` | [tax-pl](../explanation/tax-pl.md) |
+| Import (broker/bank) | `backend/src/import/`, `backend/src/routes/importRoutes.ts`, `importPresetsRoutes.ts`, `frontend/src/api/importApi.ts`, `frontend/src/features/import/` | [import-csv](../how-to/import-csv.md), [domain](../reference/domain.md) |
+| Tax (PL) | `backend/src/tax/`, `statsRoutes.ts` (tax-report/overview), `taxLossCarryforwardRoutes.ts`, `taxCalendarRoutes.ts`, `taxWrappersRoutes.ts`, `propertySalesRoutes.ts`, `documentAttachmentsRoutes.ts`, `frontend/src/features/tax/` | [tax-year-workflow](../how-to/tax-year-workflow.md), [tax-pl](../explanation/tax-pl.md) |
 | Categories / budgets | `backend/src/categories.ts`, `backend/src/budgets.ts`, matching routes + `frontend/src/api/*` | [api](../reference/api.md) |
 | Income / liabilities | `backend/src/incomeEvents.ts`, `backend/src/liabilities.ts` | [domain](../reference/domain.md) |
 | Property | `backend/src/propertyCashFlows.ts`, `backend/src/propertySales.ts`, `backend/src/assetValuations.ts` | [domain](../reference/domain.md) |

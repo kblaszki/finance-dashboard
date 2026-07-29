@@ -27,6 +27,9 @@ Token-aware index — open [docs/README.md](docs/README.md) for the Diátaxis co
 | [docs/how-to/add-ui-page.md](docs/how-to/add-ui-page.md) | New UI page/route |
 | [docs/how-to/run-tests-and-coverage.md](docs/how-to/run-tests-and-coverage.md) | Verify before finishing logic work |
 | [docs/how-to/brokerage-and-fx.md](docs/how-to/brokerage-and-fx.md) | Brokerage positions / FX |
+| [docs/how-to/import-csv.md](docs/how-to/import-csv.md) | Broker or bank CSV import |
+| [docs/how-to/tax-year-workflow.md](docs/how-to/tax-year-workflow.md) | PL tax year review / close |
+| [docs/how-to/internal-transfers.md](docs/how-to/internal-transfers.md) | Cross-account cash transfers |
 | [docs/how-to/private-deploy.md](docs/how-to/private-deploy.md) | Private single-user deploy |
 
 ### Reference

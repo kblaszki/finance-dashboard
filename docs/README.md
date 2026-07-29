@@ -32,6 +32,20 @@ Never load all docs. Prefer reference for facts, how-to for tasks, explanation f
 - First run walkthrough: [tutorials/first-run.md](tutorials/first-run.md)
 - Private deploy: [how-to/private-deploy.md](how-to/private-deploy.md)
 
+## How-to index
+
+| Doc | Use when |
+|-----|----------|
+| [add-api-endpoint.md](how-to/add-api-endpoint.md) | New REST endpoint |
+| [add-prisma-model.md](how-to/add-prisma-model.md) | Schema / model change |
+| [add-ui-page.md](how-to/add-ui-page.md) | New UI page |
+| [run-tests-and-coverage.md](how-to/run-tests-and-coverage.md) | Verification gate |
+| [brokerage-and-fx.md](how-to/brokerage-and-fx.md) | Brokerage / FX work |
+| [import-csv.md](how-to/import-csv.md) | Broker or bank CSV import |
+| [tax-year-workflow.md](how-to/tax-year-workflow.md) | PL tax year workflow |
+| [internal-transfers.md](how-to/internal-transfers.md) | Internal cash transfers |
+| [private-deploy.md](how-to/private-deploy.md) | Private single-user deploy |
+
 ## Page front matter
 
 Every page under the folders above uses YAML front matter:
