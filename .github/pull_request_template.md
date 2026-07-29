@@ -13,5 +13,6 @@
 
 ## Docs
 
-- [ ] Updated `docs/api.md` / `docs/domain.md` / `docs/frontend.md` if applicable
-- [ ] N/A — no API or schema changes
+- [ ] Updated `docs/reference/api.md` / `docs/reference/domain.md` / `docs/reference/frontend.md` if applicable (Diátaxis; see `docs/README.md`)
+- [ ] Updated `docs/meta/code-map.md` if a primary code path moved
+- [ ] N/A — no API, schema, or UI surface changes

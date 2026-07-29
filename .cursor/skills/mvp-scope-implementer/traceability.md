@@ -28,7 +28,7 @@ Use one primary layer per row:
 - `api` — routes, serializers, HTTP tests
 - `client` — `frontend/src/api/*`
 - `ui` — pages, components, routing
-- `docs` — `docs/api.md`, `docs/domain.md`, `docs/frontend.md`
+- `docs` — `docs/reference/api.md`, `docs/reference/domain.md`, `docs/reference/frontend.md`
 
 ## Gap analysis checklist
 
@@ -37,8 +37,8 @@ After reading docs, fill "Repo evidence (before)" from code — not assumptions:
 | Check | Where to look |
 |-------|----------------|
 | Schema delta | `backend/prisma/schema.prisma` vs `database/*` |
-| REST surface | `backend/src/routes/`, `docs/api.md` |
-| UI routes | `frontend/src/App.tsx`, `docs/frontend.md` |
+| REST surface | `backend/src/routes/`, `docs/reference/api.md` |
+| UI routes | `frontend/src/App.tsx`, `docs/reference/frontend.md` |
 | API clients | `frontend/src/api/` |
 | Tests | `backend/test/app.http.test.ts`, `frontend/src/api/apiModules.test.ts` |
 

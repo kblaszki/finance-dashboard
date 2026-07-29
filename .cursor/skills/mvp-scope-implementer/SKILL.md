@@ -41,7 +41,7 @@ Supporting references (read on demand):
 
 - [AGENTS.md](../../../AGENTS.md) — recipes (schema, API, UI, tests)
 - [.cursor/rules/verification.mdc](../../../.cursor/rules/verification.mdc) — mandatory checks
-- [docs/testing.md](../../../docs/testing.md) — pyramid, coverage thresholds, where to add tests
+- [docs/reference/testing.md](../../../docs/reference/testing.md) — pyramid, coverage thresholds, where to add tests
 - [.cursor/rules/golden-rule.mdc](../../../.cursor/rules/golden-rule.mdc) — minimal diffs
 
 Committed docs (`docs/*`) are English. Local `plans/` docs may be any language. **Never link `plans/` from committed docs.**
@@ -90,10 +90,10 @@ For each scope/requirement row, record current repo evidence:
 | Layer | Compare against |
 |-------|-----------------|
 | Schema | `backend/prisma/schema.prisma` vs `database/` |
-| API | `backend/src/routes/`, `docs/api.md` |
+| API | `backend/src/routes/`, `docs/reference/api.md` |
 | Domain | `backend/src/*.ts` (fx, valuations, balances) |
 | Client | `frontend/src/api/` |
-| UI | `frontend/src/App.tsx`, `docs/frontend.md` |
+| UI | `frontend/src/App.tsx`, `docs/reference/frontend.md` |
 | Tests | `backend/test/`, `frontend/src/api/*.test.ts` |
 
 Present a short gap summary before coding unless the user said "just implement".
@@ -108,7 +108,7 @@ Order packages by dependency (AGENTS.md recipes):
 2. Domain modules + routes + HTTP/integration tests
 3. Frontend API client + `apiModules.test.ts` + `apiContracts` fixtures if JSON shape is new
 4. UI pages/components + routing
-5. Update `docs/domain.md`, `docs/api.md`, `docs/frontend.md` for shipped behavior
+5. Update `docs/reference/domain.md`, `docs/reference/api.md`, `docs/reference/frontend.md` for shipped behavior
 
 **One logical commit per package** when possible. Split large packages (e.g. schema vs API vs UI).
 
@@ -133,9 +133,9 @@ Step progress:
 ### Per-step implementation
 
 - Follow existing patterns in touched files.
-- New route: `backend/src/routes/<area>Routes.ts` → wire in `app.ts` → client in `frontend/src/api/` → row in `docs/api.md`.
-- New model: `schema.prisma` → `npx prisma migrate dev` → `docs/domain.md`.
-- New page: `App.tsx` → component → `docs/frontend.md`.
+- New route: `backend/src/routes/<area>Routes.ts` → wire in `app.ts` → client in `frontend/src/api/` → row in `docs/reference/api.md`.
+- New model: `schema.prisma` → `npx prisma migrate dev` → `docs/reference/domain.md`.
+- New page: `App.tsx` → component → `docs/reference/frontend.md`.
 - Financial rules: centralize in domain modules (`fx.ts`, `accountValuation.ts`, etc.) — not in route handlers.
 
 ### Tests (required for logic changes)
@@ -147,14 +147,14 @@ Step progress:
 | New API client module | `frontend/src/api/apiModules.test.ts` |
 | New JSON response shape | `apiContracts.test.ts` + fixtures |
 
-Prioritize money, balances, auth/tenancy, and write flows. See [docs/testing.md](../../../docs/testing.md).
+Prioritize money, balances, auth/tenancy, and write flows. See [docs/reference/testing.md](../../../docs/reference/testing.md).
 
 ### Verification (run from repo root)
 
 | When | Command | Pass |
 |------|---------|------|
 | Every step | `npm test` | exit 0 (includes frontend lint) |
-| Logic in `backend/src/`, routes, `frontend/src/api/` | `npm run test:coverage` | thresholds in docs/testing.md |
+| Logic in `backend/src/`, routes, `frontend/src/api/` | `npm run test:coverage` | thresholds in docs/reference/testing.md |
 | UI-only step (no counted paths) | `npm run test:coverage` | at least every 2–3 steps |
 
 **Never** claim green without command output. Fix failures before the next step or commit.
@@ -202,7 +202,7 @@ Done only when **all** are true:
 
 - Every matrix row: `done` or `out_of_scope` (with scope citation)
 - Latest `npm test` and `npm run test:coverage`: pass
-- `docs/api.md`, `docs/domain.md`, `docs/frontend.md` match shipped code
+- `docs/reference/api.md`, `docs/reference/domain.md`, `docs/reference/frontend.md` match shipped code
 - Final architecture review completed; Critical/High in-scope items resolved
 
 ### Final report template

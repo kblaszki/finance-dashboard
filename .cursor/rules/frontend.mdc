@@ -8,8 +8,8 @@ alwaysApply: false
 
 - Functional components + TypeScript; routing in `frontend/src/App.tsx` (react-router-dom).
 - HTTP calls via `frontend/src/api/` (`client.ts`, `accountsApi.ts`, `holdingsApi.ts`, `transactionsApi.ts`, `instrumentsApi.ts`, `holdingLotsApi.ts`, `valuationsApi.ts`, `statsApi.ts`, `marketDataApi.ts`, `authApi.ts`).
-- Tests for API modules: [docs/testing.md](mdc:docs/testing.md).
+- Tests for API modules: [docs/reference/testing.md](mdc:docs/reference/testing.md).
 - Display currency: context in `frontend/src/state/currency.tsx`.
 - Formatting: `frontend/src/utils/format.ts`.
 - Styles: existing classes in `App.css` / `index.css` — match the current UI layout.
-- Routes and API mapping: [docs/frontend.md](mdc:docs/frontend.md) — add a row when adding pages or client functions.
+- Routes and API mapping: [docs/reference/frontend.md](mdc:docs/reference/frontend.md) — add a row when adding pages or client functions.

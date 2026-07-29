@@ -65,9 +65,9 @@ Repo-specific:
 **Define success criteria. Loop until verified.**
 
 Transform tasks into verifiable goals:
-- "New route" → handler in `backend/src/routes/*`, row in `docs/api.md`, HTTP test → `npm test`
+- "New route" → handler in `backend/src/routes/*`, row in `docs/reference/api.md`, HTTP test → `npm test`
 - "New API client" → `frontend/src/api/*Api.ts`, `apiModules.test.ts` → `npm run test:coverage`
-- "Schema change" → `prisma migrate dev`, update `docs/domain.md` if meaning changed
+- "Schema change" → `prisma migrate dev`, update `docs/reference/domain.md` if meaning changed
 - "Fix the bug" → regression test first when practical, then fix
 - "Refactor X" → tests pass before and after
 

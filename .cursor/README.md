@@ -19,32 +19,39 @@
 
 | Skill | Trigger |
 |-------|---------|
-| [fullstack-architecture-review](skills/fullstack-architecture-review/SKILL.md) | Manual only — fullstack practices audit and remediation plan |
+| [docs-reader](skills/docs-reader/SKILL.md) | Diátaxis doc routing for daily AI work |
+| [docs-author](skills/docs-author/SKILL.md) | Manual — add new Diátaxis pages |
+| [docs-audit](skills/docs-audit/SKILL.md) | Manual — docs vs code audit |
+| [docs-sync-during-work](skills/docs-sync-during-work/SKILL.md) | Significant API/schema/UI changes — same-chunk docs |
+| [fullstack-architecture-review](skills/fullstack-architecture-review/SKILL.md) | Manual — fullstack practices audit and remediation plan |
+| [mvp-scope-implementer](skills/mvp-scope-implementer/SKILL.md) | Manual — implement MVP from local scope docs |
 
 ## Agent index and docs
 
-- [AGENTS.md](../AGENTS.md) — short router for agents (recipes, links, skills).
-- [docs/](../docs/) — deep reference; **not** loaded every session. Attach when needed:
-  - `@docs/domain.md` — accounts, lots, valuations
-  - `@docs/api.md` — endpoint list
-  - `@docs/architecture.md` — auth, FX, file layout
-  - `@docs/frontend.md` — routes and API clients
-  - `@docs/testing.md` — coverage, test pyramid, verification checklist
+- [AGENTS.md](../AGENTS.md) — short router for agents (docs by Diátaxis mode, skills).
+- [docs/README.md](../docs/README.md) — Diátaxis hub and AI reading order.
+- [docs/meta/code-map.md](../docs/meta/code-map.md) — domain → code paths.
+- Attach when needed:
+  - `@docs/reference/domain.md` — accounts, lots, valuations
+  - `@docs/reference/api.md` — endpoint list
+  - `@docs/explanation/architecture.md` — auth, FX, file layout
+  - `@docs/reference/frontend.md` — routes and API clients
+  - `@docs/reference/testing.md` — coverage, test pyramid, CI facts
 
-Human onboarding (install, env, seed): [README.md](../README.md).
+Human onboarding (install, env, seed): [README.md](../README.md); tutorial: [docs/tutorials/first-run.md](../docs/tutorials/first-run.md).
 
 ## Token usage
 
 - **Always Apply** rules stay small; product detail lives in `docs/` (pull via `@` or Read).
 - **Glob rules** activate when matching files are in context (backend/frontend edits, doc maintenance).
-- Avoid copying README or `docs/api.md` into always-on rules.
+- Avoid copying README or `docs/reference/api.md` into always-on rules.
 
 ## Verification
 
 1. **Cursor Settings → Rules, Commands** — project rules list with status.
 2. In Agent chat — context indicator near the prompt: active rules should appear there.
-3. Manually: `@golden-rule` or `@docs/api.md` to force-include.
-4. After logic changes: [verification.mdc](rules/verification.mdc) and [docs/testing.md](../docs/testing.md) (`npm test`, `npm run test:coverage`).
+3. Manually: `@golden-rule` or `@docs/reference/api.md` to force-include.
+4. After logic changes: [verification.mdc](rules/verification.mdc) and [docs/reference/testing.md](../docs/reference/testing.md) (`npm test`, `npm run test:coverage`).
 
 ## Version control
 

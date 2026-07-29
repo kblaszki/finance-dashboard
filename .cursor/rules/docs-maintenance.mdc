@@ -1,21 +1,25 @@
 ---
-description: Keep docs/ in sync when changing API, schema, or routes (glob-scoped).
+description: Keep Diátaxis docs/ in sync when changing API, schema, or routes (glob-scoped). Prefer skill docs-sync-during-work.
 globs: backend/prisma/schema.prisma,backend/src/app.ts,backend/src/routes/**/*.ts,frontend/src/api/**/*.ts,frontend/src/App.tsx
 alwaysApply: false
 ---
 
 # Documentation maintenance
 
-Applies when editing schema, routes, API clients, or app routing.
+Applies when editing schema, routes, API clients, or app routing. Prefer skill [docs-sync-during-work](mdc:.cursor/skills/docs-sync-during-work/SKILL.md) for the full gate.
 
-- New or changed REST route: add/update **one row** in [docs/api.md](mdc:docs/api.md).
-- Model or relation change: update [docs/domain.md](mdc:docs/domain.md).
-- New route/page or API client module: update [docs/frontend.md](mdc:docs/frontend.md).
-- Auth/FX/architecture change: update [docs/architecture.md](mdc:docs/architecture.md) only if behavior changed.
+- New or changed REST route: add/update **one row** in [docs/reference/api.md](mdc:docs/reference/api.md).
+- Model or relation change: update [docs/reference/domain.md](mdc:docs/reference/domain.md).
+- New route/page or API client module: update [docs/reference/frontend.md](mdc:docs/reference/frontend.md).
+- Auth/FX/architecture change: update [docs/explanation/architecture.md](mdc:docs/explanation/architecture.md) only if behavior changed.
+- Primary code path moves: update [docs/meta/code-map.md](mdc:docs/meta/code-map.md).
+- Hub / agent index: [docs/README.md](mdc:docs/README.md), [AGENTS.md](mdc:AGENTS.md).
 - Never link to `plans/` from committed documentation (`README.md`, `docs/*`, `AGENTS.md`). That directory is gitignored local WIP.
 
 Skip doc updates for trivial changes (typo, CSS-only, comment-only).
 
 Do **not** expand `golden-rule.mdc` or `project-context.mdc` per feature — only when global conventions change.
 
-Keep entries short (table rows); no full JSON examples in docs.
+Keep entries short (table rows); no full JSON examples in docs. New pages need Diátaxis YAML front matter (`diataxis`, `use_when`, `audience`) — see skill `docs-author`.
+
+Old flat paths (`docs/api.md`, etc.) are redirect stubs; edit the canonical file under `docs/reference|how-to|explanation|tutorials|meta/`.

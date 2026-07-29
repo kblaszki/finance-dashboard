@@ -15,7 +15,7 @@ Behavioral rules (including commit-after-chunk): [golden-rule.mdc](mdc:.cursor/r
 
 ## Local dev
 
-- Root: `npm run dev` (backend `:4000`, frontend `:5173`). Setup, env, seed: [README.md](mdc:README.md). Tests: `npm test`; coverage and checklist: [docs/testing.md](mdc:docs/testing.md).
+- Root: `npm run dev` (backend `:4000`, frontend `:5173`). Setup, env, seed: [README.md](mdc:README.md). Tests: `npm test`; coverage and checklist: [docs/reference/testing.md](mdc:docs/reference/testing.md), [docs/how-to/run-tests-and-coverage.md](mdc:docs/how-to/run-tests-and-coverage.md). Docs hub: [docs/README.md](mdc:docs/README.md).
 
 ## Conventions
 

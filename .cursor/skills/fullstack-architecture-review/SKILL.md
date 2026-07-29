@@ -2,7 +2,7 @@
 name: fullstack-architecture-review
 description: >-
   Performs a periodic fullstack architecture and engineering-practices review of
-  finance-dashboard. Evaluates the repo against docs/fullstack-architecture-practices.md,
+  finance-dashboard. Evaluates the repo against docs/explanation/fullstack-practices.md,
   analyzes backend/frontend/docs/CI, and produces a prioritized remediation plan for
   delegation. Use when the user asks for a fullstack review, architecture audit,
   engineering practices audit, or a remediation roadmap for this project.
@@ -25,13 +25,13 @@ Do **not** auto-invoke for normal feature work.
 
 ## Primary rubric
 
-Use [docs/fullstack-architecture-practices.md](../../../docs/fullstack-architecture-practices.md) as the main standard. Map every finding to one or more of its **13 sections**.
+Use [docs/explanation/fullstack-practices.md](../../../docs/explanation/fullstack-practices.md) as the main standard. Map every finding to one or more of its **13 sections**.
 
 Treat these as supporting evidence, not substitutes for reading code:
-- [docs/architecture.md](../../../docs/architecture.md)
-- [docs/domain.md](../../../docs/domain.md)
-- [docs/api.md](../../../docs/api.md)
-- [docs/frontend.md](../../../docs/frontend.md)
+- [docs/explanation/architecture.md](../../../docs/explanation/architecture.md)
+- [docs/reference/domain.md](../../../docs/reference/domain.md)
+- [docs/reference/api.md](../../../docs/reference/api.md)
+- [docs/reference/frontend.md](../../../docs/reference/frontend.md)
 - [AGENTS.md](../../../AGENTS.md)
 
 If docs disagree with code, **trust the code** and note doc drift as a finding.
@@ -53,9 +53,9 @@ Review progress:
 ### Step 1: Establish context
 
 Read, at minimum:
-- `docs/fullstack-architecture-practices.md`
-- `docs/testing.md`
-- `docs/architecture.md`
+- `docs/explanation/fullstack-practices.md`
+- `docs/reference/testing.md`
+- `docs/explanation/architecture.md`
 - `backend/src/app.ts`
 - `backend/src/routes/`
 - `frontend/src/App.tsx`
@@ -78,7 +78,7 @@ Focus on:
 
 Run targeted tests when useful:
 - `npm test` from repo root
-- `npm run test:coverage` when reviewing test/CI posture (see `docs/testing.md`)
+- `npm run test:coverage` when reviewing test/CI posture (see `docs/reference/testing.md`)
 
 ### Step 3: Frontend review
 
@@ -93,12 +93,12 @@ Focus on:
 Run when useful:
 - `cd frontend && npm run build`
 - `cd frontend && npm run lint` (report failures; do not fix unless asked)
-- `npm run test:coverage` from repo root when assessing coverage gaps (see `docs/testing.md`)
+- `npm run test:coverage` from repo root when assessing coverage gaps (see `docs/reference/testing.md`)
 
 ### Step 4: Repo / docs / CI review
 
 Focus on:
-- whether CI matches [docs/testing.md](../../../docs/testing.md) (backend tests, frontend build/test/lint, coverage thresholds)
+- whether CI matches [docs/reference/testing.md](../../../docs/reference/testing.md) (backend tests, frontend build/test/lint, coverage thresholds)
 - whether docs index matches reality (`AGENTS.md`, `docs/*`, practices doc vs `routes/*`)
 - whether change discipline is clear (where to add routes, clients, docs)
 - monorepo ergonomics (install/build/test from root vs split packages)
@@ -115,7 +115,7 @@ Use these severities:
 | Low | Polish, consistency, or future-proofing |
 
 Also tag each finding with:
-- **Practice area** (section 1–13 from `fullstack-architecture-practices.md`)
+- **Practice area** (section 1–13 from `docs/explanation/fullstack-practices.md`)
 - **Layer** (`backend`, `frontend`, `data`, `docs`, `ci`, `cross-cutting`)
 - **Evidence** (file paths, tests, observed behavior)
 
@@ -141,7 +141,7 @@ Use this structure exactly:
 [Short description of current backend/frontend/data/test layout based on code, not assumptions]
 
 ## Practices compliance
-| Practice (from fullstack-architecture-practices.md) | Status | Notes |
+| Practice (from docs/explanation/fullstack-practices.md) | Status | Notes |
 |---|---|---|
 | 1. Clear boundaries | Pass / Partial / Fail | ... |
 | 2. Boring request flow | Pass / Partial / Fail | ... |
@@ -207,7 +207,7 @@ Each item in **Now / Next / Later** must be delegatable as a standalone task:
 - one clear goal
 - bounded scope (avoid "refactor everything")
 - explicit success criteria
-- verification steps (`npm test`, `npm run test:coverage` when logic changed — [docs/testing.md](../../../docs/testing.md), specific HTTP/integration checks, build/lint, manual UI checks)
+- verification steps (`npm test`, `npm run test:coverage` when logic changed — [docs/reference/testing.md](../../../docs/reference/testing.md), specific HTTP/integration checks, build/lint, manual UI checks)
 
 Prefer small, reviewable packages over large rewrites.
 

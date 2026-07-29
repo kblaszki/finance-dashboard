@@ -1,6 +1,6 @@
 # Fullstack review checklist
 
-Use with [SKILL.md](SKILL.md). Map each item to a section in [docs/fullstack-architecture-practices.md](../../../docs/fullstack-architecture-practices.md).
+Use with [SKILL.md](SKILL.md). Map each item to a section in [docs/explanation/fullstack-practices.md](../../../docs/explanation/fullstack-practices.md).
 
 ## 1. Clear boundaries
 
@@ -19,14 +19,14 @@ Use with [SKILL.md](SKILL.md). Map each item to a section in [docs/fullstack-arc
 ## 3. Stable API contracts
 
 - Are endpoints under `/api/...` with consistent JSON and status codes?
-- Does [docs/api.md](../../../docs/api.md) match implemented routes (including `backend/src/routes/*`)?
+- Does [docs/reference/api.md](../../../docs/reference/api.md) match implemented routes (including `backend/src/routes/*`)?
 - Do frontend API types in `frontend/src/api/*.ts` match backend serializers?
 - Are all public endpoints serialized (no raw Prisma rows with inconsistent Decimal shapes)?
 - Are shared vs user-scoped resources documented (`Instrument` global vs accounts per `userId`)?
 
 ## 4. Data model as source of truth
 
-- Is [backend/prisma/schema.prisma](../../../backend/prisma/schema.prisma) aligned with [docs/domain.md](../../../docs/domain.md)?
+- Is [backend/prisma/schema.prisma](../../../backend/prisma/schema.prisma) aligned with [docs/reference/domain.md](../../../docs/reference/domain.md)?
 - Are migrations present for schema changes?
 - Are ledger/invariant fields enforced in backend code, not inferred in UI?
 
@@ -67,7 +67,7 @@ Use with [SKILL.md](SKILL.md). Map each item to a section in [docs/fullstack-arc
 
 ## 10. Tests and verification
 
-See [testing.md](../../../docs/testing.md) for the full pyramid, coverage scope, thresholds, CI jobs, and verification checklist. Spot-check:
+See [testing.md](../../../docs/reference/testing.md) for the full pyramid, coverage scope, thresholds, CI jobs, and verification checklist. Spot-check:
 
 - backend unit tests for pure domain logic (`backend/src/*.test.ts`)
 - integration tests for domain + Prisma (`backend/test/*.integration.test.ts`)
@@ -81,7 +81,7 @@ See [testing.md](../../../docs/testing.md) for the full pyramid, coverage scope,
 ## 11. Documentation discipline
 
 - `AGENTS.md` and `docs/*` index accurate
-- [fullstack-architecture-practices.md](../../../docs/fullstack-architecture-practices.md) matches current `routes/*` layout
+- [fullstack-practices.md](../../../docs/explanation/fullstack-practices.md) matches current `routes/*` layout
 - doc drift called out when stale
 - recipes for new routes/clients/docs still valid
 
@@ -117,7 +117,7 @@ Inspect these even if the general checklist passes:
 | `backend/src/routes/routeSupport.ts` | shared helpers becoming a hidden god module |
 | Frontend async patterns | `useAsyncData.ts`, dashboard charts, duplicated `useEffect` loads |
 | Frontend page components | duplicated fetch/error/loading patterns |
-| CI in `.github/workflows/ci.yml` | see [testing.md](../../../docs/testing.md) |
+| CI in `.github/workflows/ci.yml` | see [testing.md](../../../docs/reference/testing.md) |
 
 ## Evidence to collect
 

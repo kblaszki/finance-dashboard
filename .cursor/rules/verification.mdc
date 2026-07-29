@@ -15,7 +15,7 @@ Run commands from the **repository root** and report the outcome explicitly in y
 |-------|---------|---------------|
 | Tests | `npm test` | Backend and frontend test suites exit 0 |
 | Frontend ESLint | included in `npm test` | `cd frontend && npm run lint` — **0 errors, 0 warnings** |
-| Coverage | `npm run test:coverage` | Backend and frontend thresholds pass (see [docs/testing.md](mdc:docs/testing.md)) |
+| Coverage | `npm run test:coverage` | Backend and frontend thresholds pass (see [docs/reference/testing.md](mdc:docs/reference/testing.md)) |
 
 `npm test` already runs frontend lint after frontend tests. Still run `npm run test:coverage` separately — it is not part of `npm test`.
 
@@ -31,4 +31,4 @@ Run commands from the **repository root** and report the outcome explicitly in y
 - Documentation-only edits (`.md`, comments with no logic change).
 - User explicitly asked for a partial deliverable (e.g. "plan only", "do not run tests").
 
-Details, thresholds, and CI layout: [docs/testing.md](mdc:docs/testing.md).
+Details, thresholds, and CI layout: [docs/reference/testing.md](mdc:docs/reference/testing.md). How-to checklist: [docs/how-to/run-tests-and-coverage.md](mdc:docs/how-to/run-tests-and-coverage.md).
