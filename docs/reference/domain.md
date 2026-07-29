@@ -18,7 +18,7 @@ Source of truth: [`backend/prisma/schema.prisma`](../../backend/prisma/schema.pr
 | `User` | `email`, `username`, `passwordHash` |
 | `Account` | Unified account (`BANK`, `BROKERAGE`, `CRYPTO`, `PRECIOUS_METAL`, `REAL_ESTATE`, `OTHER`, legacy `MANUAL`); `cashBalance`, `openingBalance`, `openingCashAsOf` (DATA-002), `metalGrams` (PRECIOUS_METAL), `taxWrapperType` (BROKERAGE: `standard`, `ike`, `ikze`, `ppk`), `rentalTaxMethod` (REAL_ESTATE: `scale`, `lump_sum_8_5`), `currency` |
 | `Transaction` | Cash flows with `balanceAfter` snapshot; types include `DIVIDEND` and `INTEREST` for corporate income |
-| `Instrument` | Global instrument catalog (symbol, exchange, type) |
+| `Instrument` | Global instrument catalog (symbol, exchange, type, `source` default `manual`) |
 | `Holding` | Brokerage position per account + instrument; persisted `quantity` (current net shares) |
 | `HoldingLot` | BUY/SELL trade ledger under a `Holding`; `quantityAfter` chain; `commission` (FR-007) |
 | `InstrumentValuation` | Daily/manual price per instrument |
@@ -40,19 +40,20 @@ Allowed `Instrument.instrumentType` values: `STOCK`, `ETF`, `BOND`, `FUND`, `OTH
 | Type | Typical valuation source |
 |------|-------------------------|
 | STOCK, ETF | `twelve_data` (EOD sync) when exchange is mapped; else manual |
-| Crypto (CRYPTO account or instrument) | `twelve_data` pair symbol (e.g. `BTC/USD`) |
+| Crypto | Holdings on `Account.accountType === CRYPTO` (pair symbols e.g. `BTC/USD`); not a separate `instrumentType` value |
 | BOND, FUND | `manual_nav` — user enters NAV/price from broker or fund manager |
 | OTHER | manual |
 
-Market sync (`POST /api/market-data/sync`) processes **STOCK**, **ETF**, and **crypto** holdings; BOND/FUND are skipped without error.
+Market sync (`POST /api/market-data/sync`) processes **STOCK**, **ETF**, and holdings on **CRYPTO** accounts; BOND/FUND are skipped without error.
 
 ## Global instrument catalog
 
 - `Instrument` and `InstrumentValuation` rows are **shared** across all users (no `userId` on the model).
+- `Instrument.source` defaults to `"manual"` (catalog provenance; market sync may write valuations with `source: twelve_data`).
 - Any authenticated user may search/create instruments and append manual valuations.
 - `POST /api/instruments/:id/valuations` writes a global price row but **recomputes daily account snapshots only for the caller's accounts** that hold the instrument (`recomputeAccountsForInstrumentUser`).
 - `POST /api/market-data/sync` still recomputes all affected accounts (system job).
-- Designed for **single-user private** deployment; multi-tenant hosting requires a product decision (per-user catalog, admin-only writes, etc.). See [private-ops.md](../how-to/private-deploy.md).
+- Designed for **single-user private** deployment; multi-tenant hosting requires a product decision (per-user catalog, admin-only writes, etc.). See [private-deploy.md](../how-to/private-deploy.md).
 
 ## CSV import (XTB)
 

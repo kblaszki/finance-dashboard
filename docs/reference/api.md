@@ -9,7 +9,7 @@ related_code:
 ---
 # API catalog
 
-Implementation: [`backend/src/routes/`](../../backend/src/routes/) (wired in [`backend/src/app.ts`](../../backend/src/app.ts)). Auth: `requireAuth` = Bearer JWT unless noted.
+Implementation: [`backend/src/routes/`](../../backend/src/routes/) (handlers wired via [`mountRouters.ts`](../../backend/src/routes/mountRouters.ts) from [`backend/src/app.ts`](../../backend/src/app.ts)). Auth: `requireAuth` = Bearer JWT unless noted.
 
 **Tenancy:** Account, transaction, and holding endpoints are scoped to the authenticated user. Instrument list/create and instrument valuations are a **shared global catalog** (any authenticated user can read/write); valuation recompute only affects the caller's brokerage accounts that hold the instrument.
 
@@ -232,13 +232,17 @@ Market sync (`POST /api/market-data/sync`) includes **crypto** holdings on `CRYP
 |--------|------|------|-------------|
 | GET | `/api/stats/tax-overview` | Yes | Consolidated overview — `year`, `currency`, `snapshot=1` |
 | POST | `/api/stats/pre-sell-simulator` | Yes | FR-050 — `{ holdingId, quantity, salePricePerUnit?, saleDate?, currency? }` |
-| GET | `/api/stats/tax-report/export` | Yes | `reportType=crypto_pit` for crypto CSV (FR-043) |
-| GET/PUT/DELETE | `/api/tax-loss-carryforward` | Yes | Loss carryforward register (FR-042) |
+| GET | `/api/stats/tax-report/export` | Yes | Also `reportType=crypto_pit` for crypto CSV (FR-043); base CSV row under Stats |
+| GET/PUT | `/api/tax-loss-carryforward` | Yes | Loss carryforward register list / upsert (FR-042) |
+| DELETE | `/api/tax-loss-carryforward/:id` | Yes | Delete carryforward row |
 | GET | `/api/tax-calendar` | Yes | Deadlines + checklist — `year` (FR-045) |
 | PUT | `/api/tax-checklist` | Yes | `{ taxYear, itemKey, completed }` |
-| GET/POST/DELETE | `/api/property-sales` | Yes | Real estate sales (FR-044, DATA-025) |
-| GET/POST/DELETE | `/api/document-attachments` | Yes | Metadata only (FR-049, DATA-022) |
-| GET/POST/DELETE | `/api/import/presets` | Yes | Built-in + custom broker presets (FR-047) |
+| GET/POST | `/api/property-sales` | Yes | Real estate sales (FR-044, DATA-025) |
+| DELETE | `/api/property-sales/:id` | Yes | Delete property sale |
+| GET/POST | `/api/document-attachments` | Yes | Metadata only (FR-049, DATA-022) |
+| DELETE | `/api/document-attachments/:id` | Yes | Delete attachment metadata |
+| GET/POST | `/api/import/presets` | Yes | Built-in + custom broker presets (FR-047) |
+| DELETE | `/api/import/presets/:id` | Yes | Delete custom preset |
 
 `PUT /api/accounts/:id` accepts `rentalTaxMethod` (`scale`, `lump_sum_8_5`) on REAL_ESTATE accounts.
 
