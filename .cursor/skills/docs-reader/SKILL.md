@@ -40,9 +40,7 @@ audience: agent | human | both
 
 Use `use_when` to decide whether the page matches the user intent before reading the body.
 
-## Redirect stubs
-
-Old paths (`docs/api.md`, `docs/domain.md`, …) are stubs. Follow `redirect` / the link to the new path.
+Only open pages under `docs/{tutorials,how-to,reference,explanation,meta}/` or the hub [`docs/README.md`](../../../docs/README.md).
 
 ## Output habit
 

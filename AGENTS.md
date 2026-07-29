@@ -46,8 +46,6 @@ Token-aware index — open [docs/README.md](docs/README.md) for the Diátaxis co
 | [docs/explanation/fullstack-practices.md](docs/explanation/fullstack-practices.md) | Fullstack practices rubric |
 | [docs/explanation/tax-pl.md](docs/explanation/tax-pl.md) | PL tax assumptions |
 
-Old flat paths (`docs/api.md`, etc.) are redirect stubs.
-
 ## Cursor rules
 
 - Always: `.cursor/rules/golden-rule.mdc`, `project-context.mdc`, `verification.mdc`

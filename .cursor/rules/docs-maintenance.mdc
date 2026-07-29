@@ -20,6 +20,4 @@ Skip doc updates for trivial changes (typo, CSS-only, comment-only).
 
 Do **not** expand `golden-rule.mdc` or `project-context.mdc` per feature — only when global conventions change.
 
-Keep entries short (table rows); no full JSON examples in docs. New pages need Diátaxis YAML front matter (`diataxis`, `use_when`, `audience`) — see skill `docs-author`.
-
-Old flat paths (`docs/api.md`, etc.) are redirect stubs; edit the canonical file under `docs/reference|how-to|explanation|tutorials|meta/`.
+Keep entries short (table rows); no full JSON examples in docs. New pages need Diátaxis YAML front matter (`diataxis`, `use_when`, `audience`) — see skill `docs-author`. Edit only under `docs/reference|how-to|explanation|tutorials|meta/` (plus the hub `docs/README.md`).
