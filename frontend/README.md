@@ -3,7 +3,7 @@
 Vite + React + TypeScript SPA for the finance dashboard.
 
 - Setup and demo login: [README.md](../README.md)
-- Routes, state, and API clients: [docs/frontend.md](../docs/frontend.md)
+- Routes, state, and API clients: [docs/reference/frontend.md](../docs/reference/frontend.md)
 
 ```bash
 cd frontend

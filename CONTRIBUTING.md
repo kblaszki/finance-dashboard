@@ -31,7 +31,7 @@ If you change backend or frontend logic covered by metrics, also run:
 npm run test:coverage
 ```
 
-See [docs/testing.md](docs/testing.md) for coverage scope, test layout, and the verification checklist.
+See [docs/reference/testing.md](docs/reference/testing.md) for coverage scope, test layout, and the verification checklist.
 
 4. Open a pull request against `main` and fill in the PR template checklist.
 
@@ -45,9 +45,9 @@ See [docs/testing.md](docs/testing.md) for coverage scope, test layout, and the 
 ## Project conventions
 
 - Use **LF** line endings (see `.editorconfig` and `.gitattributes`).
-- **New API endpoint:** handler in `backend/src/routes/`, wire in `backend/src/app.ts`, client in `frontend/src/api/`, one row in `docs/api.md`.
-- **Schema change:** edit `backend/prisma/schema.prisma`, run `cd backend && npx prisma migrate dev --name <description>`, update `docs/domain.md` if models or relationships change.
-- **New UI page or route:** update `frontend/src/App.tsx` and `docs/frontend.md`.
+- **New API endpoint:** handler in `backend/src/routes/`, wire in `backend/src/app.ts`, client in `frontend/src/api/`, one row in `docs/reference/api.md`.
+- **Schema change:** edit `backend/prisma/schema.prisma`, run `cd backend && npx prisma migrate dev --name <description>`, update `docs/reference/domain.md` if models or relationships change.
+- **New UI page or route:** update `frontend/src/App.tsx` and `docs/reference/frontend.md`.
 - Do not commit `backend/.env`, `**/dev.db`, or other local SQLite files.
 
 More detail for agents and maintainers: [AGENTS.md](AGENTS.md) and `docs/`.
@@ -56,7 +56,7 @@ More detail for agents and maintainers: [AGENTS.md](AGENTS.md) and `docs/`.
 
 Do **not** open public issues with exploit details or live credentials.
 
-Report security vulnerabilities through **GitHub Private vulnerability reporting**: repository **Security** tab → **Report a vulnerability**. Allow time for a fix before public disclosure.
+Report security vulnerabilities through **GitHub Private vulnerability reporting**: repository **Security** tab â†’ **Report a vulnerability**. Allow time for a fix before public disclosure.
 
 ## Questions
 
@@ -66,5 +66,5 @@ Use the **Question** issue template for setup or usage questions. Include what y
 
 These items are configured in GitHub, not in git:
 
-1. **About description** (repo homepage): set to match `package.json` description — *Personal full-stack finance dashboard: bank accounts, brokerage positions, manual assets (Node, React, SQLite).*
-2. **Private vulnerability reporting:** Settings → Security → Code security and analysis → enable **Private vulnerability reporting**.
+1. **About description** (repo homepage): set to match `package.json` description â€” *Personal full-stack finance dashboard: bank accounts, brokerage positions, manual assets (Node, React, SQLite).*
+2. **Private vulnerability reporting:** Settings â†’ Security â†’ Code security and analysis â†’ enable **Private vulnerability reporting**.

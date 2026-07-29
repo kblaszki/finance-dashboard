@@ -1,18 +1,52 @@
 # Agent guide (finance-dashboard)
 
-Token-aware index — use `@docs/...` for domain detail; do not duplicate [README.md](README.md) here.
+Token-aware index — open [docs/README.md](docs/README.md) for the Diátaxis compass; do not duplicate [README.md](README.md) here.
 
 ## Docs (on-demand)
 
+### Meta
+
 | Doc | Use when |
 |-----|----------|
-| [docs/architecture.md](docs/architecture.md) | Auth, FX, request flow, where code lives |
-| [docs/fullstack-architecture-practices.md](docs/fullstack-architecture-practices.md) | Principles for structuring fullstack apps; patterns illustrated with this repo |
-| [docs/domain.md](docs/domain.md) | Prisma models (Account, HoldingLot, valuations) |
-| [docs/api.md](docs/api.md) | REST route catalog |
-| [docs/frontend.md](docs/frontend.md) | Routes, API clients, UI patterns |
-| [docs/testing.md](docs/testing.md) | Test pyramid, coverage thresholds, verification checklist |
-| [docs/private-ops.md](docs/private-ops.md) | Private deployment checklist |
+| [docs/README.md](docs/README.md) | Diátaxis hub and AI reading order |
+| [docs/meta/code-map.md](docs/meta/code-map.md) | Domain → primary code paths |
+
+### Tutorials
+
+| Doc | Use when |
+|-----|----------|
+| [docs/tutorials/first-run.md](docs/tutorials/first-run.md) | First local install and login |
+| [docs/tutorials/demo-seed.md](docs/tutorials/demo-seed.md) | Demo user + sample portfolio seed |
+
+### How-to
+
+| Doc | Use when |
+|-----|----------|
+| [docs/how-to/add-api-endpoint.md](docs/how-to/add-api-endpoint.md) | New REST endpoint end-to-end |
+| [docs/how-to/add-prisma-model.md](docs/how-to/add-prisma-model.md) | Schema / model change |
+| [docs/how-to/add-ui-page.md](docs/how-to/add-ui-page.md) | New UI page/route |
+| [docs/how-to/run-tests-and-coverage.md](docs/how-to/run-tests-and-coverage.md) | Verify before finishing logic work |
+| [docs/how-to/brokerage-and-fx.md](docs/how-to/brokerage-and-fx.md) | Brokerage positions / FX |
+| [docs/how-to/private-deploy.md](docs/how-to/private-deploy.md) | Private single-user deploy |
+
+### Reference
+
+| Doc | Use when |
+|-----|----------|
+| [docs/reference/api.md](docs/reference/api.md) | REST route catalog |
+| [docs/reference/domain.md](docs/reference/domain.md) | Prisma models |
+| [docs/reference/frontend.md](docs/reference/frontend.md) | UI routes and API clients |
+| [docs/reference/testing.md](docs/reference/testing.md) | Test pyramid, coverage, CI |
+
+### Explanation
+
+| Doc | Use when |
+|-----|----------|
+| [docs/explanation/architecture.md](docs/explanation/architecture.md) | Auth, FX, request flow, modules |
+| [docs/explanation/fullstack-practices.md](docs/explanation/fullstack-practices.md) | Fullstack practices rubric |
+| [docs/explanation/tax-pl.md](docs/explanation/tax-pl.md) | PL tax assumptions |
+
+Old flat paths (`docs/api.md`, etc.) are redirect stubs.
 
 ## Cursor rules
 
@@ -20,47 +54,16 @@ Token-aware index — use `@docs/...` for domain detail; do not duplicate [READM
 - On file match: `backend.mdc`, `frontend.mdc`, `docs-maintenance.mdc`, `markdown.mdc`
 - Human setup: [README.md](README.md)
 
-## Skills (manual)
+## Skills
 
 | Skill | Use when |
 |-------|----------|
-| [.cursor/skills/fullstack-architecture-review/SKILL.md](.cursor/skills/fullstack-architecture-review/SKILL.md) | Periodic fullstack architecture / practices audit; output is a prioritized remediation plan for delegation |
-| [.cursor/skills/mvp-scope-implementer/SKILL.md](.cursor/skills/mvp-scope-implementer/SKILL.md) | Implement MVP from local docs (`database/`, `mvp/scope.md`, `requirements/`) until scope is met; commits + tests + coverage per step |
-
-## Recipes
-
-**New API endpoint**
-
-1. Handler in `backend/src/routes/<area>Routes.ts` (wire in `backend/src/app.ts`; match existing patterns: `requireAuth`, `userId`, `toNumber`, `normalizeCurrency` from `fx.ts`).
-2. Client in `frontend/src/api/<area>Api.ts`.
-3. One row in `docs/api.md`.
-4. Tests — see [docs/testing.md](docs/testing.md) (HTTP/integration + `apiModules.test.ts`).
-
-**Schema / model change**
-
-1. Edit `backend/prisma/schema.prisma`.
-2. `cd backend && npx prisma migrate dev --name <description>`.
-3. Update `docs/domain.md` if relationships or meaning changed.
-
-**New UI page**
-
-1. Route + nav in `frontend/src/App.tsx`.
-2. Component under `frontend/src/components/` or `pages/`.
-3. Row in `docs/frontend.md`.
-
-**Brokerage / FX work**
-
-- Positions: `HoldingLot` on `Account` (`BROKERAGE`); charts from `AccountValuationDaily` / `HoldingValuationDaily`.
-- FX: `backend/src/fx.ts` only.
-
-**Tests** — [docs/testing.md](docs/testing.md) (`npm test`, `npm run test:coverage`, file layout, checklist).
-
-**Demo seed**
-
-1. Requires `MARKET_DATA_API_KEY` in `backend/.env` — see [README.md](README.md) (demo user section).
-2. Entry: `backend/prisma/seed.ts`; modules under `backend/prisma/demo/` (`seedConfig.ts`, `marketHistory.ts`, `tradePlanner.ts`, `seedBuilders.ts`, `wipe.ts`).
-3. Re-seed wipes demo user data and cleans demo `InstrumentValuation` rows; symbol mapping must match `backend/src/marketDataSymbols.ts`.
-4. After schema changes: `npx prisma migrate dev` (or `migrate reset`) before `npm run db:seed`.
+| [.cursor/skills/docs-reader/SKILL.md](.cursor/skills/docs-reader/SKILL.md) | Daily AI doc reading — pick ≤3 files |
+| [.cursor/skills/docs-author/SKILL.md](.cursor/skills/docs-author/SKILL.md) | Add a new Diátaxis page |
+| [.cursor/skills/docs-audit/SKILL.md](.cursor/skills/docs-audit/SKILL.md) | Check docs vs code drift |
+| [.cursor/skills/docs-sync-during-work/SKILL.md](.cursor/skills/docs-sync-during-work/SKILL.md) | **Required** — update docs in the same chunk as significant code changes |
+| [.cursor/skills/fullstack-architecture-review/SKILL.md](.cursor/skills/fullstack-architecture-review/SKILL.md) | Periodic fullstack architecture audit |
+| [.cursor/skills/mvp-scope-implementer/SKILL.md](.cursor/skills/mvp-scope-implementer/SKILL.md) | Implement MVP from local scope docs |
 
 ## Do not commit
 

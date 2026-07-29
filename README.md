@@ -108,7 +108,7 @@ For running as a personal MyFund-style instance (not open registration):
    ```
    UI: `http://localhost:8080` (nginx proxies `/api` to the backend). Database and backups persist in `./data/`.
 
-Full checklist: [docs/private-ops.md](docs/private-ops.md).
+Full checklist: [docs/how-to/private-deploy.md](docs/how-to/private-deploy.md).
 
 ## Market price sync
 
@@ -169,7 +169,7 @@ Open `backend/coverage/index.html` and `frontend/coverage/index.html` in a brows
 
 Coverage thresholds are enforced in [`backend/.c8rc.json`](backend/.c8rc.json) and [`frontend/vitest.config.ts`](frontend/vitest.config.ts) (CI job `coverage`). Frontend metrics include only testable logic (`src/api/`, `src/hooks/`, `src/utils/`, `src/state/period.tsx`); UI pages and components are intentionally excluded.
 
-Details: [docs/testing.md](docs/testing.md) (pyramid, where to add tests, verification checklist).
+Details: [docs/reference/testing.md](docs/reference/testing.md) (pyramid, where to add tests); [docs/how-to/run-tests-and-coverage.md](docs/how-to/run-tests-and-coverage.md) (checklist).
 
 ## Contributing
 
@@ -235,8 +235,10 @@ Builds the backend (TypeScript to JS) and the frontend (Vite production bundle).
 
 ## Further documentation
 
-- [docs/architecture.md](docs/architecture.md) — auth, FX, module layout
-- [docs/api.md](docs/api.md) — REST route catalog
-- [docs/domain.md](docs/domain.md) — Prisma models
-- [docs/frontend.md](docs/frontend.md) — UI routes and API clients
+- [docs/README.md](docs/README.md) — Diátaxis documentation hub
+- [docs/explanation/architecture.md](docs/explanation/architecture.md) — auth, FX, module layout
+- [docs/reference/api.md](docs/reference/api.md) — REST route catalog
+- [docs/reference/domain.md](docs/reference/domain.md) — Prisma models
+- [docs/reference/frontend.md](docs/reference/frontend.md) — UI routes and API clients
+- [docs/tutorials/first-run.md](docs/tutorials/first-run.md) — first local success
 - [AGENTS.md](AGENTS.md) — agent-oriented index
