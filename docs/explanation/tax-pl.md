@@ -5,6 +5,8 @@ audience: both
 related_docs:
   - docs/reference/api.md
   - docs/reference/domain.md
+  - docs/explanation/portfolio-stats.md
+  - docs/how-to/tax-year-workflow.md
 ---
 # Tax reporting (Poland) — assumptions
 
@@ -13,7 +15,7 @@ Personal-use estimates for annual settlement prep. **Not tax advice.**
 ## What is included
 
 - **Realized capital gains/losses** from brokerage `SELL` lots in the selected calendar year (PIT-38 helper, FR-022).
-- **Cost basis:** FIFO with **commission** included in buy cost and net sell proceeds; `settlementDate` on lots when set (FR-039 prerequisites).
+- **Cost basis:** FIFO with **commission** included in buy cost and net sell proceeds; `settlementDate` on lots when set (FR-039 prerequisites). Portfolio KPI realized P&amp;L uses the same FIFO engine for closed lots — see [portfolio-stats.md](portfolio-stats.md).
 - **Loss carryforward:** `TaxLossCarryforward` register applied oldest-first against net gains (FR-042).
 - **IKE / IKZE / PPK:** `Account.taxWrapperType` and wrapper withdrawals; holdings excluded from PIT-38 unless withdrawn with `includeInPit38` (FR-039).
 - **Dividends:** `IncomeEvent` rows (`eventType=dividend`) when present; otherwise `DIVIDEND` transactions (FR-024).

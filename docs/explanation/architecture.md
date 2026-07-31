@@ -87,6 +87,7 @@ SQLite fits local/MVP usage (single writer, simple backup). Valuation recompute 
 ## Related docs
 
 - [fullstack-practices.md](./fullstack-practices.md) — principles with repo examples
+- [portfolio-stats.md](./portfolio-stats.md) — dashboard KPIs, history, benchmarks
 - [domain.md](../reference/domain.md) — data model
 - [api.md](../reference/api.md) — route catalog
 - [frontend.md](../reference/frontend.md) — UI routes and API clients
