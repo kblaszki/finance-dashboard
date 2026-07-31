@@ -32,6 +32,13 @@ Never load all docs. Prefer reference for facts, how-to for tasks, explanation f
 - First run walkthrough: [tutorials/first-run.md](tutorials/first-run.md)
 - Private deploy: [how-to/private-deploy.md](how-to/private-deploy.md)
 
+## Tutorials
+
+| Doc | Use when |
+|-----|----------|
+| [first-run.md](tutorials/first-run.md) | First local install and login |
+| [demo-seed.md](tutorials/demo-seed.md) | Demo user + sample portfolio |
+
 ## How-to index
 
 | Doc | Use when |
@@ -41,10 +48,45 @@ Never load all docs. Prefer reference for facts, how-to for tasks, explanation f
 | [add-ui-page.md](how-to/add-ui-page.md) | New UI page |
 | [run-tests-and-coverage.md](how-to/run-tests-and-coverage.md) | Verification gate |
 | [brokerage-and-fx.md](how-to/brokerage-and-fx.md) | Brokerage / FX work |
+| [accounts-and-holdings.md](how-to/accounts-and-holdings.md) | Accounts, lots, trades |
 | [import-csv.md](how-to/import-csv.md) | Broker or bank CSV import |
-| [tax-year-workflow.md](how-to/tax-year-workflow.md) | PL tax year workflow |
+| [corporate-actions.md](how-to/corporate-actions.md) | Stock splits / CA |
+| [position-transfers.md](how-to/position-transfers.md) | Securities between brokerages |
 | [internal-transfers.md](how-to/internal-transfers.md) | Internal cash transfers |
+| [income-and-coupons.md](how-to/income-and-coupons.md) | Dividends and coupons |
+| [budgets-and-categories.md](how-to/budgets-and-categories.md) | Categories, budgets, rules |
+| [property-tracking.md](how-to/property-tracking.md) | Real estate / asset NAV |
+| [market-data-sync.md](how-to/market-data-sync.md) | EOD market sync |
+| [tax-year-workflow.md](how-to/tax-year-workflow.md) | PL tax year workflow |
+| [data-export.md](how-to/data-export.md) | Export and audit log |
+| [account-sync.md](how-to/account-sync.md) | Sync / PSD2 stubs |
 | [private-deploy.md](how-to/private-deploy.md) | Private single-user deploy |
+
+## Reference
+
+| Doc | Use when |
+|-----|----------|
+| [api.md](reference/api.md) | REST route catalog |
+| [domain.md](reference/domain.md) | Prisma models / enums |
+| [frontend.md](reference/frontend.md) | UI routes and API clients |
+| [testing.md](reference/testing.md) | Test pyramid, coverage, CI |
+
+## Explanation
+
+| Doc | Use when |
+|-----|----------|
+| [architecture.md](explanation/architecture.md) | Auth, FX, request flow |
+| [fullstack-practices.md](explanation/fullstack-practices.md) | Fullstack practices rubric |
+| [tax-pl.md](explanation/tax-pl.md) | PL tax assumptions |
+| [portfolio-stats.md](explanation/portfolio-stats.md) | Dashboard KPIs / benchmarks |
+
+## Meta
+
+| Doc | Use when |
+|-----|----------|
+| [code-map.md](meta/code-map.md) | Domain → primary code paths |
+
+Full agent index (skills + rules): [AGENTS.md](../AGENTS.md).
 
 ## Page front matter
 

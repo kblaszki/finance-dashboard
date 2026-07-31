@@ -27,9 +27,18 @@ Token-aware index — open [docs/README.md](docs/README.md) for the Diátaxis co
 | [docs/how-to/add-ui-page.md](docs/how-to/add-ui-page.md) | New UI page/route |
 | [docs/how-to/run-tests-and-coverage.md](docs/how-to/run-tests-and-coverage.md) | Verify before finishing logic work |
 | [docs/how-to/brokerage-and-fx.md](docs/how-to/brokerage-and-fx.md) | Brokerage positions / FX |
+| [docs/how-to/accounts-and-holdings.md](docs/how-to/accounts-and-holdings.md) | Accounts, lots, asset trades |
 | [docs/how-to/import-csv.md](docs/how-to/import-csv.md) | Broker or bank CSV import |
-| [docs/how-to/tax-year-workflow.md](docs/how-to/tax-year-workflow.md) | PL tax year review / close |
+| [docs/how-to/corporate-actions.md](docs/how-to/corporate-actions.md) | Stock splits and corporate actions |
+| [docs/how-to/position-transfers.md](docs/how-to/position-transfers.md) | Move securities between brokerages |
 | [docs/how-to/internal-transfers.md](docs/how-to/internal-transfers.md) | Cross-account cash transfers |
+| [docs/how-to/income-and-coupons.md](docs/how-to/income-and-coupons.md) | Dividends, interest, coupon schedules |
+| [docs/how-to/budgets-and-categories.md](docs/how-to/budgets-and-categories.md) | Categories, budgets, rules, alerts |
+| [docs/how-to/property-tracking.md](docs/how-to/property-tracking.md) | Real estate and asset valuations |
+| [docs/how-to/market-data-sync.md](docs/how-to/market-data-sync.md) | Twelve Data EOD sync ops |
+| [docs/how-to/tax-year-workflow.md](docs/how-to/tax-year-workflow.md) | PL tax year review / close |
+| [docs/how-to/data-export.md](docs/how-to/data-export.md) | Full export and audit log |
+| [docs/how-to/account-sync.md](docs/how-to/account-sync.md) | Sync / PSD2 stubs |
 | [docs/how-to/private-deploy.md](docs/how-to/private-deploy.md) | Private single-user deploy |
 
 ### Reference
@@ -48,6 +57,7 @@ Token-aware index — open [docs/README.md](docs/README.md) for the Diátaxis co
 | [docs/explanation/architecture.md](docs/explanation/architecture.md) | Auth, FX, request flow, modules |
 | [docs/explanation/fullstack-practices.md](docs/explanation/fullstack-practices.md) | Fullstack practices rubric |
 | [docs/explanation/tax-pl.md](docs/explanation/tax-pl.md) | PL tax assumptions |
+| [docs/explanation/portfolio-stats.md](docs/explanation/portfolio-stats.md) | Dashboard KPIs, history, benchmarks |
 
 ## Cursor rules
 

@@ -38,5 +38,5 @@ Create runs atomically in domain (`createInternalTransfer` in `internalTransfers
 ## Agent notes
 
 - Do not reimplement FX in the UI — suggestion endpoint and `fx.ts` own rates.
-- Distinct from **position** transfers (`/api/position-transfers`) which move holdings, not cash legs.
+- Distinct from **position** transfers — see [position-transfers.md](position-transfers.md) (`/api/position-transfers`).
 - Catalog: [api.md](../reference/api.md) Internal transfers rows; client: `internalTransfersApi.ts`.
