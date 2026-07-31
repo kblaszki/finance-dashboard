@@ -55,7 +55,8 @@ Metrics include only:
 | Integration | `backend/test/*.integration.test.ts` and `backend/src/**/*.integration.test.ts` | `accountValuation.integration.test.ts`, `tax/taxWrapper.integration.test.ts` |
 | HTTP / workflow | `backend/test/app.http.test.ts` | auth, cross-user IDOR, brokerage cash, market-data status |
 | Golden | `backend/test/golden.integration.test.ts` | ledger scenarios |
-| Frontend unit | `frontend/src/**/*.test.ts` | `apiModules.test.ts`, `client.test.ts`, `useAsyncData.test.tsx`, `apiContracts.test.ts` |
+| Frontend unit | `frontend/src/**/*.{test.ts,test.tsx}` | `apiModules.test.ts`, `client.test.ts`, `useAsyncData.test.tsx`, `apiContracts.test.ts` |
+| Other | `backend/test/` (non-pyramid suites) | Demo templates/history, `schema.integration.test.ts`, `migrateDeploy.test.ts`, `phaseC`/`phaseD`/`assetClasses` integration, duplicate-location corporate-actions suites if present |
 
 Prioritize: money and balance rules, auth and tenancy, write flows that update derived state. Skip trivial UI snapshots unless they guard real behavior.
 
@@ -75,7 +76,7 @@ Step-by-step gate: [how-to/run-tests-and-coverage.md](../how-to/run-tests-and-co
 
 ## CI
 
-[`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) runs three jobs:
+[`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) runs three jobs on **Node 24**:
 
 1. **backend-test** — backend unit, integration, HTTP tests
 2. **frontend-checks** — build, frontend tests, lint

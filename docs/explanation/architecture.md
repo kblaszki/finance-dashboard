@@ -36,11 +36,13 @@ sequenceDiagram
 | Holdings | `backend/src/holdingLot.ts` | `quantityAfter`, lot price resolution |
 | Cash ledger | `backend/src/transactionBalance.ts` | `balanceAfter`, transaction types |
 | Valuations | `backend/src/accountValuation.ts` | Daily snapshots, backfill |
-| Market data | `backend/src/marketData/` | Twelve Data EOD fetch, sync, symbols (`marketData.ts`, `marketDataSync.ts`, …) |
+| Market data | `backend/src/marketData/` | EOD sync (`marketDataSync.ts`), symbols, trigger/epoch, FX history (`fxHistorySync.ts`) |
+| Import | `backend/src/import/` | XTB/bank parsers, `importTrades`, `importBankTransactions` |
 | Net worth | `backend/src/netWorth.ts` | Aggregated stats for dashboard |
-| Tax (PL) | `backend/src/tax/*` | PIT-38 report, overview, wrappers, calendar, pre-sell simulator |
+| Portfolio stats | `backend/src/portfolioStats.ts` | History, returns, benchmarks (see dashboard stats) |
+| Tax (PL) | `backend/src/tax/*` | PIT-38 report, overview, wrappers, calendar/checklist, crypto tax, loss carryforward, pre-sell, report cache |
 
-Domain modules live under `backend/src/` (flat hubs such as `accountValuation.ts`, `holdings.ts`) and grouped folders where cohesion is high (`tax/`, `import/`, `marketData/`, `routes/`). See [fullstack-practices.md](./fullstack-practices.md) §12.
+Domain modules live under `backend/src/` (flat hubs such as `accountValuation.ts`, `holdings.ts`, `portfolioStats.ts`) and grouped folders where cohesion is high (`tax/`, `import/`, `marketData/`, `routes/`). Also `backend/src/lib/` and `backend/src/scripts/` (backup, create-user, market sync). See [fullstack-practices.md](./fullstack-practices.md) §12.
 
 ## Auth
 
@@ -64,7 +66,8 @@ Env (see [README.md](../../README.md)): `DATABASE_URL`, `JWT_SECRET` (≥32 char
 - `MARKET_DATA_API_KEY` enables Twelve Data EOD quotes for held **STOCK** / **ETF**, and for holdings on **CRYPTO** accounts (pair format e.g. `BTC/USD`). Crypto is not a separate allowed `instrumentType`.
 - `POST /api/market-data/sync` (or `npm run market:sync` in `backend/`) upserts `InstrumentValuation` with `source: twelve_data` and recomputes affected brokerage account snapshots via `recomputeAccountValuationsFrom`.
 - Symbol mapping (`backend/src/marketData/marketDataSymbols.ts`): US exchanges use bare ticker; GPW → `:GPW` (e.g. `PKO:GPW` on Twelve Data free tier), XETRA → `:XETR`, etc. Unmapped types/exchanges are skipped (use manual valuation UI).
-- Scheduled sync: run `npm run market:sync` from cron on weekdays after market close (see [README.md](../../README.md)).
+- Helpers: `marketDataTrigger.ts` / `marketDataEpoch.ts` coordinate sync runs; `fxHistorySync.ts` refreshes `FxRateDaily`.
+- Scheduled sync: run `npm run market:sync` from cron on weekdays after market close (see [README.md](../../README.md)). Ops recipe: [market-data-sync.md](../how-to/market-data-sync.md).
 
 Demo seed (`npm run db:seed`) reuses the same Twelve Data EOD path and symbol mapping; orchestration lives in `backend/prisma/demo/` (see [tutorials/demo-seed.md](../tutorials/demo-seed.md)).
 

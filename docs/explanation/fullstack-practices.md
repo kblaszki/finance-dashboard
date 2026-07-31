@@ -105,11 +105,11 @@ Use a practical test pyramid — full layout, thresholds, CI jobs, and the verif
 
 | Level | Where | Examples in this repo |
 |-------|--------|------------------------|
-| Unit | `backend/src/*.test.ts` | `transactionBalance.test.ts`, `marketData.test.ts` |
-| Integration | `backend/test/` | `accountValuation.integration.test.ts`, `marketData.integration.test.ts` |
+| Unit | `backend/src/**/*.test.ts` | `transactionBalance.test.ts`, `marketData/marketData.test.ts` |
+| Integration | `backend/test/` and `backend/src/**/*.integration.test.ts` | `accountValuation.integration.test.ts`, `tax/taxWrapper.integration.test.ts` |
 | HTTP / workflow | `backend/test/app.http.test.ts` | auth, cross-user access, brokerage cash |
 | Golden | `backend/test/golden.integration.test.ts` | ledger scenarios |
-| Frontend unit | `frontend/src/**/*.test.ts` | `apiModules.test.ts`, `client.test.ts`, `useAsyncData.test.tsx` |
+| Frontend unit | `frontend/src/**/*.{test.ts,test.tsx}` | `apiModules.test.ts`, `client.test.ts`, `useAsyncData.test.tsx` |
 
 Prioritize tests for money and balance rules, auth and tenancy, and write flows that update derived state. Skip trivial UI snapshots and formatter-only checks unless they guard real behavior.
 
@@ -139,10 +139,12 @@ backend/src/
   routes/                  # HTTP: thin handlers, wired via mountRouters.ts from app.ts
   routes/routeSupport.ts   # serialization, getAccountForUser, date filters
   routes/httpSupport.ts    # HttpError, parsers, handleRouteError
-  tax/                     # PL tax domain (report, overview, wrappers, calendar)
+  tax/                     # PL tax: report, overview, wrappers, calendar, checklist, crypto, loss carryforward, pre-sell, cache
   import/                  # CSV import parsers and commit logic
-  marketData/              # Twelve Data EOD sync, symbols, FX history helpers
-  *.ts                     # other domain logic (hubs: accountValuation, holdings, fx)
+  marketData/              # Twelve Data EOD sync, symbols, trigger/epoch, FX history
+  lib/                     # shared helpers (db, dates, errors)
+  scripts/                 # CLI: backup, create-user, market sync
+  *.ts                     # other domain logic (hubs: accountValuation, holdings, fx, portfolioStats)
   **/*.test.ts             # unit tests next to domain code (including nested folders)
   **/*.integration.test.ts # some integrations co-located under src/
 backend/test/              # HTTP, golden, and other integration suites
