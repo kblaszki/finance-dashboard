@@ -5,6 +5,8 @@ audience: agent
 related_docs:
   - docs/explanation/architecture.md
   - docs/reference/domain.md
+  - docs/how-to/accounts-and-holdings.md
+  - docs/how-to/market-data-sync.md
 related_code:
   - backend/src/fx.ts
   - backend/src/holdingLot.ts
@@ -14,8 +16,9 @@ related_code:
 
 Hub: [docs/README.md](../README.md).
 
-- Positions: `HoldingLot` on `Account` (`BROKERAGE`); charts from `AccountValuationDaily` / `HoldingValuationDaily`.
+- Positions: `HoldingLot` on holdings-capable accounts (`BROKERAGE`, `CRYPTO`, `PRECIOUS_METAL`); charts from `AccountValuationDaily` / `HoldingValuationDaily`.
 - FX: implement conversion only in `backend/src/fx.ts` — never reimplement in route handlers or UI.
 - Holdings helpers: `backend/src/holdingLot.ts`, `backend/src/holdings.ts`.
-- See [docs/meta/code-map.md](../meta/code-map.md) rows for Holdings / FX / Valuations.
-- Market EOD sync: [docs/explanation/architecture.md](../explanation/architecture.md) (Market data section).
+- Day-to-day UI/API recipe: [accounts-and-holdings.md](accounts-and-holdings.md).
+- Market EOD sync ops: [market-data-sync.md](market-data-sync.md); architecture: [architecture.md](../explanation/architecture.md) (Market data section).
+- Code map: [docs/meta/code-map.md](../meta/code-map.md) rows for Holdings / FX / Valuations / Market data.
