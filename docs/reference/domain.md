@@ -41,8 +41,8 @@ Allowed `Instrument.instrumentType` values: `STOCK`, `ETF`, `BOND`, `FUND`, `OTH
 |------|-------------------------|
 | STOCK, ETF | `twelve_data` (EOD sync) when exchange is mapped; else manual |
 | Crypto | Holdings on `Account.accountType === CRYPTO` (pair symbols e.g. `BTC/USD`); not a separate `instrumentType` value |
-| BOND, FUND | `manual_nav` — user enters NAV/price from broker or fund manager |
-| OTHER | manual |
+| BOND, FUND | Manual NAV/price via `InstrumentValuation` with `source: "manual"` (free-string; not a fixed `manual_nav` enum) |
+| OTHER | `source: "manual"` |
 
 Market sync (`POST /api/market-data/sync`) processes **STOCK**, **ETF**, and holdings on **CRYPTO** accounts; BOND/FUND are skipped without error.
 
@@ -55,9 +55,12 @@ Market sync (`POST /api/market-data/sync`) processes **STOCK**, **ETF**, and hol
 - `POST /api/market-data/sync` still recomputes all affected accounts (system job).
 - Designed for **single-user private** deployment; multi-tenant hosting requires a product decision (per-user catalog, admin-only writes, etc.). See [private-deploy.md](../how-to/private-deploy.md).
 
-## CSV import (XTB)
+## CSV import
 
-Brokerage accounts can import XTB exports via `POST /api/import/broker-trades`. Parsed rows become `HoldingLot` (trades) or `Transaction` (dividends, interest, transfers). `ImportBatch` / `ImportRow` store `externalHash` per account for idempotent re-upload.
+- **Runtime HTTP import:** broker = `xtb` only (`POST /api/import/broker-trades`); bank = `mbank` \| `generic` (`POST /api/import/bank-transactions`).
+- Parsed broker rows become `HoldingLot` (trades) or `Transaction` (dividends, interest, transfers). Bank rows become `Transaction`s.
+- `ImportBatch` / `ImportRow` store `externalHash` per account for idempotent re-upload; applied rows may link `holdingLotId` or `transactionId`.
+- **`ImportPreset`:** built-in templates (e.g. xtb, mbank, ibkr, revolut, binance) plus user-saved column maps — templates for the presets UI; only the runtime brokers/banks above are wired to import endpoints. See [import-csv.md](../how-to/import-csv.md).
 
 ## Corporate actions
 
@@ -77,7 +80,7 @@ Annual estimates via `GET /api/stats/tax-report` — FIFO realized gains on SELL
 
 - **BANK** — transactions update `cashBalance` and `balanceAfter`; valuations backfilled for charts.
 - **BROKERAGE** — cash via transactions; securities via `Holding` / `HoldingLot`; `AccountValuationDaily.cashValue` replays transactions **and** lot trade cash impact (BUY/SELL).
-- **MANUAL** — tracked account value (`openingBalance` / `cashBalance`); no holdings. Revalue via `POST /api/accounts/:id/revalue` (creates internal `REVALUATION` ledger entry for chart step).
+- **MANUAL** — tracked account value (`openingBalance` / `cashBalance`); no holdings. Revalue via `POST /api/accounts/:id/revalue` (creates an `INCOME` or `EXPENSE` transaction with `category: "REVALUATION"` for the chart step — not a separate `transactionType`).
 
 ## Categories (FR-015, DATA-011)
 
@@ -155,7 +158,7 @@ User-scoped `Category` tree (`parentId`, `sortOrder`). Defaults seeded on regist
 
 `DocumentAttachment` — metadata for tax evidence (FR-049); no binary storage.
 
-`ImportPreset` — user-saved broker CSV column maps (FR-047); built-in presets in code.
+`ImportPreset` — user-saved / built-in CSV column maps (FR-047); see CSV import section for runtime vs template scope.
 
 ## Related docs
 

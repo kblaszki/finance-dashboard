@@ -128,7 +128,7 @@ Implementation: [`backend/src/routes/`](../../backend/src/routes/) (handlers wir
 | GET | `/api/stats/portfolio-history` | Yes | Aggregated brokerage value series; `from`, `to`, `currency` |
 | GET | `/api/stats/benchmark-comparison` | Yes | Portfolio vs benchmark return; `from`, `to`, `currency`, `benchmark=WIG\|SP500` |
 | GET | `/api/stats/tax-report` | Yes | PL tax year — PIT-38 FIFO (FR-022), Belka sections (FR-027), PIT/ZG helper (FR-028), derivative flag (FR-025), rental stub (FR-026); `year`, `currency` |
-| GET | `/api/stats/tax-report/export` | Yes | CSV of sales; `year`, `format=csv`, `currency` |
+| GET | `/api/stats/tax-report/export` | Yes | CSV export; `year`, `format=csv`, `currency`; optional `reportType=crypto_pit` for crypto CSV (FR-043) |
 
 ## Income events (FR-024)
 
@@ -232,7 +232,6 @@ Market sync (`POST /api/market-data/sync`) includes **crypto** holdings on `CRYP
 |--------|------|------|-------------|
 | GET | `/api/stats/tax-overview` | Yes | Consolidated overview — `year`, `currency`, `snapshot=1` |
 | POST | `/api/stats/pre-sell-simulator` | Yes | FR-050 — `{ holdingId, quantity, salePricePerUnit?, saleDate?, currency? }` |
-| GET | `/api/stats/tax-report/export` | Yes | Also `reportType=crypto_pit` for crypto CSV (FR-043); base CSV row under Stats |
 | GET/PUT | `/api/tax-loss-carryforward` | Yes | Loss carryforward register list / upsert (FR-042) |
 | DELETE | `/api/tax-loss-carryforward/:id` | Yes | Delete carryforward row |
 | GET | `/api/tax-calendar` | Yes | Deadlines + checklist — `year` (FR-045) |
