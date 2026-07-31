@@ -17,10 +17,10 @@ Source of truth: [`backend/prisma/schema.prisma`](../../backend/prisma/schema.pr
 |-------|---------|
 | `User` | `email`, `username`, `passwordHash` |
 | `Account` | Unified account (`BANK`, `BROKERAGE`, `CRYPTO`, `PRECIOUS_METAL`, `REAL_ESTATE`, `OTHER`, legacy `MANUAL`); `cashBalance`, `openingBalance`, `openingCashAsOf` (DATA-002), `metalGrams` (PRECIOUS_METAL), `taxWrapperType` (BROKERAGE: `standard`, `ike`, `ikze`, `ppk`), `rentalTaxMethod` (REAL_ESTATE: `scale`, `lump_sum_8_5`), `currency` |
-| `Transaction` | Cash flows with `balanceAfter` snapshot; types include `DIVIDEND` and `INTEREST` for corporate income |
-| `Instrument` | Global instrument catalog (symbol, exchange, type, `source` default `manual`) |
+| `Transaction` | Cash flows with `balanceAfter` snapshot; `transactionType` values in Domain enums below |
+| `Instrument` | Global instrument catalog (symbol, exchange, type, `source` default `manual`; unique on `(symbol, exchange, source)`) |
 | `Holding` | Brokerage position per account + instrument; persisted `quantity` (current net shares) |
-| `HoldingLot` | BUY/SELL trade ledger under a `Holding`; `quantityAfter` chain; `commission` (FR-007) |
+| `HoldingLot` | BUY/SELL trade ledger under a `Holding` (`side`); `quantityAfter` chain; `commission` (FR-007); optional `settlementDate` |
 | `InstrumentValuation` | Daily/manual price per instrument |
 | `FxRateDaily` | Historical NBP FX legs (USD/PLN, EUR/PLN) since 2020 (FR-010, DATA-008) |
 | `AccountValuationDaily` | Materialized account value snapshots |
@@ -66,21 +66,69 @@ Market sync (`POST /api/market-data/sync`) processes **STOCK**, **ETF**, and hol
 
 | Event | Mechanism |
 |-------|-----------|
-| Dividend | `Transaction` type `DIVIDEND` credits brokerage cash (`category` typically `DIVIDEND`) |
-| Bond interest | `Transaction` type `INTEREST` on bank or brokerage (`category` typically `INTEREST`) |
-| Stock split | `POST /api/holdings/:holdingId/split` — multiplies all lot quantities and `quantityAfter` by `ratio`; `pricePerUnit` divides; `totalPrice` per lot unchanged |
+| Dividend | `Transaction` type `DIVIDEND` credits brokerage cash (`category` typically `DIVIDEND`); or `IncomeEvent` `eventType=dividend` |
+| Bond interest | `Transaction` type `INTEREST` on bank or brokerage; or `IncomeEvent` `interest` / `coupon` |
+| Stock / reverse split | `POST /api/holdings/:holdingId/split` or `CorporateAction` `stock_split` / `reverse_split` — multiplies lot quantities and `quantityAfter` by ratio; `pricePerUnit` divides; `totalPrice` unchanged |
+| Merger / spinoff | `CorporateAction` audit row only — **no** lot mutation |
 
-Splits recompute account valuations from `effectiveDate`. Historical charts before the split may show pre-split per-share prices with post-split quantities unless market prices are adjusted manually.
+Splits recompute account valuations from `effectiveDate` / `actionDate`. Historical charts before the split may show pre-split per-share prices with post-split quantities unless market prices are adjusted manually.
 
 ## Tax reporting (PL)
 
-Annual estimates via `GET /api/stats/tax-report` — FIFO realized gains on SELL lots in calendar year, dividend gross, Belka 19% on positive net gains. Details: [tax.md](../explanation/tax-pl.md).
+Annual estimates via `GET /api/stats/tax-report` — FIFO realized gains on SELL lots in calendar year, dividend gross, Belka 19% on positive net gains. Details: [tax-pl.md](../explanation/tax-pl.md).
 
 ## Account workflow
 
+Capability sets from [`backend/src/accountTypes.ts`](../../backend/src/accountTypes.ts) and [`assetValuations.ts`](../../backend/src/assetValuations.ts):
+
+| Account type | Cash ledger | Holdings / lots | Manual revalue | Asset valuations | Notes |
+|--------------|-------------|-----------------|----------------|------------------|-------|
+| `BANK` | Yes | No | No | No | Bank CSV import; PSD2 stub |
+| `BROKERAGE` | Yes | Yes | No | No | Trades, tax wrappers, XTB import, market EOD |
+| `CRYPTO` | Yes | Yes | No | No | Pair symbols (e.g. `BTC/USD`); market sync |
+| `PRECIOUS_METAL` | Yes | Yes | No | Yes | Optional `metalGrams`; holdings and/or asset NAV |
+| `REAL_ESTATE` | No cash txs in holdings sense | No | Yes | Yes | `PropertyCashFlow`, `PropertySale`, `rentalTaxMethod` |
+| `OTHER` | Via revalue path | No | Yes | Yes | Same revalue set as MANUAL |
+| `MANUAL` (legacy) | Via revalue path | No | Yes | Yes | Alias of OTHER for existing rows |
+
 - **BANK** — transactions update `cashBalance` and `balanceAfter`; valuations backfilled for charts.
-- **BROKERAGE** — cash via transactions; securities via `Holding` / `HoldingLot`; `AccountValuationDaily.cashValue` replays transactions **and** lot trade cash impact (BUY/SELL).
-- **MANUAL** — tracked account value (`openingBalance` / `cashBalance`); no holdings. Revalue via `POST /api/accounts/:id/revalue` (creates an `INCOME` or `EXPENSE` transaction with `category: "REVALUATION"` for the chart step — not a separate `transactionType`).
+- **BROKERAGE / CRYPTO / PRECIOUS_METAL** — holdings via `Holding` / `HoldingLot` where applicable; brokerage cash replays transactions **and** lot trade cash impact (BUY/SELL).
+- **MANUAL / REAL_ESTATE / OTHER** — revalue via `POST /api/accounts/:id/revalue` (`INCOME`/`EXPENSE` + `category: "REVALUATION"`) or `AssetValuation` rows.
+
+## Domain enums (code constants)
+
+Values live in TypeScript modules (not Prisma enums). Source modules under `backend/src/`.
+
+| Concern | Values | Module |
+|---------|--------|--------|
+| `Transaction.transactionType` | `INCOME`, `EXPENSE`, `TRANSFER_IN`, `TRANSFER_OUT`, `DIVIDEND`, `INTEREST` | `transactionBalance.ts` |
+| `HoldingLot.side` | `BUY`, `SELL` | `holdingLot.ts` |
+| `Instrument.instrumentType` | `STOCK`, `ETF`, `BOND`, `FUND`, `OTHER` | `instrumentTypes.ts` |
+| `IncomeEvent.eventType` | `dividend`, `interest`, `coupon`, `capital_gain_distribution` | `incomeEvents.ts` |
+| `IncomeEvent.taxType` | `belka`, `pit38`, `exempt` | `incomeEvents.ts` |
+| `Liability.liabilityType` | `mortgage`, `loan`, `credit`, `tax_provision`, `tax_advance` | `liabilities.ts` |
+| `PropertyCashFlow.flowType` | `rent`, `maintenance`, `other` | `propertyCashFlows.ts` |
+| `CouponSchedule.scheduleType` | `coupon`, `amortization` | `couponSchedules.ts` |
+| `CategorizationRule.matchType` | `contains`, `regex` (+ `priority`, `active`) | `categorizationRules.ts` |
+| `TaxWrapperWithdrawal.withdrawalType` | `partial`, `full`, `securities_transfer` | `tax/taxWrapper.ts` |
+| `CorporateAction.actionType` | `stock_split`, `reverse_split`, `merger`, `spinoff` | `corporateActions.ts` |
+| `TaxChecklistItem.itemKey` | `pit38`, `belka`, `pit_zg`, `rental`, `crypto`, `property_sales`, `attachments` | `tax/taxCalendar.ts` |
+| `DocumentAttachment.entityType` | `property_cash_flow`, `transaction`, `income_event` | `documentAttachments.ts` |
+| `AuditLog.entityType` | `transaction`, `asset_trade`, `internal_transfer`, `import_batch` | `auditLog.ts` |
+| `AuditLog.action` | `create`, `update`, `delete` | `auditLog.ts` |
+| `AccountSyncSetting.provider` | `stub`, `broker_api`, `bank_api` | `accountSync.ts` |
+| `BankConnection.status` | `pending`, `connected`, `error` | `bankConnections.ts` |
+
+## Valuation layers and recompute triggers
+
+| Layer | Model | Role |
+|-------|-------|------|
+| Instrument prices | `InstrumentValuation` | Global EOD/manual prices (`source`: typically `manual` or `twelve_data`) |
+| Daily snapshots | `AccountValuationDaily`, `HoldingValuationDaily` | Materialized charts / net worth history |
+| Account-level NAV | `AssetValuation` | Manual dated value for RE / MANUAL / OTHER / PRECIOUS_METAL |
+| FX history | `FxRateDaily` | NBP legs; `source` default `nbp` |
+
+`recomputeAccountValuationsFrom` (and related helpers) runs after: lot CRUD / asset trades, cash transactions, manual revalue, asset valuation create, market-data sync, broker import commit, position transfers, mutating corporate actions (splits), and instrument valuation POST (caller’s holding accounts only).
 
 ## Categories (FR-015, DATA-011)
 
@@ -94,7 +142,7 @@ User-scoped `Category` tree (`parentId`, `sortOrder`). Defaults seeded on regist
 
 ## Income events (FR-024, DATA-015)
 
-`IncomeEvent` — dividends, interest, coupons separate from trade lots. Fields: `eventType`, `taxType` (`belka`, `pit38`, `exempt`), optional `instrumentId`, `withheldTax`, `sourceCountry`, `foreignTaxPaid`. Tax reports prefer income events over duplicate `Transaction` rows.
+`IncomeEvent` — dividends, interest, coupons, and capital-gain distributions separate from trade lots. `eventType`: `dividend` \| `interest` \| `coupon` \| `capital_gain_distribution`. Fields: `taxType` (`belka`, `pit38`, `exempt`), optional `instrumentId`, `withheldTax`, `sourceCountry`, `foreignTaxPaid`. Tax reports prefer income events over duplicate `Transaction` rows.
 
 `Instrument.pitZgCountry` — ISO country for PIT/ZG helper (FR-028); default `PL`.
 
@@ -118,29 +166,29 @@ User-scoped `Category` tree (`parentId`, `sortOrder`). Defaults seeded on regist
 
 ## Automation (FR-034–038, NFR-002–003)
 
-`CategorizationRule` — pattern (`contains` / `regex`) → `categoryId`; applied on bank CSV import.
+`CategorizationRule` — pattern (`contains` / `regex`) → `categoryId`; optional `priority`, `active`; applied on bank CSV import.
 
-`AccountSyncSetting` — per-account sync toggle and last run (FR-035 stub; brokerage runs market sync).
+`AccountSyncSetting` — per-account `provider` (`stub` \| `broker_api` \| `bank_api`), `syncEnabled`, `syncIntervalHours`, `lastSyncAt` / `lastSyncStatus`, `configJson` (FR-035 stub; brokerage run may trigger market sync).
 
-`BankConnection` — PSD2 stub on BANK accounts (FR-036).
+`BankConnection` — PSD2 stub on BANK accounts (`status`: `pending` \| `connected` \| `error`; optional `consentExpiresAt`, `errorMessage`) (FR-036).
 
-`AuditLog` — create/update/delete snapshots for transactions, asset trades, internal transfers.
+`AuditLog` — `create` / `update` / `delete` snapshots for `transaction`, `asset_trade`, `internal_transfer`, `import_batch`.
 
 ## Tax wrappers (FR-039, DATA-018/023)
 
 `Account.taxWrapperType` — `standard`, `ike`, `ikze`, `ppk` on brokerage accounts. IKE/IKZE/PPK holdings are excluded from PIT-38 unless a `TaxWrapperWithdrawal` with `includeInPit38` exists in the sell tax year.
 
-`TaxWrapperWithdrawal` — partial/full/securities_transfer withdrawals from wrapper accounts.
+`TaxWrapperWithdrawal` — `withdrawalType`: `partial` \| `full` \| `securities_transfer`.
 
-`IkzeContribution` — annual IKZE deposits per account and tax year.
+`IkzeContribution` — annual IKZE deposits per account and tax year (account must be `ikze`).
 
 ## Position transfers (FR-041, DATA-020)
 
-`PositionTransfer` — non-taxable move of open buy lots between brokerage accounts (FIFO slice of cost basis preserved).
+`PositionTransfer` — non-taxable move of open buy lots between **BROKERAGE → BROKERAGE** only (FIFO slice of cost basis preserved).
 
 ## Corporate actions (FR-040, DATA-019)
 
-`CorporateAction` — audit log; `stock_split` / `reverse_split` apply lot ratio via existing split logic.
+`CorporateAction` — audit log; `stock_split` / `reverse_split` apply lot ratio via split logic; `merger` / `spinoff` record only.
 
 `HoldingLot.settlementDate` — optional; tax report uses it (fallback `tradeDate`) for PIT-38 year assignment.
 
@@ -150,13 +198,13 @@ User-scoped `Category` tree (`parentId`, `sortOrder`). Defaults seeded on regist
 
 `TaxReportSnapshot` — optional JSON cache; invalidated when prior-year tax inputs change (FR-048).
 
-`TaxChecklistItem` — local filing checklist completion per year (FR-045).
+`TaxChecklistItem` — local filing checklist; `itemKey` values in Domain enums (`pit38`, `belka`, …).
 
-`PropertySale` — real estate disposal with taxable gain helper (FR-044, DATA-025).
+`PropertySale` — real estate disposal (`soldOn`, `proceeds`, `acquisitionCost`, `improvementsCost`, `fiveYearExemption`, `currency`, `description`) with taxable gain helper (FR-044, DATA-025).
 
 `Account.rentalTaxMethod` — `scale` or `lump_sum_8_5` for FR-026 rental computation.
 
-`DocumentAttachment` — metadata for tax evidence (FR-049); no binary storage.
+`DocumentAttachment` — metadata for tax evidence (FR-049); `entityType` in Domain enums; no binary storage.
 
 `ImportPreset` — user-saved / built-in CSV column maps (FR-047); see CSV import section for runtime vs template scope.
 
@@ -164,3 +212,5 @@ User-scoped `Category` tree (`parentId`, `sortOrder`). Defaults seeded on regist
 
 - [api.md](api.md) — REST surface
 - [architecture.md](../explanation/architecture.md) — auth and FX flow
+- [tax-pl.md](../explanation/tax-pl.md) — PL tax assumptions
+- [import-csv.md](../how-to/import-csv.md) — CSV import recipe
