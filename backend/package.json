@@ -7,10 +7,14 @@
     "dev": "ts-node-dev --respawn --transpile-only src/app.ts",
     "build": "tsc",
     "start": "node dist/app.js",
+    "db:seed": "prisma db seed",
     "db:backup": "tsx src/scripts/backupDb.ts",
     "create-user": "tsx src/scripts/createUser.ts",
     "test": "tsx --import ./test/setupTestEnv.ts --test --test-concurrency=1 \"src/**/*.test.ts\" \"test/**/*.test.ts\"",
     "test:coverage": "c8 tsx --import ./test/setupTestEnv.ts --test --test-concurrency=1 \"src/**/*.test.ts\" \"test/**/*.test.ts\""
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "keywords": [],
   "author": "",
