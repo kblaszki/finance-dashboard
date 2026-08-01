@@ -26,7 +26,8 @@ function App() {
       </Route>
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
-          <Route path="/home" element={<HomePage />} />
+          <Route path="/dashboard" element={<HomePage />} />
+          <Route path="/home" element={<Navigate to="/dashboard" replace />} />
           <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/accounts/:id" element={<AccountDetailPage />} />
           <Route path="/categories" element={<CategoriesPage />} />
@@ -49,7 +50,7 @@ function RootRoute() {
     );
   }
   if (user) {
-    return <Navigate to="/home" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
   return <LandingPage />;
 }
@@ -64,7 +65,7 @@ function GuestOnly() {
     );
   }
   if (user) {
-    return <Navigate to="/home" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
   return <Outlet />;
 }
