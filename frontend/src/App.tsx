@@ -7,6 +7,8 @@ import { RegisterPage } from "./pages/RegisterPage";
 import { LandingPage } from "./pages/LandingPage";
 import { HomePage } from "./pages/HomePage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { HomePreviewIndexPage } from "./pages/home-previews/HomePreviewIndexPage";
+import { HomePreviewPage } from "./pages/home-previews/HomePreviewPage";
 import { useAuth } from "./state/auth";
 
 function App() {
@@ -15,6 +17,8 @@ function App() {
       <Route path="/" element={<RootRoute />} />
       <Route path="/login" element={<GuestOnly><LoginPage /></GuestOnly>} />
       <Route path="/register" element={<GuestOnly><RegisterPage /></GuestOnly>} />
+      <Route path="/preview/home" element={<HomePreviewIndexPage />} />
+      <Route path="/preview/home/:slug" element={<HomePreviewPage />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
           <Route path="/home" element={<HomePage />} />
