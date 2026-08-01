@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { ThemeToggle } from "../components/ThemeToggle";
 
 const FEATURES = [
   {
@@ -25,6 +26,7 @@ export function LandingPage() {
       <header className="landing-header">
         <h1 className="landing-logo">Finance Dashboard</h1>
         <nav className="landing-nav">
+          <ThemeToggle />
           <Link to="/login" className="btn-secondary">
             Log in
           </Link>

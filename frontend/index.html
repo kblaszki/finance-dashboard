@@ -9,9 +9,11 @@
       (function () {
         var key = 'finance-dashboard:theme';
         var saved = localStorage.getItem(key);
+        var preference =
+          saved === 'light' || saved === 'dark' || saved === 'system' ? saved : 'system';
         var theme =
-          saved === 'light' || saved === 'dark'
-            ? saved
+          preference === 'light' || preference === 'dark'
+            ? preference
             : window.matchMedia('(prefers-color-scheme: dark)').matches
               ? 'dark'
               : 'light';

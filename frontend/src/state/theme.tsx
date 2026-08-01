@@ -1,45 +1,78 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 
-export type Theme = 'light' | 'dark'
+export type ThemePreference = 'light' | 'dark' | 'system'
+export type ResolvedTheme = 'light' | 'dark'
 
 type ThemeContextValue = {
-  theme: Theme
-  setTheme: (theme: Theme) => void
-  toggleTheme: () => void
+  preference: ThemePreference
+  theme: ResolvedTheme
+  setPreference: (preference: ThemePreference) => void
+  cyclePreference: () => void
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 
-const STORAGE_KEY = 'finance-dashboard:theme'
+export const STORAGE_KEY = 'finance-dashboard:theme'
 
-function getInitialTheme(): Theme {
+const PREFERENCE_ORDER: ThemePreference[] = ['light', 'dark', 'system']
+
+export function readStoredPreference(): ThemePreference {
   const saved = localStorage.getItem(STORAGE_KEY)
-  if (saved === 'light' || saved === 'dark') return saved
+  if (saved === 'light' || saved === 'dark' || saved === 'system') return saved
+  return 'system'
+}
+
+export function resolveTheme(preference: ThemePreference): ResolvedTheme {
+  if (preference === 'light' || preference === 'dark') return preference
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
-function applyTheme(theme: Theme) {
+export function applyTheme(theme: ResolvedTheme) {
   document.documentElement.dataset.theme = theme
 }
 
+function nextPreference(current: ThemePreference): ThemePreference {
+  const idx = PREFERENCE_ORDER.indexOf(current)
+  return PREFERENCE_ORDER[(idx + 1) % PREFERENCE_ORDER.length]
+}
+
 export function ThemeProvider(props: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    const initial = getInitialTheme()
-    applyTheme(initial)
+  const [preference, setPreferenceState] = useState<ThemePreference>(() => {
+    const initial = readStoredPreference()
+    applyTheme(resolveTheme(initial))
     return initial
   })
+  const [theme, setThemeState] = useState<ResolvedTheme>(() =>
+    resolveTheme(readStoredPreference()),
+  )
 
   useEffect(() => {
-    applyTheme(theme)
-    localStorage.setItem(STORAGE_KEY, theme)
-  }, [theme])
+    const resolved = resolveTheme(preference)
+    setThemeState(resolved)
+    applyTheme(resolved)
+    localStorage.setItem(STORAGE_KEY, preference)
+  }, [preference])
 
-  const setTheme = (next: Theme) => setThemeState(next)
-  const toggleTheme = () => setThemeState((t) => (t === 'light' ? 'dark' : 'light'))
+  useEffect(() => {
+    if (preference !== 'system') return
+
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const onChange = () => {
+      const resolved = resolveTheme('system')
+      setThemeState(resolved)
+      applyTheme(resolved)
+    }
+
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [preference])
+
+  const setPreference = (next: ThemePreference) => setPreferenceState(next)
+  const cyclePreference = () => setPreferenceState((p) => nextPreference(p))
 
   const value = useMemo(
-    () => ({ theme, setTheme, toggleTheme }),
-    [theme],
+    () => ({ preference, theme, setPreference, cyclePreference }),
+    [preference, theme],
   )
 
   return <ThemeContext.Provider value={value}>{props.children}</ThemeContext.Provider>

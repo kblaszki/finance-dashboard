@@ -1,9 +1,17 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../state/auth";
 import { updateEmail, updatePassword, updateProfile } from "../api/authApi";
+import { useTheme, type ThemePreference } from "../state/theme";
+
+const APPEARANCE_OPTIONS: { value: ThemePreference; label: string }[] = [
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+  { value: "system", label: "System" },
+];
 
 export function SettingsPage() {
   const { user, refreshUser } = useAuth();
+  const { preference, setPreference } = useTheme();
 
   const [username, setUsername] = useState("");
   const [profileMsg, setProfileMsg] = useState<string | null>(null);
@@ -82,6 +90,24 @@ export function SettingsPage() {
   return (
     <div className="page-stack">
       <h1 className="page-title">Account settings</h1>
+
+      <section className="card form-section-gap">
+        <h2 className="section-title">Appearance</h2>
+        <div className="appearance-options" role="radiogroup" aria-label="Color theme">
+          {APPEARANCE_OPTIONS.map((option) => (
+            <label key={option.value} className="appearance-option">
+              <input
+                type="radio"
+                name="theme-preference"
+                value={option.value}
+                checked={preference === option.value}
+                onChange={() => setPreference(option.value)}
+              />
+              {option.label}
+            </label>
+          ))}
+        </div>
+      </section>
 
       <section className="card form-section-gap">
         <h2 className="section-title">Profile</h2>

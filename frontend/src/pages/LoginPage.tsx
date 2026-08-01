@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { fetchAuthConfig } from "../api/authApi";
+import { ThemeToggle } from "../components/ThemeToggle";
 import { useAuth } from "../state/auth";
 
 export function LoginPage() {
@@ -32,6 +33,9 @@ export function LoginPage() {
 
   return (
     <div className="auth-page">
+      <div className="auth-theme-toggle">
+        <ThemeToggle />
+      </div>
       <div className="auth-card card">
         <h1 className="page-title">Log in</h1>
         <form className="auth-form" onSubmit={handleSubmit}>
