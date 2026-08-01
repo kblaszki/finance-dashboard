@@ -8,6 +8,7 @@ import { RegisterPage } from "./pages/RegisterPage";
 import { LandingPage } from "./pages/LandingPage";
 import { HomePage } from "./pages/HomePage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { AccountsPage } from "./pages/AccountsPage";
 import { useAuth } from "./state/auth";
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
           <Route path="/home" element={<HomePage />} />
+          <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Route>

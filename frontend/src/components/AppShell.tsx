@@ -18,6 +18,9 @@ export function AppShell() {
           <NavLink to="/home" className={navLinkClass} end>
             Home
           </NavLink>
+          <NavLink to="/accounts" className={navLinkClass}>
+            Accounts
+          </NavLink>
           <NavLink to="/settings" className={navLinkClass}>
             Settings
           </NavLink>
@@ -34,8 +37,8 @@ export function AppShell() {
           <ThemeToggle />
         </div>
         <p className="app-folio-mast-note muted">
-          Private workspace — auth and account settings today; portfolio tools
-          follow the roadmap.
+          Private workspace — bank accounts and settings today; more portfolio
+          tools follow the roadmap.
         </p>
       </aside>
       <main className="app-folio-page">

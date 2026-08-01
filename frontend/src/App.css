@@ -1115,6 +1115,13 @@ button:disabled {
   color: var(--color-accent);
 }
 
+.form-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
 .landing-page {
   position: relative;
   isolation: isolate;

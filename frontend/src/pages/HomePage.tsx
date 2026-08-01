@@ -9,14 +9,18 @@ export function HomePage() {
       <p className="home-folio-eyebrow">Home</p>
       <h1 className="page-title">Open the folio</h1>
       <p className="muted home-folio-lead">
-        Signed in as <strong>{user?.username ?? user?.email}</strong>. Account
-        management is available in settings. More features will be added over
-        time.
+        Signed in as <strong>{user?.username ?? user?.email}</strong>. Manage
+        bank accounts or open settings. More features will be added over time.
       </p>
       <div className="home-folio-rule" aria-hidden />
-      <Link to="/settings" className="btn-primary">
-        Account settings
-      </Link>
+      <div className="form-actions-row">
+        <Link to="/accounts" className="btn-primary">
+          Accounts
+        </Link>
+        <Link to="/settings" className="btn-secondary">
+          Account settings
+        </Link>
+      </div>
     </div>
   );
 }

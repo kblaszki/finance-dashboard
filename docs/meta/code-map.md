@@ -1,6 +1,6 @@
 ---
 diataxis: meta
-use_when: Locate primary code paths for auth baseline modules
+use_when: Locate primary code paths for auth and accounts modules
 audience: agent
 related_docs:
   - docs/README.md
@@ -11,17 +11,18 @@ related_docs:
 
 Hub: [docs/README.md](../README.md).
 
-Auth-only baseline — product backlog paths live under [mvp/](../../mvp/), not here.
+Auth + BANK accounts baseline. Remaining product backlog: [mvp/](../../mvp/).
 
 | Area | Primary paths |
 |------|----------------|
 | Express app / health | `backend/src/app.ts` |
 | JWT auth helpers | `backend/src/auth.ts`, `backend/src/authConfig.ts` |
 | Auth HTTP routes | `backend/src/routes/authRoutes.ts` |
+| Accounts HTTP routes | `backend/src/routes/accountsRoutes.ts` |
 | Router mount | `backend/src/routes/mountRouters.ts` |
 | HTTP helpers / errors | `backend/src/routes/httpSupport.ts`, `backend/src/lib/errors.ts` |
 | Route uid helper | `backend/src/routes/routeSupport.ts` |
-| Prisma schema | `backend/prisma/schema.prisma` (`User` only) |
+| Prisma schema | `backend/prisma/schema.prisma` (`User`, `Account`) |
 | Migrations | `backend/prisma/migrations/` |
 | Demo user seed | `backend/prisma/seed.ts` |
 | Create user CLI | `backend/src/scripts/createUser.ts` |
@@ -32,6 +33,7 @@ Auth-only baseline — product backlog paths live under [mvp/](../../mvp/), not 
 | SPA routes | `frontend/src/App.tsx` |
 | Auth state | `frontend/src/state/auth.tsx` |
 | Auth API client | `frontend/src/api/authApi.ts`, `frontend/src/api/client.ts` |
+| Accounts API client | `frontend/src/api/accountsApi.ts` |
 | Shell / gates | `frontend/src/components/AppShell.tsx`, `AuthSwapShell.tsx`, `ProtectedRoute.tsx` |
-| Pages | `frontend/src/pages/{Landing,Login,Register,Home,Settings}Page.tsx` |
+| Pages | `frontend/src/pages/{Landing,Login,Register,Home,Accounts,Settings}Page.tsx` |
 | Theme | `frontend/src/state/theme.tsx`, `ThemeToggle.tsx` (light/dark) |

@@ -11,7 +11,7 @@ related_docs:
 
 Hub: [docs/README.md](../README.md).
 
-**Shipped in code** = auth baseline below. Everything else is product backlog in [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) and `mvp/features/*`. Checklist statuses are aligned to the repository (5 done / 57 planned as of 2026-08-01); feature files remain specs for re-implementation.
+**Shipped in code** = auth + BANK accounts below. Remaining backlog: [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) and `mvp/features/*`. Checklist: 5 done / 1 in_progress / 56 planned (as of 2026-08-01).
 
 ## Shipped
 
@@ -22,12 +22,13 @@ Hub: [docs/README.md](../README.md).
 | MVP-050 | Health endpoint | `GET /api/health` |
 | MVP-051 | Private deploy tooling | `create-user`, `db:backup`, [private-deploy.md](../how-to/private-deploy.md) |
 | MVP-052 | Production auth rate limits | `app.ts` (login/register; import limiter when import returns) |
+| FR-006 (partial) | BANK accounts CRUD | `Account` model; `/api/accounts`; `/accounts` UI — other types still planned |
 
 ## Planned / not in this codebase
 
 | Area | Where to look |
 |------|----------------|
 | Password reset (MVP-003) | [mvp/features/auth/password-reset-api.md](../../mvp/features/auth/password-reset-api.md) |
-| Accounts, holdings, tax, import, FX, budgets, … | [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) |
+| Non-BANK account types, holdings, tax, import, FX, budgets, … | [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) |
 
 Do not invent “implemented” rows for domain FRs until the feature ships and docs-sync updates this page.

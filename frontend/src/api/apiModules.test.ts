@@ -22,6 +22,13 @@ import {
   updatePassword,
   updateEmail,
 } from './authApi'
+import {
+  fetchAccounts,
+  createAccount,
+  fetchAccount,
+  updateAccount,
+  deleteAccount,
+} from './accountsApi'
 
 describe('API modules', () => {
   beforeEach(() => {
@@ -73,5 +80,29 @@ describe('API modules', () => {
 
     logoutLocal()
     expect(setAuthToken).toHaveBeenCalledWith(null)
+  })
+
+  it('accountsApi calls correct endpoints', async () => {
+    await fetchAccounts()
+    expect(apiClient.get).toHaveBeenCalledWith('/api/accounts')
+
+    await createAccount({ name: 'Checking', currency: 'PLN', openingBalance: 10 })
+    expect(apiClient.post).toHaveBeenCalledWith('/api/accounts', {
+      name: 'Checking',
+      currency: 'PLN',
+      openingBalance: 10,
+    })
+
+    await fetchAccount(7)
+    expect(apiClient.get).toHaveBeenCalledWith('/api/accounts/7')
+
+    await updateAccount(7, { name: 'Renamed', description: null })
+    expect(apiClient.patch).toHaveBeenCalledWith('/api/accounts/7', {
+      name: 'Renamed',
+      description: null,
+    })
+
+    await deleteAccount(7)
+    expect(apiClient.delete).toHaveBeenCalledWith('/api/accounts/7')
   })
 })

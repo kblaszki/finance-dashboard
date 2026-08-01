@@ -5,6 +5,7 @@ audience: both
 related_code:
   - frontend/src/App.tsx
   - frontend/src/api/authApi.ts
+  - frontend/src/api/accountsApi.ts
   - frontend/src/api/client.ts
 ---
 
@@ -20,9 +21,10 @@ Hub: [docs/README.md](../README.md).
 | `/login` | Guest only | `LoginPage` (in `AuthSwapShell`) |
 | `/register` | Guest only (when `allowRegister`) | `RegisterPage` (in `AuthSwapShell`) |
 | `/home` | Protected | `HomePage` |
+| `/accounts` | Protected | `AccountsPage` (BANK create/list/edit/delete) |
 | `/settings` | Protected | `SettingsPage` |
 
-Shell: `AppShell` — hatch-folio layout (diagonal hatch atmosphere, asymmetric mast + page). Mast: brand, Home/Settings nav, user, theme toggle, logout. Gate: `ProtectedRoute`.
+Shell: `AppShell` — hatch-folio layout (diagonal hatch atmosphere, asymmetric mast + page). Mast: brand, Home/Accounts/Settings nav, user, theme toggle, logout. Gate: `ProtectedRoute`.
 
 Auth: `AuthSwapShell` — 50/50 form + visual panel; register keeps form on the left, login swaps sides (`data-mode`). Fine grid on the visual pane; decorative chart cards. Gate: `GuestOnly` + `Outlet`.
 
@@ -40,5 +42,6 @@ Default after login/register: `/home` (`state/auth.tsx`).
 |--------|------|
 | `frontend/src/api/client.ts` | `fetch` + Bearer token + 401 handler |
 | `frontend/src/api/authApi.ts` | config, register, login, me, profile, email, password |
+| `frontend/src/api/accountsApi.ts` | list/create/get/patch/delete accounts |
 
 New domain clients follow `frontend/src/api/*Api.ts` and must be covered in `apiModules.test.ts` when added.
