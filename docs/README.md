@@ -31,6 +31,7 @@ Never load all docs. Prefer reference for facts, how-to for tasks, explanation f
 - Local setup and install: [README.md](../README.md)
 - First run walkthrough: [tutorials/first-run.md](tutorials/first-run.md)
 - Private deploy: [how-to/private-deploy.md](how-to/private-deploy.md)
+- Product feature map (done / planned): [mvp/CHECKLIST.md](../mvp/CHECKLIST.md)
 
 ## Tutorials
 

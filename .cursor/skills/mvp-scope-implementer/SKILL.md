@@ -46,6 +46,8 @@ Supporting references (read on demand):
 
 Committed docs (`docs/*`) are English. Local `plans/` docs may be any language. **Never link `plans/` from committed docs.**
 
+**Not the same as** the committed product map at repo root [`mvp/`](../../../mvp/) (`CHECKLIST.md` + `features/`). That tree tracks product capability status for agents/humans. This skill implements code from a **user-supplied** docs root (often under gitignored `plans/`) that contains its own nested `mvp/scope.md` + `requirements/`. Use skills `mvp-add-feature` / `mvp-review` for the root `mvp/` map; use this skill to ship scope from `plans/...`.
+
 ---
 
 ## Phase 0: Validate docs root

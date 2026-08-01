@@ -2,6 +2,15 @@
 
 Token-aware index — open [docs/README.md](docs/README.md) for the Diátaxis compass; do not duplicate [README.md](README.md) here.
 
+## MVP feature map
+
+| Doc | Use when |
+|-----|----------|
+| [mvp/CHECKLIST.md](mvp/CHECKLIST.md) | Product capability checklist (done / stub / planned) |
+| [mvp/README.md](mvp/README.md) | Conventions and domains |
+
+Technical FR→code map: [docs/reference/requirements.md](docs/reference/requirements.md).
+
 ## Docs (on-demand)
 
 ### Meta
@@ -82,7 +91,9 @@ Token-aware index — open [docs/README.md](docs/README.md) for the Diátaxis co
 | [.cursor/skills/docs-audit/SKILL.md](.cursor/skills/docs-audit/SKILL.md) | Check docs vs code drift |
 | [.cursor/skills/docs-sync-during-work/SKILL.md](.cursor/skills/docs-sync-during-work/SKILL.md) | **Required** — update docs in the same chunk as significant code changes |
 | [.cursor/skills/fullstack-architecture-review/SKILL.md](.cursor/skills/fullstack-architecture-review/SKILL.md) | Periodic fullstack architecture audit |
-| [.cursor/skills/mvp-scope-implementer/SKILL.md](.cursor/skills/mvp-scope-implementer/SKILL.md) | Implement MVP from local scope docs |
+| [.cursor/skills/mvp-add-feature/SKILL.md](.cursor/skills/mvp-add-feature/SKILL.md) | Add a capability to `mvp/` + CHECKLIST |
+| [.cursor/skills/mvp-review/SKILL.md](.cursor/skills/mvp-review/SKILL.md) | Audit MVP checklist vs files vs code |
+| [.cursor/skills/mvp-scope-implementer/SKILL.md](.cursor/skills/mvp-scope-implementer/SKILL.md) | Implement from local `plans/<root>/` scope docs |
 
 ## Do not commit
 
