@@ -32,7 +32,7 @@ Visual system (Signal focus): slate + emerald tokens in `index.css`; UI font IBM
 
 Controls: `ThemeToggle` (light ↔ dark) on Landing, Login, Register, and AppShell; Settings **Appearance** section sets theme via Light/Dark radios.
 
-Temporary home layout previews (`/preview/home`, `/preview/home/:slug` — including atmosphere-forward `grid-room`, `mesh-stage`, `hatch-split`, `dot-orbit`) use static Recharts demos; production `/home` is unchanged.
+Temporary home layout previews (`/preview/home`, `/preview/home/:slug`) use static Recharts demos; production `/home` is unchanged. Gallery groups: layout baselines, atmosphere (`grid-room`, `mesh-stage`, `dot-orbit`), and hatch family (`hatch-split`, `hatch-invert`, `hatch-ledge`, `hatch-triptych`, `hatch-spine`, `hatch-folio`, `hatch-ribbon`).
 
 Default after login/register: `/home` (`state/auth.tsx`).
 

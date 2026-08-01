@@ -11,6 +11,12 @@ const SLUGS = [
   "grid-room",
   "mesh-stage",
   "hatch-split",
+  "hatch-invert",
+  "hatch-ledge",
+  "hatch-triptych",
+  "hatch-spine",
+  "hatch-folio",
+  "hatch-ribbon",
   "dot-orbit",
 ] as const;
 type Slug = (typeof SLUGS)[number];
@@ -40,6 +46,18 @@ export function HomePreviewPage() {
       return <MeshStagePreview />;
     case "hatch-split":
       return <HatchSplitPreview />;
+    case "hatch-invert":
+      return <HatchInvertPreview />;
+    case "hatch-ledge":
+      return <HatchLedgePreview />;
+    case "hatch-triptych":
+      return <HatchTriptychPreview />;
+    case "hatch-spine":
+      return <HatchSpinePreview />;
+    case "hatch-folio":
+      return <HatchFolioPreview />;
+    case "hatch-ribbon":
+      return <HatchRibbonPreview />;
     case "dot-orbit":
       return <DotOrbitPreview />;
   }
@@ -270,7 +288,9 @@ function HatchSplitPreview() {
     <HomePreviewChrome name="Hatch split">
       <div className="hp-shell hp-shell--hatch-split">
         <div className="hp-atmos hp-atmos--hatch" aria-hidden />
+        <div className="hp-atmos hp-atmos--hatch-dense" aria-hidden />
         <section className="hp-split-pane hp-split-pane--copy">
+          <p className="hp-focus__eyebrow">Hatch family</p>
           <p className="hp-ledger__brand">Finance Dashboard</p>
           <h1 className="hp-title">Split the canvas</h1>
           <DemoUser />
@@ -278,14 +298,219 @@ function HatchSplitPreview() {
             Diagonal hatch as atmosphere; copy on the left, chart as a vertical
             plane on the right — one composition, two beats.
           </p>
+          <ul className="hp-kpi-rows hp-kpi-rows--compact">
+            <li>
+              <span>Demo net worth</span>
+              <strong>PLN 131,000</strong>
+            </li>
+            <li>
+              <span>Month</span>
+              <strong className="hp-positive">+5.6%</strong>
+            </li>
+          </ul>
           <div className="hp-focus__rule" aria-hidden />
           <Link to="/settings" className="btn-primary">
             Account settings
           </Link>
         </section>
-        <section className="hp-split-pane hp-split-pane--viz" aria-hidden>
-          <DemoAreaChart height={320} />
+        <section className="hp-split-pane hp-split-pane--viz">
+          <p className="hp-subhead">Net worth (demo)</p>
+          <DemoAreaChart height={300} />
         </section>
+      </div>
+    </HomePreviewChrome>
+  );
+}
+
+function HatchInvertPreview() {
+  return (
+    <HomePreviewChrome name="Hatch invert">
+      <div className="hp-shell hp-shell--hatch-invert">
+        <div className="hp-atmos hp-atmos--hatch hp-atmos--hatch-flip" aria-hidden />
+        <section className="hp-split-pane hp-split-pane--viz hp-split-pane--viz-lead">
+          <p className="hp-subhead">Net worth (demo)</p>
+          <DemoAreaChart height={300} />
+        </section>
+        <section className="hp-split-pane hp-split-pane--copy">
+          <p className="hp-focus__eyebrow">Inverted</p>
+          <p className="hp-ledger__brand">Finance Dashboard</p>
+          <h1 className="hp-title">Chart leads, words follow</h1>
+          <DemoUser />
+          <p className="hp-muted">
+            Same hatch language, mirrored beat — visual plane first, copy on the
+            trailing edge.
+          </p>
+          <div className="hp-focus__rule" aria-hidden />
+          <Link to="/settings" className="btn-primary">
+            Account settings
+          </Link>
+        </section>
+      </div>
+    </HomePreviewChrome>
+  );
+}
+
+function HatchLedgePreview() {
+  return (
+    <HomePreviewChrome name="Hatch ledge">
+      <div className="hp-shell hp-shell--hatch-ledge">
+        <div className="hp-atmos hp-atmos--hatch" aria-hidden />
+        <header className="hp-ledge-copy">
+          <div className="hp-ledge-copy__text">
+            <p className="hp-ledger__brand">Finance Dashboard</p>
+            <h1 className="hp-title">Copy on a ledge</h1>
+            <p className="hp-muted">
+              Horizontal split: welcome strip above, chart as a full-width band
+              below — hatch stays in the room.
+            </p>
+          </div>
+          <div className="hp-ledge-copy__meta">
+            <DemoUser />
+            <nav className="hp-topbar__nav">
+              <span className="hp-nav__active">Home</span>
+              <span>Settings</span>
+            </nav>
+          </div>
+        </header>
+        <section className="hp-ledge-band">
+          <DemoAreaChart height={260} />
+        </section>
+      </div>
+    </HomePreviewChrome>
+  );
+}
+
+function HatchTriptychPreview() {
+  return (
+    <HomePreviewChrome name="Hatch triptych">
+      <div className="hp-shell hp-shell--hatch-triptych">
+        <div className="hp-atmos hp-atmos--hatch" aria-hidden />
+        <section className="hp-trip-pane hp-trip-pane--copy">
+          <p className="hp-ledger__brand">Finance Dashboard</p>
+          <h1 className="hp-title">Three beats</h1>
+          <DemoUser />
+          <p className="hp-muted">
+            Copy, curve, allocation — a triptych over the same hatch field.
+          </p>
+          <Link to="/settings" className="btn-primary">
+            Account settings
+          </Link>
+        </section>
+        <section className="hp-trip-pane hp-trip-pane--mid">
+          <p className="hp-subhead">Net worth</p>
+          <DemoAreaChart height={240} />
+        </section>
+        <section className="hp-trip-pane hp-trip-pane--side">
+          <p className="hp-subhead">Allocation</p>
+          <DemoAllocationDonut size={150} />
+        </section>
+      </div>
+    </HomePreviewChrome>
+  );
+}
+
+function HatchSpinePreview() {
+  return (
+    <HomePreviewChrome name="Hatch spine">
+      <div className="hp-shell hp-shell--hatch-spine">
+        <div className="hp-atmos hp-atmos--hatch" aria-hidden />
+        <section className="hp-spine-pane hp-spine-pane--copy">
+          <p className="hp-focus__eyebrow">Spine</p>
+          <p className="hp-ledger__brand">Finance Dashboard</p>
+          <h1 className="hp-title">Two rooms, one seam</h1>
+          <DemoUser />
+          <p className="hp-muted">
+            Dual panes meet at an emerald spine — hatch behind, structure in
+            front.
+          </p>
+          <ul className="hp-kpi-rows hp-kpi-rows--compact">
+            <li>
+              <span>YTD</span>
+              <strong className="hp-positive">+12%</strong>
+            </li>
+            <li>
+              <span>Cash</span>
+              <strong>22%</strong>
+            </li>
+          </ul>
+        </section>
+        <div className="hp-spine" aria-hidden />
+        <section className="hp-spine-pane hp-spine-pane--viz">
+          <DemoAreaChart height={280} />
+        </section>
+      </div>
+    </HomePreviewChrome>
+  );
+}
+
+function HatchFolioPreview() {
+  return (
+    <HomePreviewChrome name="Hatch folio">
+      <div className="hp-shell hp-shell--hatch-folio">
+        <div className="hp-atmos hp-atmos--hatch" aria-hidden />
+        <aside className="hp-folio-mast">
+          <p className="hp-ledger__brand">Finance Dashboard</p>
+          <nav className="hp-nav">
+            <span className="hp-nav__active">Home</span>
+            <span>Settings</span>
+          </nav>
+          <DemoUser />
+          <p className="hp-muted hp-folio-mast__note">
+            Narrow mast over hatch; wide folio for the story and chart.
+          </p>
+        </aside>
+        <main className="hp-folio-page">
+          <h1 className="hp-title">Open the folio</h1>
+          <p className="hp-muted">
+            Asymmetric 38 / 62 — editorial column plus a calm chart plane.
+          </p>
+          <div className="hp-focus__rule" aria-hidden />
+          <DemoAreaChart height={240} />
+          <div className="hp-ledger__kpis">
+            <span>
+              Net <strong>131k</strong>
+            </span>
+            <span>
+              Month <strong className="hp-positive">+5.6%</strong>
+            </span>
+          </div>
+        </main>
+      </div>
+    </HomePreviewChrome>
+  );
+}
+
+function HatchRibbonPreview() {
+  return (
+    <HomePreviewChrome name="Hatch ribbon">
+      <div className="hp-shell hp-shell--hatch-ribbon">
+        <div className="hp-atmos hp-atmos--hatch" aria-hidden />
+        <header className="hp-ribbon">
+          <p className="hp-logo">Finance Dashboard</p>
+          <nav className="hp-topbar__nav">
+            <span className="hp-nav__active">Home</span>
+            <span>Settings</span>
+          </nav>
+          <DemoUser />
+        </header>
+        <div className="hp-ribbon-body">
+          <section className="hp-split-pane hp-split-pane--copy">
+            <p className="hp-focus__eyebrow">Ribbon + split</p>
+            <h1 className="hp-title">Nav as a thin ribbon</h1>
+            <p className="hp-muted">
+              Hatch underneath; chrome as a hairline bar; classic left/right
+              split for content.
+            </p>
+            <div className="hp-focus__rule" aria-hidden />
+            <Link to="/settings" className="btn-primary">
+              Account settings
+            </Link>
+          </section>
+          <section className="hp-split-pane hp-split-pane--viz">
+            <DemoAreaChart height={280} />
+            <DemoAllocationDonut size={140} />
+          </section>
+        </div>
       </div>
     </HomePreviewChrome>
   );
