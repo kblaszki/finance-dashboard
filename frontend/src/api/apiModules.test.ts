@@ -40,6 +40,7 @@ import {
   updateCategory,
   deleteCategory,
 } from './categoriesApi'
+import { fetchCategoryBreakdown } from './statisticsApi'
 
 describe('API modules', () => {
   beforeEach(() => {
@@ -162,5 +163,12 @@ describe('API modules', () => {
 
     await deleteCategory(2)
     expect(apiClient.delete).toHaveBeenCalledWith('/api/categories/2')
+  })
+
+  it('statisticsApi calls correct endpoints', async () => {
+    await fetchCategoryBreakdown('2026-08')
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/statistics/category-breakdown?month=2026-08',
+    )
   })
 })

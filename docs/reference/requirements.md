@@ -11,7 +11,7 @@ related_docs:
 
 Hub: [docs/README.md](../README.md).
 
-**Shipped in code** = auth + multi-type accounts + category tree + cash ledger (optional `categoryId`) below. Remaining backlog: [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) and `mvp/features/*`. Checklist: 9 done / 0 in_progress / 53 planned (as of 2026-08-01).
+**Shipped in code** = auth + multi-type accounts + category tree + cash ledger (optional `categoryId`) + month category breakdown below. Remaining backlog: [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) and `mvp/features/*`. Checklist: 10 done / 0 in_progress / 52 planned (as of 2026-08-01).
 
 ## Shipped
 
@@ -26,6 +26,7 @@ Hub: [docs/README.md](../README.md).
 | MVP-011 | Cash ledger INCOME/EXPENSE | `CashTransaction`; `domain/cashLedger.ts`; `/api/accounts/:id/transactions`; `/accounts/:id` |
 | FR-015 | Category tree CRUD | `Category`; `domain/categories.ts`; `/api/categories`; `/categories`; defaults on register |
 | FR-018 | Transaction categories | Optional `CashTransaction.categoryId` on ledger create/list; multi-line splits deferred |
+| FR-016 | Category spend breakdown | `GET /api/statistics/category-breakdown`; `/statistics` month Income/Expense lists (UTC, no FX) |
 
 ## Planned / not in this codebase
 

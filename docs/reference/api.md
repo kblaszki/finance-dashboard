@@ -8,6 +8,7 @@ related_code:
   - backend/src/routes/accountsRoutes.ts
   - backend/src/routes/categoriesRoutes.ts
   - backend/src/routes/cashTransactionsRoutes.ts
+  - backend/src/routes/statisticsRoutes.ts
   - backend/src/routes/mountRouters.ts
 ---
 
@@ -73,3 +74,11 @@ Nested under an owned account. Cross-user or unknown account → `404`. `amount`
 | GET | `/api/accounts/:accountId/transactions` | Bearer | List for account (`occurredAt` desc, then `id` desc); includes `categoryId` |
 | POST | `/api/accounts/:accountId/transactions` | Bearer | Body: `type`, `amount`; optional `occurredAt` (ISO, default now), `description`, `categoryId`. 201 |
 | DELETE | `/api/accounts/:accountId/transactions/:id` | Bearer | Must match account; reverses balance. 204 |
+
+## Statistics
+
+Month bounds are **UTC** `[start, end)` on `CashTransaction.occurredAt`. No FX — rows are per `(categoryId, currency)`. Null `categoryId` → `categoryName: "Uncategorized"`. Missing/invalid `month` → `400`.
+
+| Method | Path | Auth | Notes |
+|--------|------|------|-------|
+| GET | `/api/statistics/category-breakdown` | Bearer | Query: `month=YYYY-MM`. Body: `{ month, income[], expense[] }` with rows `{ categoryId, categoryName, currency, total, count }` |

@@ -11,7 +11,7 @@ related_docs:
 
 Hub: [docs/README.md](../README.md).
 
-Auth + multi-type accounts + category tree + cash ledger baseline. Remaining product backlog: [mvp/](../../mvp/).
+Auth + multi-type accounts + category tree + cash ledger + category statistics baseline. Remaining product backlog: [mvp/](../../mvp/).
 
 | Area | Primary paths |
 |------|----------------|
@@ -21,9 +21,11 @@ Auth + multi-type accounts + category tree + cash ledger baseline. Remaining pro
 | Accounts HTTP routes | `backend/src/routes/accountsRoutes.ts` |
 | Categories HTTP routes | `backend/src/routes/categoriesRoutes.ts` |
 | Cash transactions routes | `backend/src/routes/cashTransactionsRoutes.ts` |
+| Statistics routes | `backend/src/routes/statisticsRoutes.ts` |
 | Account type allow-list | `backend/src/domain/accountTypes.ts` |
 | Categories domain | `backend/src/domain/categories.ts` |
 | Cash ledger domain | `backend/src/domain/cashLedger.ts` |
+| Category breakdown domain | `backend/src/domain/categoryBreakdown.ts` |
 | Router mount | `backend/src/routes/mountRouters.ts` |
 | HTTP helpers / errors | `backend/src/routes/httpSupport.ts`, `backend/src/lib/errors.ts` |
 | Route uid helper | `backend/src/routes/routeSupport.ts` |
@@ -41,6 +43,7 @@ Auth + multi-type accounts + category tree + cash ledger baseline. Remaining pro
 | Accounts API client | `frontend/src/api/accountsApi.ts` |
 | Categories API client | `frontend/src/api/categoriesApi.ts` |
 | Transactions API client | `frontend/src/api/transactionsApi.ts` |
+| Statistics API client | `frontend/src/api/statisticsApi.ts` |
 | Shell / gates | `frontend/src/components/AppShell.tsx`, `AuthSwapShell.tsx`, `ProtectedRoute.tsx` |
-| Pages | `frontend/src/pages/{Landing,Login,Register,Home,Accounts,AccountDetail,Categories,Settings}Page.tsx` |
+| Pages | `frontend/src/pages/{Landing,Login,Register,Home,Accounts,AccountDetail,Categories,Statistics,Settings}Page.tsx` |
 | Theme | `frontend/src/state/theme.tsx`, `ThemeToggle.tsx` (light/dark) |

@@ -37,11 +37,12 @@ sequenceDiagram
 |-------|--------|------|
 | Frontend | `frontend/src/api/client.ts` | `fetch` + `Authorization: Bearer` from `localStorage` |
 | Auth helpers | `backend/src/auth.ts`, `authConfig.ts` | Password/JWT validation, `requireAuth`, register flag |
-| HTTP | `backend/src/app.ts` + `routes/mountRouters.ts` | Health, rate limits, mounts auth + accounts + categories + cash-tx routers |
+| HTTP | `backend/src/app.ts` + `routes/mountRouters.ts` | Health, rate limits, mounts auth + accounts + categories + cash-tx + statistics routers |
 | Auth routes | `backend/src/routes/authRoutes.ts` | Register/login/me/profile/email/password; register seeds default categories |
 | Accounts routes | `backend/src/routes/accountsRoutes.ts` | Account CRUD (user-scoped; type allow-list) |
 | Categories routes | `backend/src/routes/categoriesRoutes.ts` | Nested category CRUD |
 | Cash tx routes | `backend/src/routes/cashTransactionsRoutes.ts` | Nested INCOME/EXPENSE ledger (optional category) |
+| Statistics routes | `backend/src/routes/statisticsRoutes.ts` | Month category income/expense breakdown |
 | Errors | `routes/httpSupport.ts`, `lib/errors.ts` | Typed HTTP errors (incl. 409 conflict) |
 | Scripts | `backend/src/scripts/` | `createUser` (seeds categories), `backupDb` |
 | Seed | `backend/prisma/seed.ts` | Demo user + default categories if missing |
@@ -59,7 +60,7 @@ Money and conversion rules belong in dedicated backend modules when FX/valuation
 ## Frontend shell
 
 - Guests: Landing; Login/Register inside `AuthSwapShell` (50/50 form + visual; sides swap by route).
-- Authed: AppShell hatch-folio (mast + page) with Home, Accounts, Categories, Settings; account detail `/accounts/:id` for cash ledger; default post-login path `/home`.
+- Authed: AppShell hatch-folio (mast + page) with Home, Accounts, Categories, Statistics, Settings; account detail `/accounts/:id` for cash ledger; default post-login path `/home`.
 
 ## Related
 

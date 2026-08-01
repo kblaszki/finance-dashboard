@@ -1,6 +1,6 @@
 # MVP feature checklist
 
-Last review: 2026-08-01 — statuses aligned to **auth + multi-type accounts + category tree + cash ledger** baseline (JWT auth, settings, health, private-deploy CLIs, prod auth rate limits, account CRUD, nested categories, INCOME/EXPENSE cash txs with optional `categoryId`). Feature specs under `mvp/features/**` remain the backlog; do not treat `planned` rows as shipped code.
+Last review: 2026-08-01 — statuses aligned to **auth + multi-type accounts + category tree + cash ledger + category statistics** baseline (JWT auth, settings, health, private-deploy CLIs, prod auth rate limits, account CRUD, nested categories, INCOME/EXPENSE cash txs with optional `categoryId`, month category breakdown). Feature specs under `mvp/features/**` remain the backlog; do not treat `planned` rows as shipped code.
 
 ## Legend
 
@@ -15,7 +15,7 @@ Last review: 2026-08-01 — statuses aligned to **auth + multi-type accounts + c
 
 | done | stub | planned | in_progress | total |
 |------|------|---------|-------------|-------|
-| 9 | 0 | 53 | 0 | 62 |
+| 10 | 0 | 52 | 0 | 62 |
 
 ## Master table
 
@@ -30,7 +30,7 @@ Last review: 2026-08-01 — statuses aligned to **auth + multi-type accounts + c
 | FR-004 | Cashflow history chart | planned | [features/dashboard-stats/cashflow-history-chart.md](features/dashboard-stats/cashflow-history-chart.md) | /statistics |
 | FR-005 | Rolling 12-month cashflow averages | planned | [features/dashboard-stats/rolling-12m-cashflow.md](features/dashboard-stats/rolling-12m-cashflow.md) | Dashboard RollingCashflowKpis |
 | FR-008 | Cross-account portfolio with bucket filters | planned | [features/dashboard-stats/portfolio-bucket-filters.md](features/dashboard-stats/portfolio-bucket-filters.md) | /portfolio |
-| FR-016 | Category spend breakdown | planned | [features/dashboard-stats/category-spend-breakdown.md](features/dashboard-stats/category-spend-breakdown.md) | /statistics |
+| FR-016 | Category spend breakdown | done | [features/dashboard-stats/category-spend-breakdown.md](features/dashboard-stats/category-spend-breakdown.md) | /statistics |
 | FR-037 | Budget threshold alerts on dashboard | planned | [features/dashboard-stats/budget-alerts-banner.md](features/dashboard-stats/budget-alerts-banner.md) | BudgetAlertsBanner |
 | FR-038 | Dashboard PLN net-worth rollup | planned | [features/dashboard-stats/pln-net-worth-rollup.md](features/dashboard-stats/pln-net-worth-rollup.md) | NetWorthSection |
 | FR-006 | Extended account types | done | [features/accounts/extended-account-types.md](features/accounts/extended-account-types.md) | /accounts create |
@@ -132,7 +132,7 @@ Last review: 2026-08-01 — statuses aligned to **auth + multi-type accounts + c
 - **planned** [FR-004 Cashflow history chart](features/dashboard-stats/cashflow-history-chart.md)
 - **planned** [FR-005 Rolling 12-month cashflow averages](features/dashboard-stats/rolling-12m-cashflow.md)
 - **planned** [FR-008 Cross-account portfolio with bucket filters](features/dashboard-stats/portfolio-bucket-filters.md)
-- **planned** [FR-016 Category spend breakdown](features/dashboard-stats/category-spend-breakdown.md)
+- **done** [FR-016 Category spend breakdown](features/dashboard-stats/category-spend-breakdown.md)
 - **planned** [FR-037 Budget threshold alerts on dashboard](features/dashboard-stats/budget-alerts-banner.md)
 - **planned** [FR-038 Dashboard PLN net-worth rollup](features/dashboard-stats/pln-net-worth-rollup.md)
 

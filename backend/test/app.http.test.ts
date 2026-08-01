@@ -670,3 +670,173 @@ test("cash transactions accept optional categoryId and null on category delete",
   );
   assert.equal(tagged?.categoryId, null);
 });
+
+test("GET /api/statistics/category-breakdown requires auth and valid month", async () => {
+  const noAuth = await request(app).get("/api/statistics/category-breakdown?month=2026-08");
+  assert.equal(noAuth.status, 401);
+
+  const token = await registerAndLogin("statsauth@test.local", "statsauth", "password123");
+
+  const missing = await request(app)
+    .get("/api/statistics/category-breakdown")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(missing.status, 400);
+
+  const badMonth = await request(app)
+    .get("/api/statistics/category-breakdown?month=2024-13")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(badMonth.status, 400);
+
+  const shortMonth = await request(app)
+    .get("/api/statistics/category-breakdown?month=2024-1")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(shortMonth.status, 400);
+});
+
+test("GET /api/statistics/category-breakdown aggregates by category and currency", async () => {
+  const token = await registerAndLogin("statsagg@test.local", "statsagg", "password123");
+  const otherToken = await registerAndLogin("statsother@test.local", "statsother", "password123");
+
+  const cats = await request(app)
+    .get("/api/categories")
+    .set("Authorization", `Bearer ${token}`);
+  const salary = (cats.body as Array<{ id: number; name: string }>).find((c) => c.name === "Salary")!;
+  const food = (cats.body as Array<{ id: number; name: string }>).find((c) => c.name === "Food")!;
+  assert.ok(salary);
+  assert.ok(food);
+
+  const plnA = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "PLN-A", currency: "PLN", openingBalance: 0 });
+  const plnB = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "PLN-B", currency: "PLN", openingBalance: 0 });
+  const eur = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "EUR-A", currency: "EUR", openingBalance: 0 });
+  const otherAccount = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${otherToken}`)
+    .send({ name: "Other", currency: "PLN", openingBalance: 0 });
+
+  const plnAId = plnA.body.id as number;
+  const plnBId = plnB.body.id as number;
+  const eurId = eur.body.id as number;
+  const otherId = otherAccount.body.id as number;
+
+  await request(app)
+    .post(`/api/accounts/${plnAId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      type: "INCOME",
+      amount: 3000,
+      categoryId: salary.id,
+      occurredAt: "2026-08-01T00:00:00.000Z",
+    });
+  await request(app)
+    .post(`/api/accounts/${plnBId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      type: "INCOME",
+      amount: 2000,
+      categoryId: salary.id,
+      occurredAt: "2026-08-15T12:00:00.000Z",
+    });
+  await request(app)
+    .post(`/api/accounts/${plnAId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      type: "EXPENSE",
+      amount: 40,
+      categoryId: food.id,
+      occurredAt: "2026-08-10T00:00:00.000Z",
+    });
+  await request(app)
+    .post(`/api/accounts/${plnAId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      type: "EXPENSE",
+      amount: 12.5,
+      occurredAt: "2026-08-20T00:00:00.000Z",
+    });
+  await request(app)
+    .post(`/api/accounts/${eurId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      type: "EXPENSE",
+      amount: 25,
+      categoryId: food.id,
+      occurredAt: "2026-08-11T00:00:00.000Z",
+    });
+  // Outside month (next month start) — excluded
+  await request(app)
+    .post(`/api/accounts/${plnAId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      type: "EXPENSE",
+      amount: 999,
+      categoryId: food.id,
+      occurredAt: "2026-09-01T00:00:00.000Z",
+    });
+  // Other user — excluded
+  await request(app)
+    .post(`/api/accounts/${otherId}/transactions`)
+    .set("Authorization", `Bearer ${otherToken}`)
+    .send({
+      type: "EXPENSE",
+      amount: 50,
+      occurredAt: "2026-08-05T00:00:00.000Z",
+    });
+
+  const res = await request(app)
+    .get("/api/statistics/category-breakdown?month=2026-08")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  assert.equal(res.body.month, "2026-08");
+  assert.ok(Array.isArray(res.body.income));
+  assert.ok(Array.isArray(res.body.expense));
+
+  assert.equal(res.body.income.length, 1);
+  assert.equal(res.body.income[0].categoryId, salary.id);
+  assert.equal(res.body.income[0].categoryName, "Salary");
+  assert.equal(res.body.income[0].currency, "PLN");
+  assert.equal(res.body.income[0].total, 5000);
+  assert.equal(res.body.income[0].count, 2);
+
+  assert.equal(res.body.expense.length, 3);
+  const foodPln = res.body.expense.find(
+    (r: { categoryId: number | null; currency: string }) =>
+      r.categoryId === food.id && r.currency === "PLN",
+  );
+  const foodEur = res.body.expense.find(
+    (r: { categoryId: number | null; currency: string }) =>
+      r.categoryId === food.id && r.currency === "EUR",
+  );
+  const uncat = res.body.expense.find(
+    (r: { categoryId: number | null; categoryName: string }) =>
+      r.categoryId === null && r.categoryName === "Uncategorized",
+  );
+  assert.ok(foodPln);
+  assert.equal(foodPln.total, 40);
+  assert.equal(foodPln.count, 1);
+  assert.ok(foodEur);
+  assert.equal(foodEur.total, 25);
+  assert.ok(uncat);
+  assert.equal(uncat.total, 12.5);
+  assert.equal(uncat.currency, "PLN");
+
+  // Sorted by total desc: Food PLN 40, Food EUR 25, Uncategorized 12.5
+  assert.equal(res.body.expense[0].total, 40);
+  assert.equal(res.body.expense[1].total, 25);
+  assert.equal(res.body.expense[2].total, 12.5);
+
+  const empty = await request(app)
+    .get("/api/statistics/category-breakdown?month=2025-01")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(empty.status, 200);
+  assert.deepEqual(empty.body.income, []);
+  assert.deepEqual(empty.body.expense, []);
+});

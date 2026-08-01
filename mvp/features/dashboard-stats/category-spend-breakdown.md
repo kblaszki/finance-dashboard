@@ -1,6 +1,6 @@
 ---
 id: FR-016
-status: planned
+status: done
 domain: dashboard-stats
 title: Category spend breakdown
 ---
@@ -9,11 +9,11 @@ title: Category spend breakdown
 
 ## Summary
 
-Expense/income by category for the period.
+Expense/income by category for a selected calendar month (UTC), grouped by currency.
 
 ## User value
 
-Capability tracked in the product map for agents and humans; see linked docs for recipes.
+See where money went (and came from) by category without waiting for full budgets or FX rollups.
 
 ## Surfaces
 
@@ -23,14 +23,21 @@ Capability tracked in the product map for agents and humans; see linked docs for
 
 ## Acceptance
 
-- [ ] Category breakdown section on statistics
+- [x] `GET /api/statistics/category-breakdown?month=YYYY-MM` returns income/expense rows
+- [x] Category breakdown section on `/statistics` with month picker
 
 ## Implementation notes
 
-- Docs: docs/how-to/dashboard-and-statistics.md
-- Traceability: [docs/reference/requirements.md](../../../docs/reference/requirements.md) (when FR/NFR)
+- Domain: `backend/src/domain/categoryBreakdown.ts`
+- Routes: `backend/src/routes/statisticsRoutes.ts`
+- UI: `frontend/src/pages/StatisticsPage.tsx`
+- Docs: [docs/how-to/dashboard-and-statistics.md](../../../docs/how-to/dashboard-and-statistics.md)
+- Traceability: [docs/reference/requirements.md](../../../docs/reference/requirements.md)
 - Code map: [docs/meta/code-map.md](../../../docs/meta/code-map.md)
 
 ## Out of scope / follow-ups
 
-- See related planned/stub rows in [CHECKLIST.md](../../CHECKLIST.md)
+- FX conversion to a single display currency
+- Charts (Recharts reserved for later)
+- Period cashflow summary / history (FR-003 / FR-004)
+- Parent-category rollup
