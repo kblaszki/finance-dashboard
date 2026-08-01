@@ -36,5 +36,5 @@ Thumbs.db
 .idea/
 .vscode/
 
-
+## Local SQLite journals
 *.db-journal
