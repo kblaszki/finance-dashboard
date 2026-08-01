@@ -60,7 +60,7 @@ Money and conversion rules belong in dedicated backend modules when FX/valuation
 ## Frontend shell
 
 - Guests: Landing; Login/Register inside `AuthSwapShell` (50/50 form + visual; sides swap by route).
-- Authed: AppShell hatch-folio (mast + page) with Home, Accounts, Categories, Statistics, Settings; account detail `/accounts/:id` for cash ledger; default post-login path `/home`.
+- Authed: AppShell sidebar + topbar with Dashboard, Accounts, Categories, Statistics, Settings; account detail `/accounts/:id` for cash ledger; global currency in topbar (`CurrencyProvider`); default post-login path `/dashboard` (`/home` redirects).
 
 ## Related
 

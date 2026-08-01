@@ -27,12 +27,12 @@ Hub: [docs/README.md](../README.md).
 
 ## Landing / login
 
-- `/` — marketing landing for guests; authed users redirect to `/home`.
+- `/` — marketing landing for guests; authed users redirect to `/dashboard`.
 - `/login` — email or username + password.
 - `/register` — when registration is allowed.
 - First success: [first-run.md](../tutorials/first-run.md).
 
 | Area | Path |
 |------|------|
-| UI | `SettingsPage`, `LoginPage`, `RegisterPage`, `HomePage`, `LandingPage` |
+| UI | `SettingsPage`, `LoginPage`, `RegisterPage`, `DashboardPage`, `LandingPage` |
 | API | [api.md](../reference/api.md) auth routes |

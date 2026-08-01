@@ -25,10 +25,10 @@ Last review: 2026-08-01 — statuses aligned to **auth + multi-type accounts + c
 | MVP-002 | Profile, email, and password settings | done | [features/auth/profile-email-password.md](features/auth/profile-email-password.md) | /settings |
 | MVP-003 | Self-service password reset | planned | [features/auth/password-reset-api.md](features/auth/password-reset-api.md) | /password-reset (stub today) |
 | FR-001 | Value-weighted average holding return | planned | [features/dashboard-stats/average-holding-return.md](features/dashboard-stats/average-holding-return.md) | Dashboard AverageReturnKpi |
-| FR-002 | Net worth with five asset buckets | done | [features/dashboard-stats/net-worth-buckets.md](features/dashboard-stats/net-worth-buckets.md) | /home NetWorthSection |
+| FR-002 | Net worth with five asset buckets | done | [features/dashboard-stats/net-worth-buckets.md](features/dashboard-stats/net-worth-buckets.md) | /dashboard net-worth donut |
 | FR-003 | Statistics period cashflow summary | done | [features/dashboard-stats/statistics-period-summary.md](features/dashboard-stats/statistics-period-summary.md) | /statistics |
 | FR-004 | Cashflow history chart | done | [features/dashboard-stats/cashflow-history-chart.md](features/dashboard-stats/cashflow-history-chart.md) | /statistics |
-| FR-005 | Rolling 12-month cashflow averages | done | [features/dashboard-stats/rolling-12m-cashflow.md](features/dashboard-stats/rolling-12m-cashflow.md) | /home RollingCashflowKpis |
+| FR-005 | Rolling 12-month cashflow averages | done | [features/dashboard-stats/rolling-12m-cashflow.md](features/dashboard-stats/rolling-12m-cashflow.md) | /dashboard rolling KPIs |
 | FR-008 | Cross-account portfolio with bucket filters | planned | [features/dashboard-stats/portfolio-bucket-filters.md](features/dashboard-stats/portfolio-bucket-filters.md) | /portfolio |
 | FR-016 | Category spend breakdown | done | [features/dashboard-stats/category-spend-breakdown.md](features/dashboard-stats/category-spend-breakdown.md) | /statistics |
 | FR-037 | Budget threshold alerts on dashboard | planned | [features/dashboard-stats/budget-alerts-banner.md](features/dashboard-stats/budget-alerts-banner.md) | BudgetAlertsBanner |

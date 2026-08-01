@@ -41,11 +41,13 @@ Auth + multi-type accounts + category tree + cash ledger + category statistics b
 | Test Prisma helper | `backend/test/prismaTestClient.ts`, `setupTestEnv.ts` |
 | SPA routes | `frontend/src/App.tsx` |
 | Auth state | `frontend/src/state/auth.tsx` |
+| Currency state | `frontend/src/state/currency.tsx` |
 | Auth API client | `frontend/src/api/authApi.ts`, `frontend/src/api/client.ts` |
 | Accounts API client | `frontend/src/api/accountsApi.ts` |
 | Categories API client | `frontend/src/api/categoriesApi.ts` |
 | Transactions API client | `frontend/src/api/transactionsApi.ts` |
 | Statistics API client | `frontend/src/api/statisticsApi.ts` |
 | Shell / gates | `frontend/src/components/AppShell.tsx`, `AuthSwapShell.tsx`, `ProtectedRoute.tsx` |
-| Pages | `frontend/src/pages/{Landing,Login,Register,Home,Accounts,AccountDetail,Categories,Statistics,Settings}Page.tsx` |
+| Shared UI | `frontend/src/components/ui/{PageHeader,KpiCard,ChartCard,StatusBlock,CurrencySelect}.tsx` |
+| Pages | `frontend/src/pages/{Landing,Login,Register,Dashboard,Accounts,AccountDetail,Categories,Statistics,Settings}Page.tsx` |
 | Theme | `frontend/src/state/theme.tsx`, `ThemeToggle.tsx` (light/dark) |

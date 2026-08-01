@@ -29,8 +29,8 @@ Hub: [docs/README.md](../README.md).
 | FR-016 | Category spend breakdown | `GET /api/statistics/category-breakdown`; `/statistics` month Income/Expense lists (UTC, no FX) |
 | FR-003 | Statistics period cashflow summary | `GET /api/statistics/period-summary`; `/statistics` income/expense/net KPIs for one currency |
 | FR-004 | Cashflow history chart | `GET /api/statistics/cashflow-history`; `/statistics` Recharts series (`months` 6\|12\|24) |
-| FR-002 | Net worth (cash buckets) | `GET /api/statistics/net-worth`; `/home` byBucket from `cashBalance` (liabilities 0; no holdings/FX) |
-| FR-005 | Rolling 12-month cashflow averages | `GET /api/statistics/cashflow-rolling-12m`; `/home` avg income/expense/net |
+| FR-002 | Net worth (cash buckets) | `GET /api/statistics/net-worth`; `/dashboard` byBucket from `cashBalance` (liabilities 0; no holdings/FX) |
+| FR-005 | Rolling 12-month cashflow averages | `GET /api/statistics/cashflow-rolling-12m`; `/dashboard` avg income/expense/net |
 
 ## Planned / not in this codebase
 

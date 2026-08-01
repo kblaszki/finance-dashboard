@@ -65,7 +65,7 @@ Required variables:
 
 Optional: `ALLOW_REGISTER`, `CORS_ORIGIN`, `JSON_BODY_LIMIT`, backup vars — see [docs/reference/environment.md](docs/reference/environment.md).
 
-Register via the frontend at `/register`, or call `POST /api/auth/register` with `{ "email", "username", "password" }` (password minimum 8 characters). After login you land on **Home** (`/home`); manage profile under **Settings**.
+Register via the frontend at `/register`, or call `POST /api/auth/register` with `{ "email", "username", "password" }` (password minimum 8 characters). After login you land on **Dashboard** (`/dashboard`); manage profile under **Settings**.
 
 For a **private single-user deployment**, set `ALLOW_REGISTER=false` in `backend/.env` and create the account with `npm run create-user` — see [Private deployment](#private-deployment) below.
 

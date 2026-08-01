@@ -52,6 +52,6 @@ npm run create-user -- --email you@example.com --username you --password 'your-p
 
 ## 5. Log in
 
-Open `http://localhost:5173/login` and sign in. After login you land on **Home** (`/home`); account profile is under **Settings**.
+Open `http://localhost:5173/login` and sign in. After login you land on **Dashboard** (`/dashboard`); account profile is under **Settings**.
 
 Next: [demo-seed.md](demo-seed.md) for the shared demo login, or [private-deploy.md](../how-to/private-deploy.md) for a locked-down instance.

@@ -19,7 +19,7 @@ Capability tracked in the product map for agents and humans; see linked docs for
 
 | Kind | Location |
 |------|----------|
-| Primary | /home RollingCashflowKpis |
+| Primary | /dashboard rolling KPIs |
 
 ## Acceptance
 

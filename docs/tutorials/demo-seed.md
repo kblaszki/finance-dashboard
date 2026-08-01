@@ -37,7 +37,7 @@ npm run db:seed
 | `/accounts` | Everyday Checking (BANK/PLN), Euro Travel (BANK/EUR), Brokerage Cash (BROKERAGE/PLN), Crypto Spot (CRYPTO/USD) |
 | `/categories` | Default Income/Expense tree |
 | `/accounts/:id` | ~24 months of INCOME/EXPENSE rows (≥5 per month per account); tagged categories + occasional uncategorized expenses |
-| `/home` | Cash net-worth buckets + rolling 12m averages with meaningful history (pick PLN) |
+| `/dashboard` | Cash net-worth buckets, rolling 12m averages, cashflow chart, account mix (pick PLN in top bar) |
 | `/statistics` | Period KPIs, cashflow chart, and category breakdown across the seeded history |
 
 ## Notes
