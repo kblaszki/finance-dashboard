@@ -1,32 +1,13 @@
 import { Link } from "react-router-dom";
 import { ThemeToggle } from "../components/ThemeToggle";
 
-const FEATURES = [
-  {
-    title: "Net worth dashboard",
-    body: "Track total wealth with a five-segment breakdown across cash, stocks, crypto, metals, and real estate.",
-  },
-  {
-    title: "Accounts & portfolio",
-    body: "Register bank, brokerage, and manual accounts. View holdings and trade history in one place.",
-  },
-  {
-    title: "Cashflow & budgets",
-    body: "Record income and expenses, analyze spending by category, and monitor monthly trends.",
-  },
-  {
-    title: "Polish tax reporting",
-    body: "Generate PIT-38 capital gains reports with FIFO matching and export results for filing.",
-  },
-];
-
 export function LandingPage() {
   return (
     <div className="landing-page">
-      <header className="landing-header">
-        <h1 className="landing-logo">Finance Dashboard</h1>
+      <div className="landing-grid" aria-hidden />
+      <header className="landing-topbar">
+        <ThemeToggle />
         <nav className="landing-nav">
-          <ThemeToggle />
           <Link to="/login" className="btn-secondary">
             Log in
           </Link>
@@ -35,14 +16,21 @@ export function LandingPage() {
           </Link>
         </nav>
       </header>
-      <main className="landing-main">
-        <section className="landing-hero card">
-          <h2 className="landing-title">Personal finance, under your control</h2>
-          <p className="landing-lead">
-            Manage bank and brokerage accounts, track every asset class, and prepare Polish tax
-            reports — with your data isolated and private.
+      <div className="landing-body">
+        <p className="landing-brand landing-anim landing-anim-delay-0">
+          Finance Dashboard
+        </p>
+        <main className="landing-hero">
+          <h1 className="landing-title landing-anim landing-anim-delay-1">
+            Focus on the path, not the noise
+          </h1>
+          <p className="landing-lead landing-anim landing-anim-delay-2">
+            A private workspace for your accounts and reports — authenticate, set
+            your profile, keep data on your instance. More modules arrive feature
+            by feature.
           </p>
-          <div className="landing-cta">
+          <div className="landing-rule landing-anim landing-anim-delay-2" aria-hidden />
+          <div className="landing-cta landing-anim landing-anim-delay-3">
             <Link to="/register" className="btn-primary">
               Get started
             </Link>
@@ -50,16 +38,24 @@ export function LandingPage() {
               I already have an account
             </Link>
           </div>
+        </main>
+        <section className="landing-split landing-anim landing-anim-delay-3">
+          <div>
+            <h2 className="landing-subhead">What you get today</h2>
+            <p>
+              Login, registration, and account settings on your own stack —
+              profile, email, and password under your control.
+            </p>
+          </div>
+          <div>
+            <h2 className="landing-subhead">Roadmap</h2>
+            <p>
+              Accounts, portfolio, cashflow, and Polish tax tooling land step by
+              step from the product checklist — not pretended as live UI yet.
+            </p>
+          </div>
         </section>
-        <section className="landing-features">
-          {FEATURES.map((feature) => (
-            <article key={feature.title} className="landing-feature card">
-              <h3>{feature.title}</h3>
-              <p className="muted">{feature.body}</p>
-            </article>
-          ))}
-        </section>
-      </main>
+      </div>
     </div>
   );
 }

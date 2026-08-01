@@ -1,21 +1,22 @@
 :root {
   color-scheme: light;
 
-  --color-bg: #f8fafc;
-  --color-bg-elevated: #ffffff;
+  --color-bg: #e8eef3;
+  --color-bg-elevated: #f4f7fa;
   --color-surface: #ffffff;
-  --color-border: #e2e8f0;
-  --color-text: #0f172a;
-  --color-text-muted: #64748b;
-  --color-accent: #2563eb;
-  --color-accent-subtle: #eff6ff;
-  --color-accent-hover: #1d4ed8;
+  --color-border: rgba(26, 34, 44, 0.12);
+  --color-text: #1a222c;
+  --color-text-muted: #5a6570;
+  --color-accent: #059669;
+  --color-accent-subtle: rgba(5, 150, 105, 0.12);
+  --color-accent-hover: #047857;
+  --color-on-accent: #ecfdf5;
   --color-negative: #c0392b;
   --color-negative-subtle: #fef2f2;
-  --color-positive: #16a34a;
+  --color-positive: #059669;
   --accent: var(--color-accent);
 
-  --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.08), 0 4px 12px rgba(15, 23, 42, 0.06);
+  --shadow-card: 0 1px 3px rgba(26, 34, 44, 0.08), 0 4px 12px rgba(26, 34, 44, 0.05);
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;
   --radius-lg: 1rem;
@@ -25,14 +26,17 @@
   --space-lg: 1.5rem;
   --space-xl: 2rem;
 
-  --chart-1: #2563eb;
-  --chart-2: #16a34a;
-  --chart-3: #ea580c;
-  --chart-4: #db2777;
-  --chart-5: #7c3aed;
-  --chart-6: #0891b2;
+  --font-ui: "IBM Plex Sans", system-ui, sans-serif;
+  --font-display: "Space Grotesk", system-ui, sans-serif;
 
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --chart-1: #059669;
+  --chart-2: #0e7490;
+  --chart-3: #b45309;
+  --chart-4: #1d4e89;
+  --chart-5: #7c6f5a;
+  --chart-6: #4a5568;
+
+  font-family: var(--font-ui);
   line-height: 1.5;
   font-weight: 400;
   font-synthesis: none;
@@ -47,18 +51,19 @@
 [data-theme='dark'] {
   color-scheme: dark;
 
-  --color-bg: #0f172a;
-  --color-bg-elevated: #1e293b;
-  --color-surface: #1e293b;
-  --color-border: rgba(148, 163, 184, 0.25);
-  --color-text: #f1f5f9;
-  --color-text-muted: #94a3b8;
-  --color-accent: #3b82f6;
-  --color-accent-subtle: rgba(59, 130, 246, 0.15);
-  --color-accent-hover: #60a5fa;
+  --color-bg: #0d1218;
+  --color-bg-elevated: #151b24;
+  --color-surface: #1a222c;
+  --color-border: rgba(232, 238, 243, 0.12);
+  --color-text: #e8eef3;
+  --color-text-muted: #9aa8b5;
+  --color-accent: #34d399;
+  --color-accent-subtle: rgba(52, 211, 153, 0.15);
+  --color-accent-hover: #6ee7b7;
+  --color-on-accent: #052e1c;
   --color-negative: #f87171;
   --color-negative-subtle: rgba(248, 113, 113, 0.12);
-  --color-positive: #4ade80;
+  --color-positive: #34d399;
 
   --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.35);
 }
@@ -89,4 +94,8 @@ img,
 svg {
   max-width: 100%;
   height: auto;
+}
+
+.font-display {
+  font-family: var(--font-display);
 }

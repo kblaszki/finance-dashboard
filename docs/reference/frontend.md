@@ -21,14 +21,18 @@ Hub: [docs/README.md](../README.md).
 | `/register` | Guest only (when `allowRegister`) | `RegisterPage` |
 | `/home` | Protected | `HomePage` |
 | `/settings` | Protected | `SettingsPage` |
+| `/preview` | Temporary gallery | `PreviewIndexPage` |
+| `/preview/:slug` | Temporary landing concepts | `LandingPreviewPage` |
 
 Shell: `AppShell` (Home + Settings nav, theme toggle, logout). Gate: `ProtectedRoute`.
 
 Theme (`light` | `dark`) lives in `state/theme.tsx`, persisted under `localStorage` key `finance-dashboard:theme`. Applied as `document.documentElement.dataset.theme`. Missing, invalid, or legacy `system` values resolve once from `prefers-color-scheme` and are stored as explicit `light` or `dark`. FOUC bootstrap mirrors this in `frontend/index.html`.
 
+Visual system (Signal focus): slate + emerald tokens in `index.css`; UI font IBM Plex Sans; display/brand Space Grotesk (loaded from `index.html`). Production `/` landing uses the centered Signal-focus composition (brand, headline, lead, rule, CTAs, today/roadmap split) with a fine grid atmosphere.
+
 Controls: `ThemeToggle` (light ↔ dark) on Landing, Login, Register, AppShell, and temporary `/preview` gallery/chrome; Settings **Appearance** section sets theme via Light/Dark radios.
 
-Temporary landing previews (`/preview`, `/preview/:slug`) use scoped CSS that follows the same global `data-theme` (light and dark palettes per variant). Gallery includes concept variants, Signal family siblings (`signal`, `signal-focus`, `signal-depth`, `signal-quiet`, `signal-edge`), and finance-visual ones (`ticker`, `folio`, `pulse`) with static Recharts demos. Production `/` landing is unchanged.
+Temporary landing previews (`/preview`, `/preview/:slug`) remain for comparison until removed.
 
 Default after login/register: `/home` (`state/auth.tsx`).
 
