@@ -38,3 +38,27 @@ test("User.username is unique", async () => {
     }),
   );
 });
+
+test("Account name is unique per user", async () => {
+  const user = await prisma.user.create({
+    data: { email: "acct@test.local", username: "acctuser", passwordHash: "x" },
+  });
+  await prisma.account.create({
+    data: {
+      userId: user.id,
+      accountType: "BANK",
+      name: "Checking",
+      currency: "PLN",
+    },
+  });
+  await assert.rejects(() =>
+    prisma.account.create({
+      data: {
+        userId: user.id,
+        accountType: "BANK",
+        name: "Checking",
+        currency: "PLN",
+      },
+    }),
+  );
+});

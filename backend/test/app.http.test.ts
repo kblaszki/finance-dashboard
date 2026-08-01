@@ -228,3 +228,125 @@ test("PATCH /api/auth/email updates email with current password", async () => {
   assert.equal(ok.status, 200);
   assert.equal(ok.body.email, "newmail@test.local");
 });
+
+test("GET /api/accounts returns 401 without token", async () => {
+  const res = await request(app).get("/api/accounts");
+  assert.equal(res.status, 401);
+});
+
+test("POST /api/accounts creates BANK account with totalBalance", async () => {
+  const { token } = await createUserAndToken();
+  const res = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      name: "Checking",
+      currency: "pln",
+      openingBalance: 100.5,
+      description: "Main bank",
+    });
+  assert.equal(res.status, 201);
+  assert.equal(res.body.accountType, "BANK");
+  assert.equal(res.body.name, "Checking");
+  assert.equal(res.body.currency, "PLN");
+  assert.equal(res.body.cashBalance, 100.5);
+  assert.equal(res.body.openingBalance, 100.5);
+  assert.equal(res.body.totalBalance, 100.5);
+  assert.equal(res.body.description, "Main bank");
+});
+
+test("POST /api/accounts rejects non-BANK accountType", async () => {
+  const { token } = await createUserAndToken();
+  const res = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Broker", accountType: "BROKERAGE" });
+  assert.equal(res.status, 400);
+  assert.match(res.body.error, /BANK/);
+});
+
+test("POST /api/accounts rejects duplicate name for same user", async () => {
+  const { token } = await createUserAndToken();
+  const first = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Dup" });
+  assert.equal(first.status, 201);
+  const second = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Dup" });
+  assert.equal(second.status, 400);
+  assert.match(second.body.error, /already exists/i);
+});
+
+test("GET /api/accounts lists own accounts newest first", async () => {
+  const { token } = await createUserAndToken();
+  await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Older", openingBalance: 10 });
+  await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Newer", openingBalance: 20 });
+  const res = await request(app).get("/api/accounts").set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  assert.equal(res.body.length, 2);
+  assert.equal(res.body[0].name, "Newer");
+  assert.equal(res.body[0].totalBalance, 20);
+  assert.equal(res.body[1].name, "Older");
+});
+
+test("GET/PATCH/DELETE /api/accounts/:id scoped to owner", async () => {
+  const { token } = await createUserAndToken();
+  const otherToken = await registerAndLogin("other@test.local", "otheruser", "password123");
+  const created = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Mine", currency: "EUR", openingBalance: 50 });
+  assert.equal(created.status, 201);
+  const id = created.body.id as number;
+
+  const getOwn = await request(app)
+    .get(`/api/accounts/${id}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(getOwn.status, 200);
+  assert.equal(getOwn.body.name, "Mine");
+
+  const getOther = await request(app)
+    .get(`/api/accounts/${id}`)
+    .set("Authorization", `Bearer ${otherToken}`);
+  assert.equal(getOther.status, 404);
+
+  const patchOther = await request(app)
+    .patch(`/api/accounts/${id}`)
+    .set("Authorization", `Bearer ${otherToken}`)
+    .send({ name: "Hijacked" });
+  assert.equal(patchOther.status, 404);
+
+  const patchOwn = await request(app)
+    .patch(`/api/accounts/${id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Renamed", description: "Updated", currency: "usd" });
+  assert.equal(patchOwn.status, 200);
+  assert.equal(patchOwn.body.name, "Renamed");
+  assert.equal(patchOwn.body.description, "Updated");
+  assert.equal(patchOwn.body.currency, "USD");
+  assert.equal(patchOwn.body.cashBalance, 50);
+
+  const deleteOther = await request(app)
+    .delete(`/api/accounts/${id}`)
+    .set("Authorization", `Bearer ${otherToken}`);
+  assert.equal(deleteOther.status, 404);
+
+  const deleteOwn = await request(app)
+    .delete(`/api/accounts/${id}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(deleteOwn.status, 204);
+
+  const getGone = await request(app)
+    .get(`/api/accounts/${id}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(getGone.status, 404);
+});
