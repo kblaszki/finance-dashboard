@@ -25,9 +25,8 @@ export function LandingPage() {
             Focus on the path, not the noise
           </h1>
           <p className="landing-lead landing-anim landing-anim-delay-2">
-            A private workspace for your accounts and reports — authenticate, set
-            your profile, keep data on your instance. More modules arrive feature
-            by feature.
+            A private workspace for accounts, categories, and cashflow reports —
+            authenticate, set your profile, keep data on your instance.
           </p>
           <div className="landing-rule landing-anim landing-anim-delay-2" aria-hidden />
           <div className="landing-cta landing-anim landing-anim-delay-3">
@@ -43,15 +42,16 @@ export function LandingPage() {
           <div>
             <h2 className="landing-subhead">What you get today</h2>
             <p>
-              Login, registration, and account settings on your own stack —
-              profile, email, and password under your control.
+              Auth and account settings, cash accounts with ledgers, nested
+              categories, a dashboard with net-worth and cashflow KPIs, and
+              statistics with history charts — all on your own stack.
             </p>
           </div>
           <div>
             <h2 className="landing-subhead">Roadmap</h2>
             <p>
-              Accounts, portfolio, cashflow, and Polish tax tooling land step by
-              step from the product checklist — not pretended as live UI yet.
+              Holdings, FX consolidation, portfolio market data, and Polish tax
+              tooling land step by step from the product checklist.
             </p>
           </div>
         </section>
