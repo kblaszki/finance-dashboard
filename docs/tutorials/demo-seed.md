@@ -12,7 +12,7 @@ related_code:
 
 # Tutorial: demo user seed
 
-Goal: upsert the demo login and load a **sample portfolio** that showcases shipped features (accounts, categories, cash ledger, statistics).
+Goal: upsert the demo login and load a **sample portfolio** that showcases shipped features (accounts, categories, cash ledger, statistics, home KPIs).
 
 ## Warning
 
@@ -36,13 +36,14 @@ npm run db:seed
 |---------|----------------|
 | `/accounts` | Everyday Checking (BANK/PLN), Euro Travel (BANK/EUR), Brokerage Cash (BROKERAGE/PLN), Crypto Spot (CRYPTO/USD) |
 | `/categories` | Default Income/Expense tree |
-| `/accounts/:id` | INCOME/EXPENSE ledger rows; tagged categories + one uncategorized expense |
-| `/home` | Cash net-worth buckets + rolling 12m averages (pick PLN) |
-| `/statistics` | Period KPIs + chart (pick PLN/EUR) and category breakdown; switch to prior month for Checking history |
+| `/accounts/:id` | ~24 months of INCOME/EXPENSE rows (≥5 per month per account); tagged categories + occasional uncategorized expenses |
+| `/home` | Cash net-worth buckets + rolling 12m averages with meaningful history (pick PLN) |
+| `/statistics` | Period KPIs, cashflow chart, and category breakdown across the seeded history |
 
 ## Notes
 
 - Implementation: [`backend/prisma/seed.ts`](../../backend/prisma/seed.ts) + [`seedDemoPortfolio.ts`](../../backend/src/domain/seedDemoPortfolio.ts).
+- Ledger is **deterministic** (PRNG seed `demo-portfolio-v2`): same amounts on every run. Each account `cashBalance` is recomputed from opening + signed ledger deltas.
 - Password hash is reset to the known demo password on every run.
 - Other users in the same database are not modified.
 - Hub: [docs/README.md](../README.md).

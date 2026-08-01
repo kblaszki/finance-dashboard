@@ -11,18 +11,32 @@ export const DEMO_ACCOUNT_NAMES = {
   crypto: "Crypto Spot",
 } as const;
 
-/** Expected Everyday Checking cashBalance after full demo seed. */
-export const DEMO_CHECKING_CASH_BALANCE = 8155;
-/** Euro Travel: 400 - 45 - 30 */
-export const DEMO_EURO_CASH_BALANCE = 325;
-/** Brokerage Cash: 10000 + 350 - 40 */
-export const DEMO_BROKERAGE_CASH_BALANCE = 10310;
-/** Crypto Spot: 1500 + 200 - 35 */
-export const DEMO_CRYPTO_CASH_BALANCE = 1665;
+export type DemoAccountKey = keyof typeof DEMO_ACCOUNT_NAMES;
+
+/** Deterministic seed for mulberry32 PRNG. */
+export const DEMO_LEDGER_RNG_SEED = "demo-portfolio-v2";
+export const DEMO_LEDGER_MONTHS = 24;
+export const DEMO_TXS_PER_ACCOUNT_MONTH = 5;
+
+export const DEMO_OPENINGS: Record<DemoAccountKey, number> = {
+  checking: 2500,
+  euro: 400,
+  brokerage: 10000,
+  crypto: 1500,
+};
 
 export type LedgerDeltaInput = {
   type: CashTxType;
   amount: number;
+};
+
+export type DemoPlannedTx = {
+  accountKey: DemoAccountKey;
+  type: CashTxType;
+  amount: number;
+  occurredAt: Date;
+  description: string;
+  category?: { parent: string; child: string };
 };
 
 /** openingBalance + Σ signedDelta(type, amount). */
@@ -53,6 +67,294 @@ export function priorUtcMonthKey(monthKey: string): string {
   const monthIndex = Number(monthKey.slice(5, 7)) - 1;
   const prior = new Date(Date.UTC(year, monthIndex - 1, 1));
   return prior.toISOString().slice(0, 7);
+}
+
+/** Oldest → newest YYYY-MM keys ending at endMonth (inclusive). */
+export function listMonthsEndingAt(endMonth: string, n: number): string[] {
+  const year = Number(endMonth.slice(0, 4));
+  const monthIndex = Number(endMonth.slice(5, 7)) - 1;
+  const months: string[] = [];
+  for (let i = n - 1; i >= 0; i -= 1) {
+    const d = new Date(Date.UTC(year, monthIndex - i, 1));
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+    months.push(`${y}-${m}`);
+  }
+  return months;
+}
+
+function hashSeed(seed: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i += 1) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+/** mulberry32 — deterministic [0, 1). */
+export function createDemoRng(seed = DEMO_LEDGER_RNG_SEED): () => number {
+  let state = hashSeed(seed);
+  return () => {
+    state = (state + 0x6d2b79f5) >>> 0;
+    let t = state;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function money(rng: () => number, min: number, max: number): number {
+  const raw = min + rng() * (max - min);
+  return Math.round(raw * 100) / 100;
+}
+
+function pickDay(rng: () => number, used: Set<number>): number {
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    const day = 1 + Math.floor(rng() * 28);
+    if (!used.has(day)) {
+      used.add(day);
+      return day;
+    }
+  }
+  for (let day = 1; day <= 28; day += 1) {
+    if (!used.has(day)) {
+      used.add(day);
+      return day;
+    }
+  }
+  return 1;
+}
+
+type MonthPlan = {
+  type: CashTxType;
+  amountMin: number;
+  amountMax: number;
+  description: string;
+  category?: { parent: string; child: string };
+};
+
+function monthPlansForAccount(
+  accountKey: DemoAccountKey,
+  rng: () => number,
+): MonthPlan[] {
+  switch (accountKey) {
+    case "checking":
+      return [
+        {
+          type: "INCOME",
+          amountMin: 5100,
+          amountMax: 5400,
+          description: "Monthly salary",
+          category: { parent: "Income", child: "Salary" },
+        },
+        {
+          type: "EXPENSE",
+          amountMin: 1700,
+          amountMax: 1900,
+          description: "Rent",
+          category: { parent: "Expense", child: "Housing" },
+        },
+        {
+          type: "EXPENSE",
+          amountMin: 320,
+          amountMax: 480,
+          description: "Groceries",
+          category: { parent: "Expense", child: "Food" },
+        },
+        {
+          type: "EXPENSE",
+          amountMin: 180,
+          amountMax: 320,
+          description: "Transit",
+          category: { parent: "Expense", child: "Transport" },
+        },
+        rng() < 0.55
+          ? {
+              type: "EXPENSE",
+              amountMin: 40,
+              amountMax: 120,
+              description: "Misc uncategorized",
+            }
+          : {
+              type: "EXPENSE",
+              amountMin: 60,
+              amountMax: 150,
+              description: "Household",
+              category: { parent: "Expense", child: "Other" },
+            },
+      ];
+    case "euro":
+      return [
+        {
+          type: "INCOME",
+          amountMin: 90,
+          amountMax: 140,
+          description: "EUR top-up",
+          category: { parent: "Income", child: "Other income" },
+        },
+        {
+          type: "EXPENSE",
+          amountMin: 18,
+          amountMax: 45,
+          description: "Café",
+          category: { parent: "Expense", child: "Food" },
+        },
+        {
+          type: "EXPENSE",
+          amountMin: 22,
+          amountMax: 55,
+          description: "Train",
+          category: { parent: "Expense", child: "Transport" },
+        },
+        {
+          type: "EXPENSE",
+          amountMin: 15,
+          amountMax: 40,
+          description: "Lunch",
+          category: { parent: "Expense", child: "Food" },
+        },
+        rng() < 0.4
+          ? {
+              type: "EXPENSE",
+              amountMin: 8,
+              amountMax: 25,
+              description: "Travel misc",
+            }
+          : {
+              type: "EXPENSE",
+              amountMin: 10,
+              amountMax: 30,
+              description: "Souvenirs",
+              category: { parent: "Expense", child: "Other" },
+            },
+      ];
+    case "brokerage":
+      return [
+        {
+          type: "INCOME",
+          amountMin: 220,
+          amountMax: 420,
+          description: "Dividend cash",
+          category: { parent: "Income", child: "Other income" },
+        },
+        {
+          type: "EXPENSE",
+          amountMin: 25,
+          amountMax: 55,
+          description: "Account fee",
+          category: { parent: "Expense", child: "Other" },
+        },
+        {
+          type: "INCOME",
+          amountMin: 40,
+          amountMax: 120,
+          description: "Interest credit",
+          category: { parent: "Income", child: "Other income" },
+        },
+        {
+          type: "EXPENSE",
+          amountMin: 15,
+          amountMax: 45,
+          description: "Wire fee",
+          category: { parent: "Expense", child: "Other" },
+        },
+        rng() < 0.35
+          ? {
+              type: "EXPENSE",
+              amountMin: 10,
+              amountMax: 35,
+              description: "Brokerage misc",
+            }
+          : {
+              type: "EXPENSE",
+              amountMin: 12,
+              amountMax: 40,
+              description: "Platform fee",
+              category: { parent: "Expense", child: "Other" },
+            },
+      ];
+    case "crypto":
+      return [
+        {
+          type: "INCOME",
+          amountMin: 120,
+          amountMax: 260,
+          description: "Stablecoin yield",
+          category: { parent: "Income", child: "Other income" },
+        },
+        {
+          type: "EXPENSE",
+          amountMin: 12,
+          amountMax: 40,
+          description: "Network fee",
+          category: { parent: "Expense", child: "Other" },
+        },
+        {
+          type: "INCOME",
+          amountMin: 30,
+          amountMax: 90,
+          description: "Airdrop cash-out",
+          category: { parent: "Income", child: "Other income" },
+        },
+        {
+          type: "EXPENSE",
+          amountMin: 8,
+          amountMax: 28,
+          description: "Withdrawal fee",
+          category: { parent: "Expense", child: "Other" },
+        },
+        rng() < 0.4
+          ? {
+              type: "EXPENSE",
+              amountMin: 5,
+              amountMax: 22,
+              description: "Crypto misc",
+            }
+          : {
+              type: "EXPENSE",
+              amountMin: 6,
+              amountMax: 24,
+              description: "Exchange fee",
+              category: { parent: "Expense", child: "Other" },
+            },
+      ];
+    default: {
+      const _exhaustive: never = accountKey;
+      return _exhaustive;
+    }
+  }
+}
+
+/**
+ * Deterministic ledger: DEMO_LEDGER_MONTHS × DEMO_TXS_PER_ACCOUNT_MONTH
+ * per demo account, ending at the UTC month of `now`.
+ */
+export function buildDemoLedgerTxs(now = new Date()): DemoPlannedTx[] {
+  const rng = createDemoRng(DEMO_LEDGER_RNG_SEED);
+  const months = listMonthsEndingAt(utcMonthKey(now), DEMO_LEDGER_MONTHS);
+  const accountKeys = Object.keys(DEMO_ACCOUNT_NAMES) as DemoAccountKey[];
+  const planned: DemoPlannedTx[] = [];
+
+  for (const month of months) {
+    for (const accountKey of accountKeys) {
+      const plans = monthPlansForAccount(accountKey, rng);
+      const usedDays = new Set<number>();
+      for (const plan of plans) {
+        const day = pickDay(rng, usedDays);
+        planned.push({
+          accountKey,
+          type: plan.type,
+          amount: money(rng, plan.amountMin, plan.amountMax),
+          occurredAt: utcMidMonth(month, day),
+          description: `${plan.description} (${month})`,
+          category: plan.category,
+        });
+      }
+    }
+  }
+
+  return planned;
 }
 
 async function wipeDemoPortfolio(db: Db, userId: number): Promise<void> {
@@ -87,147 +389,44 @@ async function categoryIdByParentChild(
   return child.id;
 }
 
-type PlannedTx = {
-  accountKey: keyof typeof DEMO_ACCOUNT_NAMES;
-  type: CashTxType;
-  amount: number;
-  occurredAt: Date;
-  description: string;
-  category?: { parent: string; child: string };
-};
-
-function buildPlannedTxs(now = new Date()): PlannedTx[] {
-  const current = utcMonthKey(now);
-  const prior = priorUtcMonthKey(current);
-  return [
-    {
-      accountKey: "checking",
-      type: "INCOME",
-      amount: 5200,
-      occurredAt: utcMidMonth(current, 1),
-      description: "Monthly salary",
-      category: { parent: "Income", child: "Salary" },
-    },
-    {
-      accountKey: "checking",
-      type: "EXPENSE",
-      amount: 420,
-      occurredAt: utcMidMonth(current, 5),
-      description: "Groceries",
-      category: { parent: "Expense", child: "Food" },
-    },
-    {
-      accountKey: "checking",
-      type: "EXPENSE",
-      amount: 1800,
-      occurredAt: utcMidMonth(current, 3),
-      description: "Rent",
-      category: { parent: "Expense", child: "Housing" },
-    },
-    {
-      accountKey: "checking",
-      type: "EXPENSE",
-      amount: 260,
-      occurredAt: utcMidMonth(current, 8),
-      description: "Transit pass",
-      category: { parent: "Expense", child: "Transport" },
-    },
-    {
-      accountKey: "checking",
-      type: "EXPENSE",
-      amount: 85,
-      occurredAt: utcMidMonth(current, 12),
-      description: "Misc uncategorized",
-    },
-    {
-      accountKey: "checking",
-      type: "INCOME",
-      amount: 5200,
-      occurredAt: utcMidMonth(prior, 1),
-      description: "Monthly salary (prior)",
-      category: { parent: "Income", child: "Salary" },
-    },
-    {
-      accountKey: "checking",
-      type: "EXPENSE",
-      amount: 380,
-      occurredAt: utcMidMonth(prior, 6),
-      description: "Groceries (prior)",
-      category: { parent: "Expense", child: "Food" },
-    },
-    {
-      accountKey: "checking",
-      type: "EXPENSE",
-      amount: 1800,
-      occurredAt: utcMidMonth(prior, 3),
-      description: "Rent (prior)",
-      category: { parent: "Expense", child: "Housing" },
-    },
-    {
-      accountKey: "euro",
-      type: "EXPENSE",
-      amount: 45,
-      occurredAt: utcMidMonth(current, 10),
-      description: "Café",
-      category: { parent: "Expense", child: "Food" },
-    },
-    {
-      accountKey: "euro",
-      type: "EXPENSE",
-      amount: 30,
-      occurredAt: utcMidMonth(current, 11),
-      description: "Train",
-      category: { parent: "Expense", child: "Transport" },
-    },
-    {
-      accountKey: "brokerage",
-      type: "INCOME",
-      amount: 350,
-      occurredAt: utcMidMonth(current, 7),
-      description: "Dividend cash",
-      category: { parent: "Income", child: "Other income" },
-    },
-    {
-      accountKey: "brokerage",
-      type: "EXPENSE",
-      amount: 40,
-      occurredAt: utcMidMonth(current, 9),
-      description: "Account fee",
-      category: { parent: "Expense", child: "Other" },
-    },
-    {
-      accountKey: "crypto",
-      type: "INCOME",
-      amount: 200,
-      occurredAt: utcMidMonth(current, 4),
-      description: "Stablecoin yield",
-      category: { parent: "Income", child: "Other income" },
-    },
-    {
-      accountKey: "crypto",
-      type: "EXPENSE",
-      amount: 35,
-      occurredAt: utcMidMonth(current, 14),
-      description: "Network fee",
-      category: { parent: "Expense", child: "Other" },
-    },
-  ];
-}
-
 /**
  * Wipe and rebuild demo portfolio for userId (categories, accounts, cash txs).
  * Must be called with a demo (or test) user — scopes all deletes by userId.
  */
-export async function seedDemoPortfolio(db: Db, userId: number, now = new Date()): Promise<void> {
+export async function seedDemoPortfolio(
+  db: Db,
+  userId: number,
+  now = new Date(),
+): Promise<void> {
   await wipeDemoPortfolio(db, userId);
   await seedDefaultCategories(db, userId);
 
   const salaryId = await categoryIdByParentChild(db, userId, "Income", "Salary");
-  const otherIncomeId = await categoryIdByParentChild(db, userId, "Income", "Other income");
+  const otherIncomeId = await categoryIdByParentChild(
+    db,
+    userId,
+    "Income",
+    "Other income",
+  );
   const foodId = await categoryIdByParentChild(db, userId, "Expense", "Food");
-  const housingId = await categoryIdByParentChild(db, userId, "Expense", "Housing");
-  const transportId = await categoryIdByParentChild(db, userId, "Expense", "Transport");
-  const otherExpenseId = await categoryIdByParentChild(db, userId, "Expense", "Other");
+  const housingId = await categoryIdByParentChild(
+    db,
+    userId,
+    "Expense",
+    "Housing",
+  );
+  const transportId = await categoryIdByParentChild(
+    db,
+    userId,
+    "Expense",
+    "Transport",
+  );
+  const otherExpenseId = await categoryIdByParentChild(
+    db,
+    userId,
+    "Expense",
+    "Other",
+  );
 
   const categoryMap: Record<string, number> = {
     "Income/Salary": salaryId,
@@ -244,8 +443,8 @@ export async function seedDemoPortfolio(db: Db, userId: number, now = new Date()
       name: DEMO_ACCOUNT_NAMES.checking,
       accountType: "BANK",
       currency: "PLN",
-      openingBalance: 2500,
-      cashBalance: 2500,
+      openingBalance: DEMO_OPENINGS.checking,
+      cashBalance: DEMO_OPENINGS.checking,
       description: "Primary PLN checking — salary and everyday expenses",
     },
   });
@@ -255,8 +454,8 @@ export async function seedDemoPortfolio(db: Db, userId: number, now = new Date()
       name: DEMO_ACCOUNT_NAMES.euro,
       accountType: "BANK",
       currency: "EUR",
-      openingBalance: 400,
-      cashBalance: 400,
+      openingBalance: DEMO_OPENINGS.euro,
+      cashBalance: DEMO_OPENINGS.euro,
       description: "EUR travel wallet — multi-currency stats demo",
     },
   });
@@ -266,8 +465,8 @@ export async function seedDemoPortfolio(db: Db, userId: number, now = new Date()
       name: DEMO_ACCOUNT_NAMES.brokerage,
       accountType: "BROKERAGE",
       currency: "PLN",
-      openingBalance: 10000,
-      cashBalance: 10000,
+      openingBalance: DEMO_OPENINGS.brokerage,
+      cashBalance: DEMO_OPENINGS.brokerage,
       description: "Brokerage cash sleeve (no holdings yet)",
     },
   });
@@ -277,53 +476,56 @@ export async function seedDemoPortfolio(db: Db, userId: number, now = new Date()
       name: DEMO_ACCOUNT_NAMES.crypto,
       accountType: "CRYPTO",
       currency: "USD",
-      openingBalance: 1500,
-      cashBalance: 1500,
+      openingBalance: DEMO_OPENINGS.crypto,
+      cashBalance: DEMO_OPENINGS.crypto,
       description: "Crypto spot cash (USD)",
     },
   });
 
-  const accounts = {
+  const accountsByKey: Record<DemoAccountKey, { id: number }> = {
     checking,
     euro,
     brokerage,
     crypto,
   };
 
-  const planned = buildPlannedTxs(now);
-  const deltasByAccount = new Map<number, LedgerDeltaInput[]>();
-
-  for (const tx of planned) {
-    const account = accounts[tx.accountKey];
+  const planned = buildDemoLedgerTxs(now);
+  const rows = planned.map((tx) => {
+    const account = accountsByKey[tx.accountKey];
     const categoryId = tx.category
       ? categoryMap[`${tx.category.parent}/${tx.category.child}`]
       : null;
-    await db.cashTransaction.create({
-      data: {
-        accountId: account.id,
-        type: tx.type,
-        amount: tx.amount,
-        occurredAt: tx.occurredAt,
-        description: tx.description,
-        categoryId: categoryId ?? null,
-      },
+    return {
+      accountId: account.id,
+      type: tx.type,
+      amount: tx.amount,
+      occurredAt: tx.occurredAt,
+      description: tx.description,
+      categoryId: categoryId ?? null,
+    };
+  });
+
+  const chunkSize = 500;
+  for (let i = 0; i < rows.length; i += chunkSize) {
+    await db.cashTransaction.createMany({
+      data: rows.slice(i, i + chunkSize),
     });
-    const list = deltasByAccount.get(account.id) ?? [];
-    list.push({ type: tx.type, amount: tx.amount });
-    deltasByAccount.set(account.id, list);
   }
 
-  const openings: Record<number, number> = {
-    [checking.id]: 2500,
-    [euro.id]: 400,
-    [brokerage.id]: 10000,
-    [crypto.id]: 1500,
-  };
+  const deltasByKey = new Map<DemoAccountKey, LedgerDeltaInput[]>();
+  for (const tx of planned) {
+    const list = deltasByKey.get(tx.accountKey) ?? [];
+    list.push({ type: tx.type, amount: tx.amount });
+    deltasByKey.set(tx.accountKey, list);
+  }
 
-  for (const [accountId, deltas] of deltasByAccount) {
-    const cashBalance = recomputeCashBalance(openings[accountId] ?? 0, deltas);
+  for (const key of Object.keys(DEMO_ACCOUNT_NAMES) as DemoAccountKey[]) {
+    const cashBalance = recomputeCashBalance(
+      DEMO_OPENINGS[key],
+      deltasByKey.get(key) ?? [],
+    );
     await db.account.update({
-      where: { id: accountId },
+      where: { id: accountsByKey[key].id },
       data: { cashBalance },
     });
   }

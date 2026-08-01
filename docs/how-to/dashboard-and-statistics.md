@@ -51,4 +51,4 @@ Bounds are UTC (`[month start, next month start)` on `occurredAt`). History seri
 3. Totals use the category name currently stored (renames affect past months). Parent categories are not rolled up — only the tag on each transaction.
 4. API: `GET /api/statistics/category-breakdown?month=YYYY-MM`.
 
-**Tip:** Run `cd backend && npm run db:seed` for the demo user, then open `/home` (pick PLN) for net worth + rolling averages, and `/statistics` for period KPIs/chart. Switch the month picker to the prior month for Everyday Checking history.
+**Tip:** Run `cd backend && npm run db:seed` for the demo user (deterministic ~24 months of ledger history). Open `/home` (pick PLN) for net worth + rolling averages, and `/statistics` for period KPIs/chart across seeded months.
