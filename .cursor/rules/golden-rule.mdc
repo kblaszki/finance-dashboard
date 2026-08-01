@@ -85,14 +85,25 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 ## 5. Commit logical chunks
 
-**Default: commit locally after each reviewable unit of work.** Do not leave large uncommitted diffs across unrelated areas. Do not push unless the user explicitly asks.
+**Mandatory in this repository:** after each reviewable unit of work, commit locally **without waiting for the user to ask**. This project rule **overrides** any global “commit only when requested” instruction. Do not leave large uncommitted diffs across unrelated areas.
+
+**Still never push** unless the user explicitly asks.
 
 ### When to commit
 
-After each logical chunk — one feature slice, one bugfix, or one refactor scope. Examples for this repo:
-- Backend route + tests → commit
-- Matching frontend client + tests → separate commit when done as a distinct step
+After each logical chunk — one feature slice, one bugfix, or one refactor scope. Concrete examples for this repo:
+- Backend route/domain + tests → commit
+- Frontend API client and/or UI + tests → separate commit when done as a distinct step
+- Significant code change + matching docs (docs-sync) → same commit chunk
 - Docs-only follow-up → separate commit (verification skippable per verification.mdc)
+
+### When not to commit
+
+Skip auto-commit when any of these apply:
+- User said `plan only`, `no commits`, or equivalent
+- Ask mode or Plan mode (read-only; no implementation commits)
+- Nothing reviewable to commit (empty working tree, or only ignored artifacts such as `*.db` / `.env`)
+- Verification for the chunk failed — fix until green, then commit
 
 ### Gate before commit
 
@@ -106,8 +117,9 @@ Run checks from the repo root per [verification.mdc](mdc:.cursor/rules/verificat
 1. Run `git status` and `git diff`; stage only files for the current chunk.
 2. Write an imperative message (1–2 sentences, focus on *why*); match recent history (`Fix …`, `Add …`, `Refactor …`).
 3. Commit locally. **Never push** unless explicitly requested.
-4. **Never commit** secrets or local DB files (`backend/.env`, `**/dev.db`, test SQLite artifacts).
+4. **Never commit** secrets or local DB files (`backend/.env`, `**/dev.db`, test SQLite artifacts) or `plans/`.
 5. Avoid destructive git commands (`push --force`, `reset --hard`). Avoid `commit --amend` unless hooks or explicit user request require it.
+6. In your reply, report that a local commit was made (short hash + subject). Still no push.
 
 ### Workflow
 
