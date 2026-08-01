@@ -39,7 +39,7 @@ Last review: 2026-08-01 — statuses aligned to **auth + multi-type accounts** b
 | MVP-010 | Manual revalue and account detail | planned | [features/accounts/account-detail-revalue.md](features/accounts/account-detail-revalue.md) | /accounts/:id |
 | FR-011 | Internal cash transfers with FX suggestion | planned | [features/cash-transfers/internal-cash-transfers.md](features/cash-transfers/internal-cash-transfers.md) | /transfers |
 | FR-018 | Transaction categories and splits | planned | [features/cash-transfers/transaction-categories-splits.md](features/cash-transfers/transaction-categories-splits.md) | TransactionTable |
-| MVP-011 | Cash ledger transaction types | planned | [features/cash-transfers/cash-ledger-types.md](features/cash-transfers/cash-ledger-types.md) | Bank/brokerage cash forms |
+| MVP-011 | Cash ledger transaction types | planned | [features/cash-transfers/cash-ledger-types.md](features/cash-transfers/cash-ledger-types.md) | /accounts/:id cash ledger |
 | FR-007 | Asset trades with commission and settlementDate | planned | [features/holdings-trades/asset-trades-commission.md](features/holdings-trades/asset-trades-commission.md) | /transactions, lots |
 | FR-009 | Instrument price chart and manual valuations | planned | [features/holdings-trades/instrument-price-chart.md](features/holdings-trades/instrument-price-chart.md) | /assets/:id |
 | FR-014 | Account-scoped holding detail | planned | [features/holdings-trades/holding-detail.md](features/holdings-trades/holding-detail.md) | /accounts/:id/assets/:instrumentId |
