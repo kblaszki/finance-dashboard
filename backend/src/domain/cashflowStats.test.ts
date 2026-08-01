@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import {
   aggregateCashflowHistory,
   aggregatePeriodSummary,
+  aggregateRollingCashflow12m,
+  completeMonthsBefore,
   listMonthsEndingAt,
   parseCurrencyParam,
   parseMonthsParam,
@@ -106,4 +108,45 @@ test("aggregateCashflowHistory zero-fills and buckets by UTC month", () => {
     { month: "2026-02", income: 0, expense: 0, net: 0 },
     { month: "2026-03", income: 0, expense: 40, net: -40 },
   ]);
+});
+
+test("completeMonthsBefore excludes current UTC month and spans year boundary", () => {
+  const months = completeMonthsBefore(new Date("2026-01-15T12:00:00.000Z"), 12);
+  assert.equal(months.length, 12);
+  assert.equal(months[0], "2025-01");
+  assert.equal(months[11], "2025-12");
+});
+
+test("aggregateRollingCashflow12m averages over 12 complete months and ignores current month", () => {
+  const asOf = new Date("2026-08-10T00:00:00.000Z");
+  const result = aggregateRollingCashflow12m(
+    "PLN",
+    [
+      {
+        type: "INCOME",
+        amount: 1200,
+        occurredAt: new Date("2026-07-05T00:00:00.000Z"),
+        account: { currency: "PLN" },
+      },
+      {
+        type: "EXPENSE",
+        amount: 240,
+        occurredAt: new Date("2026-07-20T00:00:00.000Z"),
+        account: { currency: "PLN" },
+      },
+      {
+        type: "INCOME",
+        amount: 9999,
+        occurredAt: new Date("2026-08-01T00:00:00.000Z"),
+        account: { currency: "PLN" },
+      },
+    ],
+    asOf,
+  );
+  assert.equal(result.monthCount, 12);
+  assert.equal(result.fromMonth, "2025-08");
+  assert.equal(result.toMonth, "2026-07");
+  assert.equal(result.avgIncome, 100);
+  assert.equal(result.avgExpense, 20);
+  assert.equal(result.avgNet, 80);
 });

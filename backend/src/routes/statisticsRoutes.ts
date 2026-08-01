@@ -8,10 +8,13 @@ import {
 import {
   aggregateCashflowHistory,
   aggregatePeriodSummary,
+  aggregateRollingCashflow12m,
+  completeMonthsBefore,
   listMonthsEndingAt,
   parseCurrencyParam,
   parseMonthsParam,
 } from "../domain/cashflowStats";
+import { aggregateNetWorth } from "../domain/netWorth";
 import { handleRouteError } from "./httpSupport";
 
 type StatisticsDeps = {
@@ -92,6 +95,55 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
         res.json(aggregateCashflowHistory(months, currency, rows));
       } catch (e: unknown) {
         handleRouteError(res, e, "Failed to load cashflow history");
+      }
+    },
+  );
+
+  router.get(
+    "/api/statistics/net-worth",
+    requireAuth,
+    async (req: AuthedRequest, res) => {
+      try {
+        const currency = parseCurrencyParam(req.query.currency);
+        const accounts = await prisma.account.findMany({
+          where: { userId: uid(req) },
+          select: {
+            accountType: true,
+            currency: true,
+            cashBalance: true,
+          },
+        });
+        res.json(aggregateNetWorth(currency, accounts));
+      } catch (e: unknown) {
+        handleRouteError(res, e, "Failed to load net worth");
+      }
+    },
+  );
+
+  router.get(
+    "/api/statistics/cashflow-rolling-12m",
+    requireAuth,
+    async (req: AuthedRequest, res) => {
+      try {
+        const currency = parseCurrencyParam(req.query.currency);
+        const asOf = new Date();
+        const months = completeMonthsBefore(asOf, 12);
+        const { start } = parseMonthParam(months[0]!);
+        const { start: currentStart } = parseMonthParam(
+          `${asOf.getUTCFullYear()}-${String(asOf.getUTCMonth() + 1).padStart(2, "0")}`,
+        );
+        const rows = await prisma.cashTransaction.findMany({
+          where: {
+            occurredAt: { gte: start, lt: currentStart },
+            account: { userId: uid(req) },
+          },
+          include: {
+            account: { select: { currency: true } },
+          },
+        });
+        res.json(aggregateRollingCashflow12m(currency, rows, asOf));
+      } catch (e: unknown) {
+        handleRouteError(res, e, "Failed to load rolling cashflow");
       }
     },
   );

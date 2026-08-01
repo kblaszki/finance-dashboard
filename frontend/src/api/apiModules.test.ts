@@ -44,6 +44,8 @@ import {
   fetchCategoryBreakdown,
   fetchPeriodSummary,
   fetchCashflowHistory,
+  fetchNetWorth,
+  fetchCashflowRolling12m,
 } from './statisticsApi'
 
 describe('API modules', () => {
@@ -183,6 +185,16 @@ describe('API modules', () => {
     await fetchCashflowHistory('2026-01', 'EUR', 6)
     expect(apiClient.get).toHaveBeenCalledWith(
       '/api/statistics/cashflow-history?month=2026-01&currency=EUR&months=6',
+    )
+
+    await fetchNetWorth('PLN')
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/statistics/net-worth?currency=PLN',
+    )
+
+    await fetchCashflowRolling12m('USD')
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/statistics/cashflow-rolling-12m?currency=USD',
     )
   })
 })

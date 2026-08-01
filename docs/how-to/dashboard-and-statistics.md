@@ -1,6 +1,6 @@
 ---
 diataxis: how-to
-use_when: View period cashflow KPIs, history chart, or category breakdown
+use_when: View home net worth / rolling cashflow or statistics period KPIs and charts
 audience: both
 related_docs:
   - docs/reference/api.md
@@ -8,7 +8,9 @@ related_docs:
 related_code:
   - backend/src/domain/categoryBreakdown.ts
   - backend/src/domain/cashflowStats.ts
+  - backend/src/domain/netWorth.ts
   - backend/src/routes/statisticsRoutes.ts
+  - frontend/src/pages/HomePage.tsx
   - frontend/src/pages/StatisticsPage.tsx
 ---
 
@@ -16,7 +18,19 @@ related_code:
 
 Hub: [docs/README.md](../README.md).
 
-This page covers shipped statistics on `/statistics`: period KPIs (FR-003), cashflow history chart (FR-004), and category breakdown (FR-016).
+This page covers shipped home dashboard KPIs (`/home`) and statistics (`/statistics`).
+
+## Home: net worth and rolling cashflow (FR-002 / FR-005)
+
+1. Open **Home** (or go to `/home`).
+2. Pick a **currency** from your accounts.
+3. Review **Net worth**: total and buckets (`cash` / `stock` / `crypto` / `metal` / `real_estate` / `other`) from account `cashBalance` by `accountType`. Liabilities are always `0` until a liability model ships. Holdings valuations are not included.
+4. Review **Rolling 12-month cashflow**: average monthly income, expense, and net over the last 12 **complete** UTC months (excludes the current calendar month).
+5. APIs:
+   - `GET /api/statistics/net-worth?currency=XXX`
+   - `GET /api/statistics/cashflow-rolling-12m?currency=XXX`
+
+No FX conversion. Mapping: `BANK→cash`, `BROKERAGE→stock`, `CRYPTO→crypto`, `PRECIOUS_METAL→metal`, `REAL_ESTATE→real_estate`, `OTHER|MANUAL→other`.
 
 ## Period KPIs and cashflow chart (FR-003 / FR-004)
 
@@ -32,9 +46,9 @@ Bounds are UTC (`[month start, next month start)` on `occurredAt`). History seri
 
 ## Category breakdown (FR-016)
 
-1. On the same page, review **Income** and **Expense** lists for the selected month (all currencies; not filtered by the currency control).
+1. On `/statistics`, review **Income** and **Expense** lists for the selected month (all currencies; not filtered by the currency control).
 2. Totals by tagged category (or Uncategorized), grouped separately per account currency. There is no FX conversion.
 3. Totals use the category name currently stored (renames affect past months). Parent categories are not rolled up — only the tag on each transaction.
 4. API: `GET /api/statistics/category-breakdown?month=YYYY-MM`.
 
-**Tip:** Run `cd backend && npm run db:seed` for the demo user, then open `/statistics` for the current UTC month. Pick PLN or EUR to see KPIs/chart; switch the month picker to the prior month for Everyday Checking history.
+**Tip:** Run `cd backend && npm run db:seed` for the demo user, then open `/home` (pick PLN) for net worth + rolling averages, and `/statistics` for period KPIs/chart. Switch the month picker to the prior month for Everyday Checking history.

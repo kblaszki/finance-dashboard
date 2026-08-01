@@ -1,6 +1,6 @@
 ---
 id: FR-005
-status: planned
+status: done
 domain: dashboard-stats
 title: Rolling 12-month cashflow averages
 ---
@@ -19,16 +19,18 @@ Capability tracked in the product map for agents and humans; see linked docs for
 
 | Kind | Location |
 |------|----------|
-| Primary | Dashboard RollingCashflowKpis |
+| Primary | /home RollingCashflowKpis |
 
 ## Acceptance
 
-- [ ] GET /api/stats/cashflow-rolling-12m
+- [x] `GET /api/statistics/cashflow-rolling-12m` powers rolling KPIs
 
 ## Implementation notes
 
-- Docs: docs/how-to/dashboard-and-statistics.md
-- Traceability: [docs/reference/requirements.md](../../../docs/reference/requirements.md) (when FR/NFR)
+- Domain: `backend/src/domain/cashflowStats.ts`
+- Routes: `backend/src/routes/statisticsRoutes.ts`
+- Docs: [docs/how-to/dashboard-and-statistics.md](../../../docs/how-to/dashboard-and-statistics.md)
+- Traceability: [docs/reference/requirements.md](../../../docs/reference/requirements.md)
 - Code map: [docs/meta/code-map.md](../../../docs/meta/code-map.md)
 
 ## Out of scope / follow-ups

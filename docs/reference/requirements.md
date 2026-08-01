@@ -11,7 +11,7 @@ related_docs:
 
 Hub: [docs/README.md](../README.md).
 
-**Shipped in code** = auth + multi-type accounts + category tree + cash ledger (optional `categoryId`) + statistics (category breakdown, period KPIs, cashflow history) below. Remaining backlog: [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) and `mvp/features/*`. Checklist: 12 done / 0 in_progress / 50 planned (as of 2026-08-01).
+**Shipped in code** = auth + multi-type accounts + category tree + cash ledger (optional `categoryId`) + statistics (category breakdown, period KPIs, cashflow history, cash net worth, rolling 12m averages) below. Remaining backlog: [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) and `mvp/features/*`. Checklist: 14 done / 0 in_progress / 48 planned (as of 2026-08-01).
 
 ## Shipped
 
@@ -29,6 +29,8 @@ Hub: [docs/README.md](../README.md).
 | FR-016 | Category spend breakdown | `GET /api/statistics/category-breakdown`; `/statistics` month Income/Expense lists (UTC, no FX) |
 | FR-003 | Statistics period cashflow summary | `GET /api/statistics/period-summary`; `/statistics` income/expense/net KPIs for one currency |
 | FR-004 | Cashflow history chart | `GET /api/statistics/cashflow-history`; `/statistics` Recharts series (`months` 6\|12\|24) |
+| FR-002 | Net worth (cash buckets) | `GET /api/statistics/net-worth`; `/home` byBucket from `cashBalance` (liabilities 0; no holdings/FX) |
+| FR-005 | Rolling 12-month cashflow averages | `GET /api/statistics/cashflow-rolling-12m`; `/home` avg income/expense/net |
 
 ## Planned / not in this codebase
 

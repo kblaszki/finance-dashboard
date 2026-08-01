@@ -52,7 +52,7 @@ Never load all docs. Prefer reference for facts, how-to for tasks, explanation f
 | [run-tests-and-coverage.md](how-to/run-tests-and-coverage.md) | Verification gate |
 | [account-settings.md](how-to/account-settings.md) | Profile, email, password |
 | [budgets-and-categories.md](how-to/budgets-and-categories.md) | Category tree + tag cash txs |
-| [dashboard-and-statistics.md](how-to/dashboard-and-statistics.md) | Period KPIs, cashflow chart, category breakdown |
+| [dashboard-and-statistics.md](how-to/dashboard-and-statistics.md) | Home net worth / rolling 12m; period KPIs, chart, category breakdown |
 | [write-integration-tests.md](how-to/write-integration-tests.md) | HTTP / integration tests |
 | [private-deploy.md](how-to/private-deploy.md) | Private single-user deploy |
 

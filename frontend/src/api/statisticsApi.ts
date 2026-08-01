@@ -35,6 +35,32 @@ export type CashflowHistory = {
   series: CashflowHistoryPoint[];
 };
 
+export type NetWorthByBucket = {
+  cash: number;
+  stock: number;
+  crypto: number;
+  metal: number;
+  real_estate: number;
+  other: number;
+};
+
+export type NetWorth = {
+  currency: string;
+  byBucket: NetWorthByBucket;
+  liabilities: number;
+  netWorth: number;
+};
+
+export type CashflowRolling12m = {
+  currency: string;
+  monthCount: number;
+  fromMonth: string;
+  toMonth: string;
+  avgIncome: number;
+  avgExpense: number;
+  avgNet: number;
+};
+
 export async function fetchCategoryBreakdown(
   month: string,
 ): Promise<CategoryBreakdown> {
@@ -66,5 +92,21 @@ export async function fetchCashflowHistory(
   });
   return apiClient.get<CashflowHistory>(
     `/api/statistics/cashflow-history?${params.toString()}`,
+  );
+}
+
+export async function fetchNetWorth(currency: string): Promise<NetWorth> {
+  const params = new URLSearchParams({ currency });
+  return apiClient.get<NetWorth>(
+    `/api/statistics/net-worth?${params.toString()}`,
+  );
+}
+
+export async function fetchCashflowRolling12m(
+  currency: string,
+): Promise<CashflowRolling12m> {
+  const params = new URLSearchParams({ currency });
+  return apiClient.get<CashflowRolling12m>(
+    `/api/statistics/cashflow-rolling-12m?${params.toString()}`,
   );
 }

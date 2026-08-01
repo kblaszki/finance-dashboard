@@ -42,7 +42,7 @@ sequenceDiagram
 | Accounts routes | `backend/src/routes/accountsRoutes.ts` | Account CRUD (user-scoped; type allow-list) |
 | Categories routes | `backend/src/routes/categoriesRoutes.ts` | Nested category CRUD |
 | Cash tx routes | `backend/src/routes/cashTransactionsRoutes.ts` | Nested INCOME/EXPENSE ledger (optional category) |
-| Statistics routes | `backend/src/routes/statisticsRoutes.ts` | Category breakdown, period summary, cashflow history |
+| Statistics routes | `backend/src/routes/statisticsRoutes.ts` | Category breakdown, period summary, cashflow history, net worth, rolling 12m |
 | Errors | `routes/httpSupport.ts`, `lib/errors.ts` | Typed HTTP errors (incl. 409 conflict) |
 | Scripts | `backend/src/scripts/` | `createUser` (seeds categories), `backupDb` |
 | Seed | `backend/prisma/seed.ts`, `domain/seedDemoPortfolio.ts` | Demo user + wipe/rebuild sample portfolio |

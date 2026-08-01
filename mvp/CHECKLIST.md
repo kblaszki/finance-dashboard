@@ -1,6 +1,6 @@
 # MVP feature checklist
 
-Last review: 2026-08-01 — statuses aligned to **auth + multi-type accounts + category tree + cash ledger + statistics** baseline (JWT auth, settings, health, private-deploy CLIs, prod auth rate limits, account CRUD, nested categories, INCOME/EXPENSE cash txs with optional `categoryId`, month category breakdown, period KPIs, cashflow history chart). Feature specs under `mvp/features/**` remain the backlog; do not treat `planned` rows as shipped code.
+Last review: 2026-08-01 — statuses aligned to **auth + multi-type accounts + category tree + cash ledger + statistics + home KPIs** baseline (JWT auth, settings, health, private-deploy CLIs, prod auth rate limits, account CRUD, nested categories, INCOME/EXPENSE cash txs with optional `categoryId`, month category breakdown, period KPIs, cashflow history chart, cash net-worth buckets, rolling 12m cashflow averages). Feature specs under `mvp/features/**` remain the backlog; do not treat `planned` rows as shipped code.
 
 ## Legend
 
@@ -15,7 +15,7 @@ Last review: 2026-08-01 — statuses aligned to **auth + multi-type accounts + c
 
 | done | stub | planned | in_progress | total |
 |------|------|---------|-------------|-------|
-| 12 | 0 | 50 | 0 | 62 |
+| 14 | 0 | 48 | 0 | 62 |
 
 ## Master table
 
@@ -25,10 +25,10 @@ Last review: 2026-08-01 — statuses aligned to **auth + multi-type accounts + c
 | MVP-002 | Profile, email, and password settings | done | [features/auth/profile-email-password.md](features/auth/profile-email-password.md) | /settings |
 | MVP-003 | Self-service password reset | planned | [features/auth/password-reset-api.md](features/auth/password-reset-api.md) | /password-reset (stub today) |
 | FR-001 | Value-weighted average holding return | planned | [features/dashboard-stats/average-holding-return.md](features/dashboard-stats/average-holding-return.md) | Dashboard AverageReturnKpi |
-| FR-002 | Net worth with five asset buckets | planned | [features/dashboard-stats/net-worth-buckets.md](features/dashboard-stats/net-worth-buckets.md) | Dashboard NetWorthSection |
+| FR-002 | Net worth with five asset buckets | done | [features/dashboard-stats/net-worth-buckets.md](features/dashboard-stats/net-worth-buckets.md) | /home NetWorthSection |
 | FR-003 | Statistics period cashflow summary | done | [features/dashboard-stats/statistics-period-summary.md](features/dashboard-stats/statistics-period-summary.md) | /statistics |
 | FR-004 | Cashflow history chart | done | [features/dashboard-stats/cashflow-history-chart.md](features/dashboard-stats/cashflow-history-chart.md) | /statistics |
-| FR-005 | Rolling 12-month cashflow averages | planned | [features/dashboard-stats/rolling-12m-cashflow.md](features/dashboard-stats/rolling-12m-cashflow.md) | Dashboard RollingCashflowKpis |
+| FR-005 | Rolling 12-month cashflow averages | done | [features/dashboard-stats/rolling-12m-cashflow.md](features/dashboard-stats/rolling-12m-cashflow.md) | /home RollingCashflowKpis |
 | FR-008 | Cross-account portfolio with bucket filters | planned | [features/dashboard-stats/portfolio-bucket-filters.md](features/dashboard-stats/portfolio-bucket-filters.md) | /portfolio |
 | FR-016 | Category spend breakdown | done | [features/dashboard-stats/category-spend-breakdown.md](features/dashboard-stats/category-spend-breakdown.md) | /statistics |
 | FR-037 | Budget threshold alerts on dashboard | planned | [features/dashboard-stats/budget-alerts-banner.md](features/dashboard-stats/budget-alerts-banner.md) | BudgetAlertsBanner |
@@ -127,10 +127,10 @@ Last review: 2026-08-01 — statuses aligned to **auth + multi-type accounts + c
 ### dashboard-stats
 
 - **planned** [FR-001 Value-weighted average holding return](features/dashboard-stats/average-holding-return.md)
-- **planned** [FR-002 Net worth with five asset buckets](features/dashboard-stats/net-worth-buckets.md)
+- **done** [FR-002 Net worth with five asset buckets](features/dashboard-stats/net-worth-buckets.md)
 - **done** [FR-003 Statistics period cashflow summary](features/dashboard-stats/statistics-period-summary.md)
 - **done** [FR-004 Cashflow history chart](features/dashboard-stats/cashflow-history-chart.md)
-- **planned** [FR-005 Rolling 12-month cashflow averages](features/dashboard-stats/rolling-12m-cashflow.md)
+- **done** [FR-005 Rolling 12-month cashflow averages](features/dashboard-stats/rolling-12m-cashflow.md)
 - **planned** [FR-008 Cross-account portfolio with bucket filters](features/dashboard-stats/portfolio-bucket-filters.md)
 - **done** [FR-016 Category spend breakdown](features/dashboard-stats/category-spend-breakdown.md)
 - **planned** [FR-037 Budget threshold alerts on dashboard](features/dashboard-stats/budget-alerts-banner.md)

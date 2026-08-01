@@ -34,6 +34,16 @@ export type CashflowHistoryResult = {
   series: CashflowHistoryPoint[];
 };
 
+export type RollingCashflow12mResult = {
+  currency: string;
+  monthCount: number;
+  fromMonth: string;
+  toMonth: string;
+  avgIncome: number;
+  avgExpense: number;
+  avgNet: number;
+};
+
 export function parseCurrencyParam(value: unknown): string {
   if (value === undefined || value === null || value === "") {
     throw badRequest("currency required");
@@ -69,6 +79,15 @@ export function listMonthsEndingAt(endMonth: string, n: number): string[] {
     months.push(`${y}-${m}`);
   }
   return months;
+}
+
+/** Last `n` complete UTC months before the calendar month of `asOf` (excludes that month). */
+export function completeMonthsBefore(asOf: Date, n = 12): string[] {
+  const y = asOf.getUTCFullYear();
+  const m = asOf.getUTCMonth();
+  const previous = new Date(Date.UTC(y, m - 1, 1));
+  const prevKey = `${previous.getUTCFullYear()}-${String(previous.getUTCMonth() + 1).padStart(2, "0")}`;
+  return listMonthsEndingAt(prevKey, n);
 }
 
 function decimalToNumber(value: Prisma.Decimal | number): number {
@@ -134,5 +153,32 @@ export function aggregateCashflowHistory(
     currency,
     monthCount: months.length,
     series: months.map((m) => byMonth.get(m)!),
+  };
+}
+
+export function aggregateRollingCashflow12m(
+  currency: string,
+  rows: CashflowSourceRow[],
+  asOf: Date = new Date(),
+): RollingCashflow12mResult {
+  const months = completeMonthsBefore(asOf, 12);
+  const history = aggregateCashflowHistory(months, currency, rows);
+  const count = history.series.length;
+  let incomeSum = 0;
+  let expenseSum = 0;
+  let netSum = 0;
+  for (const point of history.series) {
+    incomeSum += point.income;
+    expenseSum += point.expense;
+    netSum += point.net;
+  }
+  return {
+    currency,
+    monthCount: count,
+    fromMonth: months[0]!,
+    toMonth: months[count - 1]!,
+    avgIncome: incomeSum / count,
+    avgExpense: expenseSum / count,
+    avgNet: netSum / count,
   };
 }

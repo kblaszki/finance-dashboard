@@ -23,7 +23,7 @@ Hub: [docs/README.md](../README.md).
 | `/` | Guest → Landing; authed → redirect `/home` | `LandingPage` / navigate |
 | `/login` | Guest only | `LoginPage` (in `AuthSwapShell`) |
 | `/register` | Guest only (when `allowRegister`) | `RegisterPage` (in `AuthSwapShell`) |
-| `/home` | Protected | `HomePage` |
+| `/home` | Protected | `HomePage` (currency filter; cash net-worth buckets + rolling 12m cashflow KPIs; action cards) |
 | `/accounts` | Protected | `AccountsPage` (multi-type create/list/edit/delete) |
 | `/accounts/:id` | Protected | `AccountDetailPage` (cash ledger create/list/delete; optional category) |
 | `/categories` | Protected | `CategoriesPage` (nested tree create/rename/reparent/delete) |
@@ -38,7 +38,7 @@ Theme (`light` | `dark`) lives in `state/theme.tsx`, persisted under `localStora
 
 Visual system (Signal focus): slate + emerald tokens in `index.css` (including `--color-warning`, `--color-positive-subtle`, `--focus-ring`); UI font IBM Plex Sans; display/brand Space Grotesk (loaded from `index.html`). Production `/` landing uses the centered Signal-focus composition (brand, headline, lead, rule, CTAs, today/roadmap split) with a fine grid atmosphere. Authenticated shell uses hatch-folio (diagonal hatch + 38/62 mast/page). Login/register use auth swap-split.
 
-Forms on Settings and Accounts use the stack form class `.auth-form` (compact table edits: `.auth-form--compact`). Feedback: `.error-banner` / `.auth-error` for failures, `.success-banner` for confirmations, `.empty-state` for empty lists. Destructive actions use `.btn-danger`. AppShell logout uses `.app-folio-logout` (distinct from `.theme-toggle`). Home uses honest action cards (`.home-action-grid` / `.home-action-card`) linking to Accounts and Settings — no fake metrics.
+Forms on Settings and Accounts use the stack form class `.auth-form` (compact table edits: `.auth-form--compact`). Feedback: `.error-banner` / `.auth-error` for failures, `.success-banner` for confirmations, `.empty-state` for empty lists. Destructive actions use `.btn-danger`. AppShell logout uses `.app-folio-logout` (distinct from `.theme-toggle`). Home shows API-backed net worth and rolling cashflow KPIs (`.kpi-grid` / `.kpi-card`) plus action cards (`.home-action-grid` / `.home-action-card`) to Accounts and Settings.
 
 Controls: `ThemeToggle` (light ↔ dark) on Landing, AuthSwapShell, and AppShell; Settings **Appearance** section sets theme via Light/Dark radios (`.appearance-option`).
 
@@ -53,6 +53,6 @@ Default after login/register: `/home` (`state/auth.tsx`).
 | `frontend/src/api/accountsApi.ts` | list/create/get/patch/delete accounts; `ACCOUNT_TYPES` / `AccountType` |
 | `frontend/src/api/categoriesApi.ts` | list/create/patch/delete categories; `flattenCategoryTree` |
 | `frontend/src/api/transactionsApi.ts` | list/create/delete cash txs under `/api/accounts/:id/transactions` (optional `categoryId`) |
-| `frontend/src/api/statisticsApi.ts` | `fetchCategoryBreakdown`, `fetchPeriodSummary`, `fetchCashflowHistory` → `/api/statistics/*` |
+| `frontend/src/api/statisticsApi.ts` | `fetchCategoryBreakdown`, `fetchPeriodSummary`, `fetchCashflowHistory`, `fetchNetWorth`, `fetchCashflowRolling12m` → `/api/statistics/*` |
 
 New domain clients follow `frontend/src/api/*Api.ts` and must be covered in `apiModules.test.ts` when added.

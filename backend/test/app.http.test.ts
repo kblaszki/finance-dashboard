@@ -997,3 +997,118 @@ test("GET /api/statistics/cashflow-history aggregates series with year span and 
   assert.deepEqual(dec, { month: "2025-12", income: 1000, expense: 0, net: 1000 });
   assert.deepEqual(jan, { month: "2026-01", income: 0, expense: 200, net: -200 });
 });
+
+test("GET /api/statistics/net-worth requires auth and valid currency", async () => {
+  const noAuth = await request(app).get("/api/statistics/net-worth?currency=PLN");
+  assert.equal(noAuth.status, 401);
+
+  const token = await registerAndLogin("nwauth@test.local", "nwauth", "password123");
+
+  const missing = await request(app)
+    .get("/api/statistics/net-worth")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(missing.status, 400);
+
+  const bad = await request(app)
+    .get("/api/statistics/net-worth?currency=US")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(bad.status, 400);
+});
+
+test("GET /api/statistics/net-worth aggregates cashBalance by bucket with tenancy", async () => {
+  const token = await registerAndLogin("nwagg@test.local", "nwagg", "password123");
+  const otherToken = await registerAndLogin("nwother@test.local", "nwother", "password123");
+
+  await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      name: "NW Bank",
+      currency: "PLN",
+      accountType: "BANK",
+      openingBalance: 1000,
+    });
+  await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      name: "NW Broker",
+      currency: "PLN",
+      accountType: "BROKERAGE",
+      openingBalance: 2500,
+    });
+  await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      name: "NW Crypto",
+      currency: "USD",
+      accountType: "CRYPTO",
+      openingBalance: 400,
+    });
+  await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${otherToken}`)
+    .send({
+      name: "Other NW",
+      currency: "PLN",
+      accountType: "BANK",
+      openingBalance: 9999,
+    });
+
+  const res = await request(app)
+    .get("/api/statistics/net-worth?currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  assert.deepEqual(res.body, {
+    currency: "PLN",
+    byBucket: {
+      cash: 1000,
+      stock: 2500,
+      crypto: 0,
+      metal: 0,
+      real_estate: 0,
+      other: 0,
+    },
+    liabilities: 0,
+    netWorth: 3500,
+  });
+
+  const unknown = await request(app)
+    .get("/api/statistics/net-worth?currency=EUR")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(unknown.status, 200);
+  assert.equal(unknown.body.netWorth, 0);
+  assert.equal(unknown.body.liabilities, 0);
+});
+
+test("GET /api/statistics/cashflow-rolling-12m requires auth and valid currency", async () => {
+  const noAuth = await request(app).get(
+    "/api/statistics/cashflow-rolling-12m?currency=PLN",
+  );
+  assert.equal(noAuth.status, 401);
+
+  const token = await registerAndLogin("rollauth@test.local", "rollauth", "password123");
+
+  const missing = await request(app)
+    .get("/api/statistics/cashflow-rolling-12m")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(missing.status, 400);
+
+  const bad = await request(app)
+    .get("/api/statistics/cashflow-rolling-12m?currency=pl")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(bad.status, 400);
+
+  const empty = await request(app)
+    .get("/api/statistics/cashflow-rolling-12m?currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(empty.status, 200);
+  assert.equal(empty.body.currency, "PLN");
+  assert.equal(empty.body.monthCount, 12);
+  assert.ok(typeof empty.body.fromMonth === "string");
+  assert.ok(typeof empty.body.toMonth === "string");
+  assert.equal(empty.body.avgIncome, 0);
+  assert.equal(empty.body.avgExpense, 0);
+  assert.equal(empty.body.avgNet, 0);
+});

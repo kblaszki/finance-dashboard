@@ -1,6 +1,6 @@
 ---
 id: FR-002
-status: planned
+status: done
 domain: dashboard-stats
 title: Net worth with five asset buckets
 ---
@@ -9,7 +9,7 @@ title: Net worth with five asset buckets
 
 ## Summary
 
-Assets by cash/stock/crypto/metal/real_estate minus liabilities.
+Cash balances by account-type buckets (cash/stock/crypto/metal/real_estate/other) minus liabilities (always 0 until liability model).
 
 ## User value
 
@@ -19,18 +19,22 @@ Capability tracked in the product map for agents and humans; see linked docs for
 
 | Kind | Location |
 |------|----------|
-| Primary | Dashboard NetWorthSection |
+| Primary | /home NetWorthSection |
 
 ## Acceptance
 
-- [ ] GET /api/stats/net-worth returns byBucket and liabilities
+- [x] `GET /api/statistics/net-worth` returns `byBucket` and `liabilities`
 
 ## Implementation notes
 
-- Docs: docs/explanation/portfolio-stats.md, docs/how-to/liabilities.md
-- Traceability: [docs/reference/requirements.md](../../../docs/reference/requirements.md) (when FR/NFR)
+- Thin MVP: sums `Account.cashBalance` only (no holdings valuations, no FX).
+- Domain: `backend/src/domain/netWorth.ts`
+- Routes: `backend/src/routes/statisticsRoutes.ts`
+- Docs: [docs/how-to/dashboard-and-statistics.md](../../../docs/how-to/dashboard-and-statistics.md)
+- Traceability: [docs/reference/requirements.md](../../../docs/reference/requirements.md)
 - Code map: [docs/meta/code-map.md](../../../docs/meta/code-map.md)
 
 ## Out of scope / follow-ups
 
+- Holdings valuations; FR-038 PLN FX rollup; real liabilities (FR-029)
 - See related planned/stub rows in [CHECKLIST.md](../../CHECKLIST.md)
