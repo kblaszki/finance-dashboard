@@ -29,6 +29,11 @@ import {
   updateAccount,
   deleteAccount,
 } from './accountsApi'
+import {
+  fetchTransactions,
+  createTransaction,
+  deleteTransaction,
+} from './transactionsApi'
 
 describe('API modules', () => {
   beforeEach(() => {
@@ -110,5 +115,20 @@ describe('API modules', () => {
 
     await deleteAccount(7)
     expect(apiClient.delete).toHaveBeenCalledWith('/api/accounts/7')
+  })
+
+  it('transactionsApi calls correct endpoints', async () => {
+    await fetchTransactions(3)
+    expect(apiClient.get).toHaveBeenCalledWith('/api/accounts/3/transactions')
+
+    await createTransaction(3, { type: 'INCOME', amount: 12.5, description: 'Pay' })
+    expect(apiClient.post).toHaveBeenCalledWith('/api/accounts/3/transactions', {
+      type: 'INCOME',
+      amount: 12.5,
+      description: 'Pay',
+    })
+
+    await deleteTransaction(3, 9)
+    expect(apiClient.delete).toHaveBeenCalledWith('/api/accounts/3/transactions/9')
   })
 })

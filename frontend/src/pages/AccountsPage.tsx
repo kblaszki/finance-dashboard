@@ -1,4 +1,5 @@
 import { FormEvent, useCallback, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   ACCOUNT_TYPES,
   createAccount,
@@ -104,8 +105,8 @@ export function AccountsPage() {
     <div className="page-stack">
       <h1 className="page-title">Accounts</h1>
       <p className="muted">
-        Choose an account type when creating. Opening balance seeds cash;
-        ledger moves and type-specific fields come later.
+        Choose an account type when creating. Opening balance seeds cash; open
+        an account ledger for INCOME and EXPENSE moves.
       </p>
 
       <section className="card form-section-gap">
@@ -234,7 +235,11 @@ export function AccountsPage() {
                         </form>
                       ) : (
                         <>
-                          <div>{account.name}</div>
+                          <div>
+                            <Link to={`/accounts/${account.id}`}>
+                              {account.name}
+                            </Link>
+                          </div>
                           {account.description && (
                             <div className="muted">{account.description}</div>
                           )}
@@ -246,6 +251,12 @@ export function AccountsPage() {
                     <td>
                       {editingId !== account.id && (
                         <div className="form-actions-row">
+                          <Link
+                            to={`/accounts/${account.id}`}
+                            className="btn-secondary"
+                          >
+                            Ledger
+                          </Link>
                           <button
                             type="button"
                             className="btn-secondary"

@@ -11,7 +11,7 @@ related_docs:
 
 Hub: [docs/README.md](../README.md).
 
-Auth + multi-type accounts baseline. Remaining product backlog: [mvp/](../../mvp/).
+Auth + multi-type accounts + cash ledger baseline. Remaining product backlog: [mvp/](../../mvp/).
 
 | Area | Primary paths |
 |------|----------------|
@@ -19,11 +19,13 @@ Auth + multi-type accounts baseline. Remaining product backlog: [mvp/](../../mvp
 | JWT auth helpers | `backend/src/auth.ts`, `backend/src/authConfig.ts` |
 | Auth HTTP routes | `backend/src/routes/authRoutes.ts` |
 | Accounts HTTP routes | `backend/src/routes/accountsRoutes.ts` |
+| Cash transactions routes | `backend/src/routes/cashTransactionsRoutes.ts` |
 | Account type allow-list | `backend/src/domain/accountTypes.ts` |
+| Cash ledger domain | `backend/src/domain/cashLedger.ts` |
 | Router mount | `backend/src/routes/mountRouters.ts` |
 | HTTP helpers / errors | `backend/src/routes/httpSupport.ts`, `backend/src/lib/errors.ts` |
 | Route uid helper | `backend/src/routes/routeSupport.ts` |
-| Prisma schema | `backend/prisma/schema.prisma` (`User`, `Account`) |
+| Prisma schema | `backend/prisma/schema.prisma` (`User`, `Account`, `CashTransaction`) |
 | Migrations | `backend/prisma/migrations/` |
 | Demo user seed | `backend/prisma/seed.ts` |
 | Create user CLI | `backend/src/scripts/createUser.ts` |
@@ -35,6 +37,7 @@ Auth + multi-type accounts baseline. Remaining product backlog: [mvp/](../../mvp
 | Auth state | `frontend/src/state/auth.tsx` |
 | Auth API client | `frontend/src/api/authApi.ts`, `frontend/src/api/client.ts` |
 | Accounts API client | `frontend/src/api/accountsApi.ts` |
+| Transactions API client | `frontend/src/api/transactionsApi.ts` |
 | Shell / gates | `frontend/src/components/AppShell.tsx`, `AuthSwapShell.tsx`, `ProtectedRoute.tsx` |
-| Pages | `frontend/src/pages/{Landing,Login,Register,Home,Accounts,Settings}Page.tsx` |
+| Pages | `frontend/src/pages/{Landing,Login,Register,Home,Accounts,AccountDetail,Settings}Page.tsx` |
 | Theme | `frontend/src/state/theme.tsx`, `ThemeToggle.tsx` (light/dark) |

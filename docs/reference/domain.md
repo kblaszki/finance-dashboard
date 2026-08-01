@@ -39,4 +39,20 @@ User-scoped financial account. Create accepts allow-listed types; `accountType` 
 | createdAt | DateTime | Default now |
 | updatedAt | DateTime | `@updatedAt` |
 
-Indexes: `[userId, accountType]`. API responses also expose computed `totalBalance` (= `cashBalance` until holdings exist). Allow-list: `backend/src/domain/accountTypes.ts`.
+Indexes: `[userId, accountType]`. API responses also expose computed `totalBalance` (= `cashBalance` until holdings exist). Allow-list: `backend/src/domain/accountTypes.ts`. Relation: `cashTransactions` → `CashTransaction[]` (`onDelete: Cascade`).
+
+## CashTransaction
+
+Single-account cash ledger row (INCOME / EXPENSE). Positive `amount`; type drives signed effect on `Account.cashBalance`. No `balanceAfter`.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id | Int | PK, autoincrement |
+| accountId | Int | FK → Account (`onDelete: Cascade`) |
+| type | String | `INCOME` or `EXPENSE` |
+| amount | Decimal | Always positive |
+| occurredAt | DateTime | Movement time (default now) |
+| description | String? | Optional note |
+| createdAt | DateTime | Default now |
+
+Index: `[accountId, occurredAt]`. Domain rules: `backend/src/domain/cashLedger.ts`.

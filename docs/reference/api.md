@@ -6,6 +6,7 @@ related_code:
   - backend/src/app.ts
   - backend/src/routes/authRoutes.ts
   - backend/src/routes/accountsRoutes.ts
+  - backend/src/routes/cashTransactionsRoutes.ts
   - backend/src/routes/mountRouters.ts
 ---
 
@@ -48,3 +49,13 @@ User-scoped. Cross-user access returns `404`. Create accepts allow-listed `accou
 | DELETE | `/api/accounts/:id` | Bearer | 204 |
 
 Duplicate name for the same user → `400`. Unknown `accountType` → `400`.
+
+## Cash transactions
+
+Nested under an owned account. Cross-user or unknown account → `404`. `amount` must be positive. `type` is `INCOME` or `EXPENSE` (case-normalized). Create/delete adjust `Account.cashBalance` atomically (delete reverses). No PATCH / no `balanceAfter`.
+
+| Method | Path | Auth | Notes |
+|--------|------|------|-------|
+| GET | `/api/accounts/:accountId/transactions` | Bearer | List for account (`occurredAt` desc, then `id` desc) |
+| POST | `/api/accounts/:accountId/transactions` | Bearer | Body: `type`, `amount`; optional `occurredAt` (ISO, default now), `description`. 201 |
+| DELETE | `/api/accounts/:accountId/transactions/:id` | Bearer | Must match account; reverses balance. 204 |

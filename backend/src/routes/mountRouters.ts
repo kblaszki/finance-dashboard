@@ -13,6 +13,7 @@ import {
 import { uid } from "./routeSupport";
 import { createAuthRouter } from "./authRoutes";
 import { createAccountsRouter } from "./accountsRoutes";
+import { createCashTransactionsRouter } from "./cashTransactionsRoutes";
 
 export function mountApiRouters(app: Express, prisma: PrismaClient): void {
   app.use(
@@ -31,6 +32,13 @@ export function mountApiRouters(app: Express, prisma: PrismaClient): void {
   );
   app.use(
     createAccountsRouter({
+      prisma,
+      requireAuth,
+      uid,
+    }),
+  );
+  app.use(
+    createCashTransactionsRouter({
       prisma,
       requireAuth,
       uid,

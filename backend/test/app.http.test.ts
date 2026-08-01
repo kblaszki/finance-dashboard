@@ -399,3 +399,143 @@ test("PATCH /api/accounts/:id ignores accountType", async () => {
   assert.equal(patched.body.name, "Typed Renamed");
   assert.equal(patched.body.accountType, "CRYPTO");
 });
+
+test("POST /api/accounts/:id/transactions updates cashBalance for INCOME and EXPENSE", async () => {
+  const { token } = await createUserAndToken();
+  const account = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Ledger", openingBalance: 100 });
+  assert.equal(account.status, 201);
+  const accountId = account.body.id as number;
+
+  const income = await request(app)
+    .post(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "INCOME", amount: 25, description: "Pay" });
+  assert.equal(income.status, 201);
+  assert.equal(income.body.type, "INCOME");
+  assert.equal(income.body.amount, 25);
+  assert.ok(income.body.occurredAt);
+
+  const afterIncome = await request(app)
+    .get(`/api/accounts/${accountId}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(afterIncome.body.cashBalance, 125);
+
+  const expense = await request(app)
+    .post(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "expense", amount: 40 });
+  assert.equal(expense.status, 201);
+  assert.equal(expense.body.type, "EXPENSE");
+
+  const afterExpense = await request(app)
+    .get(`/api/accounts/${accountId}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(afterExpense.body.cashBalance, 85);
+});
+
+test("GET /api/accounts/:id/transactions lists newest first and scopes ownership", async () => {
+  const { token } = await createUserAndToken();
+  const otherToken = await registerAndLogin("txother@test.local", "txother", "password123");
+  const account = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "ListTx", openingBalance: 10 });
+  const accountId = account.body.id as number;
+
+  await request(app)
+    .post(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "INCOME", amount: 1, occurredAt: "2024-01-01T00:00:00.000Z" });
+  await request(app)
+    .post(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "EXPENSE", amount: 2, occurredAt: "2024-06-01T00:00:00.000Z" });
+
+  const list = await request(app)
+    .get(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(list.status, 200);
+  assert.equal(list.body.length, 2);
+  assert.equal(list.body[0].type, "EXPENSE");
+  assert.equal(list.body[1].type, "INCOME");
+
+  const forbidden = await request(app)
+    .get(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${otherToken}`);
+  assert.equal(forbidden.status, 404);
+});
+
+test("DELETE /api/accounts/:id/transactions/:txId reverses cashBalance", async () => {
+  const { token } = await createUserAndToken();
+  const account = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Rev", openingBalance: 50 });
+  const accountId = account.body.id as number;
+
+  const income = await request(app)
+    .post(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "INCOME", amount: 30 });
+  const txId = income.body.id as number;
+
+  const deleted = await request(app)
+    .delete(`/api/accounts/${accountId}/transactions/${txId}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(deleted.status, 204);
+
+  const after = await request(app)
+    .get(`/api/accounts/${accountId}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(after.body.cashBalance, 50);
+
+  const list = await request(app)
+    .get(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(list.body.length, 0);
+});
+
+test("cash transactions reject invalid input and mismatched account", async () => {
+  const { token } = await createUserAndToken();
+  const a = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "A1", openingBalance: 10 });
+  const b = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "A2", openingBalance: 10 });
+  const accountId = a.body.id as number;
+  const otherAccountId = b.body.id as number;
+
+  const zero = await request(app)
+    .post(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "INCOME", amount: 0 });
+  assert.equal(zero.status, 400);
+
+  const badType = await request(app)
+    .post(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "TRANSFER", amount: 5 });
+  assert.equal(badType.status, 400);
+
+  const created = await request(app)
+    .post(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "INCOME", amount: 5 });
+  const txId = created.body.id as number;
+
+  const wrongAccount = await request(app)
+    .delete(`/api/accounts/${otherAccountId}/transactions/${txId}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(wrongAccount.status, 404);
+
+  const missing = await request(app)
+    .delete(`/api/accounts/${accountId}/transactions/999999`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(missing.status, 404);
+});

@@ -9,6 +9,7 @@ import { LandingPage } from "./pages/LandingPage";
 import { HomePage } from "./pages/HomePage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { AccountsPage } from "./pages/AccountsPage";
+import { AccountDetailPage } from "./pages/AccountDetailPage";
 import { useAuth } from "./state/auth";
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
         <Route element={<AppShell />}>
           <Route path="/home" element={<HomePage />} />
           <Route path="/accounts" element={<AccountsPage />} />
+          <Route path="/accounts/:id" element={<AccountDetailPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Route>
