@@ -641,6 +641,7 @@ button:disabled {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
   padding: clamp(1.75rem, 5vw, 3.5rem);
   width: 100%;
   box-sizing: border-box;
