@@ -13,7 +13,6 @@ export default defineConfig({
         'src/api/**/*.ts',
         'src/hooks/**/*.{ts,tsx}',
         'src/utils/**/*.ts',
-        'src/state/period.tsx',
       ],
       exclude: [
         'src/**/*.test.{ts,tsx}',

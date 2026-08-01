@@ -7,7 +7,7 @@ import { PrismaClient } from "@prisma/client";
 
 const BACKEND_ROOT = path.join(__dirname, "..");
 
-test("prisma migrate deploy applies Account tax columns", async () => {
+test("prisma migrate deploy creates User table", async () => {
   const tmpDir = path.join(__dirname, "tmp");
   if (!fs.existsSync(tmpDir)) {
     fs.mkdirSync(tmpDir, { recursive: true });
@@ -24,12 +24,13 @@ test("prisma migrate deploy applies Account tax columns", async () => {
   const prisma = new PrismaClient({ datasources: { db: { url } } });
   try {
     const columns = await prisma.$queryRaw<Array<{ name: string }>>`
-      SELECT name FROM pragma_table_info('Account')
-      WHERE name IN ('taxWrapperType', 'rentalTaxMethod')
+      SELECT name FROM pragma_table_info('User')
+      WHERE name IN ('email', 'username', 'passwordHash')
     `;
     const names = new Set(columns.map((c) => c.name));
-    assert.ok(names.has("taxWrapperType"));
-    assert.ok(names.has("rentalTaxMethod"));
+    assert.ok(names.has("email"));
+    assert.ok(names.has("username"));
+    assert.ok(names.has("passwordHash"));
   } finally {
     await prisma.$disconnect();
     if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath);

@@ -68,28 +68,3 @@ describe("apiClient", () => {
     expect(result).toBeUndefined();
   });
 });
-
-describe("fetchCashflow query", () => {
-  beforeEach(() => {
-    vi.stubGlobal("fetch", vi.fn());
-    vi.mocked(fetch).mockResolvedValue(
-      new Response(JSON.stringify({ income: 1, expense: 2, net: -1, currency: "PLN" }), {
-        status: 200,
-      }),
-    );
-  });
-
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
-  it("builds period query params", async () => {
-    const { fetchCashflow } = await import("./statsApi");
-    await fetchCashflow({ from: "2025-01-01", to: "2025-01-31", currency: "EUR" });
-
-    expect(fetch).toHaveBeenCalledWith(
-      expect.stringMatching(/from=2025-01-01.*to=2025-01-31.*currency=EUR/),
-      expect.any(Object),
-    );
-  });
-});

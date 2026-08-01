@@ -27,16 +27,9 @@ const authRateLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
-const importRateLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 10,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
 if (process.env.NODE_ENV === "production") {
   app.use("/api/auth/login", authRateLimiter);
   app.use("/api/auth/register", authRateLimiter);
-  app.use("/api/import", importRateLimiter);
 }
 
 app.get("/api/health", async (_req, res) => {

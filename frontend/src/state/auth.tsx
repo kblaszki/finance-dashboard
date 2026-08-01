@@ -4,7 +4,7 @@ import type { AuthUser } from "../api/authApi";
 import { fetchMe, login as apiLogin, logoutLocal, register as apiRegister } from "../api/authApi";
 import { getAuthToken, setUnauthorizedHandler } from "../api/client";
 
-const DEFAULT_AFTER_AUTH = "/dashboard";
+const DEFAULT_AFTER_AUTH = "/home";
 
 type AuthLocationState = {
   from?: string;

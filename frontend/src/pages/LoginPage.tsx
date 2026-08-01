@@ -61,9 +61,6 @@ export function LoginPage() {
             {submitting ? "Logging in…" : "Log in"}
           </button>
         </form>
-        <p className="auth-switch">
-          <Link to="/password-reset">Forgot password?</Link>
-        </p>
         {allowRegister === true && (
           <p className="auth-switch">
             Don&apos;t have an account? <Link to="/register">Sign up</Link>
