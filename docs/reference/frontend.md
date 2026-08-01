@@ -22,11 +22,11 @@ Hub: [docs/README.md](../README.md).
 | `/home` | Protected | `HomePage` |
 | `/settings` | Protected | `SettingsPage` |
 
-Shell: `AppShell` (Home + Settings nav, theme cycle toggle, logout). Gate: `ProtectedRoute`.
+Shell: `AppShell` (Home + Settings nav, theme toggle, logout). Gate: `ProtectedRoute`.
 
-Theme preference (`light` | `dark` | `system`) lives in `state/theme.tsx`, persisted under `localStorage` key `finance-dashboard:theme`. Resolved theme is applied as `document.documentElement.dataset.theme`. Missing/invalid storage defaults to `system` (follows `prefers-color-scheme`, including live OS changes). FOUC bootstrap mirrors this in `frontend/index.html`.
+Theme (`light` | `dark`) lives in `state/theme.tsx`, persisted under `localStorage` key `finance-dashboard:theme`. Applied as `document.documentElement.dataset.theme`. Missing, invalid, or legacy `system` values resolve once from `prefers-color-scheme` and are stored as explicit `light` or `dark`. FOUC bootstrap mirrors this in `frontend/index.html`.
 
-Controls: `ThemeToggle` (cycles light → dark → system) on Landing, Login, Register, and AppShell; Settings **Appearance** section sets preference explicitly via radios.
+Controls: `ThemeToggle` (light ↔ dark) on Landing, Login, Register, and AppShell; Settings **Appearance** section sets theme via Light/Dark radios.
 
 Default after login/register: `/home` (`state/auth.tsx`).
 

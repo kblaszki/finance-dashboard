@@ -1,17 +1,16 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../state/auth";
 import { updateEmail, updatePassword, updateProfile } from "../api/authApi";
-import { useTheme, type ThemePreference } from "../state/theme";
+import { useTheme, type Theme } from "../state/theme";
 
-const APPEARANCE_OPTIONS: { value: ThemePreference; label: string }[] = [
+const APPEARANCE_OPTIONS: { value: Theme; label: string }[] = [
   { value: "light", label: "Light" },
   { value: "dark", label: "Dark" },
-  { value: "system", label: "System" },
 ];
 
 export function SettingsPage() {
   const { user, refreshUser } = useAuth();
-  const { preference, setPreference } = useTheme();
+  const { theme, setTheme } = useTheme();
 
   const [username, setUsername] = useState("");
   const [profileMsg, setProfileMsg] = useState<string | null>(null);
@@ -100,8 +99,8 @@ export function SettingsPage() {
                 type="radio"
                 name="theme-preference"
                 value={option.value}
-                checked={preference === option.value}
-                onChange={() => setPreference(option.value)}
+                checked={theme === option.value}
+                onChange={() => setTheme(option.value)}
               />
               {option.label}
             </label>

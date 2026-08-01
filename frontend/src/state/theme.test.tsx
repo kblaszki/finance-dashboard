@@ -1,46 +1,21 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import {
-  STORAGE_KEY,
-  ThemeProvider,
-  useTheme,
-  type ThemePreference,
-} from './theme'
+import { STORAGE_KEY, ThemeProvider, useTheme } from './theme'
 
-type MediaListener = (event: MediaQueryListEvent) => void
-
-function mockMatchMedia(initialDark: boolean) {
-  let matches = initialDark
-  const listeners = new Set<MediaListener>()
-
-  const mql = {
-    get matches() {
-      return matches
-    },
-    media: '(prefers-color-scheme: dark)',
-    onchange: null,
-    addEventListener: (_type: string, listener: EventListener) => {
-      listeners.add(listener as MediaListener)
-    },
-    removeEventListener: (_type: string, listener: EventListener) => {
-      listeners.delete(listener as MediaListener)
-    },
-    addListener: () => {},
-    removeListener: () => {},
-    dispatchEvent: () => false,
-    setMatches(next: boolean) {
-      matches = next
-      const event = { matches: next } as MediaQueryListEvent
-      listeners.forEach((listener) => listener(event))
-    },
-  }
-
+function mockMatchMedia(dark: boolean) {
   vi.stubGlobal(
     'matchMedia',
-    vi.fn(() => mql),
+    vi.fn(() => ({
+      matches: dark,
+      media: '(prefers-color-scheme: dark)',
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    })),
   )
-
-  return mql
 }
 
 function wrapper(props: { children: React.ReactNode }) {
@@ -58,100 +33,77 @@ describe('theme', () => {
     localStorage.clear()
   })
 
-  it('uses stored dark preference and sets data-theme', async () => {
+  it('uses stored dark theme and sets data-theme', async () => {
     localStorage.setItem(STORAGE_KEY, 'dark')
     mockMatchMedia(false)
 
     const { result } = renderHook(() => useTheme(), { wrapper })
 
-    expect(result.current.preference).toBe('dark')
     expect(result.current.theme).toBe('dark')
     await waitFor(() => {
       expect(document.documentElement.dataset.theme).toBe('dark')
+      expect(localStorage.getItem(STORAGE_KEY)).toBe('dark')
     })
   })
 
-  it('follows system preference and updates when media changes', async () => {
-    localStorage.setItem(STORAGE_KEY, 'system')
-    const mql = mockMatchMedia(true)
-
-    const { result } = renderHook(() => useTheme(), { wrapper })
-
-    expect(result.current.preference).toBe('system')
-    expect(result.current.theme).toBe('dark')
-    expect(document.documentElement.dataset.theme).toBe('dark')
-
-    act(() => {
-      mql.setMatches(false)
-    })
-
-    await waitFor(() => {
-      expect(result.current.theme).toBe('light')
-      expect(document.documentElement.dataset.theme).toBe('light')
-    })
-  })
-
-  it('setPreference(light) persists and stops following media', async () => {
-    localStorage.setItem(STORAGE_KEY, 'system')
-    const mql = mockMatchMedia(true)
-
-    const { result } = renderHook(() => useTheme(), { wrapper })
-
-    act(() => {
-      result.current.setPreference('light')
-    })
-
-    await waitFor(() => {
-      expect(result.current.preference).toBe('light')
-      expect(result.current.theme).toBe('light')
-      expect(localStorage.getItem(STORAGE_KEY)).toBe('light')
-      expect(document.documentElement.dataset.theme).toBe('light')
-    })
-
-    act(() => {
-      mql.setMatches(true)
-    })
-
-    expect(result.current.theme).toBe('light')
-    expect(document.documentElement.dataset.theme).toBe('light')
-  })
-
-  it('cycles preference light → dark → system', async () => {
+  it('toggles light ↔ dark', async () => {
     localStorage.setItem(STORAGE_KEY, 'light')
     mockMatchMedia(false)
 
     const { result } = renderHook(() => useTheme(), { wrapper })
-    const order: ThemePreference[] = []
-
-    expect(result.current.preference).toBe('light')
 
     act(() => {
-      result.current.cyclePreference()
+      result.current.toggleTheme()
     })
-    order.push(result.current.preference)
 
-    act(() => {
-      result.current.cyclePreference()
-    })
-    order.push(result.current.preference)
-
-    act(() => {
-      result.current.cyclePreference()
-    })
-    order.push(result.current.preference)
-
-    expect(order).toEqual(['dark', 'system', 'light'])
     await waitFor(() => {
-      expect(localStorage.getItem(STORAGE_KEY)).toBe('light')
+      expect(result.current.theme).toBe('dark')
+      expect(localStorage.getItem(STORAGE_KEY)).toBe('dark')
+    })
+
+    act(() => {
+      result.current.toggleTheme()
+    })
+
+    await waitFor(() => {
+      expect(result.current.theme).toBe('light')
     })
   })
 
-  it('defaults missing storage to system', () => {
+  it('migrates legacy system storage via one-shot OS preference', async () => {
+    localStorage.setItem(STORAGE_KEY, 'system')
     mockMatchMedia(true)
 
     const { result } = renderHook(() => useTheme(), { wrapper })
 
-    expect(result.current.preference).toBe('system')
     expect(result.current.theme).toBe('dark')
+    await waitFor(() => {
+      expect(localStorage.getItem(STORAGE_KEY)).toBe('dark')
+      expect(document.documentElement.dataset.theme).toBe('dark')
+    })
+  })
+
+  it('defaults missing storage from OS preference', () => {
+    mockMatchMedia(false)
+
+    const { result } = renderHook(() => useTheme(), { wrapper })
+
+    expect(result.current.theme).toBe('light')
+  })
+
+  it('setTheme persists explicit choice', async () => {
+    localStorage.setItem(STORAGE_KEY, 'light')
+    mockMatchMedia(true)
+
+    const { result } = renderHook(() => useTheme(), { wrapper })
+
+    act(() => {
+      result.current.setTheme('dark')
+    })
+
+    await waitFor(() => {
+      expect(result.current.theme).toBe('dark')
+      expect(localStorage.getItem(STORAGE_KEY)).toBe('dark')
+    })
   })
 })

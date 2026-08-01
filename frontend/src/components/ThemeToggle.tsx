@@ -1,22 +1,16 @@
-import { useTheme, type ThemePreference } from '../state/theme'
-
-const LABELS: Record<ThemePreference, string> = {
-  light: 'Theme: Light',
-  dark: 'Theme: Dark',
-  system: 'Theme: System',
-}
+import { useTheme } from '../state/theme'
 
 export function ThemeToggle() {
-  const { preference, cyclePreference } = useTheme()
+  const { theme, toggleTheme } = useTheme()
 
   return (
     <button
       type="button"
       className="theme-toggle"
-      onClick={cyclePreference}
-      aria-label={`Current theme ${preference}. Click to cycle light, dark, system`}
+      onClick={toggleTheme}
+      aria-label={theme === 'light' ? 'Enable dark mode' : 'Enable light mode'}
     >
-      {LABELS[preference]}
+      {theme === 'light' ? 'Dark mode' : 'Light mode'}
     </button>
   )
 }
