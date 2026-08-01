@@ -55,7 +55,7 @@ When domain features return (accounts, FX, tax, …), keep money and conversion 
 ## Frontend shell
 
 - Guests: Landing, Login, Register.
-- Authed: AppShell with Home + Settings; default post-login path `/home`.
+- Authed: AppShell hatch-folio (mast + page) with Home + Settings; default post-login path `/home`.
 
 ## Related
 
