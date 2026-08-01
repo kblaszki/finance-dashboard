@@ -1,9 +1,11 @@
 # Finance Dashboard
 
-A full-stack app for tracking personal finances: bank accounts, brokerage positions, and manual assets (e.g. real estate). Built with:
+Personal full-stack finance app (auth baseline today; more domains tracked in [mvp/CHECKLIST.md](mvp/CHECKLIST.md)). Built with:
 
 - **Backend:** Node.js + TypeScript + Express + Prisma + SQLite
 - **Frontend:** Vite + React + TypeScript
+
+**Current code:** register/login (JWT), profile / email / password settings, health check, login-only demo user. Accounts, portfolio, tax, and related features are not in this tree yet.
 
 ## Requirements
 
@@ -47,34 +49,29 @@ npm run dev
 
 ## Authentication and environment
 
-Each user has a separate account (`email`, `username`, `password`). All accounts, transactions, and positions are scoped to the logged-in user.
-
-Copy the backend env template and set a strong secret before starting the API:
+Each user has `email`, `username`, and `passwordHash`. Copy the backend env template and set a strong secret before starting the API:
 
 ```bash
 cd backend
 cp .env.example .env
 ```
 
-Commit **`backend/.env.example`** to the repository (template only). Do **not** commit **`backend/.env`** — it contains secrets such as `JWT_SECRET`.
+Commit **`backend/.env.example`** (template only). Do **not** commit **`backend/.env`**.
 
 Required variables:
 
 - `DATABASE_URL` — SQLite path (default `file:./dev.db`)
 - `JWT_SECRET` — at least 32 characters (used to sign login tokens)
 
-Optional (market data — Twelve Data EOD prices):
+Optional: `ALLOW_REGISTER`, `CORS_ORIGIN`, `JSON_BODY_LIMIT`, backup vars — see [docs/reference/environment.md](docs/reference/environment.md).
 
-- `MARKET_DATA_API_KEY` — see `.env.example`
-- `MARKET_BACKFILL_DAYS` — days of history for `npm run market:sync` (default 90)
-
-Register via the frontend at `/register`, or call `POST /api/auth/register` with `{ "email", "username", "password" }` (password minimum 8 characters).
+Register via the frontend at `/register`, or call `POST /api/auth/register` with `{ "email", "username", "password" }` (password minimum 8 characters). After login you land on **Home** (`/home`); manage profile under **Settings**.
 
 For a **private single-user deployment**, set `ALLOW_REGISTER=false` in `backend/.env` and create the account with `npm run create-user` — see [Private deployment](#private-deployment) below.
 
 ## Private deployment
 
-For running as a personal MyFund-style instance (not open registration):
+For running as a personal instance (not open registration):
 
 1. **Lock registration** — in `backend/.env`:
    ```env
@@ -90,7 +87,7 @@ For running as a personal MyFund-style instance (not open registration):
    cd backend
    npm run db:backup
    ```
-   Files land in `backend/backups/` (`finance-YYYYMMDD-HHmm.db`). Add `--gzip` or set `BACKUP_GZIP=true` to compress. Sync that folder off-site manually (cloud drive, rclone).
+   Files land in `backend/backups/` (`finance-YYYYMMDD-HHmm.db`). Add `--gzip` or set `BACKUP_GZIP=true` to compress. Sync that folder off-site manually.
 
    Windows Task Scheduler / cron example:
    ```bash
@@ -102,28 +99,13 @@ For running as a personal MyFund-style instance (not open registration):
 5. **Docker** (optional home server):
    ```bash
    cp backend/.env.production.example backend/.env
-   # edit JWT_SECRET, MARKET_DATA_API_KEY
+   # edit JWT_SECRET
    docker compose up -d --build
    docker compose exec api npm run create-user -- --email you@example.com --username you --password 'secret'
    ```
    UI: `http://localhost:8080` (nginx proxies `/api` to the backend). Database and backups persist in `./data/`.
 
 Full checklist: [docs/how-to/private-deploy.md](docs/how-to/private-deploy.md).
-
-## Market price sync
-
-After setting `MARKET_DATA_API_KEY` in `backend/.env`:
-
-```bash
-cd backend
-npm run market:sync
-```
-
-Or trigger from the dashboard / brokerage account page (**Sync prices now**). For daily updates, schedule the CLI via cron (e.g. weekdays 22:00 CET).
-
-```bash
-0 22 * * 1-5 cd /path/to/finance-dashboard/backend && npm run market:sync
-```
 
 ## Demo user (optional)
 
@@ -144,7 +126,7 @@ From the project root:
 npm test
 ```
 
-Runs backend unit, integration, and HTTP tests (`backend/src/**/*.test.ts`, `backend/test/**/*.test.ts`).
+Runs backend tests, frontend tests, and frontend lint.
 
 Coverage reports (HTML + terminal summary):
 
@@ -154,37 +136,13 @@ npm run test:coverage
 
 Open `backend/coverage/index.html` and `frontend/coverage/index.html` in a browser.
 
-Coverage thresholds are enforced in [`backend/.c8rc.json`](backend/.c8rc.json) and [`frontend/vitest.config.ts`](frontend/vitest.config.ts) (CI job `coverage`). Frontend metrics include only testable logic (`src/api/`, `src/hooks/`, `src/utils/`, `src/state/period.tsx`); UI pages and components are intentionally excluded.
+Coverage thresholds are enforced in [`backend/.c8rc.json`](backend/.c8rc.json) and [`frontend/vitest.config.ts`](frontend/vitest.config.ts). Frontend metrics include `src/api/`, `src/hooks/`, and `src/utils/` (UI pages excluded).
 
-Details: [docs/reference/testing.md](docs/reference/testing.md) (pyramid, where to add tests); [docs/how-to/run-tests-and-coverage.md](docs/how-to/run-tests-and-coverage.md) (checklist).
+Details: [docs/reference/testing.md](docs/reference/testing.md); [docs/how-to/run-tests-and-coverage.md](docs/how-to/run-tests-and-coverage.md).
 
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for fork/branch/PR workflow and project conventions.
-
-## Account types
-
-| Type | Purpose |
-|------|---------|
-| **BANK** | Cash transactions (income, expense, transfers); balance history from `Transaction.balanceAfter` |
-| **BROKERAGE** | Cash plus securities via BUY/SELL **holding lots**; charts from daily valuations |
-| **MANUAL** | Tracked value without lots (e.g. real estate estimate) |
-
-Manage accounts on **Accounts** (`/accounts`). Open an account for transaction history (bank) or lots and position charts (brokerage).
-
-## Transactions
-
-On **Transactions** (`/transactions`): list and filter income/expense/transfer rows. Each transaction has a **category** string (free text, e.g. `SALARY`, `FOOD`) — there is no category tree in the MVP.
-
-Link transactions to a **BANK** or **BROKERAGE** account so `cashBalance` and charts stay correct.
-
-## Dashboard
-
-The dashboard summarizes finances for a **selected period** (default: current month):
-
-- Presets: current month, previous month, current quarter, current year, or a custom date range
-- KPI cards: income, expenses, balance, transaction count for the period; net worth from latest account valuations
-- Charts: cash flow over time, expenses by category, income by category
 
 ## Database migrations
 
@@ -204,11 +162,9 @@ cd backend
 npx prisma migrate reset --force
 ```
 
-Or push schema without migration history:
+Then optionally:
 
 ```bash
-cd backend
-npx prisma db push --force-reset
 npm run db:seed
 ```
 
@@ -223,9 +179,10 @@ Builds the backend (TypeScript to JS) and the frontend (Vite production bundle).
 ## Further documentation
 
 - [docs/README.md](docs/README.md) — Diátaxis documentation hub
-- [docs/explanation/architecture.md](docs/explanation/architecture.md) — auth, FX, module layout
+- [docs/explanation/architecture.md](docs/explanation/architecture.md) — auth and request flow
 - [docs/reference/api.md](docs/reference/api.md) — REST route catalog
 - [docs/reference/domain.md](docs/reference/domain.md) — Prisma models
 - [docs/reference/frontend.md](docs/reference/frontend.md) — UI routes and API clients
 - [docs/tutorials/first-run.md](docs/tutorials/first-run.md) — first local success
+- [mvp/CHECKLIST.md](mvp/CHECKLIST.md) — product backlog
 - [AGENTS.md](AGENTS.md) — agent-oriented index

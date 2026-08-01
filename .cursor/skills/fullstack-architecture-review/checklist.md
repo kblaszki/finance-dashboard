@@ -32,8 +32,8 @@ Use with [SKILL.md](SKILL.md). Map each item to a section in [docs/explanation/f
 
 ## 5. Domain rules in one place
 
-- FX only in `backend/src/fx.ts`
-- balances/lots/cash replay only in dedicated modules (`transactionBalance`, `holdingLot`, `holdings`, `accountValuation`)
+- When FX exists, keep it in one backend module (do not scatter conversions in routes/UI)
+- When balances/lots/cash replay exist, keep them in dedicated domain modules
 - no duplicated money/date/balance rules in frontend charts/tables
 
 ## 6. Auth and tenancy
@@ -69,14 +69,13 @@ Use with [SKILL.md](SKILL.md). Map each item to a section in [docs/explanation/f
 
 See [testing.md](../../../docs/reference/testing.md) for the full pyramid, coverage scope, thresholds, CI jobs, and verification checklist. Spot-check:
 
-- backend unit tests for pure domain logic (`backend/src/*.test.ts`)
-- integration tests for domain + Prisma (`backend/test/*.integration.test.ts`)
-- HTTP tests for auth, tenancy, and critical write paths (`backend/test/app.http.test.ts`)
-- golden fixtures for ledger/financial workflows (`backend/test/golden.integration.test.ts`)
+- backend unit tests for pure helpers (`backend/src/*.test.ts`)
+- schema / migrate integration tests (`backend/test/schema.integration.test.ts`, `migrateDeploy.test.ts`)
+- HTTP tests for auth and health (`backend/test/app.http.test.ts`)
 - frontend API/client/hook tests (`apiModules.test.ts`, `client.test.ts`, `useAsyncData.test.tsx`, `apiContracts.test.ts`)
 - CI: `backend-test`, `frontend-checks`, and **`coverage`** jobs in `.github/workflows/ci.yml`
-- cross-user IDOR checks for user-owned resources where HTTP coverage exists
-- note gaps explicitly (E2E, component coverage, untested API modules in coverage scope) without treating E2E as blockers for hobby scale
+- cross-user IDOR checks for user-owned resources when those resources exist
+- note gaps explicitly (E2E, component coverage) without treating E2E as blockers for hobby scale
 
 ## 11. Documentation discipline
 

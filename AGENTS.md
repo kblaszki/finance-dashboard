@@ -2,14 +2,16 @@
 
 Token-aware index — open [docs/README.md](docs/README.md) for the Diátaxis compass; do not duplicate [README.md](README.md) here.
 
+**Code baseline:** JWT auth + account settings. Product backlog (may say “done” for future intent): [mvp/CHECKLIST.md](mvp/CHECKLIST.md) — do not treat checklist status as shipped code without checking the tree.
+
 ## MVP feature map
 
 | Doc | Use when |
 |-----|----------|
-| [mvp/CHECKLIST.md](mvp/CHECKLIST.md) | Product capability checklist (done / stub / planned) |
+| [mvp/CHECKLIST.md](mvp/CHECKLIST.md) | Product capability checklist (backlog) |
 | [mvp/README.md](mvp/README.md) | Conventions and domains |
 
-Technical FR→code map: [docs/reference/requirements.md](docs/reference/requirements.md).
+Shipped FR map: [docs/reference/requirements.md](docs/reference/requirements.md).
 
 ## Docs (on-demand)
 
@@ -25,7 +27,7 @@ Technical FR→code map: [docs/reference/requirements.md](docs/reference/require
 | Doc | Use when |
 |-----|----------|
 | [docs/tutorials/first-run.md](docs/tutorials/first-run.md) | First local install and login |
-| [docs/tutorials/demo-seed.md](docs/tutorials/demo-seed.md) | Demo user + sample portfolio seed |
+| [docs/tutorials/demo-seed.md](docs/tutorials/demo-seed.md) | Login-only demo user (no portfolio) |
 
 ### How-to
 
@@ -35,23 +37,8 @@ Technical FR→code map: [docs/reference/requirements.md](docs/reference/require
 | [docs/how-to/add-prisma-model.md](docs/how-to/add-prisma-model.md) | Schema / model change |
 | [docs/how-to/add-ui-page.md](docs/how-to/add-ui-page.md) | New UI page/route |
 | [docs/how-to/run-tests-and-coverage.md](docs/how-to/run-tests-and-coverage.md) | Verify before finishing logic work |
-| [docs/how-to/brokerage-and-fx.md](docs/how-to/brokerage-and-fx.md) | Brokerage positions / FX |
-| [docs/how-to/accounts-and-holdings.md](docs/how-to/accounts-and-holdings.md) | Accounts, lots, asset trades |
-| [docs/how-to/import-csv.md](docs/how-to/import-csv.md) | Broker or bank CSV import |
-| [docs/how-to/corporate-actions.md](docs/how-to/corporate-actions.md) | Stock splits and corporate actions |
-| [docs/how-to/position-transfers.md](docs/how-to/position-transfers.md) | Move securities between brokerages |
-| [docs/how-to/internal-transfers.md](docs/how-to/internal-transfers.md) | Cross-account cash transfers |
-| [docs/how-to/income-and-coupons.md](docs/how-to/income-and-coupons.md) | Dividends, interest, coupon schedules |
-| [docs/how-to/budgets-and-categories.md](docs/how-to/budgets-and-categories.md) | Categories, budgets, rules, alerts |
-| [docs/how-to/property-tracking.md](docs/how-to/property-tracking.md) | Real estate and asset valuations |
-| [docs/how-to/liabilities.md](docs/how-to/liabilities.md) | Mortgages, loans, net worth |
-| [docs/how-to/dashboard-and-statistics.md](docs/how-to/dashboard-and-statistics.md) | Dashboard, statistics, portfolio filters |
-| [docs/how-to/market-data-sync.md](docs/how-to/market-data-sync.md) | Twelve Data EOD sync ops |
-| [docs/how-to/tax-year-workflow.md](docs/how-to/tax-year-workflow.md) | PL tax year review / close |
-| [docs/how-to/data-export.md](docs/how-to/data-export.md) | Full export and audit log |
-| [docs/how-to/account-sync.md](docs/how-to/account-sync.md) | Sync / PSD2 stubs |
 | [docs/how-to/account-settings.md](docs/how-to/account-settings.md) | Profile, email, password |
-| [docs/how-to/write-integration-tests.md](docs/how-to/write-integration-tests.md) | Golden fixtures and integration tests |
+| [docs/how-to/write-integration-tests.md](docs/how-to/write-integration-tests.md) | HTTP / integration tests |
 | [docs/how-to/private-deploy.md](docs/how-to/private-deploy.md) | Private single-user deploy |
 
 ### Reference
@@ -62,19 +49,16 @@ Technical FR→code map: [docs/reference/requirements.md](docs/reference/require
 | [docs/reference/domain.md](docs/reference/domain.md) | Prisma models |
 | [docs/reference/frontend.md](docs/reference/frontend.md) | UI routes and API clients |
 | [docs/reference/testing.md](docs/reference/testing.md) | Test pyramid, coverage, CI |
-| [docs/reference/requirements.md](docs/reference/requirements.md) | FR/NFR/DATA traceability map |
+| [docs/reference/requirements.md](docs/reference/requirements.md) | Shipped FRs vs mvp backlog |
 | [docs/reference/environment.md](docs/reference/environment.md) | Env vars, rate limits, prod guards |
-| [docs/reference/scripts.md](docs/reference/scripts.md) | CLI backup, create-user, migrate deploy |
+| [docs/reference/scripts.md](docs/reference/scripts.md) | CLI backup, create-user, seed, migrate |
 
 ### Explanation
 
 | Doc | Use when |
 |-----|----------|
-| [docs/explanation/architecture.md](docs/explanation/architecture.md) | Auth, FX, request flow, modules |
+| [docs/explanation/architecture.md](docs/explanation/architecture.md) | Auth, request flow, modules |
 | [docs/explanation/fullstack-practices.md](docs/explanation/fullstack-practices.md) | Fullstack practices rubric |
-| [docs/explanation/tax-pl.md](docs/explanation/tax-pl.md) | PL tax assumptions |
-| [docs/explanation/portfolio-stats.md](docs/explanation/portfolio-stats.md) | Dashboard KPIs, history, benchmarks |
-| [docs/explanation/fifo-cost-basis.md](docs/explanation/fifo-cost-basis.md) | FIFO queues, commissions, consumers |
 
 ## Cursor rules
 

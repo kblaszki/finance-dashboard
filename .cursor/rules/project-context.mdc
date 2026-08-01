@@ -9,9 +9,10 @@ Behavioral rules (including commit-after-chunk): [golden-rule.mdc](mdc:.cursor/r
 
 ## Layout
 
-- `backend/` — Express + Prisma + SQLite (`prisma/schema.prisma`, `src/app.ts`, `src/fx.ts`, `src/auth.ts`, `test/` for integration)
-- `frontend/` — Vite + React + TypeScript (`src/components/`, `src/api/`, `src/state/`)
+- `backend/` — Express + Prisma + SQLite (`prisma/schema.prisma`, `src/app.ts`, `src/auth.ts`, `src/routes/`, `test/` for HTTP/integration)
+- `frontend/` — Vite + React + TypeScript (`src/components/`, `src/pages/`, `src/api/`, `src/state/`)
 - Repository root: `npm run dev`, `npm run build`
+- Product backlog: `mvp/` (not the same as shipped code)
 
 ## Local dev
 
@@ -20,5 +21,5 @@ Behavioral rules (including commit-after-chunk): [golden-rule.mdc](mdc:.cursor/r
 ## Conventions
 
 - **LF only** — [line-endings.mdc](mdc:.cursor/rules/line-endings.mdc), `.editorconfig`, `.gitattributes`.
-- Minimal diff (golden-rule). New routes in `backend/src/app.ts`; API clients in `frontend/src/api/`; UI in `frontend/src/components/`.
+- Minimal diff (golden-rule). New routes in `backend/src/routes/*` (wire in `mountRouters.ts`); API clients in `frontend/src/api/`; UI in `frontend/src/components/` or `pages/`.
 - Schema changes: `cd backend && npx prisma migrate dev --name <description>` — see [README.md](mdc:README.md) for reset notes.

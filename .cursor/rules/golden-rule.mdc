@@ -20,8 +20,8 @@ Before implementing:
 - If something is unclear, stop. Name what's confusing. Ask.
 
 Repo-specific checks:
-- **Tenancy:** accounts, transactions, and holdings are user-scoped; instruments are shared — confirm scope before new queries.
-- **Money and FX:** balances, valuations, and conversions belong in backend domain modules (`fx.ts`, `accountValuation.ts`, etc.), not in route handlers or UI.
+- **Tenancy:** when user-owned domain rows exist (accounts, transactions, holdings, …), scope queries by authenticated `userId`; confirm shared vs user-scoped before new queries.
+- **Money and FX:** when balances, valuations, or conversions exist, keep them in dedicated backend domain modules — not in route handlers or UI.
 - **API contract:** frontend `*Api.ts` types must match backend serializers; ask when the contract is ambiguous.
 
 ## 2. Simplicity First

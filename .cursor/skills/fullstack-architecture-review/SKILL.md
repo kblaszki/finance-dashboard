@@ -68,12 +68,12 @@ For deeper checklist items, read [checklist.md](checklist.md).
 ### Step 2: Backend review
 
 Focus on:
-- route boundaries vs domain logic (`backend/src/routes/*`, `backend/src/*.ts`)
-- `routeSupport.ts` vs domain modules (serialization/tenancy only; financial rules in `accountValuation.ts` and peers)
-- auth and tenancy (`backend/src/auth.ts`, `userId` scoping; shared instruments catalog)
-- financial correctness and atomicity (transactions, ledger invariants, valuation recompute, brokerage cash replay)
+- route boundaries vs domain logic (`backend/src/routes/*`, domain modules under `backend/src/` when present)
+- `routeSupport.ts` / `httpSupport.ts` for HTTP helpers; financial rules in dedicated domain modules when those features exist
+- auth and tenancy (`backend/src/auth.ts`, `userId` scoping for user-owned models)
+- financial correctness and atomicity when ledger/valuation modules exist
 - API contract consistency (serializers, validation, status codes via `httpSupport.ts`)
-- cross-cutting rules centralized once (`backend/src/fx.ts`, balance/lot helpers)
+- cross-cutting money/FX rules centralized once (when an FX or valuation module exists)
 - scalability risks (N+1 queries, synchronous heavy recompute, global/shared mutable data)
 
 Run targeted tests when useful:

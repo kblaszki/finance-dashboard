@@ -6,9 +6,9 @@ alwaysApply: false
 
 # Backend
 
-- Models and migrations: `backend/prisma/`; HTTP handlers in `backend/src/routes/*` (wired in `backend/src/app.ts`).
-- When serializing amounts and currencies, follow patterns in `routeSupport.ts` and domain modules (`toNumber`, `normalizeCurrency`).
-- FX rates: `backend/src/fx.ts` — do not duplicate FX logic in route handlers.
+- Models and migrations: `backend/prisma/`; HTTP handlers in `backend/src/routes/*` (wired via `mountRouters.ts` from `backend/src/app.ts`).
+- Use `httpSupport` / `lib/errors` for validation and HTTP errors. Auth helpers: `auth.ts`, `authConfig.ts`.
+- When money, FX, or valuations exist, keep those rules in dedicated domain modules — do not duplicate them in route handlers.
 - REST endpoints under `/api/...`; JSON responses; appropriate HTTP status codes on errors.
 - Secrets only in `.env` (do not commit); `dotenv` loads configuration at startup.
 - Endpoint catalog: [docs/reference/api.md](mdc:docs/reference/api.md) — add one table row when adding routes.

@@ -32,11 +32,12 @@
 - [docs/README.md](../docs/README.md) — Diátaxis hub and AI reading order.
 - [docs/meta/code-map.md](../docs/meta/code-map.md) — domain → code paths.
 - Attach when needed:
-  - `@docs/reference/domain.md` — accounts, lots, valuations
+  - `@docs/reference/domain.md` — Prisma models (User baseline)
   - `@docs/reference/api.md` — endpoint list
-  - `@docs/explanation/architecture.md` — auth, FX, file layout
+  - `@docs/explanation/architecture.md` — auth and request flow
   - `@docs/reference/frontend.md` — routes and API clients
   - `@docs/reference/testing.md` — coverage, test pyramid, CI facts
+  - `@mvp/CHECKLIST.md` — product backlog (not shipped-code truth)
 
 Human onboarding (install, env, seed): [README.md](../README.md); tutorial: [docs/tutorials/first-run.md](../docs/tutorials/first-run.md).
 

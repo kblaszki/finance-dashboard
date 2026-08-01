@@ -135,10 +135,10 @@ Step progress:
 ### Per-step implementation
 
 - Follow existing patterns in touched files.
-- New route: `backend/src/routes/<area>Routes.ts` → wire in `app.ts` → client in `frontend/src/api/` → row in `docs/reference/api.md`.
+- New route: `backend/src/routes/<area>Routes.ts` → wire in `mountRouters.ts` → client in `frontend/src/api/` → row in `docs/reference/api.md`.
 - New model: `schema.prisma` → `npx prisma migrate dev` → `docs/reference/domain.md`.
 - New page: `App.tsx` → component → `docs/reference/frontend.md`.
-- Financial rules: centralize in domain modules (`fx.ts`, `accountValuation.ts`, etc.) — not in route handlers.
+- Financial rules: when money/FX/valuation modules exist, centralize them in domain modules — not in route handlers.
 
 ### Tests (required for logic changes)
 

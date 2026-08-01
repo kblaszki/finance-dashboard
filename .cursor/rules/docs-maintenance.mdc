@@ -11,7 +11,7 @@ Applies when editing schema, routes, API clients, or app routing. Prefer skill [
 - New or changed REST route: add/update **one row** in [docs/reference/api.md](mdc:docs/reference/api.md).
 - Model or relation change: update [docs/reference/domain.md](mdc:docs/reference/domain.md).
 - New route/page or API client module: update [docs/reference/frontend.md](mdc:docs/reference/frontend.md).
-- Auth/FX/architecture change: update [docs/explanation/architecture.md](mdc:docs/explanation/architecture.md) only if behavior changed.
+- Auth/architecture change: update [docs/explanation/architecture.md](mdc:docs/explanation/architecture.md) only if behavior changed.
 - Primary code path moves: update [docs/meta/code-map.md](mdc:docs/meta/code-map.md).
 - Hub / agent index: [docs/README.md](mdc:docs/README.md), [AGENTS.md](mdc:AGENTS.md).
 - Never link to `plans/` from committed documentation (`README.md`, `docs/*`, `AGENTS.md`). That directory is gitignored local WIP.

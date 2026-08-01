@@ -1,40 +1,31 @@
 ---
 diataxis: tutorial
-use_when: Load demo user and sample portfolio with real EOD prices
+use_when: Create login-only demo user
 audience: both
 related_docs:
-  - docs/how-to/brokerage-and-fx.md
+  - docs/tutorials/first-run.md
 related_code:
   - backend/prisma/seed.ts
-  - backend/prisma/demo/
 ---
 
-# Tutorial: demo seed
+# Tutorial: demo user seed
 
-Goal: seed a demo user with ~2 years of sample history. Requires `MARKET_DATA_API_KEY` in `backend/.env` (Twelve Data).
+Goal: upsert a demo account you can log into. **No sample portfolio data** — auth baseline only.
 
 ## Steps
 
 1. Ensure migrations are applied (`cd backend && npx prisma migrate dev` if needed).
-2. Set `MARKET_DATA_API_KEY` in `backend/.env`.
-3. Run:
+2. Run:
 
 ```bash
 cd backend
 npm run db:seed
 ```
 
-4. Log in: `demo@finance.local` / `demo12345` (username: `demo`).
-
-## What you get
-
-- BANK (PLN), brokerage accounts (GPW/US/EU), IKZE, gold, real estate, liabilities, budgets, tax helpers.
-- Prices use `source: twelve_data` (same path as live market sync). Free tier rate limits apply (~2–3 minutes).
+3. Log in: `demo@finance.local` / `demo12345` (username: `demo`).
 
 ## Notes
 
-- Re-seed wipes demo user data and cleans demo `InstrumentValuation` rows.
-- Symbol mapping must match `backend/src/marketDataSymbols.ts`.
-- Orchestration: `backend/prisma/seed.ts` + `backend/prisma/demo/`.
-
-More detail: [README.md](../../README.md) (Demo data section). Hub: [docs/README.md](../README.md).
+- Seed upserts email/username/password only (`backend/prisma/seed.ts`).
+- Safe to re-run; it resets the demo password hash to the known value.
+- More detail: [README.md](../../README.md) (Demo user section). Hub: [docs/README.md](../README.md).
