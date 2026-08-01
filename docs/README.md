@@ -56,10 +56,14 @@ Never load all docs. Prefer reference for facts, how-to for tasks, explanation f
 | [income-and-coupons.md](how-to/income-and-coupons.md) | Dividends and coupons |
 | [budgets-and-categories.md](how-to/budgets-and-categories.md) | Categories, budgets, rules |
 | [property-tracking.md](how-to/property-tracking.md) | Real estate / asset NAV |
+| [liabilities.md](how-to/liabilities.md) | Mortgages, loans, net worth |
+| [dashboard-and-statistics.md](how-to/dashboard-and-statistics.md) | Dashboard / statistics / portfolio |
 | [market-data-sync.md](how-to/market-data-sync.md) | EOD market sync |
 | [tax-year-workflow.md](how-to/tax-year-workflow.md) | PL tax year workflow |
 | [data-export.md](how-to/data-export.md) | Export and audit log |
 | [account-sync.md](how-to/account-sync.md) | Sync / PSD2 stubs |
+| [account-settings.md](how-to/account-settings.md) | Profile, email, password |
+| [write-integration-tests.md](how-to/write-integration-tests.md) | Golden / integration tests |
 | [private-deploy.md](how-to/private-deploy.md) | Private single-user deploy |
 
 ## Reference
@@ -70,6 +74,9 @@ Never load all docs. Prefer reference for facts, how-to for tasks, explanation f
 | [domain.md](reference/domain.md) | Prisma models / enums |
 | [frontend.md](reference/frontend.md) | UI routes and API clients |
 | [testing.md](reference/testing.md) | Test pyramid, coverage, CI |
+| [requirements.md](reference/requirements.md) | FR/NFR/DATA map |
+| [environment.md](reference/environment.md) | Env vars, rate limits |
+| [scripts.md](reference/scripts.md) | CLI and migrate deploy |
 
 ## Explanation
 
@@ -79,6 +86,7 @@ Never load all docs. Prefer reference for facts, how-to for tasks, explanation f
 | [fullstack-practices.md](explanation/fullstack-practices.md) | Fullstack practices rubric |
 | [tax-pl.md](explanation/tax-pl.md) | PL tax assumptions |
 | [portfolio-stats.md](explanation/portfolio-stats.md) | Dashboard KPIs / benchmarks |
+| [fifo-cost-basis.md](explanation/fifo-cost-basis.md) | FIFO cost basis engine |
 
 ## Meta
 

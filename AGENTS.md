@@ -35,10 +35,14 @@ Token-aware index — open [docs/README.md](docs/README.md) for the Diátaxis co
 | [docs/how-to/income-and-coupons.md](docs/how-to/income-and-coupons.md) | Dividends, interest, coupon schedules |
 | [docs/how-to/budgets-and-categories.md](docs/how-to/budgets-and-categories.md) | Categories, budgets, rules, alerts |
 | [docs/how-to/property-tracking.md](docs/how-to/property-tracking.md) | Real estate and asset valuations |
+| [docs/how-to/liabilities.md](docs/how-to/liabilities.md) | Mortgages, loans, net worth |
+| [docs/how-to/dashboard-and-statistics.md](docs/how-to/dashboard-and-statistics.md) | Dashboard, statistics, portfolio filters |
 | [docs/how-to/market-data-sync.md](docs/how-to/market-data-sync.md) | Twelve Data EOD sync ops |
 | [docs/how-to/tax-year-workflow.md](docs/how-to/tax-year-workflow.md) | PL tax year review / close |
 | [docs/how-to/data-export.md](docs/how-to/data-export.md) | Full export and audit log |
 | [docs/how-to/account-sync.md](docs/how-to/account-sync.md) | Sync / PSD2 stubs |
+| [docs/how-to/account-settings.md](docs/how-to/account-settings.md) | Profile, email, password |
+| [docs/how-to/write-integration-tests.md](docs/how-to/write-integration-tests.md) | Golden fixtures and integration tests |
 | [docs/how-to/private-deploy.md](docs/how-to/private-deploy.md) | Private single-user deploy |
 
 ### Reference
@@ -49,6 +53,9 @@ Token-aware index — open [docs/README.md](docs/README.md) for the Diátaxis co
 | [docs/reference/domain.md](docs/reference/domain.md) | Prisma models |
 | [docs/reference/frontend.md](docs/reference/frontend.md) | UI routes and API clients |
 | [docs/reference/testing.md](docs/reference/testing.md) | Test pyramid, coverage, CI |
+| [docs/reference/requirements.md](docs/reference/requirements.md) | FR/NFR/DATA traceability map |
+| [docs/reference/environment.md](docs/reference/environment.md) | Env vars, rate limits, prod guards |
+| [docs/reference/scripts.md](docs/reference/scripts.md) | CLI backup, create-user, migrate deploy |
 
 ### Explanation
 
@@ -58,6 +65,7 @@ Token-aware index — open [docs/README.md](docs/README.md) for the Diátaxis co
 | [docs/explanation/fullstack-practices.md](docs/explanation/fullstack-practices.md) | Fullstack practices rubric |
 | [docs/explanation/tax-pl.md](docs/explanation/tax-pl.md) | PL tax assumptions |
 | [docs/explanation/portfolio-stats.md](docs/explanation/portfolio-stats.md) | Dashboard KPIs, history, benchmarks |
+| [docs/explanation/fifo-cost-basis.md](docs/explanation/fifo-cost-basis.md) | FIFO queues, commissions, consumers |
 
 ## Cursor rules
 

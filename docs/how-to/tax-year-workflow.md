@@ -33,10 +33,11 @@ Use this order when reviewing or closing a calendar year `Y`.
 2. Review FIFO sales, Belka / dividend sections, PIT/ZG helper, rental stub as applicable.
 3. Export sales CSV: `GET /api/stats/tax-report/export?year=Y&format=csv` (crypto PIT export via `reportType=crypto_pit` — see Stats / Tax completeness in [api.md](../reference/api.md)).
 
-## 3. Overview and simulator
+## 3. Overview, pre-sell, and attachments
 
-1. `/tax/:year/overview` — consolidated summary (`GET /api/stats/tax-overview?year=Y`, optional `snapshot=1`).
-2. Optional: `POST /api/stats/pre-sell-simulator` before a planned sale.
+1. `/tax/:year/overview` — consolidated summary (`GET /api/stats/tax-overview?year=Y`, optional `snapshot=1`). Reachable from tax report links (not in sidebar).
+2. **Pre-sell simulator (FR-050):** on holding detail (`PreSellSimulatorForm`) or `POST /api/stats/pre-sell-simulator` — estimated FIFO gain before a sale ([fifo-cost-basis.md](../explanation/fifo-cost-basis.md)).
+3. **Document attachments (FR-049):** `/settings` → metadata only (entity type/id, filename) — no binary upload; `GET/POST/DELETE /api/document-attachments`.
 
 ## 4. Calendar and checklist
 
