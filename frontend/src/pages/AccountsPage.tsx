@@ -1,21 +1,27 @@
-import { FormEvent, useCallback, useState } from "react";
+import { FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ACCOUNT_TYPES,
   createAccount,
   deleteAccount,
-  fetchAccounts,
   updateAccount,
   type Account,
   type AccountType,
 } from "../api/accountsApi";
-import { useAsyncData } from "../hooks/useAsyncData";
+import { PageHeader } from "../components/ui/PageHeader";
+import { StatusBlock } from "../components/ui/StatusBlock";
+import { useCurrency } from "../state/currency";
 import { formatMoney } from "../utils/format";
 
 export function AccountsPage() {
-  const loadAccounts = useCallback(() => fetchAccounts(), []);
-  const { data: accounts, error, loading, reload } = useAsyncData(loadAccounts);
+  const {
+    accounts,
+    accountsError,
+    accountsLoading,
+    refreshAccounts,
+  } = useCurrency();
 
+  const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState("");
   const [accountType, setAccountType] = useState<AccountType>("BANK");
   const [currency, setCurrency] = useState("PLN");
@@ -49,7 +55,8 @@ export function AccountsPage() {
       setCurrency("PLN");
       setOpeningBalance("0");
       setDescription("");
-      reload();
+      setShowCreate(false);
+      refreshAccounts();
     } catch (err) {
       setCreateErr(err instanceof Error ? err.message : "Create failed");
     } finally {
@@ -81,7 +88,7 @@ export function AccountsPage() {
         description: editDescription.trim() ? editDescription.trim() : null,
       });
       setEditingId(null);
-      reload();
+      refreshAccounts();
     } catch (err) {
       setEditErr(err instanceof Error ? err.message : "Update failed");
     } finally {
@@ -95,96 +102,108 @@ export function AccountsPage() {
     try {
       await deleteAccount(account.id);
       if (editingId === account.id) setEditingId(null);
-      reload();
+      refreshAccounts();
     } catch (err) {
       setActionErr(err instanceof Error ? err.message : "Delete failed");
     }
   }
 
   return (
-    <div className="page-stack">
-      <h1 className="page-title">Accounts</h1>
-      <p className="muted">
-        Choose an account type when creating. Opening balance seeds cash; open
-        an account ledger for INCOME and EXPENSE moves.
-      </p>
-
-      <section className="card form-section-gap">
-        <h2 className="section-title">Add account</h2>
-        <form className="auth-form" onSubmit={handleCreate}>
-          <label>
-            Type
-            <select
-              value={accountType}
-              onChange={(e) => setAccountType(e.target.value as AccountType)}
-            >
-              {ACCOUNT_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Name
-            <input
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </label>
-          <label>
-            Currency
-            <input
-              type="text"
-              required
-              minLength={3}
-              maxLength={3}
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value.toUpperCase())}
-            />
-          </label>
-          <label>
-            Opening balance
-            <input
-              type="number"
-              step="0.01"
-              value={openingBalance}
-              onChange={(e) => setOpeningBalance(e.target.value)}
-            />
-          </label>
-          <label>
-            Description (optional)
-            <input
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </label>
-          {createErr && <p className="auth-error">{createErr}</p>}
-          <button type="submit" className="btn-primary" disabled={createBusy}>
-            {createBusy ? "Creating…" : "Create account"}
+    <>
+      <PageHeader
+        title="Accounts"
+        subtitle="Opening balance seeds cash. Open a ledger for income and expense moves."
+        actions={
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => setShowCreate((v) => !v)}
+          >
+            {showCreate ? "Hide form" : "Add account"}
           </button>
-        </form>
-      </section>
+        }
+      />
+
+      {showCreate && (
+        <section className="card form-section-gap">
+          <h2 className="section-title">Add account</h2>
+          <form className="auth-form" onSubmit={handleCreate}>
+            <label>
+              Type
+              <select
+                value={accountType}
+                onChange={(e) => setAccountType(e.target.value as AccountType)}
+              >
+                {ACCOUNT_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Name
+              <input
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </label>
+            <label>
+              Currency
+              <input
+                type="text"
+                required
+                minLength={3}
+                maxLength={3}
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value.toUpperCase())}
+              />
+            </label>
+            <label>
+              Opening balance
+              <input
+                type="number"
+                step="0.01"
+                value={openingBalance}
+                onChange={(e) => setOpeningBalance(e.target.value)}
+              />
+            </label>
+            <label>
+              Description (optional)
+              <input
+                type="text"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </label>
+            {createErr && <p className="auth-error">{createErr}</p>}
+            <button type="submit" className="btn-primary" disabled={createBusy}>
+              {createBusy ? "Creating…" : "Create account"}
+            </button>
+          </form>
+        </section>
+      )}
 
       <section className="card form-section-gap">
         <h2 className="section-title">Your accounts</h2>
-        {loading && <p className="muted">Loading…</p>}
-        {error && <p className="error-banner">{error}</p>}
         {actionErr && <p className="error-banner">{actionErr}</p>}
-        {!loading && !error && accounts && accounts.length === 0 && (
-          <p className="empty-state">No accounts yet.</p>
-        )}
-        {!loading && accounts && accounts.length > 0 && (
+        <StatusBlock
+          loading={accountsLoading}
+          error={accountsError}
+          empty={!accountsLoading && !accountsError && (accounts?.length ?? 0) === 0}
+          loadingMessage="Loading accounts…"
+          emptyMessage="No accounts yet."
+        />
+        {!accountsLoading && accounts && accounts.length > 0 && (
           <div className="table-wrap">
             <table className="data-table">
               <thead>
                 <tr>
                   <th>Name</th>
                   <th>Type</th>
-                  <th>Balance</th>
+                  <th className="num">Balance</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -246,8 +265,12 @@ export function AccountsPage() {
                         </>
                       )}
                     </td>
-                    <td>{account.accountType}</td>
-                    <td>{formatMoney(account.totalBalance, account.currency)}</td>
+                    <td>
+                      <span className="badge">{account.accountType}</span>
+                    </td>
+                    <td className="num">
+                      {formatMoney(account.totalBalance, account.currency)}
+                    </td>
                     <td>
                       {editingId !== account.id && (
                         <div className="form-actions-row">
@@ -281,6 +304,6 @@ export function AccountsPage() {
           </div>
         )}
       </section>
-    </div>
+    </>
   );
 }

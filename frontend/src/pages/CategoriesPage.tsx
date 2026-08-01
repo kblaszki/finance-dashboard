@@ -7,6 +7,8 @@ import {
   updateCategory,
   type Category,
 } from "../api/categoriesApi";
+import { PageHeader } from "../components/ui/PageHeader";
+import { StatusBlock } from "../components/ui/StatusBlock";
 import { useAsyncData } from "../hooks/useAsyncData";
 
 export function CategoriesPage() {
@@ -18,6 +20,7 @@ export function CategoriesPage() {
     [categories],
   );
 
+  const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState("");
   const [parentId, setParentId] = useState<string>("");
   const [createErr, setCreateErr] = useState<string | null>(null);
@@ -41,6 +44,7 @@ export function CategoriesPage() {
       });
       setName("");
       setParentId("");
+      setShowCreate(false);
       reload();
     } catch (err) {
       setCreateErr(err instanceof Error ? err.message : "Create failed");
@@ -94,52 +98,64 @@ export function CategoriesPage() {
   }
 
   return (
-    <div className="page-stack">
-      <h1 className="page-title">Categories</h1>
-      <p className="muted">
-        Nested labels for cash transactions. Defaults are created on register;
-        any category can tag income or expense.
-      </p>
-
-      <section className="card form-section-gap">
-        <h2 className="section-title">Add category</h2>
-        <form className="auth-form" onSubmit={handleCreate}>
-          <label>
-            Name
-            <input
-              type="text"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </label>
-          <label>
-            Parent (optional)
-            <select value={parentId} onChange={(e) => setParentId(e.target.value)}>
-              <option value="">— Root —</option>
-              {treeRows.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {"\u00A0".repeat(cat.depth * 2)}
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          {createErr && <p className="auth-error">{createErr}</p>}
-          <button type="submit" className="btn-primary" disabled={createBusy}>
-            {createBusy ? "Creating…" : "Create category"}
+    <>
+      <PageHeader
+        title="Categories"
+        subtitle="Nested labels for cash transactions. Defaults are created on register."
+        actions={
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => setShowCreate((v) => !v)}
+          >
+            {showCreate ? "Hide form" : "Add category"}
           </button>
-        </form>
-      </section>
+        }
+      />
+
+      {showCreate && (
+        <section className="card form-section-gap">
+          <h2 className="section-title">Add category</h2>
+          <form className="auth-form" onSubmit={handleCreate}>
+            <label>
+              Name
+              <input
+                type="text"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </label>
+            <label>
+              Parent (optional)
+              <select value={parentId} onChange={(e) => setParentId(e.target.value)}>
+                <option value="">— Root —</option>
+                {treeRows.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {"\u00A0".repeat(cat.depth * 2)}
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {createErr && <p className="auth-error">{createErr}</p>}
+            <button type="submit" className="btn-primary" disabled={createBusy}>
+              {createBusy ? "Creating…" : "Create category"}
+            </button>
+          </form>
+        </section>
+      )}
 
       <section className="card form-section-gap">
         <h2 className="section-title">Your categories</h2>
-        {loading && <p className="muted">Loading…</p>}
-        {error && <p className="error-banner">{error}</p>}
         {actionErr && <p className="error-banner">{actionErr}</p>}
-        {!loading && !error && categories && categories.length === 0 && (
-          <p className="empty-state">No categories yet.</p>
-        )}
+        <StatusBlock
+          loading={loading}
+          error={error}
+          empty={!loading && !error && (categories?.length ?? 0) === 0}
+          loadingMessage="Loading categories…"
+          emptyMessage="No categories yet."
+        />
         {!loading && categories && categories.length > 0 && (
           <div className="table-wrap">
             <table className="data-table">
@@ -204,8 +220,12 @@ export function CategoriesPage() {
                           </div>
                         </form>
                       ) : (
-                        <span>
-                          {"\u00A0".repeat(category.depth * 4)}
+                        <span
+                          className={
+                            category.depth === 0 ? "category-root" : undefined
+                          }
+                          style={{ paddingInlineStart: `${category.depth * 1.25}rem` }}
+                        >
                           {category.name}
                         </span>
                       )}
@@ -237,6 +257,6 @@ export function CategoriesPage() {
           </div>
         )}
       </section>
-    </div>
+    </>
   );
 }

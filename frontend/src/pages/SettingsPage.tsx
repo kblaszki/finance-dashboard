@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "../state/auth";
 import { updateEmail, updatePassword, updateProfile } from "../api/authApi";
+import { PageHeader } from "../components/ui/PageHeader";
+import { useAuth } from "../state/auth";
 import { useTheme, type Theme } from "../state/theme";
 
 const APPEARANCE_OPTIONS: { value: Theme; label: string }[] = [
@@ -87,8 +88,11 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="page-stack">
-      <h1 className="page-title">Account settings</h1>
+    <>
+      <PageHeader
+        title="Account settings"
+        subtitle="Profile, email, password, and appearance for this instance."
+      />
 
       <section className="card form-section-gap">
         <h2 className="section-title">Appearance</h2>
@@ -193,6 +197,6 @@ export function SettingsPage() {
           </button>
         </form>
       </section>
-    </div>
+    </>
   );
 }

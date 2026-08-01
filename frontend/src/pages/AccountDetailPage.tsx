@@ -13,12 +13,16 @@ import {
   type CashTxType,
   type CashTransaction,
 } from "../api/transactionsApi";
+import { PageHeader } from "../components/ui/PageHeader";
+import { StatusBlock } from "../components/ui/StatusBlock";
 import { useAsyncData } from "../hooks/useAsyncData";
+import { useCurrency } from "../state/currency";
 import { formatMoney } from "../utils/format";
 
 export function AccountDetailPage() {
   const { id } = useParams();
   const accountId = Number(id);
+  const { refreshAccounts } = useCurrency();
 
   const loadAccount = useCallback(() => {
     if (!Number.isFinite(accountId) || accountId < 1) {
@@ -65,6 +69,7 @@ export function AccountDetailPage() {
     return map;
   }, [categories]);
 
+  const [showCreate, setShowCreate] = useState(false);
   const [type, setType] = useState<CashTxType>("INCOME");
   const [amount, setAmount] = useState("");
   const [occurredAt, setOccurredAt] = useState("");
@@ -77,6 +82,7 @@ export function AccountDetailPage() {
   async function refresh() {
     reloadAccount();
     reloadTx();
+    refreshAccounts();
   }
 
   async function handleCreate(e: FormEvent) {
@@ -97,6 +103,7 @@ export function AccountDetailPage() {
       setDescription("");
       setCategoryId("");
       setType("INCOME");
+      setShowCreate(false);
       await refresh();
     } catch (err) {
       setCreateErr(err instanceof Error ? err.message : "Create failed");
@@ -118,98 +125,122 @@ export function AccountDetailPage() {
 
   if (!Number.isFinite(accountId) || accountId < 1) {
     return (
-      <div className="page-stack">
+      <>
         <p className="error-banner">Invalid account id.</p>
         <p className="page-back-link">
           <Link to="/accounts">Back to accounts</Link>
         </p>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="page-stack">
+    <>
       <p className="page-back-link">
         <Link to="/accounts">← Accounts</Link>
       </p>
 
-      {accountLoading && <p className="muted">Loading account…</p>}
-      {accountError && <p className="error-banner">{accountError}</p>}
-      {account && <AccountSummary account={account} />}
+      <StatusBlock
+        loading={accountLoading}
+        error={accountError}
+        loadingMessage="Loading account…"
+      />
 
-      <section className="card form-section-gap">
-        <h2 className="section-title">Add cash movement</h2>
-        <form className="auth-form" onSubmit={handleCreate}>
-          <label>
-            Type
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value as CashTxType)}
+      {account && (
+        <PageHeader
+          title={account.name}
+          subtitle={<AccountSubtitle account={account} />}
+          actions={
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => setShowCreate((v) => !v)}
             >
-              {CASH_TX_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Amount
-            <input
-              type="number"
-              step="0.01"
-              min="0.01"
-              required
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-          </label>
-          <label>
-            Category (optional)
-            <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-            >
-              <option value="">— None —</option>
-              {categoryRows.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {"\u00A0".repeat(cat.depth * 2)}
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Date (optional)
-            <input
-              type="datetime-local"
-              value={occurredAt}
-              onChange={(e) => setOccurredAt(e.target.value)}
-            />
-          </label>
-          <label>
-            Description (optional)
-            <input
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </label>
-          {createErr && <p className="auth-error">{createErr}</p>}
-          <button type="submit" className="btn-primary" disabled={createBusy}>
-            {createBusy ? "Saving…" : "Add transaction"}
-          </button>
-        </form>
-      </section>
+              {showCreate ? "Hide form" : "Add transaction"}
+            </button>
+          }
+        />
+      )}
+
+      {showCreate && (
+        <section className="card form-section-gap">
+          <h2 className="section-title">Add cash movement</h2>
+          <form className="auth-form" onSubmit={handleCreate}>
+            <label>
+              Type
+              <select
+                value={type}
+                onChange={(e) => setType(e.target.value as CashTxType)}
+              >
+                {CASH_TX_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Amount
+              <input
+                type="number"
+                step="0.01"
+                min="0.01"
+                required
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </label>
+            <label>
+              Category (optional)
+              <select
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+              >
+                <option value="">— None —</option>
+                {categoryRows.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {"\u00A0".repeat(cat.depth * 2)}
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Date (optional)
+              <input
+                type="datetime-local"
+                value={occurredAt}
+                onChange={(e) => setOccurredAt(e.target.value)}
+              />
+            </label>
+            <label>
+              Description (optional)
+              <input
+                type="text"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </label>
+            {createErr && <p className="auth-error">{createErr}</p>}
+            <button type="submit" className="btn-primary" disabled={createBusy}>
+              {createBusy ? "Saving…" : "Add transaction"}
+            </button>
+          </form>
+        </section>
+      )}
 
       <section className="card form-section-gap">
         <h2 className="section-title">Ledger</h2>
-        {txLoading && <p className="muted">Loading…</p>}
-        {txError && <p className="error-banner">{txError}</p>}
         {actionErr && <p className="error-banner">{actionErr}</p>}
-        {!txLoading && !txError && transactions && transactions.length === 0 && (
-          <p className="empty-state">No transactions yet.</p>
-        )}
+        <StatusBlock
+          loading={txLoading}
+          error={txError}
+          empty={
+            !txLoading && !txError && (transactions?.length ?? 0) === 0
+          }
+          loadingMessage="Loading ledger…"
+          emptyMessage="No transactions yet."
+        />
         {!txLoading && transactions && transactions.length > 0 && (
           <div className="table-wrap">
             <table className="data-table">
@@ -217,7 +248,7 @@ export function AccountDetailPage() {
                 <tr>
                   <th>Date</th>
                   <th>Type</th>
-                  <th>Amount</th>
+                  <th className="num">Amount</th>
                   <th>Category</th>
                   <th>Description</th>
                   <th>Actions</th>
@@ -227,16 +258,27 @@ export function AccountDetailPage() {
                 {transactions.map((tx) => (
                   <tr key={tx.id}>
                     <td>{formatOccurredAt(tx.occurredAt)}</td>
-                    <td>{tx.type}</td>
                     <td>
+                      <span
+                        className={`badge ${tx.type === "INCOME" ? "badge-positive" : "badge-negative"}`}
+                      >
+                        {tx.type}
+                      </span>
+                    </td>
+                    <td className="num">
                       {account
                         ? formatMoney(tx.amount, account.currency)
                         : tx.amount}
                     </td>
                     <td>
-                      {tx.categoryId != null
-                        ? (categoryNameById.get(tx.categoryId) ?? `#${tx.categoryId}`)
-                        : "—"}
+                      {tx.categoryId != null ? (
+                        <span className="badge">
+                          {categoryNameById.get(tx.categoryId) ??
+                            `#${tx.categoryId}`}
+                        </span>
+                      ) : (
+                        "—"
+                      )}
                     </td>
                     <td>{tx.description ?? "—"}</td>
                     <td>
@@ -255,20 +297,24 @@ export function AccountDetailPage() {
           </div>
         )}
       </section>
-    </div>
+    </>
   );
 }
 
-function AccountSummary({ account }: { account: Account }) {
+function AccountSubtitle({ account }: { account: Account }) {
   return (
-    <section className="card form-section-gap">
-      <h1 className="page-title">{account.name}</h1>
-      <p className="muted">
-        {account.accountType} · Balance{" "}
-        <strong>{formatMoney(account.cashBalance, account.currency)}</strong>
-      </p>
-      {account.description && <p className="muted">{account.description}</p>}
-    </section>
+    <>
+      <span className="badge">{account.accountType}</span>
+      {" · Balance "}
+      <strong>{formatMoney(account.cashBalance, account.currency)}</strong>
+      {account.openingCashAsOf && (
+        <>
+          {" · Opening as of "}
+          {formatOccurredAt(account.openingCashAsOf)}
+        </>
+      )}
+      {account.description ? ` · ${account.description}` : null}
+    </>
   );
 }
 
