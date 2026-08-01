@@ -38,6 +38,7 @@ Shipped FR map: [docs/reference/requirements.md](docs/reference/requirements.md)
 | [docs/how-to/add-ui-page.md](docs/how-to/add-ui-page.md) | New UI page/route |
 | [docs/how-to/run-tests-and-coverage.md](docs/how-to/run-tests-and-coverage.md) | Verify before finishing logic work |
 | [docs/how-to/account-settings.md](docs/how-to/account-settings.md) | Profile, email, password |
+| [docs/how-to/budgets-and-categories.md](docs/how-to/budgets-and-categories.md) | Category tree + tag cash txs |
 | [docs/how-to/write-integration-tests.md](docs/how-to/write-integration-tests.md) | HTTP / integration tests |
 | [docs/how-to/private-deploy.md](docs/how-to/private-deploy.md) | Private single-user deploy |
 

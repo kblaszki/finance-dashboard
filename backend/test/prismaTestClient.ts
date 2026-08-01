@@ -46,6 +46,9 @@ export async function createTestPrisma(): Promise<PrismaClient> {
 }
 
 export async function resetDatabase(prisma: PrismaClient): Promise<void> {
+  await prisma.cashTransaction.deleteMany();
+  await prisma.category.updateMany({ data: { parentId: null } });
+  await prisma.category.deleteMany();
   await prisma.account.deleteMany();
   await prisma.user.deleteMany();
 }

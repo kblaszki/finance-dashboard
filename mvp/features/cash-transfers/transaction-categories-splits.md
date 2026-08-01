@@ -1,6 +1,6 @@
 ---
 id: FR-018
-status: planned
+status: in_progress
 domain: cash-transfers
 title: Transaction categories and splits
 ---
@@ -9,28 +9,33 @@ title: Transaction categories and splits
 
 ## Summary
 
-categoryId and multi-line splits on cash transactions.
+Optional `categoryId` on cash ledger transactions. Multi-line splits not shipped yet.
 
 ## User value
 
-Capability tracked in the product map for agents and humans; see linked docs for recipes.
+Tag INCOME/EXPENSE rows with a user category for later budgets and spend breakdowns.
 
 ## Surfaces
 
 | Kind | Location |
 |------|----------|
-| Primary | TransactionTable |
+| Primary | `/accounts/:id` ledger (AccountDetailPage) |
 
 ## Acceptance
 
-- [ ] POST /api/transactions accepts splits
+- [x] `POST /api/accounts/:accountId/transactions` accepts optional `categoryId` (same-user category)
+- [x] List/create responses include `categoryId`
+- [ ] Multi-line splits on cash transactions
 
 ## Implementation notes
 
-- Docs: docs/how-to/budgets-and-categories.md
-- Traceability: [docs/reference/requirements.md](../../../docs/reference/requirements.md) (when FR/NFR)
+- Extends `CashTransaction.categoryId` (`onDelete: SetNull`)
+- Categories: [category-tree.md](../budgets-categories/category-tree.md) (FR-015)
+- Docs: [docs/how-to/budgets-and-categories.md](../../../docs/how-to/budgets-and-categories.md)
+- Traceability: [docs/reference/requirements.md](../../../docs/reference/requirements.md)
 - Code map: [docs/meta/code-map.md](../../../docs/meta/code-map.md)
 
 ## Out of scope / follow-ups
 
-- See related planned/stub rows in [CHECKLIST.md](../../CHECKLIST.md)
+- Multi-line splits (remaining work for this FR)
+- Auto-categorization rules (FR-034)

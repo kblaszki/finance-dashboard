@@ -90,6 +90,18 @@ test("POST /api/auth/register creates user", async () => {
   assert.equal(res.status, 201);
   assert.ok(res.body.token);
   assert.equal(res.body.user.email, "newuser@test.local");
+
+  const cats = await request(app)
+    .get("/api/categories")
+    .set("Authorization", `Bearer ${res.body.token}`);
+  assert.equal(cats.status, 200);
+  assert.equal(cats.body.length, 8);
+  const rows = cats.body as Array<{ id: number; name: string; parentId: number | null }>;
+  const byName = new Map(rows.map((c) => [c.name, c]));
+  assert.equal(byName.get("Income")?.parentId, null);
+  assert.equal(byName.get("Expense")?.parentId, null);
+  assert.equal(byName.get("Salary")?.parentId, byName.get("Income")!.id);
+  assert.equal(byName.get("Food")?.parentId, byName.get("Expense")!.id);
 });
 
 test("POST /api/auth/register rejects short password", async () => {
@@ -538,4 +550,123 @@ test("cash transactions reject invalid input and mismatched account", async () =
     .delete(`/api/accounts/${accountId}/transactions/999999`)
     .set("Authorization", `Bearer ${token}`);
   assert.equal(missing.status, 404);
+});
+
+test("categories CRUD supports nesting, rename, reparent, and delete rules", async () => {
+  const token = await registerAndLogin("cats@test.local", "catsuser", "password123");
+
+  const roots = await request(app)
+    .get("/api/categories")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(roots.status, 200);
+  const income = (roots.body as Array<{ id: number; name: string }>).find((c) => c.name === "Income")!;
+  assert.ok(income);
+
+  const created = await request(app)
+    .post("/api/categories")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Bonus", parentId: income.id });
+  assert.equal(created.status, 201);
+  assert.equal(created.body.name, "Bonus");
+  assert.equal(created.body.parentId, income.id);
+
+  const dup = await request(app)
+    .post("/api/categories")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "bonus", parentId: income.id });
+  assert.equal(dup.status, 400);
+
+  const renamed = await request(app)
+    .patch(`/api/categories/${created.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Yearly bonus" });
+  assert.equal(renamed.status, 200);
+  assert.equal(renamed.body.name, "Yearly bonus");
+
+  const expense = (roots.body as Array<{ id: number; name: string }>).find((c) => c.name === "Expense")!;
+  const reparented = await request(app)
+    .patch(`/api/categories/${created.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ parentId: expense.id });
+  assert.equal(reparented.status, 200);
+  assert.equal(reparented.body.parentId, expense.id);
+
+  const cycle = await request(app)
+    .patch(`/api/categories/${expense.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ parentId: created.body.id });
+  assert.equal(cycle.status, 400);
+
+  const deleteParent = await request(app)
+    .delete(`/api/categories/${expense.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(deleteParent.status, 409);
+
+  const deleted = await request(app)
+    .delete(`/api/categories/${created.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(deleted.status, 204);
+});
+
+test("cash transactions accept optional categoryId and null on category delete", async () => {
+  const token = await registerAndLogin("txcat@test.local", "txcatuser", "password123");
+  const otherToken = await registerAndLogin("txcat2@test.local", "txcat2", "password123");
+
+  const account = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "CatLedger", openingBalance: 20 });
+  const accountId = account.body.id as number;
+
+  const cats = await request(app)
+    .get("/api/categories")
+    .set("Authorization", `Bearer ${token}`);
+  const food = (cats.body as Array<{ id: number; name: string }>).find((c) => c.name === "Food")!;
+  assert.ok(food);
+
+  const withCat = await request(app)
+    .post(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "EXPENSE", amount: 5, categoryId: food.id });
+  assert.equal(withCat.status, 201);
+  assert.equal(withCat.body.categoryId, food.id);
+
+  const omit = await request(app)
+    .post(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "INCOME", amount: 3 });
+  assert.equal(omit.status, 201);
+  assert.equal(omit.body.categoryId, null);
+
+  const foreign = await request(app)
+    .post(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "EXPENSE", amount: 1, categoryId: 999999 });
+  assert.equal(foreign.status, 404);
+
+  const otherCats = await request(app)
+    .get("/api/categories")
+    .set("Authorization", `Bearer ${otherToken}`);
+  const otherFood = (otherCats.body as Array<{ id: number; name: string }>).find(
+    (c) => c.name === "Food",
+  )!;
+  const crossUser = await request(app)
+    .post(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "EXPENSE", amount: 1, categoryId: otherFood.id });
+  assert.equal(crossUser.status, 404);
+
+  const delCat = await request(app)
+    .delete(`/api/categories/${food.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(delCat.status, 204);
+
+  const list = await request(app)
+    .get(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(list.status, 200);
+  const tagged = (list.body as Array<{ id: number; categoryId: number | null }>).find(
+    (t) => t.id === withCat.body.id,
+  );
+  assert.equal(tagged?.categoryId, null);
 });

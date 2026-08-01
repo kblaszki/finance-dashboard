@@ -20,6 +20,21 @@ Hub: [docs/README.md](../README.md).
 | passwordHash | String | bcrypt |
 | createdAt | DateTime | Default now |
 | accounts | Account[] | Owned accounts (`onDelete: Cascade`) |
+| categories | Category[] | Owned category tree (`onDelete: Cascade`) |
+
+## Category
+
+User-scoped nested label (`parentId` self-relation). No income/expense kind field.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id | Int | PK, autoincrement |
+| userId | Int | FK → User |
+| name | String | Sibling uniqueness enforced in domain |
+| parentId | Int? | FK → Category (`onDelete: Restrict`); null = root |
+| createdAt | DateTime | Default now |
+
+Indexes: `[userId]`, `[parentId]`. Domain: `backend/src/domain/categories.ts`. Seeded on register / create-user / demo seed.
 
 ## Account
 
@@ -43,7 +58,7 @@ Indexes: `[userId, accountType]`. API responses also expose computed `totalBalan
 
 ## CashTransaction
 
-Single-account cash ledger row (INCOME / EXPENSE). Positive `amount`; type drives signed effect on `Account.cashBalance`. No `balanceAfter`.
+Single-account cash ledger row (INCOME / EXPENSE). Positive `amount`; type drives signed effect on `Account.cashBalance`. No `balanceAfter`. Optional category tag.
 
 | Field | Type | Notes |
 |-------|------|-------|
@@ -53,6 +68,7 @@ Single-account cash ledger row (INCOME / EXPENSE). Positive `amount`; type drive
 | amount | Decimal | Always positive |
 | occurredAt | DateTime | Movement time (default now) |
 | description | String? | Optional note |
+| categoryId | Int? | FK → Category (`onDelete: SetNull`) |
 | createdAt | DateTime | Default now |
 
-Index: `[accountId, occurredAt]`. Domain rules: `backend/src/domain/cashLedger.ts`.
+Indexes: `[accountId, occurredAt]`, `[categoryId]`. Domain rules: `backend/src/domain/cashLedger.ts`.

@@ -34,6 +34,12 @@ import {
   createTransaction,
   deleteTransaction,
 } from './transactionsApi'
+import {
+  fetchCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+} from './categoriesApi'
 
 describe('API modules', () => {
   beforeEach(() => {
@@ -121,14 +127,40 @@ describe('API modules', () => {
     await fetchTransactions(3)
     expect(apiClient.get).toHaveBeenCalledWith('/api/accounts/3/transactions')
 
-    await createTransaction(3, { type: 'INCOME', amount: 12.5, description: 'Pay' })
+    await createTransaction(3, {
+      type: 'INCOME',
+      amount: 12.5,
+      description: 'Pay',
+      categoryId: 4,
+    })
     expect(apiClient.post).toHaveBeenCalledWith('/api/accounts/3/transactions', {
       type: 'INCOME',
       amount: 12.5,
       description: 'Pay',
+      categoryId: 4,
     })
 
     await deleteTransaction(3, 9)
     expect(apiClient.delete).toHaveBeenCalledWith('/api/accounts/3/transactions/9')
+  })
+
+  it('categoriesApi calls correct endpoints', async () => {
+    await fetchCategories()
+    expect(apiClient.get).toHaveBeenCalledWith('/api/categories')
+
+    await createCategory({ name: 'Food', parentId: 1 })
+    expect(apiClient.post).toHaveBeenCalledWith('/api/categories', {
+      name: 'Food',
+      parentId: 1,
+    })
+
+    await updateCategory(2, { name: 'Groceries', parentId: null })
+    expect(apiClient.patch).toHaveBeenCalledWith('/api/categories/2', {
+      name: 'Groceries',
+      parentId: null,
+    })
+
+    await deleteCategory(2)
+    expect(apiClient.delete).toHaveBeenCalledWith('/api/categories/2')
   })
 })

@@ -6,6 +6,7 @@ related_code:
   - backend/src/app.ts
   - backend/src/routes/authRoutes.ts
   - backend/src/routes/accountsRoutes.ts
+  - backend/src/routes/categoriesRoutes.ts
   - backend/src/routes/cashTransactionsRoutes.ts
   - backend/src/routes/mountRouters.ts
 ---
@@ -25,7 +26,7 @@ Hub: [docs/README.md](../README.md).
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
 | GET | `/api/auth/config` | No | `{ allowRegister }` |
-| POST | `/api/auth/register` | No | Body: email, username, password. 403 if registration disabled |
+| POST | `/api/auth/register` | No | Body: email, username, password. Seeds default category tree. 403 if registration disabled |
 | POST | `/api/auth/login` | No | Body: login (email or username) or email + password |
 | GET | `/api/auth/me` | Bearer | Current user `{ id, email, username }` |
 | PATCH | `/api/auth/profile` | Bearer | Body: username |
@@ -50,12 +51,25 @@ User-scoped. Cross-user access returns `404`. Create accepts allow-listed `accou
 
 Duplicate name for the same user → `400`. Unknown `accountType` → `400`.
 
-## Cash transactions
+## Categories
 
-Nested under an owned account. Cross-user or unknown account → `404`. `amount` must be positive. `type` is `INCOME` or `EXPENSE` (case-normalized). Create/delete adjust `Account.cashBalance` atomically (delete reverses). No PATCH / no `balanceAfter`.
+User-scoped nested tree (`parentId`). Flat list responses include `id`, `name`, `parentId`, `createdAt`. Sibling name uniqueness is case-insensitive (domain). Delete with children → `409`.
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
-| GET | `/api/accounts/:accountId/transactions` | Bearer | List for account (`occurredAt` desc, then `id` desc) |
-| POST | `/api/accounts/:accountId/transactions` | Bearer | Body: `type`, `amount`; optional `occurredAt` (ISO, default now), `description`. 201 |
+| GET | `/api/categories` | Bearer | Flat list, name ascending |
+| POST | `/api/categories` | Bearer | Body: `name`; optional `parentId`. 201 |
+| PATCH | `/api/categories/:id` | Bearer | Body: optional `name`, `parentId` (`null` = root). Cycle → 400 |
+| DELETE | `/api/categories/:id` | Bearer | 409 if children; else 204 (`CashTransaction.categoryId` → null) |
+
+Unknown / other-user category or parent → `404`.
+
+## Cash transactions
+
+Nested under an owned account. Cross-user or unknown account → `404`. `amount` must be positive. `type` is `INCOME` or `EXPENSE` (case-normalized). Create/delete adjust `Account.cashBalance` atomically (delete reverses). No PATCH / no `balanceAfter`. Optional `categoryId` must belong to the same user.
+
+| Method | Path | Auth | Notes |
+|--------|------|------|-------|
+| GET | `/api/accounts/:accountId/transactions` | Bearer | List for account (`occurredAt` desc, then `id` desc); includes `categoryId` |
+| POST | `/api/accounts/:accountId/transactions` | Bearer | Body: `type`, `amount`; optional `occurredAt` (ISO, default now), `description`, `categoryId`. 201 |
 | DELETE | `/api/accounts/:accountId/transactions/:id` | Bearer | Must match account; reverses balance. 204 |

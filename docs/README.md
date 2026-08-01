@@ -51,6 +51,7 @@ Never load all docs. Prefer reference for facts, how-to for tasks, explanation f
 | [add-ui-page.md](how-to/add-ui-page.md) | New UI page |
 | [run-tests-and-coverage.md](how-to/run-tests-and-coverage.md) | Verification gate |
 | [account-settings.md](how-to/account-settings.md) | Profile, email, password |
+| [budgets-and-categories.md](how-to/budgets-and-categories.md) | Category tree + tag cash txs |
 | [write-integration-tests.md](how-to/write-integration-tests.md) | HTTP / integration tests |
 | [private-deploy.md](how-to/private-deploy.md) | Private single-user deploy |
 

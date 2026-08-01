@@ -8,12 +8,28 @@ datasource db {
 }
 
 model User {
-  id           Int       @id @default(autoincrement())
-  email        String    @unique
-  username     String    @unique
+  id           Int        @id @default(autoincrement())
+  email        String     @unique
+  username     String     @unique
   passwordHash String
-  createdAt    DateTime  @default(now())
+  createdAt    DateTime   @default(now())
   accounts     Account[]
+  categories   Category[]
+}
+
+model Category {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  name      String
+  parentId  Int?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent    Category? @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children  Category[] @relation("CategoryTree")
+  cashTransactions CashTransaction[]
+
+  @@index([userId])
+  @@index([parentId])
 }
 
 model Account {
@@ -36,14 +52,17 @@ model Account {
 }
 
 model CashTransaction {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   accountId   Int
   type        String
   amount      Decimal
-  occurredAt  DateTime @default(now())
+  occurredAt  DateTime  @default(now())
   description String?
-  createdAt   DateTime @default(now())
-  account     Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  categoryId  Int?
+  createdAt   DateTime  @default(now())
+  account     Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
 
   @@index([accountId, occurredAt])
+  @@index([categoryId])
 }

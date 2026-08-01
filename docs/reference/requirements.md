@@ -11,7 +11,7 @@ related_docs:
 
 Hub: [docs/README.md](../README.md).
 
-**Shipped in code** = auth + multi-type accounts + cash ledger below. Remaining backlog: [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) and `mvp/features/*`. Checklist: 7 done / 0 in_progress / 55 planned (as of 2026-08-01).
+**Shipped in code** = auth + multi-type accounts + category tree + cash ledger (optional `categoryId`) below. Remaining backlog: [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) and `mvp/features/*`. Checklist: 8 done / 1 in_progress / 53 planned (as of 2026-08-01).
 
 ## Shipped
 
@@ -24,6 +24,8 @@ Hub: [docs/README.md](../README.md).
 | MVP-052 | Production auth rate limits | `app.ts` (login/register; import limiter when import returns) |
 | FR-006 | Extended account types | `Account` model; allow-list in `domain/accountTypes.ts`; `/api/accounts`; `/accounts` UI type select — type-specific fields still planned |
 | MVP-011 | Cash ledger INCOME/EXPENSE | `CashTransaction`; `domain/cashLedger.ts`; `/api/accounts/:id/transactions`; `/accounts/:id` |
+| FR-015 | Category tree CRUD | `Category`; `domain/categories.ts`; `/api/categories`; `/categories`; defaults on register |
+| FR-018 | Transaction categories (partial) | Optional `CashTransaction.categoryId` on ledger create/list; splits still planned |
 
 ## Planned / not in this codebase
 

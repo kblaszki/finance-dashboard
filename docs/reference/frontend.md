@@ -6,6 +6,7 @@ related_code:
   - frontend/src/App.tsx
   - frontend/src/api/authApi.ts
   - frontend/src/api/accountsApi.ts
+  - frontend/src/api/categoriesApi.ts
   - frontend/src/api/transactionsApi.ts
   - frontend/src/api/client.ts
 ---
@@ -23,7 +24,8 @@ Hub: [docs/README.md](../README.md).
 | `/register` | Guest only (when `allowRegister`) | `RegisterPage` (in `AuthSwapShell`) |
 | `/home` | Protected | `HomePage` |
 | `/accounts` | Protected | `AccountsPage` (multi-type create/list/edit/delete) |
-| `/accounts/:id` | Protected | `AccountDetailPage` (cash ledger create/list/delete) |
+| `/accounts/:id` | Protected | `AccountDetailPage` (cash ledger create/list/delete; optional category) |
+| `/categories` | Protected | `CategoriesPage` (nested tree create/rename/reparent/delete) |
 | `/settings` | Protected | `SettingsPage` |
 
 Shell: `AppShell` — hatch-folio layout (diagonal hatch atmosphere, asymmetric mast + page). Mast: brand, Home/Accounts/Settings nav, user, `.app-folio-logout`, theme toggle. Gate: `ProtectedRoute`.
@@ -47,6 +49,7 @@ Default after login/register: `/home` (`state/auth.tsx`).
 | `frontend/src/api/client.ts` | `fetch` + Bearer token + 401 handler |
 | `frontend/src/api/authApi.ts` | config, register, login, me, profile, email, password |
 | `frontend/src/api/accountsApi.ts` | list/create/get/patch/delete accounts; `ACCOUNT_TYPES` / `AccountType` |
-| `frontend/src/api/transactionsApi.ts` | list/create/delete cash txs under `/api/accounts/:id/transactions` |
+| `frontend/src/api/categoriesApi.ts` | list/create/patch/delete categories; `flattenCategoryTree` |
+| `frontend/src/api/transactionsApi.ts` | list/create/delete cash txs under `/api/accounts/:id/transactions` (optional `categoryId`) |
 
 New domain clients follow `frontend/src/api/*Api.ts` and must be covered in `apiModules.test.ts` when added.

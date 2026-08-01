@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { hashPassword } from "../src/auth";
+import { seedDefaultCategories } from "../src/domain/categories";
 
 const prisma = new PrismaClient();
 
@@ -21,6 +22,10 @@ async function main(): Promise<void> {
       passwordHash,
     },
   });
+  const categoryCount = await prisma.category.count({ where: { userId: user.id } });
+  if (categoryCount === 0) {
+    await seedDefaultCategories(prisma, user.id);
+  }
   // eslint-disable-next-line no-console
   console.log(
     JSON.stringify({

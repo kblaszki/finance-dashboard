@@ -1,6 +1,7 @@
 import {
   HttpError,
   badRequest,
+  conflict,
   forbidden,
   notFound,
   unauthorized,
@@ -10,6 +11,7 @@ import {
 export {
   HttpError,
   badRequest,
+  conflict,
   forbidden,
   notFound,
   unauthorized,

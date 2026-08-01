@@ -11,6 +11,7 @@ export type CashTransaction = {
   amount: number;
   occurredAt: string;
   description: string | null;
+  categoryId: number | null;
   createdAt: string;
 };
 
@@ -19,6 +20,7 @@ export type CreateCashTransactionInput = {
   amount: number;
   occurredAt?: string;
   description?: string | null;
+  categoryId?: number | null;
 };
 
 export async function fetchTransactions(

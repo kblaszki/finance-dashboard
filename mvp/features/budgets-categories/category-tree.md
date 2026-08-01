@@ -1,6 +1,6 @@
 ---
 id: FR-015
-status: planned
+status: done
 domain: budgets-categories
 title: Category tree CRUD
 ---
@@ -13,7 +13,7 @@ User category tree with defaults on register.
 
 ## User value
 
-Capability tracked in the product map for agents and humans; see linked docs for recipes.
+Nested labels for organizing cash; seeded Income/Expense defaults on new users.
 
 ## Surfaces
 
@@ -23,14 +23,19 @@ Capability tracked in the product map for agents and humans; see linked docs for
 
 ## Acceptance
 
-- [ ] Create/rename/delete categories
+- [x] Create/rename/reparent/delete categories (`parentId` tree)
+- [x] Defaults seeded on register (and create-user / demo seed)
 
 ## Implementation notes
 
-- Docs: docs/how-to/budgets-and-categories.md
-- Traceability: [docs/reference/requirements.md](../../../docs/reference/requirements.md) (when FR/NFR)
+- Domain: `backend/src/domain/categories.ts`
+- Routes: `backend/src/routes/categoriesRoutes.ts` → `/api/categories`
+- UI: `frontend/src/pages/CategoriesPage.tsx`
+- Docs: [docs/how-to/budgets-and-categories.md](../../../docs/how-to/budgets-and-categories.md)
+- Traceability: [docs/reference/requirements.md](../../../docs/reference/requirements.md)
 - Code map: [docs/meta/code-map.md](../../../docs/meta/code-map.md)
 
 ## Out of scope / follow-ups
 
-- See related planned/stub rows in [CHECKLIST.md](../../CHECKLIST.md)
+- Category income/expense kind enforcement
+- Monthly budgets (FR-017), auto-categorization (FR-034)

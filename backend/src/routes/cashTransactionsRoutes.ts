@@ -48,8 +48,32 @@ export function cashTransactionPayload(tx: CashTransaction) {
     amount: decimalToNumber(tx.amount),
     occurredAt: tx.occurredAt.toISOString(),
     description: tx.description,
+    categoryId: tx.categoryId,
     createdAt: tx.createdAt.toISOString(),
   };
+}
+
+function parseOptionalCategoryId(value: unknown): number | null {
+  if (value === undefined || value === null || value === "") return null;
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 1) {
+    throw badRequest("categoryId must be a valid id");
+  }
+  return n;
+}
+
+async function assertOwnedCategoryId(
+  prisma: PrismaClient,
+  userId: number,
+  categoryId: number | null,
+): Promise<number | null> {
+  if (categoryId === null) return null;
+  const category = await prisma.category.findFirst({
+    where: { id: categoryId, userId },
+    select: { id: true },
+  });
+  if (!category) throw notFound("Category not found");
+  return category.id;
 }
 
 async function findOwnedAccountId(
@@ -101,6 +125,11 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
         const delta = signedDelta(type, amount);
         const occurredAt = parseOccurredAt(body.occurredAt);
         const description = parseOptionalDescription(body.description);
+        const categoryId = await assertOwnedCategoryId(
+          prisma,
+          uid(req),
+          parseOptionalCategoryId(body.categoryId),
+        );
 
         const created = await prisma.$transaction(async (tx) => {
           const row = await tx.cashTransaction.create({
@@ -110,6 +139,7 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
               amount,
               occurredAt,
               description,
+              categoryId,
             },
           });
           await tx.account.update({

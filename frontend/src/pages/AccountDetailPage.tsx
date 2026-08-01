@@ -1,6 +1,10 @@
-import { FormEvent, useCallback, useState } from "react";
+import { FormEvent, useCallback, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { fetchAccount, type Account } from "../api/accountsApi";
+import {
+  fetchCategories,
+  flattenCategoryTree,
+} from "../api/categoriesApi";
 import {
   CASH_TX_TYPES,
   createTransaction,
@@ -30,6 +34,8 @@ export function AccountDetailPage() {
     return fetchTransactions(accountId);
   }, [accountId]);
 
+  const loadCategories = useCallback(() => fetchCategories(), []);
+
   const {
     data: account,
     error: accountError,
@@ -44,10 +50,26 @@ export function AccountDetailPage() {
     reload: reloadTx,
   } = useAsyncData(loadTx);
 
+  const { data: categories } = useAsyncData(loadCategories);
+
+  const categoryRows = useMemo(
+    () => (categories ? flattenCategoryTree(categories) : []),
+    [categories],
+  );
+
+  const categoryNameById = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const cat of categories ?? []) {
+      map.set(cat.id, cat.name);
+    }
+    return map;
+  }, [categories]);
+
   const [type, setType] = useState<CashTxType>("INCOME");
   const [amount, setAmount] = useState("");
   const [occurredAt, setOccurredAt] = useState("");
   const [description, setDescription] = useState("");
+  const [categoryId, setCategoryId] = useState<string>("");
   const [createErr, setCreateErr] = useState<string | null>(null);
   const [createBusy, setCreateBusy] = useState(false);
   const [actionErr, setActionErr] = useState<string | null>(null);
@@ -68,10 +90,12 @@ export function AccountDetailPage() {
         amount: value,
         occurredAt: occurredAt.trim() ? new Date(occurredAt).toISOString() : undefined,
         description: description.trim() ? description.trim() : null,
+        categoryId: categoryId === "" ? null : Number(categoryId),
       });
       setAmount("");
       setOccurredAt("");
       setDescription("");
+      setCategoryId("");
       setType("INCOME");
       await refresh();
     } catch (err) {
@@ -141,6 +165,21 @@ export function AccountDetailPage() {
             />
           </label>
           <label>
+            Category (optional)
+            <select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+            >
+              <option value="">— None —</option>
+              {categoryRows.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {"\u00A0".repeat(cat.depth * 2)}
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
             Date (optional)
             <input
               type="datetime-local"
@@ -179,6 +218,7 @@ export function AccountDetailPage() {
                   <th>Date</th>
                   <th>Type</th>
                   <th>Amount</th>
+                  <th>Category</th>
                   <th>Description</th>
                   <th>Actions</th>
                 </tr>
@@ -192,6 +232,11 @@ export function AccountDetailPage() {
                       {account
                         ? formatMoney(tx.amount, account.currency)
                         : tx.amount}
+                    </td>
+                    <td>
+                      {tx.categoryId != null
+                        ? (categoryNameById.get(tx.categoryId) ?? `#${tx.categoryId}`)
+                        : "—"}
                     </td>
                     <td>{tx.description ?? "—"}</td>
                     <td>

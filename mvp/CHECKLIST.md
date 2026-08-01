@@ -1,6 +1,6 @@
 # MVP feature checklist
 
-Last review: 2026-08-01 — statuses aligned to **auth + multi-type accounts + cash ledger** baseline (JWT auth, settings, health, private-deploy CLIs, prod auth rate limits, account CRUD, INCOME/EXPENSE cash txs). Feature specs under `mvp/features/**` remain the backlog; do not treat `planned` rows as shipped code.
+Last review: 2026-08-01 — statuses aligned to **auth + multi-type accounts + category tree + cash ledger** baseline (JWT auth, settings, health, private-deploy CLIs, prod auth rate limits, account CRUD, nested categories, INCOME/EXPENSE cash txs with optional `categoryId`). Feature specs under `mvp/features/**` remain the backlog; do not treat `planned` rows as shipped code.
 
 ## Legend
 
@@ -15,7 +15,7 @@ Last review: 2026-08-01 — statuses aligned to **auth + multi-type accounts + c
 
 | done | stub | planned | in_progress | total |
 |------|------|---------|-------------|-------|
-| 7 | 0 | 55 | 0 | 62 |
+| 8 | 0 | 53 | 1 | 62 |
 
 ## Master table
 
@@ -38,7 +38,7 @@ Last review: 2026-08-01 — statuses aligned to **auth + multi-type accounts + c
 | FR-032 | Precious metal grams on account | planned | [features/accounts/precious-metal-grams.md](features/accounts/precious-metal-grams.md) | PRECIOUS_METAL account detail |
 | MVP-010 | Manual revalue and account detail | planned | [features/accounts/account-detail-revalue.md](features/accounts/account-detail-revalue.md) | /accounts/:id |
 | FR-011 | Internal cash transfers with FX suggestion | planned | [features/cash-transfers/internal-cash-transfers.md](features/cash-transfers/internal-cash-transfers.md) | /transfers |
-| FR-018 | Transaction categories and splits | planned | [features/cash-transfers/transaction-categories-splits.md](features/cash-transfers/transaction-categories-splits.md) | TransactionTable |
+| FR-018 | Transaction categories and splits | in_progress | [features/cash-transfers/transaction-categories-splits.md](features/cash-transfers/transaction-categories-splits.md) | /accounts/:id ledger |
 | MVP-011 | Cash ledger transaction types | done | [features/cash-transfers/cash-ledger-types.md](features/cash-transfers/cash-ledger-types.md) | /accounts/:id cash ledger |
 | FR-007 | Asset trades with commission and settlementDate | planned | [features/holdings-trades/asset-trades-commission.md](features/holdings-trades/asset-trades-commission.md) | /transactions, lots |
 | FR-009 | Instrument price chart and manual valuations | planned | [features/holdings-trades/instrument-price-chart.md](features/holdings-trades/instrument-price-chart.md) | /assets/:id |
@@ -50,7 +50,7 @@ Last review: 2026-08-01 — statuses aligned to **auth + multi-type accounts + c
 | FR-010 | Historical NBP FX rates | planned | [features/market-fx/nbp-fx-history.md](features/market-fx/nbp-fx-history.md) | Display currency / valuations |
 | FR-031 | Crypto EOD sync on CRYPTO accounts | planned | [features/market-fx/crypto-eod-sync.md](features/market-fx/crypto-eod-sync.md) | MarketPricesStatus |
 | MVP-021 | STOCK/ETF market data sync | planned | [features/market-fx/stock-etf-market-sync.md](features/market-fx/stock-etf-market-sync.md) | Market sync + CLI |
-| FR-015 | Category tree CRUD | planned | [features/budgets-categories/category-tree.md](features/budgets-categories/category-tree.md) | /categories |
+| FR-015 | Category tree CRUD | done | [features/budgets-categories/category-tree.md](features/budgets-categories/category-tree.md) | /categories |
 | FR-017 | Monthly budgets vs spend | planned | [features/budgets-categories/monthly-budgets.md](features/budgets-categories/monthly-budgets.md) | /budgets |
 | FR-034 | Auto-categorization rules | planned | [features/budgets-categories/categorization-rules.md](features/budgets-categories/categorization-rules.md) | /categories |
 | FR-024 | Income events CRUD | planned | [features/income-liabilities/income-events.md](features/income-liabilities/income-events.md) | /income-events |
@@ -102,7 +102,7 @@ Last review: 2026-08-01 — statuses aligned to **auth + multi-type accounts + c
 ### cash-transfers
 
 - **planned** [FR-011 Internal cash transfers with FX suggestion](features/cash-transfers/internal-cash-transfers.md)
-- **planned** [FR-018 Transaction categories and splits](features/cash-transfers/transaction-categories-splits.md)
+- **in_progress** [FR-018 Transaction categories and splits](features/cash-transfers/transaction-categories-splits.md)
 - **done** [MVP-011 Cash ledger transaction types](features/cash-transfers/cash-ledger-types.md)
 
 ### holdings-trades
@@ -138,7 +138,7 @@ Last review: 2026-08-01 — statuses aligned to **auth + multi-type accounts + c
 
 ### budgets-categories
 
-- **planned** [FR-015 Category tree CRUD](features/budgets-categories/category-tree.md)
+- **done** [FR-015 Category tree CRUD](features/budgets-categories/category-tree.md)
 - **planned** [FR-017 Monthly budgets vs spend](features/budgets-categories/monthly-budgets.md)
 - **planned** [FR-034 Auto-categorization rules](features/budgets-categories/categorization-rules.md)
 

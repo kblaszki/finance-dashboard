@@ -16,8 +16,8 @@ Run from `backend/` unless noted.
 
 | Script | Command | Purpose |
 |--------|---------|---------|
-| Create user | `npm run create-user -- --email … --username … --password …` | Private deploy when registration is closed |
-| Demo user seed | `npm run db:seed` | Upsert login-only `demo@finance.local` (no portfolio) |
+| Create user | `npm run create-user -- --email … --username … --password …` | Private deploy when registration is closed; seeds default categories |
+| Demo user seed | `npm run db:seed` | Upsert login-only `demo@finance.local` + default categories if missing (no portfolio) |
 | DB backup | `npm run db:backup` | Copy SQLite file (optional `--gzip` / `BACKUP_GZIP`) |
 | Migrate deploy | `npx prisma migrate deploy` | Apply migrations (CI / production) |
 | Migrate dev | `npx prisma migrate dev --name <description>` | Local schema change |
