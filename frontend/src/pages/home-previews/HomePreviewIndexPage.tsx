@@ -23,6 +23,26 @@ const VARIANTS = [
     name: "Focus stack",
     blurb: "Sidebar + Signal-style centered stack with chart as atmosphere.",
   },
+  {
+    slug: "grid-room",
+    name: "Grid room",
+    blurb: "Landing-style fine grid under floating nav + content panels.",
+  },
+  {
+    slug: "mesh-stage",
+    name: "Mesh stage",
+    blurb: "Soft emerald mesh + horizon; content on a raised stage card.",
+  },
+  {
+    slug: "hatch-split",
+    name: "Hatch split",
+    blurb: "Diagonal hatch; left copy / right chart as a vertical plane.",
+  },
+  {
+    slug: "dot-orbit",
+    name: "Dot orbit",
+    blurb: "Dot field + soft ring; centered instrument-panel chart.",
+  },
 ] as const;
 
 export function HomePreviewIndexPage() {
