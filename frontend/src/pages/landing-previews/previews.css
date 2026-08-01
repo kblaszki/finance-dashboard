@@ -336,8 +336,15 @@
   .lp-anim-stagger,
   .lp-anim-grid,
   .lp-preview__mesh,
-  .lp-blob {
+  .lp-blob,
+  .lp-preview__grid,
+  .lp-preview__hatch {
     animation: none !important;
+  }
+
+  .lp-preview__grid,
+  .lp-preview__hatch {
+    opacity: 1;
   }
 }
 
@@ -726,17 +733,24 @@
   }
 }
 
-/* —— D: Signal —— */
+/* —— D: Signal family —— */
 
-.lp-preview--signal {
+.lp-preview--signal,
+.lp-preview--signal-focus,
+.lp-preview--signal-depth,
+.lp-preview--signal-quiet,
+.lp-preview--signal-edge {
   --lp-ink: #121417;
   --lp-muted: #4a525a;
   --lp-amber: #c47a11;
   --lp-amber-hover: #a5660e;
+  --lp-btn-ink: #1a1208;
   --lp-bg: #eef2f4;
   --lp-border: rgba(18, 20, 23, 0.12);
   --lp-ghost-border: rgba(18, 20, 23, 0.28);
   --lp-grid-line: rgba(18, 20, 23, 0.05);
+  --lp-grid-size: 48px;
+  --lp-grid-mask: radial-gradient(ellipse 70% 60% at 50% 40%, #000 20%, transparent 75%);
   color: var(--lp-ink);
   background: var(--lp-bg);
   font-family: "IBM Plex Sans", system-ui, sans-serif;
@@ -747,10 +761,107 @@
   --lp-muted: #9aa3ad;
   --lp-amber: #e5a01d;
   --lp-amber-hover: #f0b429;
+  --lp-btn-ink: #1a1208;
   --lp-bg: #0a0c0e;
   --lp-border: rgba(238, 242, 244, 0.12);
   --lp-ghost-border: rgba(238, 242, 244, 0.28);
   --lp-grid-line: rgba(238, 242, 244, 0.06);
+}
+
+.lp-preview--signal-focus {
+  --lp-ink: #1a222c;
+  --lp-muted: #5a6570;
+  --lp-amber: #059669;
+  --lp-amber-hover: #047857;
+  --lp-btn-ink: #ecfdf5;
+  --lp-bg: #e8eef3;
+  --lp-border: rgba(26, 34, 44, 0.12);
+  --lp-ghost-border: rgba(26, 34, 44, 0.28);
+  --lp-grid-line: rgba(26, 34, 44, 0.06);
+  --lp-grid-size: 32px;
+}
+
+[data-theme="dark"] .lp-preview--signal-focus {
+  --lp-ink: #e8eef3;
+  --lp-muted: #9aa8b5;
+  --lp-amber: #34d399;
+  --lp-amber-hover: #6ee7b7;
+  --lp-btn-ink: #052e1c;
+  --lp-bg: #0d1218;
+  --lp-border: rgba(232, 238, 243, 0.12);
+  --lp-ghost-border: rgba(232, 238, 243, 0.28);
+  --lp-grid-line: rgba(232, 238, 243, 0.06);
+}
+
+.lp-preview--signal-depth {
+  --lp-ink: #e6eaf0;
+  --lp-muted: #9aa3b0;
+  --lp-amber: #3b82f6;
+  --lp-amber-hover: #60a5fa;
+  --lp-btn-ink: #0b1220;
+  --lp-bg: #1a1f28;
+  --lp-border: rgba(230, 234, 240, 0.12);
+  --lp-ghost-border: rgba(230, 234, 240, 0.28);
+  --lp-grid-line: rgba(230, 234, 240, 0.045);
+  --lp-grid-mask: radial-gradient(ellipse 55% 50% at 50% 38%, #000 15%, transparent 72%);
+}
+
+[data-theme="dark"] .lp-preview--signal-depth {
+  --lp-ink: #f0f3f8;
+  --lp-muted: #a4adba;
+  --lp-amber: #60a5fa;
+  --lp-amber-hover: #93c5fd;
+  --lp-btn-ink: #0b1220;
+  --lp-bg: #0a0d12;
+  --lp-border: rgba(240, 243, 248, 0.12);
+  --lp-ghost-border: rgba(240, 243, 248, 0.28);
+  --lp-grid-line: rgba(240, 243, 248, 0.04);
+}
+
+.lp-preview--signal-quiet {
+  --lp-ink: #1c1f23;
+  --lp-muted: #6b7280;
+  --lp-amber: #1c1f23;
+  --lp-amber-hover: #374151;
+  --lp-btn-ink: #f8fafc;
+  --lp-bg: #f3f4f6;
+  --lp-border: rgba(28, 31, 35, 0.1);
+  --lp-ghost-border: rgba(28, 31, 35, 0.22);
+}
+
+[data-theme="dark"] .lp-preview--signal-quiet {
+  --lp-ink: #f3f4f6;
+  --lp-muted: #9ca3af;
+  --lp-amber: #f3f4f6;
+  --lp-amber-hover: #e5e7eb;
+  --lp-btn-ink: #111827;
+  --lp-bg: #111317;
+  --lp-border: rgba(243, 244, 246, 0.12);
+  --lp-ghost-border: rgba(243, 244, 246, 0.28);
+}
+
+.lp-preview--signal-edge {
+  --lp-ink: #14181d;
+  --lp-muted: #55606c;
+  --lp-amber: #0f766e;
+  --lp-amber-hover: #0d5f59;
+  --lp-btn-ink: #f0fdfa;
+  --lp-bg: #e9eef2;
+  --lp-border: rgba(20, 24, 29, 0.12);
+  --lp-ghost-border: rgba(20, 24, 29, 0.28);
+  --lp-hatch: rgba(20, 24, 29, 0.05);
+}
+
+[data-theme="dark"] .lp-preview--signal-edge {
+  --lp-ink: #e8eef2;
+  --lp-muted: #9aa3ad;
+  --lp-amber: #2dd4bf;
+  --lp-amber-hover: #5eead4;
+  --lp-btn-ink: #042f2e;
+  --lp-bg: #0c1014;
+  --lp-border: rgba(232, 238, 242, 0.12);
+  --lp-ghost-border: rgba(232, 238, 242, 0.28);
+  --lp-hatch: rgba(232, 238, 242, 0.06);
 }
 
 .lp-preview__grid {
@@ -762,21 +873,68 @@
   background-image:
     linear-gradient(var(--lp-grid-line, rgba(18, 20, 23, 0.05)) 1px, transparent 1px),
     linear-gradient(90deg, var(--lp-grid-line, rgba(18, 20, 23, 0.05)) 1px, transparent 1px);
-  background-size: 48px 48px;
-  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 20%, transparent 75%);
+  background-size: var(--lp-grid-size, 48px) var(--lp-grid-size, 48px);
+  mask-image: var(
+    --lp-grid-mask,
+    radial-gradient(ellipse 70% 60% at 50% 40%, #000 20%, transparent 75%)
+  );
 }
 
-.lp-preview--signal .lp-preview__brand {
+.lp-preview__grid--soft {
+  opacity: 0;
+  animation: lp-fade-up-soft 1.1s ease 0.15s both;
+}
+
+@keyframes lp-fade-up-soft {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 0.55;
+    transform: translateY(0);
+  }
+}
+
+.lp-preview__hatch {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0;
+  animation: lp-fade-up 1s ease 0.15s both;
+  background-image: repeating-linear-gradient(
+    -32deg,
+    transparent,
+    transparent 11px,
+    var(--lp-hatch, rgba(20, 24, 29, 0.05)) 11px,
+    var(--lp-hatch, rgba(20, 24, 29, 0.05)) 12px
+  );
+  mask-image: radial-gradient(ellipse 72% 58% at 50% 40%, #000 18%, transparent 78%);
+}
+
+.lp-preview--signal .lp-preview__brand,
+.lp-preview--signal-focus .lp-preview__brand,
+.lp-preview--signal-depth .lp-preview__brand,
+.lp-preview--signal-quiet .lp-preview__brand,
+.lp-preview--signal-edge .lp-preview__brand {
   font-family: "Space Grotesk", system-ui, sans-serif;
   font-weight: 700;
 }
 
-.lp-preview--signal .lp-preview__headline {
+.lp-preview--signal .lp-preview__headline,
+.lp-preview--signal-focus .lp-preview__headline,
+.lp-preview--signal-depth .lp-preview__headline,
+.lp-preview--signal-quiet .lp-preview__headline,
+.lp-preview--signal-edge .lp-preview__headline {
   font-family: "Space Grotesk", system-ui, sans-serif;
   font-weight: 600;
 }
 
-.lp-preview--signal .lp-preview__lead {
+.lp-preview--signal .lp-preview__lead,
+.lp-preview--signal-focus .lp-preview__lead,
+.lp-preview--signal-depth .lp-preview__lead,
+.lp-preview--signal-quiet .lp-preview__lead,
+.lp-preview--signal-edge .lp-preview__lead {
   color: var(--lp-muted);
 }
 
@@ -789,7 +947,7 @@
 
 .lp-btn--signal {
   background: var(--lp-amber);
-  color: #1a1208;
+  color: var(--lp-btn-ink, #1a1208);
 }
 
 .lp-btn--signal:hover {
@@ -837,6 +995,13 @@
 @media (max-width: 640px) {
   .lp-preview__below--split-copy {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-preview__grid--soft {
+    animation: none !important;
+    opacity: 0.55;
   }
 }
 

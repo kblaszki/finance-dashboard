@@ -5,6 +5,7 @@ import {
   DemoAreaChart,
   DemoTickerTape,
 } from "./PreviewDemoCharts";
+import { SignalFamilyPreview } from "./SignalFamilyPreview";
 import "./previews.css";
 
 const SLUGS = [
@@ -12,6 +13,10 @@ const SLUGS = [
   "harbor",
   "atelier",
   "signal",
+  "signal-focus",
+  "signal-depth",
+  "signal-quiet",
+  "signal-edge",
   "ticker",
   "folio",
   "pulse",
@@ -36,7 +41,54 @@ export function LandingPreviewPage() {
     case "atelier":
       return <AtelierPreview />;
     case "signal":
-      return <SignalPreview />;
+      return (
+        <SignalFamilyPreview
+          chromeName="Signal clarity"
+          slugClass="lp-preview--signal"
+          headline="Signal over dashboard clutter"
+          lead="One clear path in: authenticate, set your profile, keep your data local. More modules arrive feature by feature."
+        />
+      );
+    case "signal-focus":
+      return (
+        <SignalFamilyPreview
+          chromeName="Signal focus"
+          slugClass="lp-preview--signal-focus"
+          atmosphereClass="lp-preview__grid--fine"
+          headline="Focus on the path, not the noise"
+          lead="Cool slate and a clear emerald cue — same centered Signal layout, tuned for decisive first steps."
+        />
+      );
+    case "signal-depth":
+      return (
+        <SignalFamilyPreview
+          chromeName="Signal depth"
+          slugClass="lp-preview--signal-depth"
+          atmosphereClass="lp-preview__grid--soft"
+          headline="Depth without dashboard clutter"
+          lead="Charcoal ground and cobalt accent — the Signal structure, dialed for a quieter, deeper first impression."
+        />
+      );
+    case "signal-quiet":
+      return (
+        <SignalFamilyPreview
+          chromeName="Signal quiet"
+          slugClass="lp-preview--signal-quiet"
+          atmosphere="none"
+          headline="Quiet entry. Clear next step."
+          lead="Mist gray and ink-only CTAs — Signal clarity with saturation turned down to almost nothing."
+        />
+      );
+    case "signal-edge":
+      return (
+        <SignalFamilyPreview
+          chromeName="Signal edge"
+          slugClass="lp-preview--signal-edge"
+          atmosphere="hatch"
+          headline="A sharp edge on a simple path"
+          lead="Teal accent and a diagonal hatch — Signal’s centered story with a slightly harder graphic edge."
+        />
+      );
     case "ticker":
       return <TickerPreview />;
     case "folio":
@@ -171,50 +223,6 @@ function AtelierPreview() {
               Add finance features from the product roadmap
             </li>
           </ol>
-        </section>
-      </div>
-    </PreviewChrome>
-  );
-}
-
-function SignalPreview() {
-  return (
-    <PreviewChrome name="Signal clarity">
-      <div className="lp-preview lp-preview--signal">
-        <div className="lp-preview__grid" aria-hidden />
-        <header className="lp-preview__top lp-preview__top--center">
-          <p className="lp-preview__brand lp-anim-grid">Finance Dashboard</p>
-        </header>
-        <main className="lp-preview__hero lp-preview__hero--center">
-          <h1 className="lp-preview__headline lp-anim-grid lp-anim-delay-1">
-            Signal over dashboard clutter
-          </h1>
-          <p className="lp-preview__lead lp-anim-grid lp-anim-delay-2">
-            One clear path in: authenticate, set your profile, keep your data
-            local. More modules arrive feature by feature.
-          </p>
-          <div className="lp-preview__rule" aria-hidden />
-          <div className="lp-preview__cta lp-anim-grid lp-anim-delay-3">
-            <Link to="/register" className="lp-btn lp-btn--signal">
-              Get started
-            </Link>
-            <Link to="/login" className="lp-btn lp-btn--signal-ghost">
-              I already have an account
-            </Link>
-          </div>
-        </main>
-        <section className="lp-preview__below lp-preview__below--split-copy">
-          <div>
-            <h2 className="lp-preview__subhead">What you get today</h2>
-            <p>Login, registration, and account settings on your own stack.</p>
-          </div>
-          <div>
-            <h2 className="lp-preview__subhead">Roadmap</h2>
-            <p>
-              Accounts, portfolio, and tax tooling land step by step from the
-              product checklist — not pretended as live UI yet.
-            </p>
-          </div>
         </section>
       </div>
     </PreviewChrome>

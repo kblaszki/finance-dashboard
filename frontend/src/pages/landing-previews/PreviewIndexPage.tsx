@@ -24,6 +24,26 @@ const VARIANTS = [
     blurb: "Amber on cool gray, Space Grotesk — clear signal, less noise.",
   },
   {
+    slug: "signal-focus",
+    name: "Signal focus",
+    blurb: "Signal layout — slate ground, emerald CTA, finer grid.",
+  },
+  {
+    slug: "signal-depth",
+    name: "Signal depth",
+    blurb: "Signal layout — charcoal cool, cobalt accent, soft grid.",
+  },
+  {
+    slug: "signal-quiet",
+    name: "Signal quiet",
+    blurb: "Signal layout — mist gray, ink-only CTAs, no grid.",
+  },
+  {
+    slug: "signal-edge",
+    name: "Signal edge",
+    blurb: "Signal layout — teal accent, diagonal hatch atmosphere.",
+  },
+  {
     slug: "ticker",
     name: "Ticker tape",
     blurb: "Scrolling symbols + index area chart — terminal-adjacent.",
