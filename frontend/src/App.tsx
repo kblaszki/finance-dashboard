@@ -6,7 +6,7 @@ import { AuthSwapShell } from "./components/AuthSwapShell";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { LandingPage } from "./pages/LandingPage";
-import { HomePage } from "./pages/HomePage";
+import { DashboardPage } from "./pages/DashboardPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { AccountsPage } from "./pages/AccountsPage";
 import { AccountDetailPage } from "./pages/AccountDetailPage";
@@ -26,7 +26,7 @@ function App() {
       </Route>
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
-          <Route path="/dashboard" element={<HomePage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/home" element={<Navigate to="/dashboard" replace />} />
           <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/accounts/:id" element={<AccountDetailPage />} />
