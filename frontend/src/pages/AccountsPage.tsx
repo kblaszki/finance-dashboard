@@ -157,7 +157,7 @@ export function AccountsPage() {
         {error && <p className="error-banner">{error}</p>}
         {actionErr && <p className="error-banner">{actionErr}</p>}
         {!loading && !error && accounts && accounts.length === 0 && (
-          <p className="muted">No accounts yet.</p>
+          <p className="empty-state">No accounts yet.</p>
         )}
         {!loading && accounts && accounts.length > 0 && (
           <div className="table-wrap">
@@ -175,7 +175,10 @@ export function AccountsPage() {
                   <tr key={account.id}>
                     <td>
                       {editingId === account.id ? (
-                        <form className="auth-form" onSubmit={handleSaveEdit}>
+                        <form
+                          className="auth-form auth-form--compact"
+                          onSubmit={handleSaveEdit}
+                        >
                           <label>
                             Name
                             <input
@@ -235,7 +238,7 @@ export function AccountsPage() {
                           </button>
                           <button
                             type="button"
-                            className="btn-secondary"
+                            className="btn-danger"
                             onClick={() => void handleDelete(account)}
                           >
                             Delete

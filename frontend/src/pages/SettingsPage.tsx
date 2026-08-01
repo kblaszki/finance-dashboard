@@ -124,7 +124,7 @@ export function SettingsPage() {
             />
           </label>
           {profileErr && <p className="auth-error">{profileErr}</p>}
-          {profileMsg && <p className="muted">{profileMsg}</p>}
+          {profileMsg && <p className="success-banner">{profileMsg}</p>}
           <button type="submit" className="btn-primary" disabled={profileBusy}>
             {profileBusy ? "Saving…" : "Save username"}
           </button>
@@ -155,7 +155,7 @@ export function SettingsPage() {
             />
           </label>
           {emailErr && <p className="auth-error">{emailErr}</p>}
-          {emailMsg && <p className="muted">{emailMsg}</p>}
+          {emailMsg && <p className="success-banner">{emailMsg}</p>}
           <button type="submit" className="btn-primary" disabled={emailBusy}>
             {emailBusy ? "Saving…" : "Save email"}
           </button>
@@ -187,7 +187,7 @@ export function SettingsPage() {
             />
           </label>
           {passwordErr && <p className="auth-error">{passwordErr}</p>}
-          {passwordMsg && <p className="muted">{passwordMsg}</p>}
+          {passwordMsg && <p className="success-banner">{passwordMsg}</p>}
           <button type="submit" className="btn-primary" disabled={passwordBusy}>
             {passwordBusy ? "Saving…" : "Change password"}
           </button>

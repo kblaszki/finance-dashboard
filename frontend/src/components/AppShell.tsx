@@ -29,7 +29,7 @@ export function AppShell() {
           <span className="app-folio-user-name" title={user?.email ?? ""}>
             {user?.username ?? user?.email}
           </span>
-          <button type="button" className="theme-toggle" onClick={logout}>
+          <button type="button" className="app-folio-logout" onClick={logout}>
             Log out
           </button>
         </div>

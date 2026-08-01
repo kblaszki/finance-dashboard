@@ -13,12 +13,18 @@ export function HomePage() {
         bank accounts or open settings. More features will be added over time.
       </p>
       <div className="home-folio-rule" aria-hidden />
-      <div className="form-actions-row">
-        <Link to="/accounts" className="btn-primary">
-          Accounts
+      <div className="home-action-grid">
+        <Link to="/accounts" className="card home-action-card">
+          <h2 className="section-title">Accounts</h2>
+          <p className="muted">
+            Bank accounts — create, edit, and track opening balances.
+          </p>
         </Link>
-        <Link to="/settings" className="btn-secondary">
-          Account settings
+        <Link to="/settings" className="card home-action-card">
+          <h2 className="section-title">Settings</h2>
+          <p className="muted">
+            Profile, email, password, and appearance preferences.
+          </p>
         </Link>
       </div>
     </div>

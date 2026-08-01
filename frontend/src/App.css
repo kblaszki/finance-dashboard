@@ -69,6 +69,27 @@
   align-self: flex-start;
 }
 
+.app-folio-logout {
+  width: 100%;
+  background: transparent;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm) var(--space-md);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.app-folio-logout:hover:not(:disabled) {
+  background: var(--color-negative-subtle);
+  border-color: var(--color-negative);
+  color: var(--color-negative);
+}
+
 .app-folio-mast-note {
   margin-top: auto;
   margin-bottom: 0;
@@ -145,10 +166,42 @@
   border-radius: 1px;
 }
 
-.home-folio .btn-primary {
+.home-action-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-md);
+  width: 100%;
+  max-width: 32rem;
+}
+
+.home-action-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.home-action-card:hover {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-card);
+}
+
+.home-action-card .section-title {
+  margin-bottom: var(--space-xs);
+}
+
+.home-action-card .muted {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.home-folio .btn-primary,
+.home-folio .btn-secondary {
   align-self: flex-start;
   text-decoration: none;
 }
+
+/* Page layout */
 
 .page {
   display: flex;
@@ -169,6 +222,8 @@
   margin: 0;
   color: var(--color-text);
 }
+
+/* Reserved (future features) — keep until MVP pages ship */
 
 .dashboard-page {
   gap: var(--space-lg);
@@ -302,6 +357,16 @@
   font-size: 0.9rem;
 }
 
+.success-banner {
+  margin: 0 0 var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-positive);
+  background: var(--color-positive-subtle);
+  color: var(--color-positive);
+  font-size: 0.9rem;
+}
+
 .page-back-link {
   margin: 0;
   font-size: 0.9rem;
@@ -314,6 +379,8 @@
 .form-section-gap {
   margin-bottom: var(--space-md);
 }
+
+/* Reserved (future features) — inline / grid forms for upcoming editors */
 
 .inline-form {
   display: flex;
@@ -381,6 +448,8 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* Reserved (future features) — charts and stats */
 
 .chart-container {
   width: 100%;
@@ -551,6 +620,14 @@ button:disabled {
   transition: background 150ms ease;
 }
 
+a.btn-primary,
+a.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
 .btn-primary:hover:not(:disabled) {
   background: var(--color-accent-hover);
 }
@@ -560,10 +637,23 @@ button:disabled {
   cursor: not-allowed;
 }
 
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible,
+.btn-danger:focus-visible,
+.theme-toggle:focus-visible,
+.app-folio-logout:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 .empty-state,
 .loading-state {
   color: var(--color-text-muted);
   margin: 0;
+}
+
+.empty-state {
+  padding: var(--space-md) 0;
 }
 
 .auth-page {
@@ -585,10 +675,26 @@ button:disabled {
 .appearance-option {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-xs);
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
   font-size: 0.9rem;
   color: var(--color-text);
   cursor: pointer;
+  background: var(--color-bg-elevated);
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.appearance-option:has(input:checked) {
+  border-color: var(--color-accent);
+  background: var(--color-accent-subtle);
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.appearance-option input {
+  accent-color: var(--color-accent);
 }
 
 .auth-error {
@@ -598,9 +704,82 @@ button:disabled {
 }
 
 .field-warning {
-  color: var(--color-warning, #d68910);
+  color: var(--color-warning);
   margin-left: 0.35rem;
   cursor: help;
+}
+
+/* Stack forms (Settings / Accounts) */
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  max-width: 28rem;
+}
+
+.auth-form label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.auth-form input,
+.auth-form select,
+.auth-form textarea {
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  padding: 0.7rem 0.85rem;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+.auth-form input:focus-visible,
+.auth-form select:focus-visible,
+.auth-form textarea:focus-visible,
+.auth-swap-fields input:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: var(--focus-ring);
+}
+
+.auth-form .btn-primary,
+.auth-form .btn-secondary,
+.auth-form .btn-danger {
+  align-self: flex-start;
+}
+
+.auth-form .success-banner,
+.auth-form .auth-error,
+.auth-form .error-banner {
+  margin-bottom: 0;
+}
+
+.auth-form--compact {
+  max-width: none;
+  gap: var(--space-sm);
+  min-width: 12rem;
+}
+
+.auth-form--compact input,
+.auth-form--compact select,
+.auth-form--compact textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--space-xs) var(--space-sm);
+  font-size: 0.9rem;
+}
+
+.auth-form--compact label {
+  font-size: 0.8rem;
+}
+
+.auth-form--compact .form-actions-row {
+  margin-top: var(--space-xs);
 }
 
 /* Auth swap-split (login / register) */
@@ -903,6 +1082,8 @@ button:disabled {
     width: min(100%, 18rem);
   }
 }
+
+/* Reserved (future features) — transactions / budget / period filters */
 
 .transactions-subnav {
   display: flex;
