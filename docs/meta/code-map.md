@@ -32,6 +32,6 @@ Auth-only baseline — product backlog paths live under [mvp/](../../mvp/), not 
 | SPA routes | `frontend/src/App.tsx` |
 | Auth state | `frontend/src/state/auth.tsx` |
 | Auth API client | `frontend/src/api/authApi.ts`, `frontend/src/api/client.ts` |
-| Shell / gates | `frontend/src/components/AppShell.tsx`, `ProtectedRoute.tsx` |
+| Shell / gates | `frontend/src/components/AppShell.tsx`, `AuthSwapShell.tsx`, `ProtectedRoute.tsx` |
 | Pages | `frontend/src/pages/{Landing,Login,Register,Home,Settings}Page.tsx` |
 | Theme | `frontend/src/state/theme.tsx`, `ThemeToggle.tsx` (light/dark) |

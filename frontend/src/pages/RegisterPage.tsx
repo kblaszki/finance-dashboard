@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { fetchAuthConfig } from "../api/authApi";
-import { ThemeToggle } from "../components/ThemeToggle";
 import { useAuth } from "../state/auth";
 
 export function RegisterPage() {
@@ -9,6 +8,7 @@ export function RegisterPage() {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [allowRegister, setAllowRegister] = useState<boolean | null>(null);
@@ -37,61 +37,63 @@ export function RegisterPage() {
   }
 
   if (allowRegister === null) {
-    return (
-      <div className="auth-page">
-        <p className="loading-state">Loading…</p>
-      </div>
-    );
+    return <p className="loading-state">Loading…</p>;
   }
 
   return (
-    <div className="auth-page">
-      <div className="auth-theme-toggle">
-        <ThemeToggle />
-      </div>
-      <div className="auth-card card">
-        <h1 className="page-title">Sign up</h1>
-        <form className="auth-form" onSubmit={handleSubmit}>
-          <label>
-            Email
+    <>
+      <p className="auth-swap-brand">Finance Dashboard</p>
+      <h1 className="auth-swap-title">Create an account</h1>
+      <form className="auth-swap-fields" onSubmit={handleSubmit}>
+        <label>
+          Email
+          <input
+            type="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </label>
+        <label>
+          Username
+          <input
+            type="text"
+            autoComplete="username"
+            required
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+        </label>
+        <label>
+          Password (min. 8 characters)
+          <span className="auth-swap-password">
             <input
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </label>
-          <label>
-            Username
-            <input
-              type="text"
-              autoComplete="username"
-              required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
-          </label>
-          <label>
-            Password (min. 8 characters)
-            <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               autoComplete="new-password"
               required
               minLength={8}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-          </label>
-          {error && <p className="auth-error">{error}</p>}
-          <button type="submit" className="btn-primary" disabled={submitting}>
-            {submitting ? "Creating account…" : "Create account"}
-          </button>
-        </form>
-        <p className="auth-switch">
-          Already have an account? <Link to="/login">Log in</Link>
-        </p>
-      </div>
-    </div>
+            <button
+              type="button"
+              className="auth-swap-password__toggle"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
+          </span>
+        </label>
+        {error && <p className="auth-error">{error}</p>}
+        <button type="submit" className="btn-primary auth-swap-submit" disabled={submitting}>
+          {submitting ? "Creating account…" : "Sign up"}
+        </button>
+      </form>
+      <p className="auth-swap-switch">
+        Already have an account? <Link to="/login">Log in</Link>
+      </p>
+    </>
   );
 }

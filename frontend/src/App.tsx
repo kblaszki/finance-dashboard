@@ -1,24 +1,25 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 import "./App.css";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AppShell } from "./components/AppShell";
+import { AuthSwapShell } from "./components/AuthSwapShell";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { LandingPage } from "./pages/LandingPage";
 import { HomePage } from "./pages/HomePage";
 import { SettingsPage } from "./pages/SettingsPage";
-import { AuthPreviewIndexPage } from "./pages/auth-previews/AuthPreviewIndexPage";
-import { AuthPreviewPage } from "./pages/auth-previews/AuthPreviewPage";
 import { useAuth } from "./state/auth";
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<RootRoute />} />
-      <Route path="/login" element={<GuestOnly><LoginPage /></GuestOnly>} />
-      <Route path="/register" element={<GuestOnly><RegisterPage /></GuestOnly>} />
-      <Route path="/preview/auth" element={<AuthPreviewIndexPage />} />
-      <Route path="/preview/auth/:slug" element={<AuthPreviewPage />} />
+      <Route element={<GuestOnly />}>
+        <Route element={<AuthSwapShell />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+        </Route>
+      </Route>
       <Route element={<ProtectedRoute />}>
         <Route element={<AppShell />}>
           <Route path="/home" element={<HomePage />} />
@@ -45,7 +46,7 @@ function RootRoute() {
   return <LandingPage />;
 }
 
-function GuestOnly(props: { children: React.ReactNode }) {
+function GuestOnly() {
   const { user, loading } = useAuth();
   if (loading) {
     return (
@@ -57,7 +58,7 @@ function GuestOnly(props: { children: React.ReactNode }) {
   if (user) {
     return <Navigate to="/home" replace />;
   }
-  return props.children;
+  return <Outlet />;
 }
 
 export default App;
