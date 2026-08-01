@@ -16,7 +16,7 @@ Finance-dashboard docs follow [Diátaxis](https://diataxis.fr/): each page has o
 | Explanation | Understand why | [explanation/](explanation/) |
 | Meta | Agent maps (not a Diátaxis mode) | [meta/](meta/) |
 
-**Code baseline:** JWT auth, account settings (profile / email / password), login-only demo user. Product backlog for future features: [mvp/CHECKLIST.md](../mvp/CHECKLIST.md) (do not treat checklist “done” as shipped code).
+**Code baseline:** JWT auth, account settings, multi-type accounts, cash ledger + categories, month statistics, demo user with sample portfolio. Product backlog: [mvp/CHECKLIST.md](../mvp/CHECKLIST.md) (do not treat checklist “done” as shipped code).
 
 ## AI reading order
 
@@ -40,7 +40,7 @@ Never load all docs. Prefer reference for facts, how-to for tasks, explanation f
 | Doc | Use when |
 |-----|----------|
 | [first-run.md](tutorials/first-run.md) | First local install and login |
-| [demo-seed.md](tutorials/demo-seed.md) | Login-only demo user (no portfolio) |
+| [demo-seed.md](tutorials/demo-seed.md) | Demo user + sample portfolio (re-run wipes demo data) |
 
 ## How-to index
 

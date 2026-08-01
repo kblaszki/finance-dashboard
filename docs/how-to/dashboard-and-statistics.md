@@ -24,3 +24,5 @@ This page covers the shipped category breakdown on `/statistics`. Period cashflo
 3. Review **Income** and **Expense** lists: totals by tagged category (or Uncategorized), grouped separately per account currency. There is no FX conversion.
 4. Totals use the category name currently stored (renames affect past months). Parent categories are not rolled up — only the tag on each transaction.
 5. API: `GET /api/statistics/category-breakdown?month=YYYY-MM`.
+
+**Tip:** Run `cd backend && npm run db:seed` for the demo user, then open `/statistics` for the current UTC month (multi-currency Food/Transport rows). Switch the month picker to the prior month to see Everyday Checking history.

@@ -1,16 +1,22 @@
 ---
 diataxis: tutorial
-use_when: Create login-only demo user
+use_when: Create demo user with sample portfolio data
 audience: both
 related_docs:
   - docs/tutorials/first-run.md
+  - docs/how-to/dashboard-and-statistics.md
 related_code:
   - backend/prisma/seed.ts
+  - backend/src/domain/seedDemoPortfolio.ts
 ---
 
 # Tutorial: demo user seed
 
-Goal: upsert a demo account you can log into. **No sample portfolio data** — auth baseline only.
+Goal: upsert the demo login and load a **sample portfolio** that showcases shipped features (accounts, categories, cash ledger, statistics).
+
+## Warning
+
+**Re-running the seed wipes all data owned by the demo user** (categories, accounts, cash transactions), then recreates the sample set. Do not store real personal data under `demo@finance.local`.
 
 ## Steps
 
@@ -24,8 +30,18 @@ npm run db:seed
 
 3. Log in: `demo@finance.local` / `demo12345` (username: `demo`).
 
+## What you get
+
+| Surface | Sample content |
+|---------|----------------|
+| `/accounts` | Everyday Checking (BANK/PLN), Euro Travel (BANK/EUR), Brokerage Cash (BROKERAGE/PLN), Crypto Spot (CRYPTO/USD) |
+| `/categories` | Default Income/Expense tree |
+| `/accounts/:id` | INCOME/EXPENSE ledger rows; tagged categories + one uncategorized expense |
+| `/statistics` | Current UTC month breakdown (multi-currency); switch to prior month for Checking history |
+
 ## Notes
 
-- Seed upserts email/username/password only (`backend/prisma/seed.ts`).
-- Safe to re-run; it resets the demo password hash to the known value.
-- More detail: [README.md](../../README.md) (Demo user section). Hub: [docs/README.md](../README.md).
+- Implementation: [`backend/prisma/seed.ts`](../../backend/prisma/seed.ts) + [`seedDemoPortfolio.ts`](../../backend/src/domain/seedDemoPortfolio.ts).
+- Password hash is reset to the known demo password on every run.
+- Other users in the same database are not modified.
+- Hub: [docs/README.md](../README.md).

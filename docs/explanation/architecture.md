@@ -45,7 +45,7 @@ sequenceDiagram
 | Statistics routes | `backend/src/routes/statisticsRoutes.ts` | Month category income/expense breakdown |
 | Errors | `routes/httpSupport.ts`, `lib/errors.ts` | Typed HTTP errors (incl. 409 conflict) |
 | Scripts | `backend/src/scripts/` | `createUser` (seeds categories), `backupDb` |
-| Seed | `backend/prisma/seed.ts` | Demo user + default categories if missing |
+| Seed | `backend/prisma/seed.ts`, `domain/seedDemoPortfolio.ts` | Demo user + wipe/rebuild sample portfolio |
 
 Money and conversion rules belong in dedicated backend modules when FX/valuations land — not duplicated in route handlers or the UI. See [fullstack-practices.md](fullstack-practices.md).
 

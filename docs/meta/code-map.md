@@ -31,7 +31,7 @@ Auth + multi-type accounts + category tree + cash ledger + category statistics b
 | Route uid helper | `backend/src/routes/routeSupport.ts` |
 | Prisma schema | `backend/prisma/schema.prisma` (`User`, `Category`, `Account`, `CashTransaction`) |
 | Migrations | `backend/prisma/migrations/` |
-| Demo user seed | `backend/prisma/seed.ts` |
+| Demo user seed | `backend/prisma/seed.ts`, `backend/src/domain/seedDemoPortfolio.ts` |
 | Create user CLI | `backend/src/scripts/createUser.ts` |
 | DB backup CLI | `backend/src/scripts/backupDb.ts` |
 | SQLite path helper | `backend/src/dbPath.ts` |

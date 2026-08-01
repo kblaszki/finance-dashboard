@@ -27,7 +27,7 @@ Shipped FR map: [docs/reference/requirements.md](docs/reference/requirements.md)
 | Doc | Use when |
 |-----|----------|
 | [docs/tutorials/first-run.md](docs/tutorials/first-run.md) | First local install and login |
-| [docs/tutorials/demo-seed.md](docs/tutorials/demo-seed.md) | Login-only demo user (no portfolio) |
+| [docs/tutorials/demo-seed.md](docs/tutorials/demo-seed.md) | Demo user + sample portfolio (re-run wipes) |
 
 ### How-to
 

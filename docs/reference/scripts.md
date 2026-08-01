@@ -6,6 +6,7 @@ related_code:
   - backend/src/scripts/createUser.ts
   - backend/src/scripts/backupDb.ts
   - backend/prisma/seed.ts
+  - backend/src/domain/seedDemoPortfolio.ts
 ---
 
 # Scripts reference
@@ -17,7 +18,7 @@ Run from `backend/` unless noted.
 | Script | Command | Purpose |
 |--------|---------|---------|
 | Create user | `npm run create-user -- --email … --username … --password …` | Private deploy when registration is closed; seeds default categories |
-| Demo user seed | `npm run db:seed` | Upsert login-only `demo@finance.local` + default categories if missing (no portfolio) |
+| Demo user seed | `npm run db:seed` | Upsert `demo@finance.local` and wipe/rebuild sample portfolio (categories, 4 accounts, cash txs) |
 | DB backup | `npm run db:backup` | Copy SQLite file (optional `--gzip` / `BACKUP_GZIP`) |
 | Migrate deploy | `npx prisma migrate deploy` | Apply migrations (CI / production) |
 | Migrate dev | `npx prisma migrate dev --name <description>` | Local schema change |

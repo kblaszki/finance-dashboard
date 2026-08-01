@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { hashPassword } from "../src/auth";
-import { seedDefaultCategories } from "../src/domain/categories";
+import { seedDemoPortfolio } from "../src/domain/seedDemoPortfolio";
 
 const prisma = new PrismaClient();
 
@@ -22,17 +22,18 @@ async function main(): Promise<void> {
       passwordHash,
     },
   });
-  const categoryCount = await prisma.category.count({ where: { userId: user.id } });
-  if (categoryCount === 0) {
-    await seedDefaultCategories(prisma, user.id);
-  }
+
+  await prisma.$transaction(async (tx) => {
+    await seedDemoPortfolio(tx, user.id);
+  });
+
   // eslint-disable-next-line no-console
   console.log(
     JSON.stringify({
       id: user.id,
       email: user.email,
       username: user.username,
-      note: "Demo user only — no sample portfolio data",
+      note: "Demo user + sample portfolio (accounts, categories, cash txs). Re-run wipes demo data.",
     }),
   );
 }

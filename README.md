@@ -5,7 +5,7 @@ Personal full-stack finance app (auth baseline today; more domains tracked in [m
 - **Backend:** Node.js + TypeScript + Express + Prisma + SQLite
 - **Frontend:** Vite + React + TypeScript
 
-**Current code:** register/login (JWT), profile / email / password settings, health check, login-only demo user. Accounts, portfolio, tax, and related features are not in this tree yet.
+**Current code:** register/login (JWT), profile / email / password settings, multi-type accounts, cash ledger with categories, month statistics, health check, and a demo user with sample portfolio data. Broader portfolio/tax features remain in [mvp/CHECKLIST.md](mvp/CHECKLIST.md).
 
 ## Requirements
 
@@ -109,14 +109,14 @@ Full checklist: [docs/how-to/private-deploy.md](docs/how-to/private-deploy.md).
 
 ## Demo user (optional)
 
-Creates a login-only demo account (no sample portfolio data):
+Upserts the demo login and **replaces** that user’s sample portfolio (accounts, categories, cash txs). Re-run wipes all demo-owned data:
 
 ```bash
 cd backend
 npm run db:seed
 ```
 
-Login: `demo@finance.local` / `demo12345` (username: `demo`)
+Login: `demo@finance.local` / `demo12345` (username: `demo`). Walkthrough: [docs/tutorials/demo-seed.md](docs/tutorials/demo-seed.md).
 
 ## Tests
 
