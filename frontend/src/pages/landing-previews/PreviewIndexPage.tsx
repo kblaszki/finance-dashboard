@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { ThemeToggle } from "../../components/ThemeToggle";
 import "./previews.css";
 
 const VARIANTS = [
@@ -28,11 +29,14 @@ export function PreviewIndexPage() {
   return (
     <div className="lp-gallery">
       <header className="lp-gallery__header">
-        <h1 className="lp-gallery__title">Landing previews</h1>
+        <div className="lp-gallery__header-row">
+          <h1 className="lp-gallery__title">Landing previews</h1>
+          <ThemeToggle />
+        </div>
         <p className="lp-gallery__lead">
           Temporary gallery to compare visual directions. Production home at{" "}
           <Link to="/">/</Link> is unchanged. Open a variant, then tell us which
-          slug to promote.
+          slug to promote. Theme toggle follows the app light/dark preference.
         </p>
       </header>
       <ul className="lp-gallery__list">

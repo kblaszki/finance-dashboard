@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import type { ReactNode } from "react";
+import { ThemeToggle } from "../../components/ThemeToggle";
 
 type PreviewChromeProps = {
   name: string;
@@ -15,12 +16,15 @@ export function PreviewChrome({ name, children }: PreviewChromeProps) {
           {" · "}
           <Link to="/preview">Back to gallery</Link>
         </p>
-        <nav className="lp-chrome__nav">
-          <Link to="/login">Log in</Link>
-          <Link to="/register" className="lp-chrome__cta">
-            Sign up
-          </Link>
-        </nav>
+        <div className="lp-chrome__actions">
+          <ThemeToggle />
+          <nav className="lp-chrome__nav">
+            <Link to="/login">Log in</Link>
+            <Link to="/register" className="lp-chrome__cta">
+              Sign up
+            </Link>
+          </nav>
+        </div>
       </div>
       {children}
     </div>

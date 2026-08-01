@@ -26,7 +26,9 @@ Shell: `AppShell` (Home + Settings nav, theme toggle, logout). Gate: `ProtectedR
 
 Theme (`light` | `dark`) lives in `state/theme.tsx`, persisted under `localStorage` key `finance-dashboard:theme`. Applied as `document.documentElement.dataset.theme`. Missing, invalid, or legacy `system` values resolve once from `prefers-color-scheme` and are stored as explicit `light` or `dark`. FOUC bootstrap mirrors this in `frontend/index.html`.
 
-Controls: `ThemeToggle` (light ↔ dark) on Landing, Login, Register, and AppShell; Settings **Appearance** section sets theme via Light/Dark radios.
+Controls: `ThemeToggle` (light ↔ dark) on Landing, Login, Register, AppShell, and temporary `/preview` gallery/chrome; Settings **Appearance** section sets theme via Light/Dark radios.
+
+Temporary landing previews (`/preview`, `/preview/:slug`) use scoped CSS that follows the same global `data-theme` (light and dark palettes per variant). Production `/` landing is unchanged.
 
 Default after login/register: `/home` (`state/auth.tsx`).
 
