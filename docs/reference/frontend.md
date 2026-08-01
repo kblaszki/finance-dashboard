@@ -32,7 +32,7 @@ Visual system (Signal focus): slate + emerald tokens in `index.css`; UI font IBM
 
 Controls: `ThemeToggle` (light ↔ dark) on Landing, Login, Register, and AppShell; Settings **Appearance** section sets theme via Light/Dark radios.
 
-Temporary auth layout previews (`/preview/auth`, `/preview/auth/:slug` — `signal-card`, `hatch-split-auth`, `hatch-folio-auth`, `grid-room-auth`, `mesh-stage-auth`, `ledge-auth`) use mock login/register tabs; production `/login` and `/register` are unchanged.
+Temporary auth layout previews (`/preview/auth`, `/preview/auth/:slug` — `signal-card`, `hatch-split-auth`, `hatch-folio-auth`, `grid-room-auth`, `mesh-stage-auth`, `ledge-auth`, `swap-split`) use mock login/register tabs (or side-swap for `swap-split`); production `/login` and `/register` are unchanged.
 
 Default after login/register: `/home` (`state/auth.tsx`).
 

@@ -33,6 +33,11 @@ const VARIANTS = [
     name: "Ledge",
     blurb: "Brand ledge on top; form band below over hatch.",
   },
+  {
+    slug: "swap-split",
+    name: "Swap split",
+    blurb: "50/50 form + visual; login/register swaps sides with motion.",
+  },
 ] as const;
 
 export function AuthPreviewIndexPage() {
