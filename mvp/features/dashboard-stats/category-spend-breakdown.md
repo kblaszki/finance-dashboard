@@ -39,5 +39,5 @@ See where money went (and came from) by category without waiting for full budget
 
 - FX conversion to a single display currency
 - Charts (Recharts reserved for later)
-- Period cashflow summary / history (FR-003 / FR-004)
+- Currency filter on category breakdown (FR-003/FR-004 KPIs/chart already filter by currency)
 - Parent-category rollup

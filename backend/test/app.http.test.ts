@@ -840,3 +840,160 @@ test("GET /api/statistics/category-breakdown aggregates by category and currency
   assert.deepEqual(empty.body.income, []);
   assert.deepEqual(empty.body.expense, []);
 });
+
+test("GET /api/statistics/period-summary requires auth and valid params", async () => {
+  const noAuth = await request(app).get(
+    "/api/statistics/period-summary?month=2026-08&currency=PLN",
+  );
+  assert.equal(noAuth.status, 401);
+
+  const token = await registerAndLogin("sumauth@test.local", "sumauth", "password123");
+
+  const missingMonth = await request(app)
+    .get("/api/statistics/period-summary?currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(missingMonth.status, 400);
+
+  const missingCurrency = await request(app)
+    .get("/api/statistics/period-summary?month=2026-08")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(missingCurrency.status, 400);
+
+  const badCurrency = await request(app)
+    .get("/api/statistics/period-summary?month=2026-08&currency=US")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(badCurrency.status, 400);
+});
+
+test("GET /api/statistics/period-summary aggregates one currency with tenancy", async () => {
+  const token = await registerAndLogin("sumagg@test.local", "sumagg", "password123");
+  const otherToken = await registerAndLogin("sumother@test.local", "sumother", "password123");
+
+  const pln = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Sum PLN", currency: "PLN", openingBalance: 0 });
+  const eur = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Sum EUR", currency: "EUR", openingBalance: 0 });
+  const otherAccount = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${otherToken}`)
+    .send({ name: "Other Sum", currency: "PLN", openingBalance: 0 });
+
+  const plnId = pln.body.id as number;
+  const eurId = eur.body.id as number;
+  const otherId = otherAccount.body.id as number;
+
+  await request(app)
+    .post(`/api/accounts/${plnId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "INCOME", amount: 3000, occurredAt: "2026-08-05T00:00:00.000Z" });
+  await request(app)
+    .post(`/api/accounts/${plnId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "EXPENSE", amount: 400, occurredAt: "2026-08-10T00:00:00.000Z" });
+  await request(app)
+    .post(`/api/accounts/${eurId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "EXPENSE", amount: 50, occurredAt: "2026-08-11T00:00:00.000Z" });
+  await request(app)
+    .post(`/api/accounts/${otherId}/transactions`)
+    .set("Authorization", `Bearer ${otherToken}`)
+    .send({ type: "EXPENSE", amount: 99, occurredAt: "2026-08-08T00:00:00.000Z" });
+
+  const res = await request(app)
+    .get("/api/statistics/period-summary?month=2026-08&currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  assert.deepEqual(res.body, {
+    month: "2026-08",
+    currency: "PLN",
+    income: 3000,
+    expense: 400,
+    net: 2600,
+  });
+
+  const unknownCcy = await request(app)
+    .get("/api/statistics/period-summary?month=2026-08&currency=USD")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(unknownCcy.status, 200);
+  assert.deepEqual(unknownCcy.body, {
+    month: "2026-08",
+    currency: "USD",
+    income: 0,
+    expense: 0,
+    net: 0,
+  });
+});
+
+test("GET /api/statistics/cashflow-history validates months and defaults to 12", async () => {
+  const token = await registerAndLogin("histauth@test.local", "histauth", "password123");
+
+  const badMonths = await request(app)
+    .get("/api/statistics/cashflow-history?month=2026-01&currency=PLN&months=5")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(badMonths.status, 400);
+
+  const missingCurrency = await request(app)
+    .get("/api/statistics/cashflow-history?month=2026-01")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(missingCurrency.status, 400);
+
+  const def = await request(app)
+    .get("/api/statistics/cashflow-history?month=2026-01&currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(def.status, 200);
+  assert.equal(def.body.monthCount, 12);
+  assert.equal(def.body.series.length, 12);
+  assert.equal(def.body.series[0].month, "2025-02");
+  assert.equal(def.body.series[11].month, "2026-01");
+  assert.ok(def.body.series.every((p: { income: number; expense: number; net: number }) =>
+    p.income === 0 && p.expense === 0 && p.net === 0));
+});
+
+test("GET /api/statistics/cashflow-history aggregates series with year span and tenancy", async () => {
+  const token = await registerAndLogin("histagg@test.local", "histagg", "password123");
+  const otherToken = await registerAndLogin("histother@test.local", "histother", "password123");
+
+  const pln = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Hist PLN", currency: "PLN", openingBalance: 0 });
+  const otherAccount = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${otherToken}`)
+    .send({ name: "Hist Other", currency: "PLN", openingBalance: 0 });
+
+  const plnId = pln.body.id as number;
+  const otherId = otherAccount.body.id as number;
+
+  await request(app)
+    .post(`/api/accounts/${plnId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "INCOME", amount: 1000, occurredAt: "2025-12-15T00:00:00.000Z" });
+  await request(app)
+    .post(`/api/accounts/${plnId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "EXPENSE", amount: 200, occurredAt: "2026-01-10T00:00:00.000Z" });
+  await request(app)
+    .post(`/api/accounts/${otherId}/transactions`)
+    .set("Authorization", `Bearer ${otherToken}`)
+    .send({ type: "INCOME", amount: 500, occurredAt: "2026-01-05T00:00:00.000Z" });
+
+  const res = await request(app)
+    .get("/api/statistics/cashflow-history?month=2026-01&currency=PLN&months=6")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  assert.equal(res.body.currency, "PLN");
+  assert.equal(res.body.monthCount, 6);
+  assert.equal(res.body.series.length, 6);
+  assert.equal(res.body.series[0].month, "2025-08");
+  assert.equal(res.body.series[5].month, "2026-01");
+
+  const dec = res.body.series.find((p: { month: string }) => p.month === "2025-12");
+  const jan = res.body.series.find((p: { month: string }) => p.month === "2026-01");
+  assert.deepEqual(dec, { month: "2025-12", income: 1000, expense: 0, net: 1000 });
+  assert.deepEqual(jan, { month: "2026-01", income: 0, expense: 200, net: -200 });
+});

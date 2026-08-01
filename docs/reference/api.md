@@ -77,8 +77,10 @@ Nested under an owned account. Cross-user or unknown account → `404`. `amount`
 
 ## Statistics
 
-Month bounds are **UTC** `[start, end)` on `CashTransaction.occurredAt`. No FX — rows are per `(categoryId, currency)`. Null `categoryId` → `categoryName: "Uncategorized"`. Missing/invalid `month` → `400`.
+Month bounds are **UTC** `[start, end)` on `CashTransaction.occurredAt`. No FX. Missing/invalid `month` → `400`. Period summary and cashflow history require `currency` as a 3-letter code (`^[A-Z]{3}$`); a currency the user does not hold returns zeros. History `months` must be `6`, `12`, or `24` when present (default `12`). Series is oldest → newest and zero-filled.
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
-| GET | `/api/statistics/category-breakdown` | Bearer | Query: `month=YYYY-MM`. Body: `{ month, income[], expense[] }` with rows `{ categoryId, categoryName, currency, total, count }` |
+| GET | `/api/statistics/category-breakdown` | Bearer | Query: `month=YYYY-MM`. Body: `{ month, income[], expense[] }` with rows `{ categoryId, categoryName, currency, total, count }` (per `(categoryId, currency)`; null category → `"Uncategorized"`) |
+| GET | `/api/statistics/period-summary` | Bearer | Query: `month=YYYY-MM`, `currency=XXX`. Body: `{ month, currency, income, expense, net }` |
+| GET | `/api/statistics/cashflow-history` | Bearer | Query: `month=YYYY-MM`, `currency=XXX`, optional `months` (6\|12\|24). Body: `{ currency, monthCount, series: [{ month, income, expense, net }] }` |

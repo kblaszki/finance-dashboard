@@ -40,7 +40,11 @@ import {
   updateCategory,
   deleteCategory,
 } from './categoriesApi'
-import { fetchCategoryBreakdown } from './statisticsApi'
+import {
+  fetchCategoryBreakdown,
+  fetchPeriodSummary,
+  fetchCashflowHistory,
+} from './statisticsApi'
 
 describe('API modules', () => {
   beforeEach(() => {
@@ -169,6 +173,16 @@ describe('API modules', () => {
     await fetchCategoryBreakdown('2026-08')
     expect(apiClient.get).toHaveBeenCalledWith(
       '/api/statistics/category-breakdown?month=2026-08',
+    )
+
+    await fetchPeriodSummary('2026-08', 'PLN')
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/statistics/period-summary?month=2026-08&currency=PLN',
+    )
+
+    await fetchCashflowHistory('2026-01', 'EUR', 6)
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/statistics/cashflow-history?month=2026-01&currency=EUR&months=6',
     )
   })
 })

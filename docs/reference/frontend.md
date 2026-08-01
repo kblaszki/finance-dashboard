@@ -27,7 +27,7 @@ Hub: [docs/README.md](../README.md).
 | `/accounts` | Protected | `AccountsPage` (multi-type create/list/edit/delete) |
 | `/accounts/:id` | Protected | `AccountDetailPage` (cash ledger create/list/delete; optional category) |
 | `/categories` | Protected | `CategoriesPage` (nested tree create/rename/reparent/delete) |
-| `/statistics` | Protected | `StatisticsPage` (month category income/expense breakdown) |
+| `/statistics` | Protected | `StatisticsPage` (period KPIs + cashflow chart for one currency; category breakdown for all currencies) |
 | `/settings` | Protected | `SettingsPage` |
 
 Shell: `AppShell` — hatch-folio layout (diagonal hatch atmosphere, asymmetric mast + page). Mast: brand, Home/Accounts/Categories/Statistics/Settings nav, user, `.app-folio-logout`, theme toggle. Gate: `ProtectedRoute`.
@@ -53,6 +53,6 @@ Default after login/register: `/home` (`state/auth.tsx`).
 | `frontend/src/api/accountsApi.ts` | list/create/get/patch/delete accounts; `ACCOUNT_TYPES` / `AccountType` |
 | `frontend/src/api/categoriesApi.ts` | list/create/patch/delete categories; `flattenCategoryTree` |
 | `frontend/src/api/transactionsApi.ts` | list/create/delete cash txs under `/api/accounts/:id/transactions` (optional `categoryId`) |
-| `frontend/src/api/statisticsApi.ts` | `fetchCategoryBreakdown(month)` → `/api/statistics/category-breakdown` |
+| `frontend/src/api/statisticsApi.ts` | `fetchCategoryBreakdown`, `fetchPeriodSummary`, `fetchCashflowHistory` → `/api/statistics/*` |
 
 New domain clients follow `frontend/src/api/*Api.ts` and must be covered in `apiModules.test.ts` when added.

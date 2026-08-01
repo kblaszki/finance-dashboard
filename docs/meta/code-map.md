@@ -26,6 +26,7 @@ Auth + multi-type accounts + category tree + cash ledger + category statistics b
 | Categories domain | `backend/src/domain/categories.ts` |
 | Cash ledger domain | `backend/src/domain/cashLedger.ts` |
 | Category breakdown domain | `backend/src/domain/categoryBreakdown.ts` |
+| Cashflow stats domain | `backend/src/domain/cashflowStats.ts` |
 | Router mount | `backend/src/routes/mountRouters.ts` |
 | HTTP helpers / errors | `backend/src/routes/httpSupport.ts`, `backend/src/lib/errors.ts` |
 | Route uid helper | `backend/src/routes/routeSupport.ts` |

@@ -37,7 +37,7 @@ npm run db:seed
 | `/accounts` | Everyday Checking (BANK/PLN), Euro Travel (BANK/EUR), Brokerage Cash (BROKERAGE/PLN), Crypto Spot (CRYPTO/USD) |
 | `/categories` | Default Income/Expense tree |
 | `/accounts/:id` | INCOME/EXPENSE ledger rows; tagged categories + one uncategorized expense |
-| `/statistics` | Current UTC month breakdown (multi-currency); switch to prior month for Checking history |
+| `/statistics` | Period KPIs + chart (pick PLN/EUR) and category breakdown; switch to prior month for Checking history |
 
 ## Notes
 
