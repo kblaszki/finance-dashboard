@@ -1,8 +1,21 @@
 import { Link, Navigate, useParams } from "react-router-dom";
 import { PreviewChrome } from "./PreviewChrome";
+import {
+  DemoAllocationDonut,
+  DemoAreaChart,
+  DemoTickerTape,
+} from "./PreviewDemoCharts";
 import "./previews.css";
 
-const SLUGS = ["ledger", "harbor", "atelier", "signal"] as const;
+const SLUGS = [
+  "ledger",
+  "harbor",
+  "atelier",
+  "signal",
+  "ticker",
+  "folio",
+  "pulse",
+] as const;
 type Slug = (typeof SLUGS)[number];
 
 function isSlug(value: string | undefined): value is Slug {
@@ -24,6 +37,12 @@ export function LandingPreviewPage() {
       return <AtelierPreview />;
     case "signal":
       return <SignalPreview />;
+    case "ticker":
+      return <TickerPreview />;
+    case "folio":
+      return <FolioPreview />;
+    case "pulse":
+      return <PulsePreview />;
   }
 }
 
@@ -197,6 +216,100 @@ function SignalPreview() {
             </p>
           </div>
         </section>
+      </div>
+    </PreviewChrome>
+  );
+}
+
+function TickerPreview() {
+  return (
+    <PreviewChrome name="Ticker tape">
+      <div className="lp-preview lp-preview--ticker">
+        <DemoTickerTape className="lp-ticker lp-anim-fade" />
+        <header className="lp-preview__top">
+          <p className="lp-preview__brand lp-anim-fade lp-anim-delay-1">
+            Finance Dashboard
+          </p>
+        </header>
+        <main className="lp-preview__hero lp-ticker-hero">
+          <div className="lp-ticker-copy lp-anim-fade lp-anim-delay-2">
+            <h1 className="lp-preview__headline">Markets move. Your books stay yours.</h1>
+            <p className="lp-preview__lead">
+              A private instance for accounts and reports — illustrative tape and
+              index curve, not live quotes.
+            </p>
+            <div className="lp-preview__cta">
+              <Link to="/register" className="lp-btn lp-btn--ticker">
+                Get started
+              </Link>
+              <Link to="/login" className="lp-btn lp-btn--ticker-ghost">
+                Log in
+              </Link>
+            </div>
+          </div>
+          <DemoAreaChart className="lp-ticker-chart lp-anim-fade lp-anim-delay-3" height={180} />
+        </main>
+      </div>
+    </PreviewChrome>
+  );
+}
+
+function FolioPreview() {
+  return (
+    <PreviewChrome name="Folio buckets">
+      <div className="lp-preview lp-preview--folio">
+        <header className="lp-preview__top lp-preview__top--center">
+          <p className="lp-preview__brand lp-anim-slide">Finance Dashboard</p>
+        </header>
+        <main className="lp-preview__hero lp-folio-hero">
+          <div className="lp-folio-copy lp-anim-slide lp-anim-delay-1">
+            <h1 className="lp-preview__headline">Five buckets. One private ledger.</h1>
+            <p className="lp-preview__lead">
+              See how cash, stocks, crypto, metals, and real estate could roll up —
+              demo allocation only, until portfolio features ship.
+            </p>
+            <div className="lp-preview__cta lp-preview__cta--stack">
+              <Link to="/register" className="lp-btn lp-btn--folio">
+                Create your account
+              </Link>
+              <Link to="/login" className="lp-btn lp-btn--folio-ghost">
+                Log in
+              </Link>
+            </div>
+          </div>
+          <DemoAllocationDonut className="lp-folio-donut lp-anim-slide lp-anim-delay-2" />
+        </main>
+      </div>
+    </PreviewChrome>
+  );
+}
+
+function PulsePreview() {
+  return (
+    <PreviewChrome name="Net-worth pulse">
+      <div className="lp-preview lp-preview--pulse">
+        <div className="lp-pulse-chart" aria-hidden>
+          <DemoAreaChart height={420} />
+        </div>
+        <div className="lp-pulse-scrim" aria-hidden />
+        <div className="lp-pulse-foreground">
+          <p className="lp-preview__brand lp-anim-stagger">Finance Dashboard</p>
+          <h1 className="lp-preview__headline lp-anim-stagger lp-anim-delay-1">
+            Watch the curve of what you own
+          </h1>
+          <p className="lp-preview__lead lp-anim-stagger lp-anim-delay-2">
+            A net-worth pulse as atmosphere — sample path only. Your data stays on
+            your stack when the real dashboard arrives.
+          </p>
+          <div className="lp-preview__cta lp-anim-stagger lp-anim-delay-3">
+            <Link to="/register" className="lp-btn lp-btn--pulse">
+              Get started
+            </Link>
+            <Link to="/login" className="lp-btn lp-btn--pulse-ghost">
+              I already have an account
+            </Link>
+          </div>
+        </div>
       </div>
     </PreviewChrome>
   );

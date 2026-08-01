@@ -28,7 +28,7 @@ Theme (`light` | `dark`) lives in `state/theme.tsx`, persisted under `localStora
 
 Controls: `ThemeToggle` (light ↔ dark) on Landing, Login, Register, AppShell, and temporary `/preview` gallery/chrome; Settings **Appearance** section sets theme via Light/Dark radios.
 
-Temporary landing previews (`/preview`, `/preview/:slug`) use scoped CSS that follows the same global `data-theme` (light and dark palettes per variant). Production `/` landing is unchanged.
+Temporary landing previews (`/preview`, `/preview/:slug`) use scoped CSS that follows the same global `data-theme` (light and dark palettes per variant). Gallery includes concept variants plus finance-visual ones (`ticker`, `folio`, `pulse`) with static Recharts demos. Production `/` landing is unchanged.
 
 Default after login/register: `/home` (`state/auth.tsx`).
 

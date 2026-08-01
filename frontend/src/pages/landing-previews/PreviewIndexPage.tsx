@@ -23,6 +23,21 @@ const VARIANTS = [
     name: "Signal clarity",
     blurb: "Amber on cool gray, Space Grotesk — clear signal, less noise.",
   },
+  {
+    slug: "ticker",
+    name: "Ticker tape",
+    blurb: "Scrolling symbols + index area chart — terminal-adjacent.",
+  },
+  {
+    slug: "folio",
+    name: "Folio buckets",
+    blurb: "Five-bucket allocation donut — cash through real estate.",
+  },
+  {
+    slug: "pulse",
+    name: "Net-worth pulse",
+    blurb: "Full-bleed net-worth area chart as the hero atmosphere.",
+  },
 ] as const;
 
 export function PreviewIndexPage() {
