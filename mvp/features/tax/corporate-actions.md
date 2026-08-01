@@ -1,6 +1,6 @@
 ---
 id: FR-040
-status: done
+status: planned
 domain: tax
 title: Corporate actions and stock splits
 ---

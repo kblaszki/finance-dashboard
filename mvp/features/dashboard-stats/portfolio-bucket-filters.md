@@ -1,6 +1,6 @@
 ---
 id: FR-008
-status: done
+status: planned
 domain: dashboard-stats
 title: Cross-account portfolio with bucket filters
 ---

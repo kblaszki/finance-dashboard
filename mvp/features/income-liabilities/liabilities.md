@@ -1,6 +1,6 @@
 ---
 id: FR-029
-status: done
+status: planned
 domain: income-liabilities
 title: Liabilities and net-worth impact
 ---

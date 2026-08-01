@@ -1,6 +1,6 @@
 ---
 id: MVP-011
-status: done
+status: planned
 domain: cash-transfers
 title: Cash ledger transaction types
 ---

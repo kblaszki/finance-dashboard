@@ -1,6 +1,6 @@
 ---
 id: FR-002
-status: done
+status: planned
 domain: dashboard-stats
 title: Net worth with five asset buckets
 ---

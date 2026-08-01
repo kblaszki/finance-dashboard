@@ -1,6 +1,6 @@
 ---
 id: NFR-003
-status: done
+status: planned
 domain: automation-export
 title: Financial edit audit trail
 ---

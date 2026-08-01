@@ -1,6 +1,6 @@
 ---
 id: FR-010
-status: done
+status: planned
 domain: market-fx
 title: Historical NBP FX rates
 ---

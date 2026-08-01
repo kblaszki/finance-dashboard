@@ -1,6 +1,6 @@
 ---
 id: FR-046
-status: done
+status: planned
 domain: tax
 title: Consolidated tax overview
 ---

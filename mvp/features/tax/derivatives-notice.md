@@ -1,6 +1,6 @@
 ---
 id: FR-025
-status: done
+status: planned
 domain: tax
 title: Derivatives notice on tax report
 ---

@@ -1,6 +1,6 @@
 ---
 id: FR-012
-status: done
+status: planned
 domain: accounts
 title: Accounts list with type filter
 ---

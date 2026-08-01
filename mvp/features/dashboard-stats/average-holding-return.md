@@ -1,6 +1,6 @@
 ---
 id: FR-001
-status: done
+status: planned
 domain: dashboard-stats
 title: Value-weighted average holding return
 ---

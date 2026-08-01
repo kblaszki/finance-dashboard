@@ -1,6 +1,6 @@
 ---
 id: FR-034
-status: done
+status: planned
 domain: budgets-categories
 title: Auto-categorization rules
 ---

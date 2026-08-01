@@ -1,6 +1,6 @@
 ---
 id: FR-038
-status: done
+status: planned
 domain: dashboard-stats
 title: Dashboard PLN net-worth rollup
 ---

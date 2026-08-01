@@ -9,7 +9,7 @@ title: Production auth and import rate limits
 
 ## Summary
 
-Rate limit login/register/import when NODE_ENV=production.
+Production rate limits on login/register are shipped (`NODE_ENV=production`). Import rate limiting returns when the import API is re-implemented.
 
 ## User value
 
@@ -23,7 +23,8 @@ Capability tracked in the product map for agents and humans; see linked docs for
 
 ## Acceptance
 
-- [ ] Limiters mounted only in production
+- [x] Auth login/register limiters mounted only in production
+- [ ] Import limiter (when import API exists)
 
 ## Implementation notes
 

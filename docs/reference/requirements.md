@@ -11,7 +11,7 @@ related_docs:
 
 Hub: [docs/README.md](../README.md).
 
-**Shipped in code** = auth baseline below. Everything else is product backlog in [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) and `mvp/features/*` — checklist statuses may describe target product intent, not current code.
+**Shipped in code** = auth baseline below. Everything else is product backlog in [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) and `mvp/features/*`. Checklist statuses are aligned to the repository (5 done / 57 planned as of 2026-08-01); feature files remain specs for re-implementation.
 
 ## Shipped
 
@@ -19,8 +19,9 @@ Hub: [docs/README.md](../README.md).
 |----|------------|-------------|
 | MVP-001 | Login and register with JWT | [api.md](api.md) auth routes; [account-settings.md](../how-to/account-settings.md) |
 | MVP-002 | Profile, email, password settings | `/settings`; auth PATCH routes |
-| Ops | Health endpoint | `GET /api/health` |
-| Ops | Private deploy tooling | `create-user`, `db:backup`, [private-deploy.md](../how-to/private-deploy.md) |
+| MVP-050 | Health endpoint | `GET /api/health` |
+| MVP-051 | Private deploy tooling | `create-user`, `db:backup`, [private-deploy.md](../how-to/private-deploy.md) |
+| MVP-052 | Production auth rate limits | `app.ts` (login/register; import limiter when import returns) |
 
 ## Planned / not in this codebase
 

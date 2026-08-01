@@ -1,6 +1,6 @@
 ---
 id: FR-041
-status: done
+status: planned
 domain: tax
 title: Position transfers between brokerages
 ---

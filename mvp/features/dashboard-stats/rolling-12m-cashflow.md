@@ -1,6 +1,6 @@
 ---
 id: FR-005
-status: done
+status: planned
 domain: dashboard-stats
 title: Rolling 12-month cashflow averages
 ---

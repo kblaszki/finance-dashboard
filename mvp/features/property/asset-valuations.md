@@ -1,6 +1,6 @@
 ---
 id: MVP-030
-status: done
+status: planned
 domain: property
 title: Manual asset valuation timeline
 ---

@@ -1,6 +1,6 @@
 ---
 id: FR-018
-status: done
+status: planned
 domain: cash-transfers
 title: Transaction categories and splits
 ---

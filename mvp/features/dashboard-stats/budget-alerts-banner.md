@@ -1,6 +1,6 @@
 ---
 id: FR-037
-status: done
+status: planned
 domain: dashboard-stats
 title: Budget threshold alerts on dashboard
 ---

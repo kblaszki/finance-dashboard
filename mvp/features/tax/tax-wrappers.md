@@ -1,6 +1,6 @@
 ---
 id: FR-039
-status: done
+status: planned
 domain: tax
 title: IKE/IKZE/PPK tax wrappers
 ---

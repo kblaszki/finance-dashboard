@@ -1,6 +1,6 @@
 ---
 id: FR-014
-status: done
+status: planned
 domain: holdings-trades
 title: Account-scoped holding detail
 ---

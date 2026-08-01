@@ -1,6 +1,6 @@
 ---
 id: FR-031
-status: done
+status: planned
 domain: market-fx
 title: Crypto EOD sync on CRYPTO accounts
 ---

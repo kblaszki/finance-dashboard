@@ -1,6 +1,6 @@
 ---
 id: FR-028
-status: done
+status: planned
 domain: tax
 title: PIT/ZG foreign income helper
 ---

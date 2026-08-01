@@ -1,6 +1,6 @@
 ---
 id: FR-049
-status: stub
+status: planned
 domain: automation-export
 title: Document attachments metadata only
 ---

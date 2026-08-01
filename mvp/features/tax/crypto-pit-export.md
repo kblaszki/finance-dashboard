@@ -1,6 +1,6 @@
 ---
 id: FR-043
-status: done
+status: planned
 domain: tax
 title: Crypto PIT scale section and export
 ---

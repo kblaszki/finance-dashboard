@@ -1,6 +1,6 @@
 ---
 id: FR-007
-status: done
+status: planned
 domain: holdings-trades
 title: Asset trades with commission and settlementDate
 ---

@@ -1,6 +1,6 @@
 ---
 id: FR-047
-status: stub
+status: planned
 domain: import
 title: Import presets catalog
 ---

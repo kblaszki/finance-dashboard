@@ -1,6 +1,6 @@
 ---
 id: FR-016
-status: done
+status: planned
 domain: dashboard-stats
 title: Category spend breakdown
 ---

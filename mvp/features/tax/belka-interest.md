@@ -1,6 +1,6 @@
 ---
 id: FR-027
-status: done
+status: planned
 domain: tax
 title: Belka on interest and coupons
 ---

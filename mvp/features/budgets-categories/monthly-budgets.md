@@ -1,6 +1,6 @@
 ---
 id: FR-017
-status: done
+status: planned
 domain: budgets-categories
 title: Monthly budgets vs spend
 ---

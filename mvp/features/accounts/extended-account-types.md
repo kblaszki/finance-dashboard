@@ -1,6 +1,6 @@
 ---
 id: FR-006
-status: done
+status: planned
 domain: accounts
 title: Extended account types
 ---

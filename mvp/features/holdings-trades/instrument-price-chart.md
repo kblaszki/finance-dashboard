@@ -1,6 +1,6 @@
 ---
 id: FR-009
-status: done
+status: planned
 domain: holdings-trades
 title: Instrument price chart and manual valuations
 ---

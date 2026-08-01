@@ -1,6 +1,6 @@
 ---
 id: FR-024
-status: done
+status: planned
 domain: income-liabilities
 title: Income events CRUD
 ---

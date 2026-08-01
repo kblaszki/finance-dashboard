@@ -1,6 +1,6 @@
 ---
 id: FR-026
-status: done
+status: planned
 domain: tax
 title: Rental PIT-36 helper section
 ---

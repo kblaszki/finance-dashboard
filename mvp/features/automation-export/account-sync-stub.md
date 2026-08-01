@@ -1,6 +1,6 @@
 ---
 id: FR-035
-status: stub
+status: planned
 domain: automation-export
 title: Account sync settings (stub)
 ---

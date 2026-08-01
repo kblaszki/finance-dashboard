@@ -1,6 +1,6 @@
 ---
 id: FR-042
-status: done
+status: planned
 domain: tax
 title: Tax loss carryforward register
 ---

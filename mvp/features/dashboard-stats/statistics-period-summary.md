@@ -1,6 +1,6 @@
 ---
 id: FR-003
-status: done
+status: planned
 domain: dashboard-stats
 title: Statistics period cashflow summary
 ---

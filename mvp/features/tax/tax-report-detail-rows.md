@@ -1,6 +1,6 @@
 ---
 id: FR-023
-status: done
+status: planned
 domain: tax
 title: Tax report sell-row and instrument detail
 ---

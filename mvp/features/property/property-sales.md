@@ -1,6 +1,6 @@
 ---
 id: FR-044
-status: done
+status: planned
 domain: property
 title: Property sales and rental tax method
 ---

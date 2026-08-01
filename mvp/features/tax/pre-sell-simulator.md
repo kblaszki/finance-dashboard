@@ -1,6 +1,6 @@
 ---
 id: FR-050
-status: done
+status: planned
 domain: tax
 title: Pre-sell tax impact simulator
 ---

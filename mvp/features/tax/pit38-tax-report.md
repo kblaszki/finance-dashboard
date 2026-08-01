@@ -1,6 +1,6 @@
 ---
 id: FR-022
-status: done
+status: planned
 domain: tax
 title: PIT-38 FIFO tax report
 ---

@@ -1,6 +1,6 @@
 ---
 id: FR-032
-status: done
+status: planned
 domain: accounts
 title: Precious metal grams on account
 ---

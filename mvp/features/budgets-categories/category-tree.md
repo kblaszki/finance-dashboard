@@ -1,6 +1,6 @@
 ---
 id: FR-015
-status: done
+status: planned
 domain: budgets-categories
 title: Category tree CRUD
 ---

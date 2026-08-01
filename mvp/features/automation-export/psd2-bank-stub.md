@@ -1,6 +1,6 @@
 ---
 id: FR-036
-status: stub
+status: planned
 domain: automation-export
 title: PSD2 bank connection (stub)
 ---

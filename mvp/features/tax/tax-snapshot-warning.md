@@ -1,6 +1,6 @@
 ---
 id: FR-048
-status: done
+status: planned
 domain: tax
 title: Tax snapshot correction warning
 ---

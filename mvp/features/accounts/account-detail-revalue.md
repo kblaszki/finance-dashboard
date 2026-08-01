@@ -1,6 +1,6 @@
 ---
 id: MVP-010
-status: done
+status: planned
 domain: accounts
 title: Manual revalue and account detail
 ---

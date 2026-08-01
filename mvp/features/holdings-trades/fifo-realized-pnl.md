@@ -1,6 +1,6 @@
 ---
 id: MVP-012
-status: done
+status: planned
 domain: holdings-trades
 title: FIFO realized P&L on closed lots
 ---

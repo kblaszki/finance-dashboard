@@ -1,6 +1,6 @@
 ---
 id: MVP-021
-status: done
+status: planned
 domain: market-fx
 title: STOCK/ETF market data sync
 ---

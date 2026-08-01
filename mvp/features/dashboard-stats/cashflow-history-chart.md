@@ -1,6 +1,6 @@
 ---
 id: FR-004
-status: done
+status: planned
 domain: dashboard-stats
 title: Cashflow history chart
 ---

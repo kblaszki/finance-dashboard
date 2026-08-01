@@ -1,6 +1,6 @@
 ---
 id: FR-019
-status: done
+status: planned
 domain: import
 title: Bank and broker CSV import
 ---

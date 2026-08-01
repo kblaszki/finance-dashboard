@@ -1,6 +1,6 @@
 ---
 id: FR-033
-status: done
+status: planned
 domain: income-liabilities
 title: Coupon schedules and record-income
 ---

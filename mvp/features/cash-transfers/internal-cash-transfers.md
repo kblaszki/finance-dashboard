@@ -1,6 +1,6 @@
 ---
 id: FR-011
-status: done
+status: planned
 domain: cash-transfers
 title: Internal cash transfers with FX suggestion
 ---

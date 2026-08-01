@@ -1,6 +1,6 @@
 ---
 id: NFR-002
-status: done
+status: planned
 domain: automation-export
 title: Full user JSON data export
 ---

@@ -1,6 +1,6 @@
 ---
 id: FR-030
-status: done
+status: planned
 domain: property
 title: Property rental and maintenance cash flows
 ---
