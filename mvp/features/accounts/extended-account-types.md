@@ -1,6 +1,6 @@
 ---
 id: FR-006
-status: in_progress
+status: done
 domain: accounts
 title: Extended account types
 ---
@@ -24,14 +24,15 @@ Capability tracked in the product map for agents and humans; see linked docs for
 ## Acceptance
 
 - [x] Create BANK account (CRUD + list UI)
-- [ ] Create account with each remaining type
+- [x] Create account with each remaining type
 
 ## Implementation notes
 
 - Docs: [docs/reference/domain.md](../../../docs/reference/domain.md), [docs/reference/api.md](../../../docs/reference/api.md)
 - Traceability: [docs/reference/requirements.md](../../../docs/reference/requirements.md)
 - Code map: [docs/meta/code-map.md](../../../docs/meta/code-map.md)
-- Create API currently rejects non-BANK `accountType`
+- Allow-list: `backend/src/domain/accountTypes.ts`; create UI type select on `/accounts`
+- Type-specific fields (grams, property, revalue) remain follow-ups
 
 ## Out of scope / follow-ups
 

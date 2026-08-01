@@ -1,9 +1,21 @@
 import { apiClient } from "./client";
 
+export const ACCOUNT_TYPES = [
+  "BANK",
+  "BROKERAGE",
+  "CRYPTO",
+  "PRECIOUS_METAL",
+  "REAL_ESTATE",
+  "OTHER",
+  "MANUAL",
+] as const;
+
+export type AccountType = (typeof ACCOUNT_TYPES)[number];
+
 export type Account = {
   id: number;
   userId: number;
-  accountType: string;
+  accountType: AccountType | string;
   name: string;
   currency: string;
   cashBalance: number;
@@ -21,7 +33,7 @@ export type CreateAccountInput = {
   openingBalance?: number;
   openingCashAsOf?: string | null;
   description?: string | null;
-  accountType?: string;
+  accountType?: AccountType;
 };
 
 export type UpdateAccountInput = {

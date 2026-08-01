@@ -1,10 +1,12 @@
 import { FormEvent, useCallback, useState } from "react";
 import {
+  ACCOUNT_TYPES,
   createAccount,
   deleteAccount,
   fetchAccounts,
   updateAccount,
   type Account,
+  type AccountType,
 } from "../api/accountsApi";
 import { useAsyncData } from "../hooks/useAsyncData";
 import { formatMoney } from "../utils/format";
@@ -14,6 +16,7 @@ export function AccountsPage() {
   const { data: accounts, error, loading, reload } = useAsyncData(loadAccounts);
 
   const [name, setName] = useState("");
+  const [accountType, setAccountType] = useState<AccountType>("BANK");
   const [currency, setCurrency] = useState("PLN");
   const [openingBalance, setOpeningBalance] = useState("0");
   const [description, setDescription] = useState("");
@@ -38,9 +41,10 @@ export function AccountsPage() {
         currency,
         openingBalance: Number.isFinite(balance) ? balance : 0,
         description: description.trim() ? description.trim() : null,
-        accountType: "BANK",
+        accountType,
       });
       setName("");
+      setAccountType("BANK");
       setCurrency("PLN");
       setOpeningBalance("0");
       setDescription("");
@@ -85,7 +89,7 @@ export function AccountsPage() {
   }
 
   async function handleDelete(account: Account) {
-    if (!window.confirm(`Delete bank account "${account.name}"?`)) return;
+    if (!window.confirm(`Delete account "${account.name}"?`)) return;
     setActionErr(null);
     try {
       await deleteAccount(account.id);
@@ -100,13 +104,26 @@ export function AccountsPage() {
     <div className="page-stack">
       <h1 className="page-title">Accounts</h1>
       <p className="muted">
-        Bank accounts only for now. Opening balance seeds cash; ledger moves
-        come later.
+        Choose an account type when creating. Opening balance seeds cash;
+        ledger moves and type-specific fields come later.
       </p>
 
       <section className="card form-section-gap">
-        <h2 className="section-title">Add bank account</h2>
+        <h2 className="section-title">Add account</h2>
         <form className="auth-form" onSubmit={handleCreate}>
+          <label>
+            Type
+            <select
+              value={accountType}
+              onChange={(e) => setAccountType(e.target.value as AccountType)}
+            >
+              {ACCOUNT_TYPES.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
+            </select>
+          </label>
           <label>
             Name
             <input
@@ -146,7 +163,7 @@ export function AccountsPage() {
           </label>
           {createErr && <p className="auth-error">{createErr}</p>}
           <button type="submit" className="btn-primary" disabled={createBusy}>
-            {createBusy ? "Creating…" : "Create bank account"}
+            {createBusy ? "Creating…" : "Create account"}
           </button>
         </form>
       </section>

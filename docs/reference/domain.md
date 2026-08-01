@@ -23,13 +23,13 @@ Hub: [docs/README.md](../README.md).
 
 ## Account
 
-User-scoped financial account. This slice supports **BANK** create only; `accountType` remains a string for later types.
+User-scoped financial account. Create accepts allow-listed types; `accountType` is a validated string (not a Prisma enum).
 
 | Field | Type | Notes |
 |-------|------|-------|
 | id | Int | PK, autoincrement |
 | userId | Int | FK → User |
-| accountType | String | `BANK` for current create API |
+| accountType | String | `BANK`, `BROKERAGE`, `CRYPTO`, `PRECIOUS_METAL`, `REAL_ESTATE`, `OTHER`, `MANUAL` (omit/blank → `BANK`) |
 | name | String | Unique per user (`@@unique([userId, name])`) |
 | currency | String | ISO-like 3-letter code (stored uppercase) |
 | cashBalance | Decimal | Working cash; set from `openingBalance` on create |
@@ -39,4 +39,4 @@ User-scoped financial account. This slice supports **BANK** create only; `accoun
 | createdAt | DateTime | Default now |
 | updatedAt | DateTime | `@updatedAt` |
 
-Indexes: `[userId, accountType]`. API responses also expose computed `totalBalance` (= `cashBalance` for BANK until holdings exist).
+Indexes: `[userId, accountType]`. API responses also expose computed `totalBalance` (= `cashBalance` until holdings exist). Allow-list: `backend/src/domain/accountTypes.ts`.

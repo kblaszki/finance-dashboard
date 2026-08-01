@@ -37,14 +37,14 @@ In production, login/register are rate-limited (see [environment.md](environment
 
 ## Accounts
 
-User-scoped. Cross-user access returns `404`. Create currently accepts **BANK** only (`accountType` omitted → `BANK`).
+User-scoped. Cross-user access returns `404`. Create accepts allow-listed `accountType` values (`accountType` omitted/blank → `BANK`).
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
 | GET | `/api/accounts` | Bearer | List own accounts (newest first); includes `totalBalance` |
-| POST | `/api/accounts` | Bearer | Body: `name`; optional `currency` (default PLN), `openingBalance`, `openingCashAsOf`, `description`, `accountType` (`BANK` only). Sets `cashBalance = openingBalance`. 201 |
+| POST | `/api/accounts` | Bearer | Body: `name`; optional `currency` (default PLN), `openingBalance`, `openingCashAsOf`, `description`, `accountType` (`BANK`, `BROKERAGE`, `CRYPTO`, `PRECIOUS_METAL`, `REAL_ESTATE`, `OTHER`, `MANUAL`). Sets `cashBalance = openingBalance`. 201 |
 | GET | `/api/accounts/:id` | Bearer | One owned account |
-| PATCH | `/api/accounts/:id` | Bearer | Body: optional `name`, `currency`, `description` (no balance edits) |
+| PATCH | `/api/accounts/:id` | Bearer | Body: optional `name`, `currency`, `description` (no balance or `accountType` edits) |
 | DELETE | `/api/accounts/:id` | Bearer | 204 |
 
-Duplicate name for the same user → `400`. Non-BANK `accountType` → `400`.
+Duplicate name for the same user → `400`. Unknown `accountType` → `400`.

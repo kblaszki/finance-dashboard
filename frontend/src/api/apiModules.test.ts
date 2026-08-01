@@ -86,11 +86,17 @@ describe('API modules', () => {
     await fetchAccounts()
     expect(apiClient.get).toHaveBeenCalledWith('/api/accounts')
 
-    await createAccount({ name: 'Checking', currency: 'PLN', openingBalance: 10 })
+    await createAccount({
+      name: 'Checking',
+      currency: 'PLN',
+      openingBalance: 10,
+      accountType: 'BANK',
+    })
     expect(apiClient.post).toHaveBeenCalledWith('/api/accounts', {
       name: 'Checking',
       currency: 'PLN',
       openingBalance: 10,
+      accountType: 'BANK',
     })
 
     await fetchAccount(7)

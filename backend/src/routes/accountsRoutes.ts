@@ -2,6 +2,7 @@ import { Router } from "express";
 import type { Account, Prisma, PrismaClient } from "@prisma/client";
 import { Prisma as PrismaNS } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
+import { parseAccountType } from "../domain/accountTypes";
 import {
   badRequest,
   handleRouteError,
@@ -16,8 +17,6 @@ type AccountsDeps = {
   requireAuth: (req: AuthedRequest, res: any, next: any) => void;
   uid: (req: AuthedRequest) => number;
 };
-
-const BANK = "BANK";
 
 function decimalToNumber(value: Prisma.Decimal | number): number {
   return typeof value === "number" ? value : Number(value);
@@ -100,13 +99,7 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
   router.post("/api/accounts", requireAuth, async (req: AuthedRequest, res) => {
     try {
       const body = req.body ?? {};
-      const accountTypeRaw =
-        body.accountType === undefined || body.accountType === null || body.accountType === ""
-          ? BANK
-          : String(body.accountType).trim().toUpperCase();
-      if (accountTypeRaw !== BANK) {
-        throw badRequest("Only BANK accounts are supported in this slice");
-      }
+      const accountType = parseAccountType(body.accountType);
 
       const name = parseRequiredString(body.name, "name");
       const currency = normalizeCurrency(body.currency);
@@ -120,7 +113,7 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
       const account = await prisma.account.create({
         data: {
           userId: uid(req),
-          accountType: BANK,
+          accountType,
           name,
           currency,
           openingBalance,

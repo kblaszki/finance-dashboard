@@ -15,7 +15,7 @@ related_code:
 
 Hub: [docs/README.md](../README.md).
 
-Monorepo: Express API (`backend/`) + Vite React SPA (`frontend/`). SQLite via Prisma. **Baseline:** `User` plus user-scoped `Account` (BANK create in this slice). Product backlog: [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md).
+Monorepo: Express API (`backend/`) + Vite React SPA (`frontend/`). SQLite via Prisma. **Baseline:** `User` plus user-scoped `Account` (allow-listed types on create). Product backlog: [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md).
 
 ## Request flow
 
@@ -39,7 +39,7 @@ sequenceDiagram
 | Auth helpers | `backend/src/auth.ts`, `authConfig.ts` | Password/JWT validation, `requireAuth`, register flag |
 | HTTP | `backend/src/app.ts` + `routes/mountRouters.ts` | Health, rate limits, mounts auth + accounts routers |
 | Auth routes | `backend/src/routes/authRoutes.ts` | Register/login/me/profile/email/password |
-| Accounts routes | `backend/src/routes/accountsRoutes.ts` | BANK account CRUD (user-scoped) |
+| Accounts routes | `backend/src/routes/accountsRoutes.ts` | Account CRUD (user-scoped; type allow-list) |
 | Errors | `routes/httpSupport.ts`, `lib/errors.ts` | Typed HTTP errors |
 | Scripts | `backend/src/scripts/` | `createUser`, `backupDb` |
 | Seed | `backend/prisma/seed.ts` | Login-only demo user |

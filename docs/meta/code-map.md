@@ -11,7 +11,7 @@ related_docs:
 
 Hub: [docs/README.md](../README.md).
 
-Auth + BANK accounts baseline. Remaining product backlog: [mvp/](../../mvp/).
+Auth + multi-type accounts baseline. Remaining product backlog: [mvp/](../../mvp/).
 
 | Area | Primary paths |
 |------|----------------|
@@ -19,6 +19,7 @@ Auth + BANK accounts baseline. Remaining product backlog: [mvp/](../../mvp/).
 | JWT auth helpers | `backend/src/auth.ts`, `backend/src/authConfig.ts` |
 | Auth HTTP routes | `backend/src/routes/authRoutes.ts` |
 | Accounts HTTP routes | `backend/src/routes/accountsRoutes.ts` |
+| Account type allow-list | `backend/src/domain/accountTypes.ts` |
 | Router mount | `backend/src/routes/mountRouters.ts` |
 | HTTP helpers / errors | `backend/src/routes/httpSupport.ts`, `backend/src/lib/errors.ts` |
 | Route uid helper | `backend/src/routes/routeSupport.ts` |

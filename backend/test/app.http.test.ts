@@ -255,14 +255,45 @@ test("POST /api/accounts creates BANK account with totalBalance", async () => {
   assert.equal(res.body.description, "Main bank");
 });
 
-test("POST /api/accounts rejects non-BANK accountType", async () => {
+test("POST /api/accounts creates each allowed accountType", async () => {
+  const { token } = await createUserAndToken();
+  const types = [
+    "BANK",
+    "BROKERAGE",
+    "CRYPTO",
+    "PRECIOUS_METAL",
+    "REAL_ESTATE",
+    "OTHER",
+    "MANUAL",
+  ];
+  for (const accountType of types) {
+    const res = await request(app)
+      .post("/api/accounts")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ name: `Acct-${accountType}`, accountType, openingBalance: 1 });
+    assert.equal(res.status, 201, accountType);
+    assert.equal(res.body.accountType, accountType);
+  }
+});
+
+test("POST /api/accounts normalizes accountType case", async () => {
   const { token } = await createUserAndToken();
   const res = await request(app)
     .post("/api/accounts")
     .set("Authorization", `Bearer ${token}`)
-    .send({ name: "Broker", accountType: "BROKERAGE" });
+    .send({ name: "Broker Case", accountType: "brokerage" });
+  assert.equal(res.status, 201);
+  assert.equal(res.body.accountType, "BROKERAGE");
+});
+
+test("POST /api/accounts rejects unknown accountType", async () => {
+  const { token } = await createUserAndToken();
+  const res = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Bad Type", accountType: "FOO" });
   assert.equal(res.status, 400);
-  assert.match(res.body.error, /BANK/);
+  assert.match(res.body.error, /accountType/i);
 });
 
 test("POST /api/accounts rejects duplicate name for same user", async () => {
@@ -349,4 +380,22 @@ test("GET/PATCH/DELETE /api/accounts/:id scoped to owner", async () => {
     .get(`/api/accounts/${id}`)
     .set("Authorization", `Bearer ${token}`);
   assert.equal(getGone.status, 404);
+});
+
+test("PATCH /api/accounts/:id ignores accountType", async () => {
+  const { token } = await createUserAndToken();
+  const created = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Typed", accountType: "CRYPTO", openingBalance: 5 });
+  assert.equal(created.status, 201);
+  const id = created.body.id as number;
+
+  const patched = await request(app)
+    .patch(`/api/accounts/${id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Typed Renamed", accountType: "BANK" });
+  assert.equal(patched.status, 200);
+  assert.equal(patched.body.name, "Typed Renamed");
+  assert.equal(patched.body.accountType, "CRYPTO");
 });

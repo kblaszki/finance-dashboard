@@ -37,7 +37,7 @@ export function AppShell() {
           <ThemeToggle />
         </div>
         <p className="app-folio-mast-note muted">
-          Private workspace — bank accounts and settings today; more portfolio
+          Private workspace — accounts and settings today; more portfolio
           tools follow the roadmap.
         </p>
       </aside>

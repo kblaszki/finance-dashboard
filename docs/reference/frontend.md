@@ -21,7 +21,7 @@ Hub: [docs/README.md](../README.md).
 | `/login` | Guest only | `LoginPage` (in `AuthSwapShell`) |
 | `/register` | Guest only (when `allowRegister`) | `RegisterPage` (in `AuthSwapShell`) |
 | `/home` | Protected | `HomePage` |
-| `/accounts` | Protected | `AccountsPage` (BANK create/list/edit/delete) |
+| `/accounts` | Protected | `AccountsPage` (multi-type create/list/edit/delete) |
 | `/settings` | Protected | `SettingsPage` |
 
 Shell: `AppShell` — hatch-folio layout (diagonal hatch atmosphere, asymmetric mast + page). Mast: brand, Home/Accounts/Settings nav, user, `.app-folio-logout`, theme toggle. Gate: `ProtectedRoute`.
@@ -44,6 +44,6 @@ Default after login/register: `/home` (`state/auth.tsx`).
 |--------|------|
 | `frontend/src/api/client.ts` | `fetch` + Bearer token + 401 handler |
 | `frontend/src/api/authApi.ts` | config, register, login, me, profile, email, password |
-| `frontend/src/api/accountsApi.ts` | list/create/get/patch/delete accounts |
+| `frontend/src/api/accountsApi.ts` | list/create/get/patch/delete accounts; `ACCOUNT_TYPES` / `AccountType` |
 
 New domain clients follow `frontend/src/api/*Api.ts` and must be covered in `apiModules.test.ts` when added.

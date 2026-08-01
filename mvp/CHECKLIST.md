@@ -1,6 +1,6 @@
 # MVP feature checklist
 
-Last review: 2026-08-01 — statuses aligned to **auth + BANK accounts** baseline (JWT auth, settings, health, private-deploy CLIs, prod auth rate limits, BANK account CRUD). Feature specs under `mvp/features/**` remain the backlog; do not treat `planned` rows as shipped code.
+Last review: 2026-08-01 — statuses aligned to **auth + multi-type accounts** baseline (JWT auth, settings, health, private-deploy CLIs, prod auth rate limits, account CRUD for allow-listed types). Feature specs under `mvp/features/**` remain the backlog; do not treat `planned` rows as shipped code.
 
 ## Legend
 
@@ -15,7 +15,7 @@ Last review: 2026-08-01 — statuses aligned to **auth + BANK accounts** baselin
 
 | done | stub | planned | in_progress | total |
 |------|------|---------|-------------|-------|
-| 5 | 0 | 56 | 1 | 62 |
+| 6 | 0 | 56 | 0 | 62 |
 
 ## Master table
 
@@ -33,7 +33,7 @@ Last review: 2026-08-01 — statuses aligned to **auth + BANK accounts** baselin
 | FR-016 | Category spend breakdown | planned | [features/dashboard-stats/category-spend-breakdown.md](features/dashboard-stats/category-spend-breakdown.md) | /statistics |
 | FR-037 | Budget threshold alerts on dashboard | planned | [features/dashboard-stats/budget-alerts-banner.md](features/dashboard-stats/budget-alerts-banner.md) | BudgetAlertsBanner |
 | FR-038 | Dashboard PLN net-worth rollup | planned | [features/dashboard-stats/pln-net-worth-rollup.md](features/dashboard-stats/pln-net-worth-rollup.md) | NetWorthSection |
-| FR-006 | Extended account types | in_progress | [features/accounts/extended-account-types.md](features/accounts/extended-account-types.md) | /accounts create |
+| FR-006 | Extended account types | done | [features/accounts/extended-account-types.md](features/accounts/extended-account-types.md) | /accounts create |
 | FR-012 | Accounts list with type filter | planned | [features/accounts/accounts-list-filter.md](features/accounts/accounts-list-filter.md) | /accounts |
 | FR-032 | Precious metal grams on account | planned | [features/accounts/precious-metal-grams.md](features/accounts/precious-metal-grams.md) | PRECIOUS_METAL account detail |
 | MVP-010 | Manual revalue and account detail | planned | [features/accounts/account-detail-revalue.md](features/accounts/account-detail-revalue.md) | /accounts/:id |
@@ -94,7 +94,7 @@ Last review: 2026-08-01 — statuses aligned to **auth + BANK accounts** baselin
 
 ### accounts
 
-- **in_progress** [FR-006 Extended account types](features/accounts/extended-account-types.md)
+- **done** [FR-006 Extended account types](features/accounts/extended-account-types.md)
 - **planned** [FR-012 Accounts list with type filter](features/accounts/accounts-list-filter.md)
 - **planned** [FR-032 Precious metal grams on account](features/accounts/precious-metal-grams.md)
 - **planned** [MVP-010 Manual revalue and account detail](features/accounts/account-detail-revalue.md)
