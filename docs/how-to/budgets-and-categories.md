@@ -29,4 +29,4 @@ This page covers the shipped category tree and optional cash tagging. Monthly bu
 
 1. Open an account ledger at `/accounts/:id`.
 2. On create, optionally pick a category (omit for uncategorized).
-3. `POST /api/accounts/:accountId/transactions` accepts optional `categoryId` (same user). Multi-line splits are not shipped yet.
+3. `POST /api/accounts/:accountId/transactions` accepts optional `categoryId` (same user). Multi-line splits are deferred (out of scope for now).

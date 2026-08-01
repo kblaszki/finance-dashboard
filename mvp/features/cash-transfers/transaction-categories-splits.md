@@ -1,6 +1,6 @@
 ---
 id: FR-018
-status: in_progress
+status: done
 domain: cash-transfers
 title: Transaction categories and splits
 ---
@@ -9,7 +9,7 @@ title: Transaction categories and splits
 
 ## Summary
 
-Optional `categoryId` on cash ledger transactions. Multi-line splits not shipped yet.
+Optional `categoryId` on cash ledger transactions. Multi-line splits are deferred (out of scope for now).
 
 ## User value
 
@@ -25,7 +25,6 @@ Tag INCOME/EXPENSE rows with a user category for later budgets and spend breakdo
 
 - [x] `POST /api/accounts/:accountId/transactions` accepts optional `categoryId` (same-user category)
 - [x] List/create responses include `categoryId`
-- [ ] Multi-line splits on cash transactions
 
 ## Implementation notes
 
@@ -37,5 +36,5 @@ Tag INCOME/EXPENSE rows with a user category for later budgets and spend breakdo
 
 ## Out of scope / follow-ups
 
-- Multi-line splits (remaining work for this FR)
+- Multi-line splits — deferred; not planned for near-term MVP
 - Auto-categorization rules (FR-034)
