@@ -1,6 +1,6 @@
 # MVP feature checklist
 
-Last review: 2026-08-01 — statuses aligned to **auth + multi-type accounts + category tree + cash ledger + statistics + home KPIs** baseline (JWT auth, settings, health, private-deploy CLIs, prod auth rate limits, account CRUD, nested categories, INCOME/EXPENSE cash txs with optional `categoryId`, month category breakdown, period KPIs, cashflow history chart, cash net-worth buckets, rolling 12m cashflow averages). Feature specs under `mvp/features/**` remain the backlog; do not treat `planned` rows as shipped code.
+Last review: 2026-08-02 — statuses aligned to **auth + multi-type accounts + category tree + cash ledger + ledger CSV export + statistics + dashboard KPIs** baseline (JWT auth, settings, health, private-deploy CLIs, prod auth rate limits, account CRUD, nested categories, INCOME/EXPENSE cash txs with optional `categoryId`, per-account cash ledger CSV export, month category breakdown, period KPIs, cashflow history chart, cash net-worth buckets, rolling 12m cashflow averages). Feature specs under `mvp/features/**` remain the backlog; do not treat `planned` rows as shipped code.
 
 ## Legend
 
@@ -15,7 +15,7 @@ Last review: 2026-08-01 — statuses aligned to **auth + multi-type accounts + c
 
 | done | stub | planned | in_progress | total |
 |------|------|---------|-------------|-------|
-| 14 | 0 | 48 | 0 | 62 |
+| 15 | 0 | 48 | 0 | 63 |
 
 ## Master table
 
@@ -40,6 +40,7 @@ Last review: 2026-08-01 — statuses aligned to **auth + multi-type accounts + c
 | FR-011 | Internal cash transfers with FX suggestion | planned | [features/cash-transfers/internal-cash-transfers.md](features/cash-transfers/internal-cash-transfers.md) | /transfers |
 | FR-018 | Transaction categories and splits | done | [features/cash-transfers/transaction-categories-splits.md](features/cash-transfers/transaction-categories-splits.md) | /accounts/:id ledger |
 | MVP-011 | Cash ledger transaction types | done | [features/cash-transfers/cash-ledger-types.md](features/cash-transfers/cash-ledger-types.md) | /accounts/:id cash ledger |
+| MVP-013 | Cash ledger CSV export | done | [features/cash-transfers/cash-ledger-csv-export.md](features/cash-transfers/cash-ledger-csv-export.md) | /accounts/:id Download CSV |
 | FR-007 | Asset trades with commission and settlementDate | planned | [features/holdings-trades/asset-trades-commission.md](features/holdings-trades/asset-trades-commission.md) | /transactions, lots |
 | FR-009 | Instrument price chart and manual valuations | planned | [features/holdings-trades/instrument-price-chart.md](features/holdings-trades/instrument-price-chart.md) | /assets/:id |
 | FR-014 | Account-scoped holding detail | planned | [features/holdings-trades/holding-detail.md](features/holdings-trades/holding-detail.md) | /accounts/:id/assets/:instrumentId |
@@ -104,6 +105,7 @@ Last review: 2026-08-01 — statuses aligned to **auth + multi-type accounts + c
 - **planned** [FR-011 Internal cash transfers with FX suggestion](features/cash-transfers/internal-cash-transfers.md)
 - **done** [FR-018 Transaction categories and splits](features/cash-transfers/transaction-categories-splits.md)
 - **done** [MVP-011 Cash ledger transaction types](features/cash-transfers/cash-ledger-types.md)
+- **done** [MVP-013 Cash ledger CSV export](features/cash-transfers/cash-ledger-csv-export.md)
 
 ### holdings-trades
 
