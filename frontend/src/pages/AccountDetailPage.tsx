@@ -9,6 +9,7 @@ import {
   CASH_TX_TYPES,
   createTransaction,
   deleteTransaction,
+  exportTransactionsCsv,
   fetchTransactions,
   type CashTxType,
   type CashTransaction,
@@ -78,11 +79,36 @@ export function AccountDetailPage() {
   const [createErr, setCreateErr] = useState<string | null>(null);
   const [createBusy, setCreateBusy] = useState(false);
   const [actionErr, setActionErr] = useState<string | null>(null);
+  const [exportBusy, setExportBusy] = useState(false);
 
   async function refresh() {
     reloadAccount();
     reloadTx();
     refreshAccounts();
+  }
+
+  async function handleExportCsv() {
+    setActionErr(null);
+    setExportBusy(true);
+    try {
+      const blob = await exportTransactionsCsv(accountId);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      const safeName = (account?.name ?? `account-${accountId}`)
+        .replace(/[^\w.-]+/g, "_")
+        .replace(/^_+|_+$/g, "")
+        .slice(0, 64);
+      anchor.href = url;
+      anchor.download = `${safeName || `account-${accountId}`}-cash.csv`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setActionErr(err instanceof Error ? err.message : "Export failed");
+    } finally {
+      setExportBusy(false);
+    }
   }
 
   async function handleCreate(e: FormEvent) {
@@ -151,16 +177,28 @@ export function AccountDetailPage() {
           title={account.name}
           subtitle={<AccountSubtitle account={account} />}
           actions={
-            <button
-              type="button"
-              className="btn-primary"
-              onClick={() => setShowCreate((v) => !v)}
-            >
-              {showCreate ? "Hide form" : "Add transaction"}
-            </button>
+            <div className="form-actions-row">
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => void handleExportCsv()}
+                disabled={exportBusy}
+              >
+                {exportBusy ? "Downloading…" : "Download CSV"}
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => setShowCreate((v) => !v)}
+              >
+                {showCreate ? "Hide form" : "Add transaction"}
+              </button>
+            </div>
           }
         />
       )}
+
+      {actionErr && <p className="error-banner">{actionErr}</p>}
 
       {showCreate && (
         <section className="card form-section-gap">
@@ -231,7 +269,6 @@ export function AccountDetailPage() {
 
       <section className="card form-section-gap">
         <h2 className="section-title">Ledger</h2>
-        {actionErr && <p className="error-banner">{actionErr}</p>}
         <StatusBlock
           loading={txLoading}
           error={txError}

@@ -7,6 +7,7 @@ vi.mock('./client', () => ({
     put: vi.fn(),
     patch: vi.fn(),
     delete: vi.fn(),
+    getBlob: vi.fn(),
   },
   setAuthToken: vi.fn(),
 }))
@@ -33,6 +34,7 @@ import {
   fetchTransactions,
   createTransaction,
   deleteTransaction,
+  exportTransactionsCsv,
 } from './transactionsApi'
 import {
   fetchCategories,
@@ -149,6 +151,11 @@ describe('API modules', () => {
 
     await deleteTransaction(3, 9)
     expect(apiClient.delete).toHaveBeenCalledWith('/api/accounts/3/transactions/9')
+
+    await exportTransactionsCsv(3)
+    expect(apiClient.getBlob).toHaveBeenCalledWith(
+      '/api/accounts/3/transactions/export',
+    )
   })
 
   it('categoriesApi calls correct endpoints', async () => {

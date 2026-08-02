@@ -47,3 +47,7 @@ export async function deleteTransaction(
 ): Promise<void> {
   await apiClient.delete(`/api/accounts/${accountId}/transactions/${id}`);
 }
+
+export async function exportTransactionsCsv(accountId: number): Promise<Blob> {
+  return apiClient.getBlob(`/api/accounts/${accountId}/transactions/export`);
+}
