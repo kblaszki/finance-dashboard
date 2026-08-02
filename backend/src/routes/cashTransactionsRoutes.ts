@@ -7,6 +7,10 @@ import {
   signedDelta,
 } from "../domain/cashLedger";
 import {
+  buildCashLedgerCsv,
+  cashLedgerExportFilename,
+} from "../domain/cashLedgerCsv";
+import {
   badRequest,
   handleRouteError,
   notFound,
@@ -81,17 +85,64 @@ async function findOwnedAccountId(
   userId: number,
   accountId: number,
 ): Promise<number> {
+  const account = await findOwnedAccount(prisma, userId, accountId);
+  return account.id;
+}
+
+async function findOwnedAccount(
+  prisma: PrismaClient,
+  userId: number,
+  accountId: number,
+): Promise<{ id: number; currency: string }> {
   const account = await prisma.account.findFirst({
     where: { id: accountId, userId },
-    select: { id: true },
+    select: { id: true, currency: true },
   });
   if (!account) throw notFound("Account not found");
-  return account.id;
+  return account;
 }
 
 export function createCashTransactionsRouter(deps: CashTxDeps): Router {
   const router = Router();
   const { prisma, requireAuth, uid } = deps;
+
+  router.get(
+    "/api/accounts/:accountId/transactions/export",
+    requireAuth,
+    async (req: AuthedRequest, res) => {
+      try {
+        const accountId = parseIdParam(req.params.accountId, "accountId");
+        const account = await findOwnedAccount(prisma, uid(req), accountId);
+        const rows = await prisma.cashTransaction.findMany({
+          where: { accountId },
+          orderBy: [{ occurredAt: "asc" }, { id: "asc" }],
+          include: { category: { select: { name: true } } },
+        });
+        const csv = buildCashLedgerCsv({
+          currency: account.currency,
+          rows: rows.map((row) => ({
+            id: row.id,
+            type: row.type,
+            amount: decimalToNumber(row.amount),
+            occurredAt: row.occurredAt,
+            description: row.description,
+            categoryId: row.categoryId,
+            categoryName: row.category?.name ?? null,
+            createdAt: row.createdAt,
+          })),
+        });
+        const filename = cashLedgerExportFilename(accountId);
+        res.setHeader("Content-Type", "text/csv; charset=utf-8");
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="${filename}"`,
+        );
+        res.status(200).send(csv);
+      } catch (e: unknown) {
+        handleRouteError(res, e, "Failed to export transactions");
+      }
+    },
+  );
 
   router.get(
     "/api/accounts/:accountId/transactions",

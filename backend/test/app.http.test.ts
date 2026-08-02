@@ -480,6 +480,98 @@ test("GET /api/accounts/:id/transactions lists newest first and scopes ownership
   assert.equal(forbidden.status, 404);
 });
 
+test("GET /api/accounts/:id/transactions/export returns CSV with auth and ownership", async () => {
+  const token = await registerAndLogin("csvuser@test.local", "csvuser", "password123");
+  const otherToken = await registerAndLogin(
+    "csvother@test.local",
+    "csvother",
+    "password123",
+  );
+
+  const unauth = await request(app).get("/api/accounts/1/transactions/export");
+  assert.equal(unauth.status, 401);
+
+  const badId = await request(app)
+    .get("/api/accounts/not-a-number/transactions/export")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(badId.status, 400);
+
+  const brokerage = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      name: "Broker CSV",
+      accountType: "BROKERAGE",
+      currency: "EUR",
+      openingBalance: 0,
+    });
+  assert.equal(brokerage.status, 201);
+  const accountId = brokerage.body.id as number;
+
+  const empty = await request(app)
+    .get(`/api/accounts/${accountId}/transactions/export`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(empty.status, 200);
+  assert.match(String(empty.headers["content-type"]), /text\/csv/);
+  assert.equal(
+    empty.headers["content-disposition"],
+    `attachment; filename="account-${accountId}-cash.csv"`,
+  );
+  assert.equal(
+    empty.text,
+    "id,type,amount,currency,occurredAt,description,categoryId,categoryName,createdAt\n",
+  );
+
+  const cats = await request(app)
+    .get("/api/categories")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(cats.status, 200);
+  const incomeRoot = (cats.body as Array<{ id: number; name: string }>).find(
+    (c) => c.name === "Income",
+  );
+  assert.ok(incomeRoot);
+
+  await request(app)
+    .post(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      type: "INCOME",
+      amount: 100.5,
+      occurredAt: "2024-06-15T12:00:00.000Z",
+      description: "Pay, bonus",
+      categoryId: incomeRoot!.id,
+    });
+  await request(app)
+    .post(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      type: "EXPENSE",
+      amount: 10,
+      occurredAt: "2024-01-01T00:00:00.000Z",
+      description: "=1+1",
+    });
+
+  const exported = await request(app)
+    .get(`/api/accounts/${accountId}/transactions/export`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(exported.status, 200);
+  const lines = exported.text.trimEnd().split("\n");
+  assert.equal(
+    lines[0],
+    "id,type,amount,currency,occurredAt,description,categoryId,categoryName,createdAt",
+  );
+  assert.equal(lines.length, 3);
+  assert.match(lines[1]!, /^[0-9]+,EXPENSE,10\.00,EUR,/);
+  assert.match(lines[1]!, /,'=1\+1,,/);
+  assert.match(lines[2]!, /,INCOME,100\.50,EUR,/);
+  assert.match(lines[2]!, /,"Pay, bonus",\d+,Income,/);
+
+  const forbidden = await request(app)
+    .get(`/api/accounts/${accountId}/transactions/export`)
+    .set("Authorization", `Bearer ${otherToken}`);
+  assert.equal(forbidden.status, 404);
+});
+
 test("DELETE /api/accounts/:id/transactions/:txId reverses cashBalance", async () => {
   const { token } = await createUserAndToken();
   const account = await request(app)
