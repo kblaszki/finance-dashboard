@@ -473,6 +473,20 @@ export function AccountDetailPage() {
       setOccurredAt((current) =>
         shiftOccurredAtByDays(current || defaultOccurredAtValue(), 1),
       );
+      return;
+    }
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setOccurredAt((current) =>
+        shiftOccurredAtByHours(current || defaultOccurredAtValue(), -1),
+      );
+      return;
+    }
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setOccurredAt((current) =>
+        shiftOccurredAtByHours(current || defaultOccurredAtValue(), 1),
+      );
     }
   }
 
@@ -802,6 +816,15 @@ function shiftOccurredAtByDays(value: string, days: number): string {
     return defaultOccurredAtValue();
   }
   base.setDate(base.getDate() + days);
+  return formatDateTimeLocal(base);
+}
+
+function shiftOccurredAtByHours(value: string, hours: number): string {
+  const base = new Date(value);
+  if (Number.isNaN(base.getTime())) {
+    return defaultOccurredAtValue();
+  }
+  base.setHours(base.getHours() + hours);
   return formatDateTimeLocal(base);
 }
 
