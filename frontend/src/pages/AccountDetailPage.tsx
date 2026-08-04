@@ -12,6 +12,7 @@ import { fetchAccount, type Account } from "../api/accountsApi";
 import {
   fetchCategories,
   flattenCategoryTree,
+  type Category,
 } from "../api/categoriesApi";
 import {
   CASH_TX_TYPES,
@@ -80,6 +81,10 @@ export function AccountDetailPage() {
 
   const [showCreate, setShowCreate] = useState(false);
   const [type, setType] = useState<CashTxType>("INCOME");
+  const [typeInput, setTypeInput] = useState("INCOME");
+  const [typeError, setTypeError] = useState<string | null>(null);
+  const [isTypeOpen, setIsTypeOpen] = useState(false);
+  const [activeTypeIndex, setActiveTypeIndex] = useState(0);
   const [amount, setAmount] = useState("");
   const [occurredAt, setOccurredAt] = useState(defaultOccurredAtValue);
   const [description, setDescription] = useState("");
@@ -92,15 +97,36 @@ export function AccountDetailPage() {
   const [createBusy, setCreateBusy] = useState(false);
   const [actionErr, setActionErr] = useState<string | null>(null);
   const [exportBusy, setExportBusy] = useState(false);
-  const typeRef = useRef<HTMLSelectElement | null>(null);
+  const typeRef = useRef<HTMLInputElement | null>(null);
   const amountRef = useRef<HTMLInputElement | null>(null);
   const categoryInputRef = useRef<HTMLInputElement | null>(null);
+  const dateRef = useRef<HTMLInputElement | null>(null);
+  const typeBlurTimer = useRef<number | null>(null);
   const categoryBlurTimer = useRef<number | null>(null);
+
+  const typeScopedCategoryRows = useMemo(() => {
+    const allowed = categoryIdsUnderRoot(
+      categories ?? [],
+      rootNameForTxType(type),
+    );
+    return categoryRows.filter((cat) => allowed.has(cat.id));
+  }, [categories, categoryRows, type]);
+
+  const filteredTypeOptions = useMemo(() => {
+    const query = typeInput.trim().toLowerCase();
+    if (!query) return [...CASH_TX_TYPES];
+    return CASH_TX_TYPES.filter((option) =>
+      option.toLowerCase().includes(query),
+    );
+  }, [typeInput]);
+
   const filteredCategoryRows = useMemo(() => {
     const query = categoryInput.trim().toLowerCase();
-    if (!query) return categoryRows;
-    return categoryRows.filter((cat) => cat.name.toLowerCase().includes(query));
-  }, [categoryInput, categoryRows]);
+    if (!query) return typeScopedCategoryRows;
+    return typeScopedCategoryRows.filter((cat) =>
+      cat.name.toLowerCase().includes(query),
+    );
+  }, [categoryInput, typeScopedCategoryRows]);
 
   useEffect(() => {
     if (!showCreate) return;
@@ -111,11 +137,26 @@ export function AccountDetailPage() {
 
   useEffect(() => {
     return () => {
+      if (typeBlurTimer.current) {
+        window.clearTimeout(typeBlurTimer.current);
+      }
       if (categoryBlurTimer.current) {
         window.clearTimeout(categoryBlurTimer.current);
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!isTypeOpen) {
+      setActiveTypeIndex(0);
+      return;
+    }
+    setActiveTypeIndex((current) =>
+      filteredTypeOptions.length === 0
+        ? 0
+        : Math.min(current, filteredTypeOptions.length - 1),
+    );
+  }, [filteredTypeOptions, isTypeOpen]);
 
   useEffect(() => {
     if (!isCategoryOpen) {
@@ -162,6 +203,7 @@ export function AccountDetailPage() {
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
     setCreateErr(null);
+    if (!validateTypeInput()) return;
     if (!validateCategoryInput()) return;
     setCreateBusy(true);
     try {
@@ -203,6 +245,111 @@ export function AccountDetailPage() {
     }
   }
 
+  function clearCategoryIfOutsideType(nextType: CashTxType) {
+    if (categoryId === "") return;
+    const allowed = categoryIdsUnderRoot(
+      categories ?? [],
+      rootNameForTxType(nextType),
+    );
+    if (!allowed.has(Number(categoryId))) {
+      clearCategory();
+    }
+  }
+
+  function selectType(nextType: CashTxType) {
+    setType(nextType);
+    setTypeInput(nextType);
+    setTypeError(null);
+    setIsTypeOpen(false);
+    clearCategoryIfOutsideType(nextType);
+  }
+
+  function validateTypeInput(): boolean {
+    const trimmed = typeInput.trim();
+    const exactMatch = CASH_TX_TYPES.find(
+      (option) => option.toLowerCase() === trimmed.toLowerCase(),
+    );
+    if (exactMatch) {
+      selectType(exactMatch);
+      return true;
+    }
+    setTypeError("Choose INCOME or EXPENSE from the list.");
+    return false;
+  }
+
+  function handleTypeInputChange(value: string) {
+    setTypeInput(value);
+    setTypeError(null);
+    setIsTypeOpen(true);
+    const exactMatch = CASH_TX_TYPES.find(
+      (option) => option.toLowerCase() === value.trim().toLowerCase(),
+    );
+    if (exactMatch) {
+      setType(exactMatch);
+      clearCategoryIfOutsideType(exactMatch);
+    }
+  }
+
+  function handleTypeInputFocus() {
+    if (typeBlurTimer.current) {
+      window.clearTimeout(typeBlurTimer.current);
+      typeBlurTimer.current = null;
+    }
+    setIsTypeOpen(true);
+  }
+
+  function handleTypeInputBlur() {
+    typeBlurTimer.current = window.setTimeout(() => {
+      setIsTypeOpen(false);
+      validateTypeInput();
+    }, 120);
+  }
+
+  function acceptActiveTypeOption(): boolean {
+    if (!isTypeOpen || filteredTypeOptions.length === 0) return false;
+    const active = filteredTypeOptions[activeTypeIndex]!;
+    selectType(active);
+    return true;
+  }
+
+  function handleTypeKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      if (!isTypeOpen) {
+        setIsTypeOpen(true);
+        return;
+      }
+      setActiveTypeIndex((current) =>
+        filteredTypeOptions.length === 0
+          ? 0
+          : Math.min(current + 1, filteredTypeOptions.length - 1),
+      );
+      return;
+    }
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      if (!isTypeOpen) {
+        setIsTypeOpen(true);
+        return;
+      }
+      setActiveTypeIndex((current) => Math.max(current - 1, 0));
+      return;
+    }
+    if (e.key === "Escape") {
+      setIsTypeOpen(false);
+      return;
+    }
+    if (e.key === "Tab" && !e.shiftKey && acceptActiveTypeOption()) {
+      e.preventDefault();
+      window.setTimeout(() => amountRef.current?.focus(), 0);
+      return;
+    }
+    if (e.key === "Enter" && isTypeOpen && filteredTypeOptions.length > 0) {
+      e.preventDefault();
+      acceptActiveTypeOption();
+    }
+  }
+
   function validateCategoryInput(): boolean {
     const trimmed = categoryInput.trim();
     if (trimmed === "") {
@@ -211,10 +358,16 @@ export function AccountDetailPage() {
       return true;
     }
     if (categoryId !== "") {
-      setCategoryError(null);
-      return true;
+      const allowed = categoryIdsUnderRoot(
+        categories ?? [],
+        rootNameForTxType(type),
+      );
+      if (allowed.has(Number(categoryId))) {
+        setCategoryError(null);
+        return true;
+      }
     }
-    const exactMatch = categoryRows.find(
+    const exactMatch = typeScopedCategoryRows.find(
       (cat) => cat.name.toLowerCase() === trimmed.toLowerCase(),
     );
     if (exactMatch) {
@@ -261,6 +414,13 @@ export function AccountDetailPage() {
     }, 120);
   }
 
+  function acceptActiveCategoryOption(): boolean {
+    if (!isCategoryOpen || filteredCategoryRows.length === 0) return false;
+    const active = filteredCategoryRows[activeCategoryIndex]!;
+    selectCategory(active.id, active.name);
+    return true;
+  }
+
   function handleCategoryKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -288,10 +448,31 @@ export function AccountDetailPage() {
       setIsCategoryOpen(false);
       return;
     }
+    if (e.key === "Tab" && !e.shiftKey && acceptActiveCategoryOption()) {
+      e.preventDefault();
+      window.setTimeout(() => dateRef.current?.focus(), 0);
+      return;
+    }
     if (e.key === "Enter" && isCategoryOpen && filteredCategoryRows.length > 0) {
       e.preventDefault();
-      const active = filteredCategoryRows[activeCategoryIndex]!;
-      selectCategory(active.id, active.name);
+      acceptActiveCategoryOption();
+    }
+  }
+
+  function handleDateKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (!e.ctrlKey) return;
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      setOccurredAt((current) =>
+        shiftOccurredAtByDays(current || defaultOccurredAtValue(), -1),
+      );
+      return;
+    }
+    if (e.key === "ArrowRight") {
+      e.preventDefault();
+      setOccurredAt((current) =>
+        shiftOccurredAtByDays(current || defaultOccurredAtValue(), 1),
+      );
     }
   }
 
@@ -356,19 +537,56 @@ export function AccountDetailPage() {
         <section className="card form-section-gap">
           <h2 className="section-title">Add cash movement</h2>
           <form className="auth-form cash-tx-form" onSubmit={handleCreate}>
-            <label>
+            <label className="cash-tx-category-field">
               Type
-              <select
-                ref={typeRef}
-                value={type}
-                onChange={(e) => setType(e.target.value as CashTxType)}
-              >
-                {CASH_TX_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
+              <div className="combobox">
+                <input
+                  ref={typeRef}
+                  type="text"
+                  value={typeInput}
+                  onChange={(e) => handleTypeInputChange(e.target.value)}
+                  onFocus={handleTypeInputFocus}
+                  onBlur={handleTypeInputBlur}
+                  onKeyDown={handleTypeKeyDown}
+                  role="combobox"
+                  aria-expanded={isTypeOpen}
+                  aria-controls="cash-type-listbox"
+                  aria-activedescendant={
+                    isTypeOpen && filteredTypeOptions[activeTypeIndex]
+                      ? `cash-type-option-${filteredTypeOptions[activeTypeIndex]!}`
+                      : undefined
+                  }
+                  placeholder="INCOME or EXPENSE"
+                  autoComplete="off"
+                />
+                {isTypeOpen && (
+                  <div className="combobox-menu" role="listbox" id="cash-type-listbox">
+                    {filteredTypeOptions.length > 0 ? (
+                      filteredTypeOptions.map((option, index) => (
+                        <button
+                          key={option}
+                          id={`cash-type-option-${option}`}
+                          type="button"
+                          role="option"
+                          aria-selected={option === type}
+                          className={`combobox-option ${
+                            index === activeTypeIndex ? "active" : ""
+                          }`}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            selectType(option);
+                          }}
+                        >
+                          <span className="combobox-option-name">{option}</span>
+                        </button>
+                      ))
+                    ) : (
+                      <p className="combobox-empty">No matching type.</p>
+                    )}
+                  </div>
+                )}
+              </div>
+              {typeError && <p className="auth-error">{typeError}</p>}
             </label>
             <label>
               Amount
@@ -455,9 +673,11 @@ export function AccountDetailPage() {
             <label>
               Date
               <input
+                ref={dateRef}
                 type="datetime-local"
                 value={occurredAt}
                 onChange={(e) => setOccurredAt(e.target.value)}
+                onKeyDown={handleDateKeyDown}
               />
             </label>
             <label>
@@ -573,8 +793,54 @@ function formatOccurredAt(iso: string): string {
 function defaultOccurredAtValue(): string {
   const now = new Date();
   now.setHours(12, 0, 0, 0);
+  return formatDateTimeLocal(now);
+}
+
+function shiftOccurredAtByDays(value: string, days: number): string {
+  const base = new Date(value);
+  if (Number.isNaN(base.getTime())) {
+    return defaultOccurredAtValue();
+  }
+  base.setDate(base.getDate() + days);
+  return formatDateTimeLocal(base);
+}
+
+function formatDateTimeLocal(date: Date): string {
   const pad = (value: number) => String(value).padStart(2, "0");
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
-    now.getDate(),
-  )}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+    date.getDate(),
+  )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function rootNameForTxType(type: CashTxType): "Income" | "Expense" {
+  return type === "INCOME" ? "Income" : "Expense";
+}
+
+/** Root named Income/Expense plus all descendants (by parentId). */
+function categoryIdsUnderRoot(
+  categories: Category[],
+  rootName: "Income" | "Expense",
+): Set<number> {
+  const root = categories.find(
+    (cat) => cat.parentId == null && cat.name === rootName,
+  );
+  if (!root) return new Set();
+
+  const byParent = new Map<number, Category[]>();
+  for (const cat of categories) {
+    if (cat.parentId == null) continue;
+    const list = byParent.get(cat.parentId) ?? [];
+    list.push(cat);
+    byParent.set(cat.parentId, list);
+  }
+
+  const ids = new Set<number>();
+  function walk(id: number) {
+    ids.add(id);
+    for (const child of byParent.get(id) ?? []) {
+      walk(child.id);
+    }
+  }
+  walk(root.id);
+  return ids;
 }

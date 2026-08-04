@@ -27,7 +27,7 @@ Hub: [docs/README.md](../README.md).
 | `/dashboard` | Protected | `DashboardPage` (KPIs, net-worth donut, 12m cashflow, account mix) |
 | `/home` | Protected | Redirect → `/dashboard` |
 | `/accounts` | Protected | `AccountsPage` (multi-type create/list/edit/delete) |
-| `/accounts/:id` | Protected | `AccountDetailPage` (cash ledger create/list/delete/CSV export; keyboard-first create form with category autocomplete; `openingCashAsOf`) |
+| `/accounts/:id` | Protected | `AccountDetailPage` (cash ledger create/list/delete/CSV export; keyboard-first create form with type + category comboboxes; `openingCashAsOf`) |
 | `/categories` | Protected | `CategoriesPage` (nested tree create/rename/reparent/delete) |
 | `/statistics` | Protected | `StatisticsPage` (period KPIs, cashflow + savings-rate chart, category donuts with parent rollup) |
 | `/settings` | Protected | `SettingsPage` |
@@ -44,7 +44,7 @@ Theme (`light` | `dark`) lives in `state/theme.tsx`, persisted under `localStora
 
 Visual system (Signal focus): slate + emerald tokens in `index.css` (including `--color-warning`, `--color-positive-subtle`, `--focus-ring`, `--chart-1…6`, sidebar tokens); stronger surface elevation; UI font IBM Plex Sans; display/brand Space Grotesk (loaded from `index.html`). Production `/` landing uses the centered Signal-focus composition (brand, headline, lead, rule, CTAs, today/roadmap split) with a fine grid atmosphere. Authenticated shell uses the sidebar/topbar layout. Login/register use auth swap-split. Recharts series use `--chart-*`.
 
-Forms on Settings and Accounts use the stack form class `.auth-form` (compact table edits: `.auth-form--compact`). `AccountDetailPage` adds a keyboard-first cash-entry flow: ordered tab navigation, today-at-noon default datetime, Enter submit loop, and local category autocomplete/validation. Feedback: `.error-banner` / `.auth-error` for failures, `.success-banner` for confirmations, `.empty-state` for empty lists. Destructive actions use `.btn-danger`. AppShell logout uses `.shell-logout` (distinct from `.theme-toggle`). Dashboard KPIs use `.kpi-grid` / `.kpi-card`; charts use `.chart-card` / `.chart-container`; tables use `.data-table` with `.num` and `.badge`.
+Forms on Settings and Accounts use the stack form class `.auth-form` (compact table edits: `.auth-form--compact`). `AccountDetailPage` adds a keyboard-first cash-entry flow: ordered tab navigation; type and category local comboboxes (ArrowUp/Down, Enter/Tab accept highlighted option, Escape close); category suggestions scoped to the `Income` or `Expense` root tree matching the selected type; today-at-noon default datetime with Ctrl+← / Ctrl+→ day nudge; Enter submit loop with validation to existing categories. Feedback: `.error-banner` / `.auth-error` for failures, `.success-banner` for confirmations, `.empty-state` for empty lists. Destructive actions use `.btn-danger`. AppShell logout uses `.shell-logout` (distinct from `.theme-toggle`). Dashboard KPIs use `.kpi-grid` / `.kpi-card`; charts use `.chart-card` / `.chart-container`; tables use `.data-table` with `.num` and `.badge`.
 
 Controls: `ThemeToggle` (light ↔ dark) on Landing, AuthSwapShell, and AppShell; Settings **Appearance** section sets theme via Light/Dark radios (`.appearance-option`). Global currency select lives in the shell topbar.
 
