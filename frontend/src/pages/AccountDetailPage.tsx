@@ -217,6 +217,8 @@ export function AccountDetailPage() {
       });
       setAmount("");
       setDescription("");
+      selectType("INCOME");
+      clearCategory();
       setCreateErr(null);
       typeRef.current?.focus();
       await refresh();
@@ -478,14 +480,14 @@ export function AccountDetailPage() {
     if (e.key === "ArrowUp") {
       e.preventDefault();
       setOccurredAt((current) =>
-        shiftOccurredAtByHours(current || defaultOccurredAtValue(), -1),
+        shiftOccurredAtByHours(current || defaultOccurredAtValue(), 1),
       );
       return;
     }
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setOccurredAt((current) =>
-        shiftOccurredAtByHours(current || defaultOccurredAtValue(), 1),
+        shiftOccurredAtByHours(current || defaultOccurredAtValue(), -1),
       );
     }
   }
