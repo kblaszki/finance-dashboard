@@ -9,7 +9,7 @@ title: Cash ledger CSV export
 
 ## Summary
 
-Per-account CSV download of cash ledger rows for any allow-listed account type. Export-only (no import). UTF-8, RFC4180, oldest→newest.
+Per-account CSV download of cash ledger rows for any allow-listed account type. Pair with [CSV import](cash-ledger-csv-import.md). UTF-8, RFC4180, oldest→newest.
 
 ## User value
 
@@ -36,7 +36,8 @@ Users can take a portable snapshot of an account’s cash movements for spreadsh
 - Docs: [docs/reference/api.md](../../../docs/reference/api.md), [docs/reference/frontend.md](../../../docs/reference/frontend.md)
 - Traceability: [docs/reference/requirements.md](../../../docs/reference/requirements.md)
 - Code map: [docs/meta/code-map.md](../../../docs/meta/code-map.md)
-- Not NFR-002 (full JSON) or FR-019 (CSV import)
+- Not NFR-002 (full JSON) or FR-019 (bank/broker CSV import)
+- Round-trip import — [MVP-014](cash-ledger-csv-import.md)
 
 ## Out of scope / follow-ups
 

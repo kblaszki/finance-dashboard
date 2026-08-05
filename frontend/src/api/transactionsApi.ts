@@ -51,3 +51,17 @@ export async function deleteTransaction(
 export async function exportTransactionsCsv(accountId: number): Promise<Blob> {
   return apiClient.getBlob(`/api/accounts/${accountId}/transactions/export`);
 }
+
+export type ImportTransactionsResult = {
+  created: number;
+};
+
+export async function importTransactionsCsv(
+  accountId: number,
+  csv: string,
+): Promise<ImportTransactionsResult> {
+  return apiClient.post<ImportTransactionsResult>(
+    `/api/accounts/${accountId}/transactions/import`,
+    { csv },
+  );
+}

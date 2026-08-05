@@ -27,7 +27,7 @@ Hub: [docs/README.md](../README.md).
 | `/dashboard` | Protected | `DashboardPage` (KPIs, net-worth donut, 12m cashflow, account mix) |
 | `/home` | Protected | Redirect → `/dashboard` |
 | `/accounts` | Protected | `AccountsPage` (multi-type create/list/edit/delete) |
-| `/accounts/:id` | Protected | `AccountDetailPage` (cash ledger create/list/delete/CSV export; keyboard-first create form with type + category comboboxes; `openingCashAsOf`) |
+| `/accounts/:id` | Protected | `AccountDetailPage` (cash ledger create/list/delete/CSV export+import; keyboard-first create form with type + category comboboxes; `openingCashAsOf`) |
 | `/categories` | Protected | `CategoriesPage` (nested tree create/rename/reparent/delete) |
 | `/statistics` | Protected | `StatisticsPage` (period KPIs, cashflow + savings-rate chart, category donuts with parent rollup) |
 | `/settings` | Protected | `SettingsPage` |
@@ -58,7 +58,7 @@ Default after login/register: `/dashboard` (`state/auth.tsx`).
 | `frontend/src/api/authApi.ts` | config, register, login, me, profile, email, password |
 | `frontend/src/api/accountsApi.ts` | list/create/get/patch/delete accounts; `ACCOUNT_TYPES` / `AccountType` |
 | `frontend/src/api/categoriesApi.ts` | list/create/patch/delete categories; `flattenCategoryTree` |
-| `frontend/src/api/transactionsApi.ts` | list/create/delete/export cash txs under `/api/accounts/:id/transactions` (optional `categoryId`; CSV via `getBlob`) |
+| `frontend/src/api/transactionsApi.ts` | list/create/delete/export/import cash txs under `/api/accounts/:id/transactions` (optional `categoryId`; CSV export via `getBlob`, import via JSON `{ csv }`) |
 | `frontend/src/api/statisticsApi.ts` | `fetchCategoryBreakdown`, `fetchPeriodSummary`, `fetchCashflowHistory`, `fetchNetWorth`, `fetchCashflowRolling12m` → `/api/statistics/*` |
 
 New domain clients follow `frontend/src/api/*Api.ts` and must be covered in `apiModules.test.ts` when added.

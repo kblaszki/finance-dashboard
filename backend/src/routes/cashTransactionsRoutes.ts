@@ -1,5 +1,5 @@
 import { Router } from "express";
-import type { CashTransaction, Prisma, PrismaClient } from "@prisma/client";
+import { Prisma, type CashTransaction, type PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import {
   parseCashTxType,
@@ -10,6 +10,11 @@ import {
   buildCashLedgerCsv,
   cashLedgerExportFilename,
 } from "../domain/cashLedgerCsv";
+import {
+  formatImportErrors,
+  parseCashLedgerCsvImport,
+  resolveImportCategoryIds,
+} from "../domain/cashLedgerCsvImport";
 import {
   badRequest,
   handleRouteError,
@@ -140,6 +145,71 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
         res.status(200).send(csv);
       } catch (e: unknown) {
         handleRouteError(res, e, "Failed to export transactions");
+      }
+    },
+  );
+
+  router.post(
+    "/api/accounts/:accountId/transactions/import",
+    requireAuth,
+    async (req: AuthedRequest, res) => {
+      try {
+        const accountId = parseIdParam(req.params.accountId, "accountId");
+        const account = await findOwnedAccount(prisma, uid(req), accountId);
+        const csv = req.body?.csv;
+        if (typeof csv !== "string") {
+          throw badRequest("csv string required");
+        }
+
+        const parsed = parseCashLedgerCsvImport(csv, account.currency);
+        if (!parsed.ok) {
+          res.status(400).json({
+            error: formatImportErrors(parsed.errors),
+            details: parsed.errors,
+          });
+          return;
+        }
+
+        const ownedCategories = await prisma.category.findMany({
+          where: { userId: uid(req) },
+          select: { id: true, name: true },
+        });
+        const resolved = resolveImportCategoryIds(parsed.drafts, ownedCategories);
+        if (!resolved.ok) {
+          res.status(400).json({
+            error: formatImportErrors(resolved.errors),
+            details: resolved.errors,
+          });
+          return;
+        }
+
+        let totalDelta = new Prisma.Decimal(0);
+        const createData = resolved.rows.map((row) => {
+          const amount = new Prisma.Decimal(row.amount);
+          totalDelta = totalDelta.add(signedDelta(row.type, amount));
+          return {
+            accountId,
+            type: row.type,
+            amount,
+            occurredAt: row.occurredAt,
+            description: row.description,
+            categoryId: row.categoryId,
+          };
+        });
+
+        await prisma.$transaction(async (tx) => {
+          if (createData.length > 0) {
+            await tx.cashTransaction.createMany({ data: createData });
+            await tx.account.update({
+              where: { id: accountId },
+              data: { cashBalance: { increment: totalDelta } },
+            });
+          }
+        });
+
+        res.status(201).json({ created: createData.length });
+      } catch (e: unknown) {
+        handleRouteError(res, e, "Failed to import transactions");
       }
     },
   );

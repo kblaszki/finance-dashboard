@@ -572,6 +572,92 @@ test("GET /api/accounts/:id/transactions/export returns CSV with auth and owners
   assert.equal(forbidden.status, 404);
 });
 
+test("POST /api/accounts/:id/transactions/import creates rows and updates balance", async () => {
+  const token = await registerAndLogin(
+    "csvimport@test.local",
+    "csvimport",
+    "password123",
+  );
+  const otherToken = await registerAndLogin(
+    "csvimportother@test.local",
+    "csvimportother",
+    "password123",
+  );
+
+  const unauth = await request(app).post("/api/accounts/1/transactions/import");
+  assert.equal(unauth.status, 401);
+
+  const account = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      name: "Import Bank",
+      accountType: "BANK",
+      currency: "PLN",
+      openingBalance: 100,
+    });
+  assert.equal(account.status, 201);
+  const accountId = account.body.id as number;
+
+  const cats = await request(app)
+    .get("/api/categories")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(cats.status, 200);
+  const food = (cats.body as Array<{ id: number; name: string }>).find(
+    (c) => c.name === "Food",
+  );
+  assert.ok(food);
+
+  const header =
+    "id,type,amount,currency,occurredAt,description,categoryId,categoryName,createdAt";
+  const csv = [
+    header,
+    `,INCOME,50.00,PLN,2024-03-01T12:00:00.000Z,Salary,,,`,
+    `,EXPENSE,20.00,,2024-03-02T12:00:00.000Z,Lunch,${food!.id},Food,`,
+  ].join("\n");
+
+  const imported = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv });
+  assert.equal(imported.status, 201);
+  assert.equal(imported.body.created, 2);
+
+  const listed = await request(app)
+    .get(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(listed.status, 200);
+  assert.equal(listed.body.length, 2);
+
+  const detail = await request(app)
+    .get(`/api/accounts/${accountId}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(detail.status, 200);
+  assert.equal(detail.body.cashBalance, 130);
+
+  const empty = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv: `${header}\n` });
+  assert.equal(empty.status, 201);
+  assert.equal(empty.body.created, 0);
+
+  const badCurrency = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      csv: `${header}\n,INCOME,1.00,USD,2024-01-01T00:00:00.000Z,,,,\n`,
+    });
+  assert.equal(badCurrency.status, 400);
+  assert.ok(Array.isArray(badCurrency.body.details));
+
+  const forbidden = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import`)
+    .set("Authorization", `Bearer ${otherToken}`)
+    .send({ csv: `${header}\n` });
+  assert.equal(forbidden.status, 404);
+});
+
 test("DELETE /api/accounts/:id/transactions/:txId reverses cashBalance", async () => {
   const { token } = await createUserAndToken();
   const account = await request(app)

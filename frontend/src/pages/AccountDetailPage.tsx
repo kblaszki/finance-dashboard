@@ -19,6 +19,7 @@ import {
   createTransaction,
   deleteTransaction,
   exportTransactionsCsv,
+  importTransactionsCsv,
   fetchTransactions,
   type CashTxType,
   type CashTransaction,
@@ -96,7 +97,10 @@ export function AccountDetailPage() {
   const [createErr, setCreateErr] = useState<string | null>(null);
   const [createBusy, setCreateBusy] = useState(false);
   const [actionErr, setActionErr] = useState<string | null>(null);
+  const [importMsg, setImportMsg] = useState<string | null>(null);
   const [exportBusy, setExportBusy] = useState(false);
+  const [importBusy, setImportBusy] = useState(false);
+  const importFileRef = useRef<HTMLInputElement | null>(null);
   const typeRef = useRef<HTMLInputElement | null>(null);
   const amountRef = useRef<HTMLInputElement | null>(null);
   const categoryInputRef = useRef<HTMLInputElement | null>(null);
@@ -178,6 +182,7 @@ export function AccountDetailPage() {
 
   async function handleExportCsv() {
     setActionErr(null);
+    setImportMsg(null);
     setExportBusy(true);
     try {
       const blob = await exportTransactionsCsv(accountId);
@@ -197,6 +202,25 @@ export function AccountDetailPage() {
       setActionErr(err instanceof Error ? err.message : "Export failed");
     } finally {
       setExportBusy(false);
+    }
+  }
+
+  async function handleImportCsvFile(file: File) {
+    setActionErr(null);
+    setImportMsg(null);
+    setImportBusy(true);
+    try {
+      const csv = await file.text();
+      const result = await importTransactionsCsv(accountId, csv);
+      setImportMsg(`Imported ${result.created} transaction(s).`);
+      await refresh();
+    } catch (err) {
+      setActionErr(err instanceof Error ? err.message : "Import failed");
+    } finally {
+      setImportBusy(false);
+      if (importFileRef.current) {
+        importFileRef.current.value = "";
+      }
     }
   }
 
@@ -521,11 +545,29 @@ export function AccountDetailPage() {
           subtitle={<AccountSubtitle account={account} />}
           actions={
             <div className="form-actions-row">
+              <input
+                ref={importFileRef}
+                type="file"
+                accept=".csv,text/csv"
+                hidden
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void handleImportCsvFile(file);
+                }}
+              />
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => importFileRef.current?.click()}
+                disabled={importBusy || exportBusy}
+              >
+                {importBusy ? "Uploading…" : "Upload CSV"}
+              </button>
               <button
                 type="button"
                 className="btn-secondary"
                 onClick={() => void handleExportCsv()}
-                disabled={exportBusy}
+                disabled={exportBusy || importBusy}
               >
                 {exportBusy ? "Downloading…" : "Download CSV"}
               </button>
@@ -548,6 +590,7 @@ export function AccountDetailPage() {
       )}
 
       {actionErr && <p className="error-banner">{actionErr}</p>}
+      {importMsg && <p className="success-banner">{importMsg}</p>}
 
       {showCreate && (
         <section className="card form-section-gap">

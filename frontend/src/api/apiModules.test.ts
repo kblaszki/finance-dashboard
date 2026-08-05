@@ -35,6 +35,7 @@ import {
   createTransaction,
   deleteTransaction,
   exportTransactionsCsv,
+  importTransactionsCsv,
 } from './transactionsApi'
 import {
   fetchCategories,
@@ -155,6 +156,12 @@ describe('API modules', () => {
     await exportTransactionsCsv(3)
     expect(apiClient.getBlob).toHaveBeenCalledWith(
       '/api/accounts/3/transactions/export',
+    )
+
+    await importTransactionsCsv(3, 'id,type\n')
+    expect(apiClient.post).toHaveBeenCalledWith(
+      '/api/accounts/3/transactions/import',
+      { csv: 'id,type\n' },
     )
   })
 

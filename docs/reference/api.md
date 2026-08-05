@@ -73,6 +73,7 @@ Nested under an owned account. Cross-user or unknown account → `404`. `amount`
 |--------|------|------|-------|
 | GET | `/api/accounts/:accountId/transactions` | Bearer | List for account (`occurredAt` desc, then `id` desc); includes `categoryId` |
 | GET | `/api/accounts/:accountId/transactions/export` | Bearer | CSV download (`text/csv; charset=utf-8`); header `id,type,amount,currency,occurredAt,description,categoryId,categoryName,createdAt`; rows oldest→newest; empty ledger = header only; `Content-Disposition: attachment; filename="account-{id}-cash.csv"` |
+| POST | `/api/accounts/:accountId/transactions/import` | Bearer | Body `{ csv: string }` same header as export; always creates new rows (`id`/`createdAt` ignored); currency empty or must match account; category by owned `categoryId` or unique `categoryName`; all-or-nothing; `201 { created }`; `400 { error, details: [{ row, message }] }` |
 | POST | `/api/accounts/:accountId/transactions` | Bearer | Body: `type`, `amount`; optional `occurredAt` (ISO, default now), `description`, `categoryId`. 201 |
 | DELETE | `/api/accounts/:accountId/transactions/:id` | Bearer | Must match account; reverses balance. 204 |
 
