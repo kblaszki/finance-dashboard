@@ -71,41 +71,30 @@ For a **private single-user deployment**, set `ALLOW_REGISTER=false` in `backend
 
 ## Private deployment
 
-For running as a personal instance (not open registration):
+For a private household instance (closed registration) behind your own reverse proxy + TLS:
 
-1. **Lock registration** — in `backend/.env`:
-   ```env
-   ALLOW_REGISTER=false
-   ```
-2. **Create your user** (CLI):
-   ```bash
-   cd backend
-   npm run create-user -- --email you@example.com --username you --password 'your-password'
-   ```
-3. **Daily SQLite backup**:
-   ```bash
-   cd backend
-   npm run db:backup
-   ```
-   Files land in `backend/backups/` (`finance-YYYYMMDD-HHmm.db`). Add `--gzip` or set `BACKUP_GZIP=true` to compress. Sync that folder off-site manually.
-
-   Windows Task Scheduler / cron example:
-   ```bash
-   0 2 * * * cd /path/to/finance-dashboard/backend && npm run db:backup
-   ```
-
-4. **Health check** — `GET /api/health` returns `{ ok: true, db: true }`.
-
-5. **Docker** (optional home server):
+1. **Docker (recommended on a server)**:
    ```bash
    cp backend/.env.production.example backend/.env
-   # edit JWT_SECRET
+   # edit JWT_SECRET (≥32 chars)
    docker compose up -d --build
+   curl -sS http://127.0.0.1:8080/api/health
    docker compose exec api npm run create-user -- --email you@example.com --username you --password 'secret'
+   # repeat create-user for each household member
    ```
-   UI: `http://localhost:8080` (nginx proxies `/api` to the backend). Database and backups persist in `./data/`.
+   UI is bound to `127.0.0.1:8080` (point Caddy/nginx/Traefik there). API is not published on the host. Data + backups: `./data/`.
 
-Full checklist: [docs/how-to/private-deploy.md](docs/how-to/private-deploy.md).
+2. **Without Docker** — in `backend/.env` set `ALLOW_REGISTER=false`, then:
+   ```bash
+   cd backend
+   npm run build
+   npm run create-user -- --email you@example.com --username you --password 'your-password'
+   npm run db:backup   # optional; files under BACKUP_DIR or backend/backups/
+   ```
+
+3. **Health check** — `GET /api/health` → `{ ok: true, db: true }`.
+
+Full checklist (proxy snippets, backup cron, update/rollback): [docs/how-to/private-deploy.md](docs/how-to/private-deploy.md).
 
 ## Demo user (optional)
 

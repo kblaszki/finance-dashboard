@@ -26,13 +26,18 @@ Hub: [docs/README.md](../README.md).
 
 | Variable | Role |
 |----------|------|
-| `CORS_ORIGIN` | Restrict CORS origin when set |
+| `CORS_ORIGIN` | Restrict CORS origin when set; leave unset for same-origin behind the Compose nginx proxy |
 | `JSON_BODY_LIMIT` | Express JSON body limit (default `1mb`) |
-| `BACKUP_DIR` / `BACKUP_GZIP` | Used by `npm run db:backup` |
+| `BACKUP_DIR` / `BACKUP_GZIP` | Used by `npm run db:backup` (Compose sets `BACKUP_DIR=/app/data/backups`) |
+| `TRUST_PROXY` | Express trust-proxy hops: unset → `1` in production / off otherwise; `false`/`0`/`no` disables; integer = hop count |
 
 ## Production guards
 
 `assertProductionEnvironment` (`authConfig.ts`): when `NODE_ENV=production`, requires a long `JWT_SECRET` and `ALLOW_REGISTER=false`.
+
+## Trust proxy
+
+`resolveTrustProxySetting` (`authConfig.ts`) feeds `app.set("trust proxy", …)` so auth rate limits see the real client IP from `X-Forwarded-For` when the host reverse proxy and `web` nginx forward headers.
 
 ## Rate limits
 

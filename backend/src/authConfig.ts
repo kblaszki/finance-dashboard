@@ -20,3 +20,26 @@ export function assertProductionEnvironment(): void {
     );
   }
 }
+
+/**
+ * Express `trust proxy` setting for correct client IP behind reverse proxies.
+ * - Unset: `1` in production, `false` otherwise
+ * - `false` / `0` / `no`: disabled
+ * - `true` / `yes`: one hop
+ * - integer: hop count
+ */
+export function resolveTrustProxySetting(
+  nodeEnv: string | undefined = process.env.NODE_ENV,
+  raw: string | undefined = process.env.TRUST_PROXY,
+): boolean | number {
+  const trimmed = raw?.trim();
+  if (trimmed != null && trimmed !== "") {
+    const lower = trimmed.toLowerCase();
+    if (lower === "false" || lower === "0" || lower === "no") return false;
+    if (lower === "true" || lower === "yes") return 1;
+    const n = Number(trimmed);
+    if (Number.isInteger(n) && n >= 0) return n;
+    return 1;
+  }
+  return nodeEnv === "production" ? 1 : false;
+}

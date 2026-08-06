@@ -3,7 +3,10 @@ import cors from "cors";
 import rateLimit from "express-rate-limit";
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
-import { assertProductionEnvironment } from "./authConfig";
+import {
+  assertProductionEnvironment,
+  resolveTrustProxySetting,
+} from "./authConfig";
 import { handleRouteError } from "./lib/errors";
 import { mountApiRouters } from "./routes/mountRouters";
 
@@ -12,6 +15,11 @@ assertProductionEnvironment();
 
 const app = express();
 const prisma = new PrismaClient();
+
+const trustProxy = resolveTrustProxySetting();
+if (trustProxy !== false) {
+  app.set("trust proxy", trustProxy);
+}
 
 const corsOrigin = process.env.CORS_ORIGIN?.trim();
 app.use(

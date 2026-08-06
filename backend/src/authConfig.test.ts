@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { isRegisterAllowed, assertProductionEnvironment } from "./authConfig";
+import {
+  isRegisterAllowed,
+  assertProductionEnvironment,
+  resolveTrustProxySetting,
+} from "./authConfig";
 
 function withEnv(value: string | undefined, fn: () => void): void {
   const prev = process.env.ALLOW_REGISTER;
@@ -49,4 +53,12 @@ test("assertProductionEnvironment requires JWT_SECRET and closed registration", 
     if (prevReg === undefined) delete process.env.ALLOW_REGISTER;
     else process.env.ALLOW_REGISTER = prevReg;
   }
+});
+
+test("resolveTrustProxySetting defaults and overrides", () => {
+  assert.equal(resolveTrustProxySetting("production", undefined), 1);
+  assert.equal(resolveTrustProxySetting("development", undefined), false);
+  assert.equal(resolveTrustProxySetting("production", "false"), false);
+  assert.equal(resolveTrustProxySetting("development", "true"), 1);
+  assert.equal(resolveTrustProxySetting("production", "2"), 2);
 });
