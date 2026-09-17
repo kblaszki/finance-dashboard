@@ -34,4 +34,5 @@ Capability tracked in the product map for agents and humans; see linked docs for
 
 ## Out of scope / follow-ups
 
+- Cookie transport (keep JWT, drop `localStorage`): [MVP-004](jwt-httponly-cookie.md)
 - See related planned/stub rows in [CHECKLIST.md](../../CHECKLIST.md)

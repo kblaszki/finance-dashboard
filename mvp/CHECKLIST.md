@@ -15,7 +15,7 @@ Last review: 2026-08-05 — statuses aligned to **auth + multi-type accounts + c
 
 | done | stub | planned | in_progress | total |
 |------|------|---------|-------------|-------|
-| 16 | 0 | 48 | 0 | 64 |
+| 16 | 0 | 49 | 0 | 65 |
 
 ## Master table
 
@@ -24,6 +24,7 @@ Last review: 2026-08-05 — statuses aligned to **auth + multi-type accounts + c
 | MVP-001 | Login and register with JWT | done | [features/auth/login-register-jwt.md](features/auth/login-register-jwt.md) | /login, /register |
 | MVP-002 | Profile, email, and password settings | done | [features/auth/profile-email-password.md](features/auth/profile-email-password.md) | /settings |
 | MVP-003 | Self-service password reset | planned | [features/auth/password-reset-api.md](features/auth/password-reset-api.md) | /password-reset (stub today) |
+| MVP-004 | JWT in HttpOnly cookie | planned | [features/auth/jwt-httponly-cookie.md](features/auth/jwt-httponly-cookie.md) | login cookie + POST /api/auth/logout |
 | FR-001 | Value-weighted average holding return | planned | [features/dashboard-stats/average-holding-return.md](features/dashboard-stats/average-holding-return.md) | Dashboard AverageReturnKpi |
 | FR-002 | Net worth with five asset buckets | done | [features/dashboard-stats/net-worth-buckets.md](features/dashboard-stats/net-worth-buckets.md) | /dashboard net-worth donut |
 | FR-003 | Statistics period cashflow summary | done | [features/dashboard-stats/statistics-period-summary.md](features/dashboard-stats/statistics-period-summary.md) | /statistics |
@@ -93,6 +94,7 @@ Last review: 2026-08-05 — statuses aligned to **auth + multi-type accounts + c
 - **done** [MVP-001 Login and register with JWT](features/auth/login-register-jwt.md)
 - **done** [MVP-002 Profile, email, and password settings](features/auth/profile-email-password.md)
 - **planned** [MVP-003 Self-service password reset](features/auth/password-reset-api.md)
+- **planned** [MVP-004 JWT in HttpOnly cookie](features/auth/jwt-httponly-cookie.md)
 
 ### accounts
 

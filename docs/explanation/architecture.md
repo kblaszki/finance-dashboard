@@ -55,7 +55,7 @@ Money and conversion rules belong in dedicated backend modules when FX/valuation
 - Register (when allowed) atomically creates the user and seeds a default Income/Expense category tree.
 - Protected routes use `requireAuth`: header `Authorization: Bearer <token>`.
 - `ALLOW_REGISTER=false` blocks register and hides Sign up in the UI (`GET /api/auth/config`).
-- Frontend: `AuthProvider` loads `/api/auth/me` when a token exists; 401 clears token and redirects to `/login`.
+- Frontend: `AuthProvider` loads `/api/auth/me` when a token exists; 401 clears token and redirects to `/login`. Token storage today is `localStorage` (`finance_dashboard_token`). Planned: same JWT in an HttpOnly cookie — [MVP-004](../../mvp/features/auth/jwt-httponly-cookie.md).
 
 ## Frontend shell
 

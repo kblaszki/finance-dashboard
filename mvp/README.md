@@ -19,7 +19,7 @@ mvp/
 
 | Folder | Scope |
 |--------|--------|
-| `auth` | Login, register, profile, password reset |
+| `auth` | Login, register, profile, password reset, HttpOnly JWT cookie |
 | `accounts` | Account types, list/detail, metal grams |
 | `cash-transfers` | Cash ledger, internal transfers |
 | `holdings-trades` | Lots, asset trades, instruments, portfolio positions |
