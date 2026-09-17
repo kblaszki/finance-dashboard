@@ -15,7 +15,7 @@ Auth + multi-type accounts + category tree + cash ledger + category statistics b
 
 | Area | Primary paths |
 |------|----------------|
-| Express app / health | `backend/src/app.ts` |
+| Express app / health | `backend/src/app.ts`, `backend/src/httpConfig.ts` |
 | JWT auth helpers | `backend/src/auth.ts`, `backend/src/authConfig.ts` |
 | Auth HTTP routes | `backend/src/routes/authRoutes.ts` |
 | Accounts HTTP routes | `backend/src/routes/accountsRoutes.ts` |

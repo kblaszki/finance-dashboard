@@ -45,7 +45,7 @@ export function buildCashLedgerCsv(input: {
   rows: CashLedgerCsvRow[];
 }): string {
   const currency = String(input.currency || "").toUpperCase();
-  const lines = [CASH_LEDGER_CSV_HEADER];
+  const lines: string[] = [CASH_LEDGER_CSV_HEADER];
 
   for (const row of input.rows) {
     const cells = [

@@ -1,5 +1,4 @@
 import express from "express";
-import cors from "cors";
 import rateLimit from "express-rate-limit";
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
@@ -7,6 +6,11 @@ import {
   assertProductionEnvironment,
   resolveTrustProxySetting,
 } from "./authConfig";
+import {
+  mountApiNotFound,
+  mountSecurityMiddleware,
+  mountStaticAndSpa,
+} from "./httpConfig";
 import { handleRouteError } from "./lib/errors";
 import { mountApiRouters } from "./routes/mountRouters";
 
@@ -21,12 +25,7 @@ if (trustProxy !== false) {
   app.set("trust proxy", trustProxy);
 }
 
-const corsOrigin = process.env.CORS_ORIGIN?.trim();
-app.use(
-  corsOrigin
-    ? cors({ origin: corsOrigin })
-    : cors(),
-);
+mountSecurityMiddleware(app);
 app.use(express.json({ limit: process.env.JSON_BODY_LIMIT ?? "1mb" }));
 
 const authRateLimiter = rateLimit({
@@ -50,18 +49,20 @@ app.get("/api/health", async (_req, res) => {
 });
 
 mountApiRouters(app, prisma);
+mountApiNotFound(app);
+mountStaticAndSpa(app);
 
 app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   handleRouteError(res, err, "Internal server error");
 });
 
-const PORT = process.env.PORT || 4000;
+const PORT = Number(process.env.PORT) || 4000;
 
 /* c8 ignore start */
 if (require.main === module) {
-  app.listen(PORT, () => {
+  app.listen(PORT, "0.0.0.0", () => {
     // eslint-disable-next-line no-console
-    console.log(`Backend listening on http://localhost:${PORT}`);
+    console.log(`Backend listening on http://0.0.0.0:${PORT}`);
   });
 }
 /* c8 ignore end */

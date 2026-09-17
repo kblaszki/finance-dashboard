@@ -348,7 +348,7 @@ export function buildDemoLedgerTxs(now = new Date()): DemoPlannedTx[] {
           amount: money(rng, plan.amountMin, plan.amountMax),
           occurredAt: utcMidMonth(month, day),
           description: `${plan.description} (${month})`,
-          category: plan.category,
+          ...(plan.category ? { category: plan.category } : {}),
         });
       }
     }

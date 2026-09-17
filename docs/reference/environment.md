@@ -4,8 +4,10 @@ use_when: Env vars, rate limits, production guards
 audience: both
 related_code:
   - backend/src/authConfig.ts
+  - backend/src/httpConfig.ts
   - backend/src/app.ts
   - backend/.env.example
+  - .env.example
 ---
 
 # Environment reference
@@ -16,20 +18,23 @@ Hub: [docs/README.md](../README.md).
 
 | Variable | Role |
 |----------|------|
-| `DATABASE_URL` | SQLite URL (default `file:./dev.db`) |
+| `DATABASE_URL` | SQLite URL (local default `file:./dev.db`; Docker `file:/data/finance.db`) |
 | `JWT_SECRET` | ≥32 characters; signs JWTs |
-| `PORT` | API port (default 4000) |
+| `PORT` | Listen port (code default 4000; Docker image `3000`) |
 | `ALLOW_REGISTER` | `true`/`false` — open registration |
-| `NODE_ENV` | `production` enables auth rate limits and stricter startup checks |
+| `NODE_ENV` | `production` enables auth rate limits, Helmet, closed CORS, and stricter startup checks |
 
 ## Optional
 
 | Variable | Role |
 |----------|------|
-| `CORS_ORIGIN` | Restrict CORS origin when set; leave unset for same-origin behind the Compose nginx proxy |
+| `CORS_ORIGIN` | Restrict CORS when set; in production, unset means CORS off (same-origin) |
+| `APP_ORIGIN` | Fallback CORS origin if `CORS_ORIGIN` is empty |
 | `JSON_BODY_LIMIT` | Express JSON body limit (default `1mb`) |
-| `BACKUP_DIR` / `BACKUP_GZIP` | Used by `npm run db:backup` (Compose sets `BACKUP_DIR=/app/data/backups`) |
+| `BACKUP_DIR` / `BACKUP_GZIP` | Used by `npm run db:backup` (Compose: `BACKUP_DIR=/data/backups`) |
 | `TRUST_PROXY` | Express trust-proxy hops: unset → `1` in production / off otherwise; `false`/`0`/`no` disables; integer = hop count |
+| `STATIC_DIR` | Directory of the Vite build (`index.html`); Docker sets `/app/public` |
+| `DOCKER_NETWORK` | Compose only: existing Docker network name for the reverse proxy (default `proxy`). Set in `.env`; not an app secret |
 
 ## Production guards
 
@@ -37,7 +42,7 @@ Hub: [docs/README.md](../README.md).
 
 ## Trust proxy
 
-`resolveTrustProxySetting` (`authConfig.ts`) feeds `app.set("trust proxy", …)` so auth rate limits see the real client IP from `X-Forwarded-For` when the host reverse proxy and `web` nginx forward headers.
+`resolveTrustProxySetting` (`authConfig.ts`) feeds `app.set("trust proxy", …)` so auth rate limits see the real client IP from `X-Forwarded-For` when a reverse proxy forwards headers.
 
 ## Rate limits
 
@@ -47,6 +52,6 @@ When `NODE_ENV=production`, Express rate-limits `POST /api/auth/login` and `POST
 
 | Variable | Role |
 |----------|------|
-| `VITE_API_BASE_URL` | API base URL; empty in production builds that proxy `/api`; in Vite DEV defaults to `http://localhost:4000` if unset |
+| `VITE_API_BASE_URL` | API base URL; empty in production builds (same-origin `/api`); in Vite DEV defaults to `http://localhost:4000` if unset |
 
-Template: `backend/.env.example` may still list unused market-data keys from earlier product versions — they are not consumed by the auth baseline.
+Docker production template: [`.env.example`](../../.env.example). Local API: [`backend/.env.example`](../../backend/.env.example). Unused market-data keys in the backend template are not consumed by the auth baseline.

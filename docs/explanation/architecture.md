@@ -7,6 +7,7 @@ related_docs:
   - docs/meta/code-map.md
 related_code:
   - backend/src/app.ts
+  - backend/src/httpConfig.ts
   - backend/src/auth.ts
   - frontend/src/state/auth.tsx
 ---
@@ -16,6 +17,8 @@ related_code:
 Hub: [docs/README.md](../README.md).
 
 Monorepo: Express API (`backend/`) + Vite React SPA (`frontend/`). SQLite via Prisma. **Baseline:** `User`, nested `Category` tree (defaults on register), user-scoped `Account` (allow-listed types), and `CashTransaction` ledger (INCOME/EXPENSE, optional `categoryId`). Product backlog: [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md).
+
+Local development: Vite (`:5173`) + API (`:4000`). Production Docker: one Express process serves `/api` and the Vite `dist` (SPA fallback for non-API routes).
 
 ## Request flow
 
@@ -37,7 +40,7 @@ sequenceDiagram
 |-------|--------|------|
 | Frontend | `frontend/src/api/client.ts` | `fetch` + `Authorization: Bearer` from `localStorage` |
 | Auth helpers | `backend/src/auth.ts`, `authConfig.ts` | Password/JWT validation, `requireAuth`, register flag |
-| HTTP | `backend/src/app.ts` + `routes/mountRouters.ts` | Health, rate limits, mounts auth + accounts + categories + cash-tx + statistics routers |
+| HTTP | `backend/src/app.ts`, `httpConfig.ts` + `routes/mountRouters.ts` | Health, Helmet/CORS, static SPA, rate limits, mounts auth + accounts + categories + cash-tx + statistics routers |
 | Auth routes | `backend/src/routes/authRoutes.ts` | Register/login/me/profile/email/password; register seeds default categories |
 | Accounts routes | `backend/src/routes/accountsRoutes.ts` | Account CRUD (user-scoped; type allow-list) |
 | Categories routes | `backend/src/routes/categoriesRoutes.ts` | Nested category CRUD |

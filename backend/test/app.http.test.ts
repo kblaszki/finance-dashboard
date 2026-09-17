@@ -59,6 +59,12 @@ test("GET /api/health returns ok", async () => {
   assert.equal(res.body.db, true);
 });
 
+test("unknown API path returns JSON 404", async () => {
+  const res = await request(app).get("/api/does-not-exist");
+  assert.equal(res.status, 404);
+  assert.deepEqual(res.body, { error: "Not found" });
+});
+
 test("GET /api/auth/config returns allowRegister", async () => {
   const res = await request(app).get("/api/auth/config");
   assert.equal(res.status, 200);

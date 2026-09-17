@@ -67,7 +67,7 @@ Optional: `ALLOW_REGISTER`, `CORS_ORIGIN`, `JSON_BODY_LIMIT`, backup vars — se
 
 Register via the frontend at `/register`, or call `POST /api/auth/register` with `{ "email", "username", "password" }` (password minimum 8 characters). After login you land on **Dashboard** (`/dashboard`); manage profile under **Settings**.
 
-For a **private single-user deployment**, set `ALLOW_REGISTER=false` in `backend/.env` and create the account with `npm run create-user` — see [Private deployment](#private-deployment) below.
+For a **private single-user deployment**, set `ALLOW_REGISTER=false` in `.env` (Docker) or `backend/.env` (without Docker) and create the account with `create-user` — see [Private deployment](#private-deployment) below.
 
 ## Private deployment
 
@@ -75,14 +75,16 @@ For a private household instance (closed registration) behind your own reverse p
 
 1. **Docker (recommended on a server)**:
    ```bash
-   cp backend/.env.production.example backend/.env
-   # edit JWT_SECRET (≥32 chars)
-   docker compose up -d --build
-   curl -sS http://127.0.0.1:8080/api/health
-   docker compose exec api npm run create-user -- --email you@example.com --username you --password 'secret'
+   cp .env.example .env
+   # set JWT_SECRET (≥32 chars) and DOCKER_NETWORK (existing proxy network)
+   chmod 600 .env
+   mkdir -p data && chmod 700 data
+   docker compose build --pull && docker compose up -d
+   # GET /api/health via https://finance.example.com
+   docker compose exec finance-dashboard node dist/scripts/createUser.js --email you@example.com --username you --password 'secret'
    # repeat create-user for each household member
    ```
-   UI is bound to `127.0.0.1:8080` (point Caddy/nginx/Traefik there). API is not published on the host. Data + backups: `./data/`.
+   The container listens on `:3000` inside Docker only (do not publish `0.0.0.0:3000`). Point Caddy/nginx/Traefik at `finance-dashboard:3000` on `DOCKER_NETWORK`. Data + backups: `./data/` (`file:/data/finance.db` in the container). Local image check: `docker build -t finance-dashboard:local .`
 
 2. **Without Docker** — in `backend/.env` set `ALLOW_REGISTER=false`, then:
    ```bash
@@ -94,7 +96,7 @@ For a private household instance (closed registration) behind your own reverse p
 
 3. **Health check** — `GET /api/health` → `{ ok: true, db: true }`.
 
-Full checklist (proxy snippets, backup cron, update/rollback): [docs/how-to/private-deploy.md](docs/how-to/private-deploy.md).
+Full checklist (proxy snippets, backup cron, update/rollback, UID): [docs/how-to/private-deploy.md](docs/how-to/private-deploy.md).
 
 ## Demo user (optional)
 

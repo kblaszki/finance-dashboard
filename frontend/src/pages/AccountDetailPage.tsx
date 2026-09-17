@@ -1,6 +1,6 @@
 import {
-  FormEvent,
-  KeyboardEvent,
+  type FormEvent,
+  type KeyboardEvent,
   useCallback,
   useEffect,
   useMemo,

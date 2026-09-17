@@ -12,42 +12,44 @@ related_docs:
 
 Hub: [docs/README.md](../README.md).
 
-Operational checklist for a **private household** instance: closed registration (`ALLOW_REGISTER=false`), users created with CLI, HTTPS terminated on a **host reverse proxy**, app stack in Docker Compose. Basics: [README.md](../../README.md#private-deployment).
+Operational checklist for a **private household** instance: closed registration (`ALLOW_REGISTER=false`), users created with CLI, HTTPS terminated on a reverse proxy, **one** Compose service serving API + SPA. Basics: [README.md](../../README.md#private-deployment).
 
 ## Target topology
 
-Browser → host reverse proxy (TLS) → `127.0.0.1:8080` (`web` nginx) → `api:4000` (internal only) → SQLite under `./data/`.
+Browser → reverse proxy (TLS) → `finance-dashboard:3000` (Docker DNS, no host port) → Express (`/api` + Vite static) → SQLite under `./data/` (`file:/data/finance.db` in the container).
 
-Compose does **not** issue certificates. Later you could add Caddy/Traefik as another Compose service; this guide assumes TLS stays on the host.
+Compose does **not** issue certificates. Point Caddy, nginx, or Traefik at the container name on the shared Docker network. Do not publish port `3000` on `0.0.0.0`.
 
 ## Host requirements
 
 - Docker Engine + Compose v2
-- Reverse proxy with TLS (Caddy, nginx, Traefik, …) pointing at `http://127.0.0.1:8080`
-- Persistent directory for the repo checkout (or at least `./data` and `backend/.env`)
+- Reverse proxy with TLS on an **existing** Docker network (set `DOCKER_NETWORK` in `.env` to that network’s name)
+- A directory for `compose.yml`, `.env`, and `./data`
 
 ## Before go-live (Docker)
 
 | Step | Action |
 |------|--------|
-| 1 | Copy `backend/.env.production.example` → `backend/.env`; set `JWT_SECRET` (≥32 random characters). |
-| 2 | Keep `ALLOW_REGISTER=false` (also forced in `docker-compose.yml`). |
-| 3 | `docker compose up -d --build` |
-| 4 | Smoke: `curl -sS http://127.0.0.1:8080/api/health` → `{ ok: true, db: true }` |
-| 5 | Create household users (repeat per person): `docker compose exec api npm run create-user -- --email you@example.com --username you --password '…'` |
-| 6 | Point reverse proxy at `127.0.0.1:8080`; open the HTTPS URL and log in |
+| 1 | Copy `.env.example` → `.env`. Set `JWT_SECRET` (≥32 random characters) and `DOCKER_NETWORK` to your proxy network. Keep `ALLOW_REGISTER=false`. |
+| 2 | `chmod 600 .env` and `chmod 700 data` (create `data/` if needed). |
+| 3 | `docker compose build --pull && docker compose up -d` |
+| 4 | Smoke: `GET /api/health` via your HTTPS hostname → `{ ok: true, db: true }` |
+| 5 | Create household users (repeat per person): `docker compose exec finance-dashboard node dist/scripts/createUser.js --email you@example.com --username you --password '…'` |
+| 6 | Confirm `docker ps` does **not** show `0.0.0.0:3000`. Open the HTTPS URL and log in |
 
 `create-user` / `db:backup` run compiled JS from `dist/` (built into the image). Locally without Docker: `cd backend && npm run build` then the same npm scripts.
 
+Local image check (no proxy network required): `docker build -t finance-dashboard:local .`
+
 ## Reverse proxy examples
 
-Replace `finance.example.com` with your hostname.
+Replace `finance.example.com` with your hostname. The proxy must share `DOCKER_NETWORK` with this Compose project.
 
 **Caddy**
 
 ```caddy
 finance.example.com {
-  reverse_proxy 127.0.0.1:8080
+  reverse_proxy finance-dashboard:3000
 }
 ```
 
@@ -61,7 +63,7 @@ server {
   # ssl_certificate_key …;
 
   location / {
-    proxy_pass http://127.0.0.1:8080;
+    proxy_pass http://finance-dashboard:3000;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
@@ -71,42 +73,46 @@ server {
 }
 ```
 
-Same-origin `/api` is proxied by the `web` container — leave `CORS_ORIGIN` unset unless UI and API use different origins.
+Same-origin: Express serves the SPA, so leave `CORS_ORIGIN` / `APP_ORIGIN` unset unless UI and API use different origins.
 
 ## Ongoing operations
 
 | Task | Command / notes |
 |------|-----------------|
-| Health | `GET /api/health` (via HTTPS domain or `127.0.0.1:8080`) |
-| Additional users | `docker compose exec api npm run create-user -- --email … --username … --password …` |
-| Daily DB backup | `docker compose exec api npm run db:backup` → files in `./data/backups/` (`BACKUP_DIR`). Optional `--gzip` / `BACKUP_GZIP=true`. Sync off-site. |
-| Cron example | `0 2 * * * cd /path/to/finance-dashboard && docker compose exec -T api npm run db:backup` |
+| Health | `GET /api/health` (via HTTPS domain) |
+| Additional users | `docker compose exec finance-dashboard node dist/scripts/createUser.js --email … --username … --password …` |
+| Daily DB backup | `docker compose exec finance-dashboard npm run db:backup` → files in `./data/backups/` (`BACKUP_DIR=/data/backups`). Optional `--gzip` / `BACKUP_GZIP=true`. Sync off-site. |
+| Cron example | `0 2 * * * cd /path/to/compose-project && docker compose exec -T finance-dashboard npm run db:backup` |
 
 ## Update
 
 ```bash
-cd /path/to/finance-dashboard
+cd /path/to/compose-project
 git pull
-docker compose up -d --build
-curl -sS http://127.0.0.1:8080/api/health
+docker compose build --pull && docker compose up -d
+# GET /api/health via HTTPS
 # smoke-test login in the browser
 ```
 
-Entrypoint runs `prisma migrate deploy` before starting the API.
+Entrypoint runs `prisma migrate deploy` before starting Node. Back up `data/` before migrating.
 
 ## Rollback (SQLite)
 
 1. `docker compose stop`
-2. Restore `./data/prod.db` from a file under `./data/backups/` (decompress `.gz` if needed)
+2. Restore `./data/finance.db` (and `-wal`/`-shm` if present) from a file under `./data/backups/` (decompress `.gz` if needed)
 3. `docker compose up -d`
 4. Verify health + login
 
+## UID and bind mounts
+
+The image runs as UID **1001**. If SQLite hits `EACCES` on `./data`, `chown` that directory on the host or uncomment `user: "1000:1000"` in `compose.yml`.
+
 ## Security notes
 
-- Do not commit `backend/.env` or `./data/*.db`.
-- API port `4000` is **not** published on the host; only `127.0.0.1:8080` is.
+- Do not commit `.env` or `./data/*.db`.
+- Do not publish container port `3000` on `0.0.0.0`.
 - JWT expiry is 7 days; no refresh tokens.
-- Production enables auth rate limits and `trust proxy` (see [environment.md](../reference/environment.md)).
+- Production enables auth rate limits, Helmet, and `trust proxy` (see [environment.md](../reference/environment.md)).
 
 ## Related docs
 

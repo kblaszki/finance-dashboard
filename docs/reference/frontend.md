@@ -50,6 +50,8 @@ Controls: `ThemeToggle` (light ↔ dark) on Landing, AuthSwapShell, and AppShell
 
 Default after login/register: `/dashboard` (`state/auth.tsx`).
 
+Production Docker serves `frontend/dist` from Express (`STATIC_DIR`); deep links fall back to `index.html`. Vite `base` is `/`; API calls use relative `/api/...`.
+
 ## API clients
 
 | Module | Role |
