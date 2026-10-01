@@ -6,6 +6,7 @@ import { parseAccountType } from "../domain/accountTypes";
 import { decimalToMinor, minorToMajor, normalizeCurrencyCode, parseOpeningBalance } from "../domain/money";
 import {
   badRequest,
+  conflict,
   handleRouteError,
   notFound,
   parseIdParam,
@@ -138,7 +139,7 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
   router.patch("/api/accounts/:id", requireAuth, async (req: AuthedRequest, res) => {
     try {
       const id = parseIdParam(req.params.id);
-      await findOwnedAccount(prisma, uid(req), id);
+      const account = await findOwnedAccount(prisma, uid(req), id);
 
       const body = req.body ?? {};
       const data: Prisma.AccountUpdateInput = {};
@@ -147,7 +148,16 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
         data.name = parseRequiredString(body.name, "name");
       }
       if (body.currency !== undefined) {
-        data.currency = normalizeCurrency(body.currency);
+        const nextCurrency = normalizeCurrency(body.currency);
+        if (nextCurrency !== account.currency) {
+          const txCount = await prisma.cashTransaction.count({
+            where: { accountId: id },
+          });
+          if (txCount > 0) {
+            throw conflict("Cannot change currency while the account has transactions");
+          }
+        }
+        data.currency = nextCurrency;
       }
       if (body.description !== undefined) {
         data.description = parseOptionalDescription(body.description) ?? null;
@@ -157,11 +167,11 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
         throw badRequest("No updatable fields provided");
       }
 
-      const account = await prisma.account.update({
+      const updated = await prisma.account.update({
         where: { id },
         data,
       });
-      res.json(accountPayload(account));
+      res.json(accountPayload(updated));
     } catch (e: unknown) {
       if (isUniqueConstraintError(e)) {
         handleRouteError(res, badRequest("Account name already exists"), "Update account failed");

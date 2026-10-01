@@ -91,6 +91,41 @@ export async function postCashTransactionBatch(
   return data.length;
 }
 
+/** Replace a stored row and apply the signed minor-unit difference to cashBalance. */
+export async function updateCashTransaction(
+  db: Db,
+  accountId: number,
+  existing: { id: number; type: string; amount: number },
+  next: {
+    type: CashTxType;
+    amount: Prisma.Decimal;
+    occurredAt: Date;
+    description: string | null;
+    categoryId: number | null;
+  },
+): Promise<CashTransaction> {
+  const oldSigned = signedMinor(parseCashTxType(existing.type), existing.amount);
+  const amountMinor = decimalToMinor(next.amount, "amount");
+  const delta = signedMinor(next.type, amountMinor) - oldSigned;
+  const row = await db.cashTransaction.update({
+    where: { id: existing.id },
+    data: {
+      type: next.type,
+      amount: amountMinor,
+      occurredAt: next.occurredAt,
+      description: next.description,
+      categoryId: next.categoryId,
+    },
+  });
+  if (delta !== 0) {
+    await db.account.update({
+      where: { id: accountId },
+      data: { cashBalance: { increment: delta } },
+    });
+  }
+  return row;
+}
+
 /** Remove a stored row and reverse its minor-unit effect on cashBalance. */
 export async function reverseCashTransaction(
   db: Db,

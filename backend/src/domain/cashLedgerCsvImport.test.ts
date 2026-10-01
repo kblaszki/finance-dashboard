@@ -43,16 +43,25 @@ describe("parseCashLedgerCsvImport", () => {
     assert.equal(row.occurredAt.toISOString(), "2024-06-15T12:00:00.000Z");
   });
 
-  it("allows empty currency and name-only category", () => {
-    const csv = [
+  it("requires currency and accepts a name-only category", () => {
+    const named = [
       CASH_LEDGER_CSV_HEADER,
-      ",EXPENSE,10.00,,2024-01-01T00:00:00.000Z,Coffee,,Food,",
+      ",EXPENSE,10.00,PLN,2024-01-01T00:00:00.000Z,Coffee,,Food,",
     ].join("\n");
-    const result = parseCashLedgerCsvImport(csv, "PLN");
+    const result = parseCashLedgerCsvImport(named, "PLN");
     assert.equal(result.ok, true);
     if (!result.ok) return;
     assert.equal(result.drafts[0]!.categoryId, null);
     assert.equal(result.drafts[0]!.categoryName, "Food");
+
+    const emptyCurrency = [
+      CASH_LEDGER_CSV_HEADER,
+      ",EXPENSE,10.00,,2024-01-01T00:00:00.000Z,Coffee,,,",
+    ].join("\n");
+    const rejected = parseCashLedgerCsvImport(emptyCurrency, "PLN");
+    assert.equal(rejected.ok, false);
+    if (rejected.ok) return;
+    assert.match(rejected.errors[0]!.message, /currency/);
   });
 
   it("rejects currency mismatch and bad type", () => {

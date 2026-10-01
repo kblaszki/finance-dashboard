@@ -7,8 +7,9 @@ import {
   postCashTransaction,
   postCashTransactionBatch,
   reverseCashTransaction,
+  updateCashTransaction,
 } from "../domain/cashLedger";
-import { minorToMajor } from "../domain/money";
+import { minorToDecimal, minorToMajor } from "../domain/money";
 import {
   buildCashLedgerCsv,
   cashLedgerExportFilename,
@@ -254,6 +255,61 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
         res.status(201).json(cashTransactionPayload(created));
       } catch (e: unknown) {
         handleRouteError(res, e, "Create transaction failed");
+      }
+    },
+  );
+
+  router.patch(
+    "/api/accounts/:accountId/transactions/:id",
+    requireAuth,
+    async (req: AuthedRequest, res) => {
+      try {
+        const accountId = parseIdParam(req.params.accountId, "accountId");
+        const id = parseIdParam(req.params.id);
+        await findOwnedAccountId(prisma, uid(req), accountId);
+
+        const existing = await prisma.cashTransaction.findFirst({
+          where: { id, accountId },
+        });
+        if (!existing) throw notFound("Transaction not found");
+
+        const body = req.body ?? {};
+        const hasField = ["type", "amount", "occurredAt", "description", "categoryId"].some(
+          (key) => body[key] !== undefined,
+        );
+        if (!hasField) throw badRequest("No updatable fields provided");
+
+        const type =
+          body.type !== undefined ? parseCashTxType(body.type) : parseCashTxType(existing.type);
+        const amount =
+          body.amount !== undefined ? parsePositiveAmount(body.amount) : minorToDecimal(existing.amount);
+        const occurredAt =
+          body.occurredAt !== undefined ? parseOccurredAt(body.occurredAt) : existing.occurredAt;
+        const description =
+          body.description !== undefined
+            ? parseOptionalDescription(body.description)
+            : existing.description;
+        const categoryId =
+          body.categoryId !== undefined
+            ? await assertOwnedCategoryId(
+                prisma,
+                uid(req),
+                parseOptionalCategoryId(body.categoryId),
+              )
+            : existing.categoryId;
+
+        const updated = await prisma.$transaction((tx) =>
+          updateCashTransaction(tx, accountId, existing, {
+            type,
+            amount,
+            occurredAt,
+            description,
+            categoryId,
+          }),
+        );
+        res.json(cashTransactionPayload(updated));
+      } catch (e: unknown) {
+        handleRouteError(res, e, "Update transaction failed");
       }
     },
   );

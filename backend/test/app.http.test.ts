@@ -400,6 +400,55 @@ test("GET/PATCH/DELETE /api/accounts/:id scoped to owner", async () => {
   assert.equal(getGone.status, 404);
 });
 
+test("PATCH /api/accounts/:id locks currency once transactions exist", async () => {
+  const { token } = await createUserAndToken();
+  const created = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Lock", currency: "PLN", openingBalance: 10 });
+  assert.equal(created.status, 201);
+  const id = created.body.id as number;
+
+  const emptyChange = await request(app)
+    .patch(`/api/accounts/${id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ currency: "eur" });
+  assert.equal(emptyChange.status, 200);
+  assert.equal(emptyChange.body.currency, "EUR");
+
+  const back = await request(app)
+    .patch(`/api/accounts/${id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ currency: "PLN" });
+  assert.equal(back.status, 200);
+
+  const invalid = await request(app)
+    .patch(`/api/accounts/${id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ currency: "US" });
+  assert.equal(invalid.status, 400);
+
+  const posted = await request(app)
+    .post(`/api/accounts/${id}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "INCOME", amount: 1 });
+  assert.equal(posted.status, 201);
+
+  const same = await request(app)
+    .patch(`/api/accounts/${id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ currency: "pln" });
+  assert.equal(same.status, 200);
+  assert.equal(same.body.currency, "PLN");
+
+  const locked = await request(app)
+    .patch(`/api/accounts/${id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ currency: "USD" });
+  assert.equal(locked.status, 409);
+  assert.match(locked.body.error, /currency/i);
+});
+
 test("PATCH /api/accounts/:id ignores accountType", async () => {
   const { token } = await createUserAndToken();
   const created = await request(app)
@@ -649,7 +698,7 @@ test("POST /api/accounts/:id/transactions/import creates rows and updates balanc
   const csv = [
     header,
     `,INCOME,50.00,PLN,2024-03-01T12:00:00.000Z,Salary,,,`,
-    `,EXPENSE,20.00,,2024-03-02T12:00:00.000Z,Lunch,${food!.id},Food,`,
+    `,EXPENSE,20.00,PLN,2024-03-02T12:00:00.000Z,Lunch,${food!.id},Food,`,
   ].join("\n");
 
   const imported = await request(app)
@@ -692,6 +741,30 @@ test("POST /api/accounts/:id/transactions/import creates rows and updates balanc
     .set("Authorization", `Bearer ${otherToken}`)
     .send({ csv: `${header}\n` });
   assert.equal(forbidden.status, 404);
+
+  const missingCsv = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({});
+  assert.equal(missingCsv.status, 400);
+
+  const emptyCurrency = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      csv: `${header}\n,EXPENSE,1.00,,2024-01-01T00:00:00.000Z,,,,\n`,
+    });
+  assert.equal(emptyCurrency.status, 400);
+  assert.match(emptyCurrency.body.details[0].message, /currency/);
+
+  const badAmount = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      csv: `${header}\n,EXPENSE,0,PLN,2024-01-01T00:00:00.000Z,,,,\n`,
+    });
+  assert.equal(badAmount.status, 400);
+  assert.match(badAmount.body.details[0].message, /amount|positive/i);
 });
 
 test("DELETE /api/accounts/:id/transactions/:txId reverses cashBalance", async () => {
@@ -722,6 +795,60 @@ test("DELETE /api/accounts/:id/transactions/:txId reverses cashBalance", async (
     .get(`/api/accounts/${accountId}/transactions`)
     .set("Authorization", `Bearer ${token}`);
   assert.equal(list.body.length, 0);
+});
+
+test("PATCH /api/accounts/:id/transactions/:txId adjusts cashBalance", async () => {
+  const { token } = await createUserAndToken();
+  const otherToken = await registerAndLogin("txpatch@test.local", "txpatch", "password123");
+  const account = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Edit", openingBalance: 100 });
+  const accountId = account.body.id as number;
+
+  const expense = await request(app)
+    .post(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      type: "EXPENSE",
+      amount: 40,
+      occurredAt: "2024-01-31T23:00:00.000Z",
+      description: "Old",
+    });
+  assert.equal(expense.status, 201);
+  const txId = expense.body.id as number;
+
+  const empty = await request(app)
+    .patch(`/api/accounts/${accountId}/transactions/${txId}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({});
+  assert.equal(empty.status, 400);
+
+  const patched = await request(app)
+    .patch(`/api/accounts/${accountId}/transactions/${txId}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      type: "INCOME",
+      amount: 10.5,
+      occurredAt: "2024-02-01T00:00:00.000Z",
+      description: "New",
+    });
+  assert.equal(patched.status, 200);
+  assert.equal(patched.body.type, "INCOME");
+  assert.equal(patched.body.amount, 10.5);
+  assert.equal(patched.body.occurredAt, "2024-02-01T00:00:00.000Z");
+  assert.equal(patched.body.description, "New");
+
+  const after = await request(app)
+    .get(`/api/accounts/${accountId}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(after.body.cashBalance, 110.5);
+
+  const foreign = await request(app)
+    .patch(`/api/accounts/${accountId}/transactions/${txId}`)
+    .set("Authorization", `Bearer ${otherToken}`)
+    .send({ description: "Nope" });
+  assert.equal(foreign.status, 404);
 });
 
 test("cash transactions reject invalid input and mismatched account", async () => {

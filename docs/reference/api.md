@@ -47,7 +47,7 @@ User-scoped. Cross-user access returns `404`. Create accepts allow-listed `accou
 | GET | `/api/accounts` | Bearer | List own accounts (newest first); includes `totalBalance` |
 | POST | `/api/accounts` | Bearer | Body: `name`; optional `currency` (default PLN), `openingBalance` (major units, at most 2 decimal places; negative allowed), `openingCashAsOf`, `description`, `accountType` (`BANK`, `BROKERAGE`, `CRYPTO`, `PRECIOUS_METAL`, `REAL_ESTATE`, `OTHER`, `MANUAL`). Sets `cashBalance = openingBalance`. Balances are stored as integer cents and returned as major-unit numbers. 201 |
 | GET | `/api/accounts/:id` | Bearer | One owned account |
-| PATCH | `/api/accounts/:id` | Bearer | Body: optional `name`, `currency`, `description` (no balance or `accountType` edits) |
+| PATCH | `/api/accounts/:id` | Bearer | Body: optional `name`, `currency`, `description` (no balance or `accountType` edits). Changing `currency` returns `409` when the account has any cash transaction; the same code is allowed. Invalid currency is `400`. |
 | DELETE | `/api/accounts/:id` | Bearer | 204 |
 
 Duplicate name for the same user → `400`. Unknown `accountType` → `400`.
@@ -67,14 +67,15 @@ Unknown / other-user category or parent → `404`.
 
 ## Cash transactions
 
-Nested under an owned account. Cross-user or unknown account → `404`. `amount` must be positive, with at most 2 decimal places (stored as integer cents; JSON stays a major-unit number). `type` is `INCOME` or `EXPENSE` (case-normalized). Create/delete adjust `Account.cashBalance` atomically (delete reverses). No PATCH / no `balanceAfter`. Optional `categoryId` must belong to the same user.
+Nested under an owned account. Cross-user or unknown account → `404`. `amount` must be positive, with at most 2 decimal places (stored as integer cents; JSON stays a major-unit number). `type` is `INCOME` or `EXPENSE` (case-normalized). Create, update, and delete adjust `Account.cashBalance` atomically (delete reverses; update applies the signed difference). No `balanceAfter`. Optional `categoryId` must belong to the same user. `occurredAt` is an absolute instant; month statistics bucket it in UTC.
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
 | GET | `/api/accounts/:accountId/transactions` | Bearer | List for account (`occurredAt` desc, then `id` desc); includes `categoryId` |
 | GET | `/api/accounts/:accountId/transactions/export` | Bearer | CSV download (`text/csv; charset=utf-8`); header `id,type,amount,currency,occurredAt,description,categoryId,categoryName,createdAt`; rows oldest→newest; empty ledger = header only; `Content-Disposition: attachment; filename="account-{id}-cash.csv"` |
-| POST | `/api/accounts/:accountId/transactions/import` | Bearer | Body `{ csv: string }` same header as export; always creates new rows (`id`/`createdAt` ignored); currency empty or must match account; category by owned `categoryId` or unique `categoryName`; all-or-nothing; `201 { created }`; `400 { error, details: [{ row, message }] }` |
-| POST | `/api/accounts/:accountId/transactions` | Bearer | Body: `type`, `amount`; optional `occurredAt` (ISO, default now), `description`, `categoryId`. 201 |
+| POST | `/api/accounts/:accountId/transactions/import` | Bearer | Body `{ csv: string }` same header as export; always creates new rows (`id`/`createdAt` ignored); currency required and must match the account; category by owned `categoryId` or unique `categoryName`; all-or-nothing; `201 { created }`; `400 { error, details: [{ row, message }] }` |
+| POST | `/api/accounts/:accountId/transactions` | Bearer | Body: `type`, `amount`; optional `occurredAt` (ISO instant, default now), `description`, `categoryId`. 201 |
+| PATCH | `/api/accounts/:accountId/transactions/:id` | Bearer | Body: optional `type`, `amount`, `occurredAt`, `description`, `categoryId`. At least one field. Adjusts `cashBalance` by the signed difference. 200 |
 | DELETE | `/api/accounts/:accountId/transactions/:id` | Bearer | Must match account; reverses balance. 204 |
 
 ## Statistics

@@ -110,14 +110,12 @@ export function parseCashLedgerCsvImport(
       continue;
     }
 
-    if (currencyRaw !== "") {
-      if (currencyRaw.toUpperCase() !== expectedCurrency) {
-        errors.push({
-          row: dataRow,
-          message: `currency must match account currency (${expectedCurrency})`,
-        });
-        continue;
-      }
+    if (currencyRaw === "" || currencyRaw.toUpperCase() !== expectedCurrency) {
+      errors.push({
+        row: dataRow,
+        message: `currency must match account currency (${expectedCurrency})`,
+      });
+      continue;
     }
 
     if (occurredAtRaw === "") {
