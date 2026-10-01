@@ -21,7 +21,7 @@ Hub: [docs/README.md](../README.md).
 | MVP-002 | Profile, email, password settings | `/settings`; auth PATCH routes |
 | MVP-050 | Health endpoint | `GET /api/health` |
 | MVP-051 | Private deploy tooling | `create-user`, `db:backup`, [private-deploy.md](../how-to/private-deploy.md) |
-| MVP-052 | Production auth rate limits | `app.ts` (login/register; import limiter when import returns) |
+| MVP-052 | Production auth rate limits | `app.ts` (login, register, password, email share one limiter) |
 | FR-006 | Extended account types | `Account` model; allow-list in `domain/accountTypes.ts`; `/api/accounts`; `/accounts` UI type select — type-specific fields still planned |
 | MVP-011 | Cash ledger INCOME/EXPENSE | `CashTransaction`; `domain/cashLedger.ts`; `/api/accounts/:id/transactions`; `/accounts/:id` |
 | MVP-013 | Cash ledger CSV export | `GET /api/accounts/:id/transactions/export`; `domain/cashLedgerCsv.ts`; Download CSV on `/accounts/:id` |
