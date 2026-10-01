@@ -1,6 +1,7 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { seedDefaultCategories } from "./categories";
 import { signedDelta, type CashTxType } from "./cashLedger";
+import { quantizeMajorToMinor } from "./money";
 
 type Db = PrismaClient | Prisma.TransactionClient;
 
@@ -49,6 +50,19 @@ export function recomputeCashBalance(
     balance = balance.add(signedDelta(tx.type, new Prisma.Decimal(tx.amount)));
   }
   return balance;
+}
+
+/** Minor units matching what seedDemoPortfolio writes. */
+export function recomputeCashMinor(
+  openingBalance: number,
+  txs: LedgerDeltaInput[],
+): number {
+  let minor = quantizeMajorToMinor(openingBalance, "openingBalance");
+  for (const tx of txs) {
+    const amount = quantizeMajorToMinor(tx.amount);
+    minor += tx.type === "INCOME" ? amount : -amount;
+  }
+  return minor;
 }
 
 export function utcMonthKey(date = new Date()): string {
@@ -443,8 +457,8 @@ export async function seedDemoPortfolio(
       name: DEMO_ACCOUNT_NAMES.checking,
       accountType: "BANK",
       currency: "PLN",
-      openingBalance: DEMO_OPENINGS.checking,
-      cashBalance: DEMO_OPENINGS.checking,
+      openingBalance: quantizeMajorToMinor(DEMO_OPENINGS.checking, "openingBalance"),
+      cashBalance: quantizeMajorToMinor(DEMO_OPENINGS.checking, "openingBalance"),
       description: "Primary PLN checking — salary and everyday expenses",
     },
   });
@@ -454,8 +468,8 @@ export async function seedDemoPortfolio(
       name: DEMO_ACCOUNT_NAMES.euro,
       accountType: "BANK",
       currency: "EUR",
-      openingBalance: DEMO_OPENINGS.euro,
-      cashBalance: DEMO_OPENINGS.euro,
+      openingBalance: quantizeMajorToMinor(DEMO_OPENINGS.euro, "openingBalance"),
+      cashBalance: quantizeMajorToMinor(DEMO_OPENINGS.euro, "openingBalance"),
       description: "EUR travel wallet — multi-currency stats demo",
     },
   });
@@ -465,8 +479,8 @@ export async function seedDemoPortfolio(
       name: DEMO_ACCOUNT_NAMES.brokerage,
       accountType: "BROKERAGE",
       currency: "PLN",
-      openingBalance: DEMO_OPENINGS.brokerage,
-      cashBalance: DEMO_OPENINGS.brokerage,
+      openingBalance: quantizeMajorToMinor(DEMO_OPENINGS.brokerage, "openingBalance"),
+      cashBalance: quantizeMajorToMinor(DEMO_OPENINGS.brokerage, "openingBalance"),
       description: "Brokerage cash sleeve (no holdings yet)",
     },
   });
@@ -476,8 +490,8 @@ export async function seedDemoPortfolio(
       name: DEMO_ACCOUNT_NAMES.crypto,
       accountType: "CRYPTO",
       currency: "USD",
-      openingBalance: DEMO_OPENINGS.crypto,
-      cashBalance: DEMO_OPENINGS.crypto,
+      openingBalance: quantizeMajorToMinor(DEMO_OPENINGS.crypto, "openingBalance"),
+      cashBalance: quantizeMajorToMinor(DEMO_OPENINGS.crypto, "openingBalance"),
       description: "Crypto spot cash (USD)",
     },
   });
@@ -498,7 +512,7 @@ export async function seedDemoPortfolio(
     return {
       accountId: account.id,
       type: tx.type,
-      amount: tx.amount,
+      amount: quantizeMajorToMinor(tx.amount),
       occurredAt: tx.occurredAt,
       description: tx.description,
       categoryId: categoryId ?? null,
@@ -520,7 +534,7 @@ export async function seedDemoPortfolio(
   }
 
   for (const key of Object.keys(DEMO_ACCOUNT_NAMES) as DemoAccountKey[]) {
-    const cashBalance = recomputeCashBalance(
+    const cashBalance = recomputeCashMinor(
       DEMO_OPENINGS[key],
       deltasByKey.get(key) ?? [],
     );

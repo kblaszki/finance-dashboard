@@ -1,4 +1,4 @@
-import { CASH_TX_TYPES, type CashTxType } from "./cashLedger";
+import { CASH_TX_TYPES, parsePositiveAmount, type CashTxType } from "./cashLedger";
 import { CASH_LEDGER_CSV_HEADER } from "./cashLedgerCsv";
 
 const HEADER_COLUMNS = CASH_LEDGER_CSV_HEADER.split(",");
@@ -99,11 +99,13 @@ export function parseCashLedgerCsvImport(
       continue;
     }
 
-    const amount = Number(amountRaw);
-    if (!Number.isFinite(amount) || amount <= 0) {
+    let amount: number;
+    try {
+      amount = parsePositiveAmount(amountRaw).toNumber();
+    } catch (error) {
       errors.push({
         row: dataRow,
-        message: "amount must be a positive number",
+        message: error instanceof Error ? error.message : "amount must be a positive number",
       });
       continue;
     }

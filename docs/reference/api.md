@@ -45,7 +45,7 @@ User-scoped. Cross-user access returns `404`. Create accepts allow-listed `accou
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
 | GET | `/api/accounts` | Bearer | List own accounts (newest first); includes `totalBalance` |
-| POST | `/api/accounts` | Bearer | Body: `name`; optional `currency` (default PLN), `openingBalance`, `openingCashAsOf`, `description`, `accountType` (`BANK`, `BROKERAGE`, `CRYPTO`, `PRECIOUS_METAL`, `REAL_ESTATE`, `OTHER`, `MANUAL`). Sets `cashBalance = openingBalance`. 201 |
+| POST | `/api/accounts` | Bearer | Body: `name`; optional `currency` (default PLN), `openingBalance` (major units, at most 2 decimal places; negative allowed), `openingCashAsOf`, `description`, `accountType` (`BANK`, `BROKERAGE`, `CRYPTO`, `PRECIOUS_METAL`, `REAL_ESTATE`, `OTHER`, `MANUAL`). Sets `cashBalance = openingBalance`. Balances are stored as integer cents and returned as major-unit numbers. 201 |
 | GET | `/api/accounts/:id` | Bearer | One owned account |
 | PATCH | `/api/accounts/:id` | Bearer | Body: optional `name`, `currency`, `description` (no balance or `accountType` edits) |
 | DELETE | `/api/accounts/:id` | Bearer | 204 |
@@ -67,7 +67,7 @@ Unknown / other-user category or parent → `404`.
 
 ## Cash transactions
 
-Nested under an owned account. Cross-user or unknown account → `404`. `amount` must be positive. `type` is `INCOME` or `EXPENSE` (case-normalized). Create/delete adjust `Account.cashBalance` atomically (delete reverses). No PATCH / no `balanceAfter`. Optional `categoryId` must belong to the same user.
+Nested under an owned account. Cross-user or unknown account → `404`. `amount` must be positive, with at most 2 decimal places (stored as integer cents; JSON stays a major-unit number). `type` is `INCOME` or `EXPENSE` (case-normalized). Create/delete adjust `Account.cashBalance` atomically (delete reverses). No PATCH / no `balanceAfter`. Optional `categoryId` must belong to the same user.
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|

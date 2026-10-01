@@ -47,8 +47,8 @@ User-scoped financial account. Create accepts allow-listed types; `accountType` 
 | accountType | String | `BANK`, `BROKERAGE`, `CRYPTO`, `PRECIOUS_METAL`, `REAL_ESTATE`, `OTHER`, `MANUAL` (omit/blank → `BANK`) |
 | name | String | Unique per user (`@@unique([userId, name])`) |
 | currency | String | ISO-like 3-letter code (stored uppercase) |
-| cashBalance | Decimal | Working cash; set from `openingBalance` on create |
-| openingBalance | Decimal | Opening cash seed (default 0) |
+| cashBalance | Int | Working cash in minor units (cents). API JSON uses major units |
+| openingBalance | Int | Opening cash seed in minor units (default 0) |
 | openingCashAsOf | DateTime? | Optional opening date |
 | description | String? | Optional note |
 | createdAt | DateTime | Default now |
@@ -65,10 +65,10 @@ Single-account cash ledger row (INCOME / EXPENSE). Positive `amount`; type drive
 | id | Int | PK, autoincrement |
 | accountId | Int | FK → Account (`onDelete: Cascade`) |
 | type | String | `INCOME` or `EXPENSE` |
-| amount | Decimal | Always positive |
+| amount | Int | Always positive, minor units (cents). API JSON uses major units |
 | occurredAt | DateTime | Movement time (default now) |
 | description | String? | Optional note |
 | categoryId | Int? | FK → Category (`onDelete: SetNull`) |
 | createdAt | DateTime | Default now |
 
-Indexes: `[accountId, occurredAt]`, `[categoryId]`. Domain rules: `backend/src/domain/cashLedger.ts`.
+Indexes: `[accountId, occurredAt]`, `[categoryId]`. Domain rules: `backend/src/domain/cashLedger.ts`. Parsing and minor-unit conversion: `backend/src/domain/money.ts`. SQLite stores these integers so cent arithmetic does not pass through REAL.

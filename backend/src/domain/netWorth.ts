@@ -1,4 +1,5 @@
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import { majorToDecimal } from "./money";
 
 export const NET_WORTH_BUCKETS = [
   "cash",
@@ -52,10 +53,6 @@ function emptyBuckets(): NetWorthByBucket {
   };
 }
 
-function decimalToNumber(value: Prisma.Decimal | number): number {
-  return typeof value === "number" ? value : Number(value);
-}
-
 export function aggregateNetWorth(
   currency: string,
   accounts: NetWorthAccountRow[],
@@ -64,9 +61,10 @@ export function aggregateNetWorth(
 
   for (const account of accounts) {
     if (account.currency !== currency) continue;
-    const amount = decimalToNumber(account.cashBalance);
-    if (!Number.isFinite(amount)) continue;
-    byBucket[accountTypeToBucket(account.accountType)] += amount;
+    const amount = majorToDecimal(account.cashBalance);
+    if (!amount) continue;
+    const bucket = accountTypeToBucket(account.accountType);
+    byBucket[bucket] = new Prisma.Decimal(byBucket[bucket]).add(amount).toNumber();
   }
 
   const liabilities = 0;

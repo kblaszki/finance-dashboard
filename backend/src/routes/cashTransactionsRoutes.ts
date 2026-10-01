@@ -1,11 +1,14 @@
 import { Router } from "express";
-import { Prisma, type CashTransaction, type PrismaClient } from "@prisma/client";
+import { type CashTransaction, type PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import {
   parseCashTxType,
   parsePositiveAmount,
-  signedDelta,
+  postCashTransaction,
+  postCashTransactionBatch,
+  reverseCashTransaction,
 } from "../domain/cashLedger";
+import { minorToMajor } from "../domain/money";
 import {
   buildCashLedgerCsv,
   cashLedgerExportFilename,
@@ -27,10 +30,6 @@ type CashTxDeps = {
   requireAuth: (req: AuthedRequest, res: any, next: any) => void;
   uid: (req: AuthedRequest) => number;
 };
-
-function decimalToNumber(value: Prisma.Decimal | number): number {
-  return typeof value === "number" ? value : Number(value);
-}
 
 function parseOptionalDescription(value: unknown): string | null {
   if (value === undefined || value === null) return null;
@@ -54,7 +53,7 @@ export function cashTransactionPayload(tx: CashTransaction) {
     id: tx.id,
     accountId: tx.accountId,
     type: tx.type,
-    amount: decimalToNumber(tx.amount),
+    amount: minorToMajor(tx.amount),
     occurredAt: tx.occurredAt.toISOString(),
     description: tx.description,
     categoryId: tx.categoryId,
@@ -128,7 +127,7 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
           rows: rows.map((row) => ({
             id: row.id,
             type: row.type,
-            amount: decimalToNumber(row.amount),
+            amount: minorToMajor(row.amount),
             occurredAt: row.occurredAt,
             description: row.description,
             categoryId: row.categoryId,
@@ -183,31 +182,21 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
           return;
         }
 
-        let totalDelta = new Prisma.Decimal(0);
-        const createData = resolved.rows.map((row) => {
-          const amount = new Prisma.Decimal(row.amount);
-          totalDelta = totalDelta.add(signedDelta(row.type, amount));
-          return {
+        const created = await prisma.$transaction((tx) =>
+          postCashTransactionBatch(
+            tx,
             accountId,
-            type: row.type,
-            amount,
-            occurredAt: row.occurredAt,
-            description: row.description,
-            categoryId: row.categoryId,
-          };
-        });
+            resolved.rows.map((row) => ({
+              type: row.type,
+              amount: parsePositiveAmount(row.amount),
+              occurredAt: row.occurredAt,
+              description: row.description,
+              categoryId: row.categoryId,
+            })),
+          ),
+        );
 
-        await prisma.$transaction(async (tx) => {
-          if (createData.length > 0) {
-            await tx.cashTransaction.createMany({ data: createData });
-            await tx.account.update({
-              where: { id: accountId },
-              data: { cashBalance: { increment: totalDelta } },
-            });
-          }
-        });
-
-        res.status(201).json({ created: createData.length });
+        res.status(201).json({ created });
       } catch (e: unknown) {
         handleRouteError(res, e, "Failed to import transactions");
       }
@@ -243,7 +232,6 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
         const body = req.body ?? {};
         const type = parseCashTxType(body.type);
         const amount = parsePositiveAmount(body.amount);
-        const delta = signedDelta(type, amount);
         const occurredAt = parseOccurredAt(body.occurredAt);
         const description = parseOptionalDescription(body.description);
         const categoryId = await assertOwnedCategoryId(
@@ -252,23 +240,16 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
           parseOptionalCategoryId(body.categoryId),
         );
 
-        const created = await prisma.$transaction(async (tx) => {
-          const row = await tx.cashTransaction.create({
-            data: {
-              accountId,
-              type,
-              amount,
-              occurredAt,
-              description,
-              categoryId,
-            },
-          });
-          await tx.account.update({
-            where: { id: accountId },
-            data: { cashBalance: { increment: delta } },
-          });
-          return row;
-        });
+        const created = await prisma.$transaction((tx) =>
+          postCashTransaction(tx, {
+            accountId,
+            type,
+            amount,
+            occurredAt,
+            description,
+            categoryId,
+          }),
+        );
 
         res.status(201).json(cashTransactionPayload(created));
       } catch (e: unknown) {
@@ -291,16 +272,9 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
         });
         if (!existing) throw notFound("Transaction not found");
 
-        const type = parseCashTxType(existing.type);
-        const reverseDelta = signedDelta(type, existing.amount).negated();
-
-        await prisma.$transaction(async (tx) => {
-          await tx.account.update({
-            where: { id: accountId },
-            data: { cashBalance: { increment: reverseDelta } },
-          });
-          await tx.cashTransaction.delete({ where: { id } });
-        });
+        await prisma.$transaction((tx) =>
+          reverseCashTransaction(tx, accountId, existing),
+        );
 
         res.status(204).send();
       } catch (e: unknown) {

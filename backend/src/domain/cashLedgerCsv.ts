@@ -1,3 +1,5 @@
+import { Prisma } from "@prisma/client";
+
 export const CASH_LEDGER_CSV_HEADER =
   "id,type,amount,currency,occurredAt,description,categoryId,categoryName,createdAt" as const;
 
@@ -25,8 +27,8 @@ export function escapeCsvCell(value: string): string {
 }
 
 function formatAmount(amount: number): string {
-  const n = Number.isFinite(amount) ? amount : 0;
-  return n.toFixed(2);
+  if (!Number.isFinite(amount)) return "0.00";
+  return new Prisma.Decimal(amount.toString()).toDecimalPlaces(2).toFixed(2);
 }
 
 function formatIso(value: Date | string): string {

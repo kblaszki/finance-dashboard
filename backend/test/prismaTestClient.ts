@@ -17,6 +17,13 @@ export function getTestDatabaseUrl(): string {
 }
 
 function pushSchema(url: string): void {
+  const normalized = url.replace(/\\/g, "/");
+  if (normalized.includes("/test/tmp/test-")) {
+    const filePath = normalized.slice("file:".length);
+    for (const suffix of ["", "-journal", "-wal", "-shm"]) {
+      if (fs.existsSync(filePath + suffix)) fs.unlinkSync(filePath + suffix);
+    }
+  }
   execSync("npx prisma db push --skip-generate", {
     cwd: BACKEND_ROOT,
     env: { ...process.env, DATABASE_URL: url },
@@ -30,11 +37,9 @@ function ensureSchemaForUrl(url: string): void {
   pushedUrls.add(url);
 }
 
-/** Ensures DATABASE_URL and schema exist (CI has no backend/.env). */
+/** Ensures DATABASE_URL and schema exist (CI has no backend/.env). Always uses a temp file so a schema change cannot rewrite the developer database. */
 export function ensureTestDatabaseEnv(): void {
-  if (!process.env.DATABASE_URL) {
-    process.env.DATABASE_URL = getTestDatabaseUrl();
-  }
+  process.env.DATABASE_URL = getTestDatabaseUrl();
   ensureSchemaForUrl(process.env.DATABASE_URL);
 }
 

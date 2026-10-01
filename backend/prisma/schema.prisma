@@ -38,8 +38,9 @@ model Account {
   accountType     String
   name            String
   currency        String
-  cashBalance     Decimal           @default(0)
-  openingBalance  Decimal           @default(0)
+  /// Minor units (cents). JSON APIs expose major units.
+  cashBalance     Int               @default(0)
+  openingBalance  Int               @default(0)
   openingCashAsOf DateTime?
   description     String?
   createdAt       DateTime          @default(now())
@@ -55,7 +56,8 @@ model CashTransaction {
   id          Int       @id @default(autoincrement())
   accountId   Int
   type        String
-  amount      Decimal
+  /// Minor units (cents). Always positive. JSON APIs expose major units.
+  amount      Int
   occurredAt  DateTime  @default(now())
   description String?
   categoryId  Int?

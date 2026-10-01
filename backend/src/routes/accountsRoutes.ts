@@ -3,11 +3,11 @@ import type { Account, Prisma, PrismaClient } from "@prisma/client";
 import { Prisma as PrismaNS } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import { parseAccountType } from "../domain/accountTypes";
+import { decimalToMinor, minorToMajor, normalizeCurrencyCode, parseOpeningBalance } from "../domain/money";
 import {
   badRequest,
   handleRouteError,
   notFound,
-  parseFiniteNumber,
   parseIdParam,
   parseRequiredString,
 } from "./httpSupport";
@@ -18,15 +18,8 @@ type AccountsDeps = {
   uid: (req: AuthedRequest) => number;
 };
 
-function decimalToNumber(value: Prisma.Decimal | number): number {
-  return typeof value === "number" ? value : Number(value);
-}
-
 function normalizeCurrency(value: unknown): string {
-  const raw = String(value ?? "PLN").trim().toUpperCase();
-  if (!raw) throw badRequest("currency required");
-  if (!/^[A-Z]{3}$/.test(raw)) throw badRequest("currency must be a 3-letter code");
-  return raw;
+  return normalizeCurrencyCode(value, { defaultCode: "PLN" });
 }
 
 function parseOptionalDescription(value: unknown): string | null | undefined {
@@ -51,7 +44,7 @@ function isUniqueConstraintError(error: unknown): boolean {
 }
 
 export function accountPayload(account: Account) {
-  const cashBalance = decimalToNumber(account.cashBalance);
+  const cashBalance = minorToMajor(account.cashBalance);
   return {
     id: account.id,
     userId: account.userId,
@@ -59,7 +52,7 @@ export function accountPayload(account: Account) {
     name: account.name,
     currency: account.currency,
     cashBalance,
-    openingBalance: decimalToNumber(account.openingBalance),
+    openingBalance: minorToMajor(account.openingBalance),
     openingCashAsOf: account.openingCashAsOf
       ? account.openingCashAsOf.toISOString()
       : null,
@@ -106,7 +99,7 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
       const openingBalance =
         body.openingBalance === undefined || body.openingBalance === null || body.openingBalance === ""
           ? 0
-          : parseFiniteNumber(body.openingBalance, "openingBalance");
+          : decimalToMinor(parseOpeningBalance(body.openingBalance));
       const openingCashAsOf = parseOpeningCashAsOf(body.openingCashAsOf);
       const description = parseOptionalDescription(body.description);
 

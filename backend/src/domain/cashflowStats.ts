@@ -1,9 +1,9 @@
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { badRequest } from "../lib/errors";
 import { CASH_TX_TYPES, type CashTxType } from "./cashLedger";
 import { parseMonthParam } from "./categoryBreakdown";
+import { majorToDecimal, normalizeCurrencyCode } from "./money";
 
-const CURRENCY_RE = /^[A-Z]{3}$/;
 const ALLOWED_MONTHS = new Set([6, 12, 24]);
 
 export type CashflowSourceRow = {
@@ -45,14 +45,7 @@ export type RollingCashflow12mResult = {
 };
 
 export function parseCurrencyParam(value: unknown): string {
-  if (value === undefined || value === null || value === "") {
-    throw badRequest("currency required");
-  }
-  const currency = String(value).trim().toUpperCase();
-  if (!CURRENCY_RE.test(currency)) {
-    throw badRequest("currency must be a 3-letter code");
-  }
-  return currency;
+  return normalizeCurrencyCode(value);
 }
 
 export function parseMonthsParam(value: unknown): number {
@@ -90,10 +83,6 @@ export function completeMonthsBefore(asOf: Date, n = 12): string[] {
   return listMonthsEndingAt(prevKey, n);
 }
 
-function decimalToNumber(value: Prisma.Decimal | number): number {
-  return typeof value === "number" ? value : Number(value);
-}
-
 function monthKeyUtc(date: Date): string {
   const y = date.getUTCFullYear();
   const m = String(date.getUTCMonth() + 1).padStart(2, "0");
@@ -109,20 +98,28 @@ export function aggregatePeriodSummary(
   currency: string,
   rows: CashflowSourceRow[],
 ): PeriodSummaryResult {
-  let income = 0;
-  let expense = 0;
+  let income = new Prisma.Decimal(0);
+  let expense = new Prisma.Decimal(0);
 
   for (const row of rows) {
     if (row.account.currency !== currency) continue;
     const type = String(row.type).trim().toUpperCase() as CashTxType;
     if (!(CASH_TX_TYPES as readonly string[]).includes(type)) continue;
-    const amount = decimalToNumber(row.amount);
-    if (!Number.isFinite(amount)) continue;
-    if (type === "INCOME") income += amount;
-    else expense += amount;
+    const amount = majorToDecimal(row.amount);
+    if (!amount) continue;
+    if (type === "INCOME") income = income.add(amount);
+    else expense = expense.add(amount);
   }
 
-  return { month, currency, income, expense, net: income - expense };
+  const incomeNumber = income.toNumber();
+  const expenseNumber = expense.toNumber();
+  return {
+    month,
+    currency,
+    income: incomeNumber,
+    expense: expenseNumber,
+    net: income.sub(expense).toNumber(),
+  };
 }
 
 export function aggregateCashflowHistory(
@@ -142,11 +139,11 @@ export function aggregateCashflowHistory(
     const key = monthKeyUtc(row.occurredAt);
     const point = byMonth.get(key);
     if (!point) continue;
-    const amount = decimalToNumber(row.amount);
-    if (!Number.isFinite(amount)) continue;
-    if (type === "INCOME") point.income += amount;
-    else point.expense += amount;
-    point.net = point.income - point.expense;
+    const amount = majorToDecimal(row.amount);
+    if (!amount) continue;
+    if (type === "INCOME") point.income = new Prisma.Decimal(point.income).add(amount).toNumber();
+    else point.expense = new Prisma.Decimal(point.expense).add(amount).toNumber();
+    point.net = new Prisma.Decimal(point.income).sub(point.expense).toNumber();
   }
 
   return {
@@ -164,21 +161,22 @@ export function aggregateRollingCashflow12m(
   const months = completeMonthsBefore(asOf, 12);
   const history = aggregateCashflowHistory(months, currency, rows);
   const count = history.series.length;
-  let incomeSum = 0;
-  let expenseSum = 0;
-  let netSum = 0;
+  let incomeSum = new Prisma.Decimal(0);
+  let expenseSum = new Prisma.Decimal(0);
+  let netSum = new Prisma.Decimal(0);
   for (const point of history.series) {
-    incomeSum += point.income;
-    expenseSum += point.expense;
-    netSum += point.net;
+    incomeSum = incomeSum.add(point.income);
+    expenseSum = expenseSum.add(point.expense);
+    netSum = netSum.add(point.net);
   }
+  const divisor = new Prisma.Decimal(count);
   return {
     currency,
     monthCount: count,
     fromMonth: months[0]!,
     toMonth: months[count - 1]!,
-    avgIncome: incomeSum / count,
-    avgExpense: expenseSum / count,
-    avgNet: netSum / count,
+    avgIncome: incomeSum.div(divisor).toNumber(),
+    avgExpense: expenseSum.div(divisor).toNumber(),
+    avgNet: netSum.div(divisor).toNumber(),
   };
 }

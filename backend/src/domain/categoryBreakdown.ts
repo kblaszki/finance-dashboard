@@ -1,6 +1,7 @@
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { badRequest } from "../lib/errors";
 import { CASH_TX_TYPES, type CashTxType } from "./cashLedger";
+import { majorToDecimal } from "./money";
 
 const MONTH_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
 const UNCATEGORIZED = "Uncategorized";
@@ -42,10 +43,6 @@ export function parseMonthParam(value: unknown): { month: string; start: Date; e
   return { month, start, end };
 }
 
-function decimalToNumber(value: Prisma.Decimal | number): number {
-  return typeof value === "number" ? value : Number(value);
-}
-
 function rowKey(categoryId: number | null, currency: string): string {
   return `${categoryId ?? "null"}:${currency}`;
 }
@@ -73,21 +70,21 @@ export function aggregateCategoryBreakdown(
     const categoryId = row.categoryId;
     const categoryName = row.category?.name ?? UNCATEGORIZED;
     const currency = row.account.currency;
-    const amount = decimalToNumber(row.amount);
-    if (!Number.isFinite(amount)) continue;
+    const amount = majorToDecimal(row.amount);
+    if (!amount) continue;
 
     const map = type === "INCOME" ? incomeMap : expenseMap;
     const key = rowKey(categoryId, currency);
     const existing = map.get(key);
     if (existing) {
-      existing.total += amount;
+      existing.total = new Prisma.Decimal(existing.total).add(amount).toNumber();
       existing.count += 1;
     } else {
       map.set(key, {
         categoryId,
         categoryName,
         currency,
-        total: amount,
+        total: amount.toNumber(),
         count: 1,
       });
     }

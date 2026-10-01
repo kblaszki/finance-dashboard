@@ -454,6 +454,36 @@ test("POST /api/accounts/:id/transactions updates cashBalance for INCOME and EXP
   assert.equal(afterExpense.body.cashBalance, 85);
 });
 
+test("POST /api/accounts/:id/transactions stores decimal cents without binary float drift", async () => {
+  const { token } = await createUserAndToken();
+  const account = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Cents", openingBalance: 0 });
+  assert.equal(account.status, 201);
+  const accountId = account.body.id as number;
+
+  for (const amount of [0.1, 0.2]) {
+    const created = await request(app)
+      .post(`/api/accounts/${accountId}/transactions`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ type: "INCOME", amount });
+    assert.equal(created.status, 201);
+  }
+
+  const after = await request(app)
+    .get(`/api/accounts/${accountId}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(JSON.stringify(after.body.cashBalance), "0.3");
+  assert.equal(JSON.stringify(after.body.openingBalance), "0");
+
+  const rejected = await request(app)
+    .post(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "INCOME", amount: 0.001 });
+  assert.equal(rejected.status, 400);
+});
+
 test("GET /api/accounts/:id/transactions lists newest first and scopes ownership", async () => {
   const { token } = await createUserAndToken();
   const otherToken = await registerAndLogin("txother@test.local", "txother", "password123");

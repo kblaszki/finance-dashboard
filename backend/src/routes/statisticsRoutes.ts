@@ -14,6 +14,7 @@ import {
   parseCurrencyParam,
   parseMonthsParam,
 } from "../domain/cashflowStats";
+import { minorToDecimal } from "../domain/money";
 import { aggregateNetWorth } from "../domain/netWorth";
 import { handleRouteError } from "./httpSupport";
 
@@ -43,7 +44,12 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
             category: { select: { id: true, name: true } },
           },
         });
-        res.json(aggregateCategoryBreakdown(month, rows));
+        res.json(
+          aggregateCategoryBreakdown(
+            month,
+            rows.map((row) => ({ ...row, amount: minorToDecimal(row.amount) })),
+          ),
+        );
       } catch (e: unknown) {
         handleRouteError(res, e, "Failed to load category breakdown");
       }
@@ -66,7 +72,13 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
             account: { select: { currency: true } },
           },
         });
-        res.json(aggregatePeriodSummary(month, currency, rows));
+        res.json(
+          aggregatePeriodSummary(
+            month,
+            currency,
+            rows.map((row) => ({ ...row, amount: minorToDecimal(row.amount) })),
+          ),
+        );
       } catch (e: unknown) {
         handleRouteError(res, e, "Failed to load period summary");
       }
@@ -92,7 +104,13 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
             account: { select: { currency: true } },
           },
         });
-        res.json(aggregateCashflowHistory(months, currency, rows));
+        res.json(
+          aggregateCashflowHistory(
+            months,
+            currency,
+            rows.map((row) => ({ ...row, amount: minorToDecimal(row.amount) })),
+          ),
+        );
       } catch (e: unknown) {
         handleRouteError(res, e, "Failed to load cashflow history");
       }
@@ -113,7 +131,16 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
             cashBalance: true,
           },
         });
-        res.json(aggregateNetWorth(currency, accounts));
+        res.json(
+          aggregateNetWorth(
+            currency,
+            accounts.map((account) => ({
+              accountType: account.accountType,
+              currency: account.currency,
+              cashBalance: minorToDecimal(account.cashBalance),
+            })),
+          ),
+        );
       } catch (e: unknown) {
         handleRouteError(res, e, "Failed to load net worth");
       }
@@ -141,7 +168,13 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
             account: { select: { currency: true } },
           },
         });
-        res.json(aggregateRollingCashflow12m(currency, rows, asOf));
+        res.json(
+          aggregateRollingCashflow12m(
+            currency,
+            rows.map((row) => ({ ...row, amount: minorToDecimal(row.amount) })),
+            asOf,
+          ),
+        );
       } catch (e: unknown) {
         handleRouteError(res, e, "Failed to load rolling cashflow");
       }
