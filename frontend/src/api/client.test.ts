@@ -39,6 +39,19 @@ describe("apiClient", () => {
     await expect(apiClient.get("/api/missing")).rejects.toThrow("Account not found");
   });
 
+  it("surfaces a wrong-password 400 without clearing the session", async () => {
+    const onUnauthorized = vi.fn();
+    setUnauthorizedHandler(onUnauthorized);
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(JSON.stringify({ error: "Current password is incorrect" }), { status: 400 }),
+    );
+
+    await expect(apiClient.patch("/api/auth/password", {})).rejects.toThrow(
+      "Current password is incorrect",
+    );
+    expect(onUnauthorized).not.toHaveBeenCalled();
+  });
+
   it("calls unauthorized handler on 401", async () => {
     const onUnauthorized = vi.fn();
     setUnauthorizedHandler(onUnauthorized);

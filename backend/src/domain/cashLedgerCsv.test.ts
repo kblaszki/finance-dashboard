@@ -23,6 +23,8 @@ describe("escapeCsvCell", () => {
     assert.equal(escapeCsvCell("+cmd"), "'+cmd");
     assert.equal(escapeCsvCell("-1"), "'-1");
     assert.equal(escapeCsvCell("@sum"), "'@sum");
+    assert.equal(escapeCsvCell("\tcmd"), "'\tcmd");
+    assert.equal(escapeCsvCell("\r=1"), "\"'\r=1\"");
   });
 });
 

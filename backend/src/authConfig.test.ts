@@ -45,6 +45,10 @@ test("assertProductionEnvironment requires JWT_SECRET and closed registration", 
     assert.throws(() => assertProductionEnvironment(), /ALLOW_REGISTER/);
     process.env.ALLOW_REGISTER = "false";
     assert.doesNotThrow(() => assertProductionEnvironment());
+    process.env.JWT_SECRET = "change-me-to-a-random-string-at-least-32-characters-long";
+    assert.throws(() => assertProductionEnvironment(), /placeholder/);
+    process.env.JWT_SECRET = "CHANGE_ME_LONG_RANDOM_32PLUS_CHARS";
+    assert.throws(() => assertProductionEnvironment(), /placeholder/);
   } finally {
     if (prevNode === undefined) delete process.env.NODE_ENV;
     else process.env.NODE_ENV = prevNode;

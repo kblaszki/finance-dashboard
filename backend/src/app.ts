@@ -1,4 +1,4 @@
-import express from "express";
+import express, { type Express } from "express";
 import rateLimit from "express-rate-limit";
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
@@ -34,16 +34,33 @@ const authRateLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
-if (process.env.NODE_ENV === "production") {
-  app.use("/api/auth/login", authRateLimiter);
-  app.use("/api/auth/register", authRateLimiter);
+
+export function mountProductionAuthRateLimit(
+  target: Express,
+  nodeEnv: string | undefined = process.env.NODE_ENV,
+  limiter = authRateLimiter,
+): void {
+  if (nodeEnv !== "production") return;
+  for (const path of [
+    "/api/auth/login",
+    "/api/auth/register",
+    "/api/auth/password",
+    "/api/auth/email",
+  ]) {
+    target.use(path, limiter);
+  }
 }
+
+mountProductionAuthRateLimit(app);
 
 app.get("/api/health", async (_req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
     res.json({ ok: true, db: true });
-  } catch {
+  } catch (error: unknown) {
+    const name = error instanceof Error ? error.name : "Error";
+    // eslint-disable-next-line no-console
+    console.error("Health check failed", name);
     res.status(503).json({ ok: false, db: false });
   }
 });

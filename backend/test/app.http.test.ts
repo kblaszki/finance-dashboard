@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import request from "supertest";
 import type { Express } from "express";
 import type { PrismaClient } from "@prisma/client";
-import { hashPassword } from "../src/auth";
+import { canonicalUsernameKey, hashPassword } from "../src/auth";
 import { createTestPrisma, disconnectTestPrisma, resetDatabase } from "./prismaTestClient";
 
 const JWT_SECRET = "test-jwt-secret-must-be-at-least-32-characters";
@@ -32,6 +32,7 @@ async function createUserAndToken(): Promise<{ token: string; userId: number }> 
     data: {
       email: "http@test.local",
       username: "httpuser",
+      usernameKey: canonicalUsernameKey("httpuser"),
       passwordHash,
     },
   });
@@ -131,7 +132,31 @@ test("POST /api/auth/register rejects duplicate email", async () => {
     username: "dup2",
     password: "password123",
   });
-  assert.equal(res.status, 500);
+  assert.equal(res.status, 409);
+  assert.match(res.body.error, /already exists/i);
+});
+
+test("POST /api/auth/register rejects a username that differs only by case", async () => {
+  const first = await request(app).post("/api/auth/register").send({
+    email: "case1@test.local",
+    username: "CaseUser",
+    password: "password123",
+  });
+  assert.equal(first.status, 201);
+  const res = await request(app).post("/api/auth/register").send({
+    email: "case2@test.local",
+    username: "caseuser",
+    password: "password123",
+  });
+  assert.equal(res.status, 409);
+});
+
+test("malformed JSON stays a client error", async () => {
+  const res = await request(app)
+    .post("/api/auth/login")
+    .set("Content-Type", "application/json")
+    .send("{");
+  assert.equal(res.status, 400);
 });
 
 test("POST /api/auth/login rejects wrong password", async () => {
@@ -212,13 +237,24 @@ test("PATCH /api/auth/password requires current password", async () => {
     .patch("/api/auth/password")
     .set("Authorization", `Bearer ${token}`)
     .send({ currentPassword: "wrong", newPassword: "newpassword99" });
-  assert.equal(bad.status, 401);
+  assert.equal(bad.status, 400);
+  assert.match(bad.body.error, /current password/i);
+
+  const stillAuthed = await request(app)
+    .get("/api/auth/me")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(stillAuthed.status, 200);
 
   const ok = await request(app)
     .patch("/api/auth/password")
     .set("Authorization", `Bearer ${token}`)
     .send({ currentPassword: "password123", newPassword: "newpassword99" });
   assert.equal(ok.status, 200);
+
+  const revoked = await request(app)
+    .get("/api/auth/me")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(revoked.status, 401);
 
   const loginOld = await request(app)
     .post("/api/auth/login")
@@ -237,7 +273,8 @@ test("PATCH /api/auth/email updates email with current password", async () => {
     .patch("/api/auth/email")
     .set("Authorization", `Bearer ${token}`)
     .send({ email: "newmail@test.local", currentPassword: "wrong" });
-  assert.equal(bad.status, 401);
+  assert.equal(bad.status, 400);
+  assert.match(bad.body.error, /current password/i);
 
   const ok = await request(app)
     .patch("/api/auth/email")
@@ -947,6 +984,61 @@ test("categories CRUD supports nesting, rename, reparent, and delete rules", asy
     .delete(`/api/categories/${created.body.id}`)
     .set("Authorization", `Bearer ${token}`);
   assert.equal(deleted.status, 204);
+});
+
+test("category and foreign-account writes return 404 for another user", async () => {
+  const token = await registerAndLogin("owneridor@test.local", "owneridor", "password123");
+  const otherToken = await registerAndLogin("otheridor@test.local", "otheridor", "password123");
+  const cats = await request(app).get("/api/categories").set("Authorization", `Bearer ${token}`);
+  const food = (cats.body as Array<{ id: number; name: string }>).find((c) => c.name === "Food")!;
+  assert.ok(food);
+
+  const patched = await request(app)
+    .patch(`/api/categories/${food.id}`)
+    .set("Authorization", `Bearer ${otherToken}`)
+    .send({ name: "Hijack" });
+  assert.equal(patched.status, 404);
+
+  const deleted = await request(app)
+    .delete(`/api/categories/${food.id}`)
+    .set("Authorization", `Bearer ${otherToken}`);
+  assert.equal(deleted.status, 404);
+
+  const account = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Owned", openingBalance: 1 });
+  const posted = await request(app)
+    .post(`/api/accounts/${account.body.id}/transactions`)
+    .set("Authorization", `Bearer ${otherToken}`)
+    .send({ type: "INCOME", amount: 1 });
+  assert.equal(posted.status, 404);
+});
+
+test("account name and description reject oversized text", async () => {
+  const { token } = await createUserAndToken();
+  const longName = "n".repeat(101);
+  const created = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: longName });
+  assert.equal(created.status, 400);
+
+  const account = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Ok name" });
+  const described = await request(app)
+    .patch(`/api/accounts/${account.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ description: "d".repeat(501) });
+  assert.equal(described.status, 400);
+
+  const tx = await request(app)
+    .post(`/api/accounts/${account.body.id}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "INCOME", amount: 1, description: "d".repeat(501) });
+  assert.equal(tx.status, 400);
 });
 
 test("cash transactions accept optional categoryId and null on category delete", async () => {

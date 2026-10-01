@@ -70,3 +70,22 @@ test("handleRouteError maps unknown errors to 500", () => {
   assert.equal(response.statusCode, 500);
   assert.deepEqual(response.body, { error: "Internal server error" });
 });
+
+test("handleRouteError keeps numeric 4xx from non-HttpError", () => {
+  const response = {
+    statusCode: 200,
+    body: null as unknown,
+    status(code: number) {
+      this.statusCode = code;
+      return this;
+    },
+    json(payload: unknown) {
+      this.body = payload;
+      return this;
+    },
+  };
+  const error = Object.assign(new SyntaxError("Unexpected token"), { status: 400 });
+  handleRouteError(response as never, error, "Internal server error");
+  assert.equal(response.statusCode, 400);
+  assert.deepEqual(response.body, { error: "Unexpected token" });
+});

@@ -27,16 +27,16 @@ Hub: [docs/README.md](../README.md).
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
 | GET | `/api/auth/config` | No | `{ allowRegister }` |
-| POST | `/api/auth/register` | No | Body: email, username, password. Seeds default category tree. 403 if registration disabled |
-| POST | `/api/auth/login` | No | Body: login (email or username) or email + password |
-| GET | `/api/auth/me` | Bearer | Current user `{ id, email, username }` |
-| PATCH | `/api/auth/profile` | Bearer | Body: username |
-| PATCH | `/api/auth/password` | Bearer | Body: currentPassword, newPassword |
-| PATCH | `/api/auth/email` | Bearer | Body: email, currentPassword |
+| POST | `/api/auth/register` | No | Body: email, username, password. Seeds default category tree. 403 if registration disabled. Duplicate email or username (any case) → `409` |
+| POST | `/api/auth/login` | No | Body: login (email or username) or email + password. Username match is case-insensitive |
+| GET | `/api/auth/me` | Bearer | Current user. Missing or revoked token → `401` |
+| PATCH | `/api/auth/profile` | Bearer | Body: username. Duplicate username → `409` |
+| PATCH | `/api/auth/password` | Bearer | Body: currentPassword, newPassword. Wrong current password → `400` (session stays). Success increments `tokenVersion` and older tokens get `401` |
+| PATCH | `/api/auth/email` | Bearer | Body: email, currentPassword. Wrong current password → `400`. Duplicate email → `409` |
 
-Password minimum length: 8. JWT expiry: 7 days.
+Password minimum length: 8. JWT expiry: 7 days (HS256). Account `name` is at most 100 characters. Account and cash-transaction `description` are at most 500 characters.
 
-In production, login/register are rate-limited (see [environment.md](environment.md)).
+In production, login, register, password, and email changes share one rate limit (see [environment.md](environment.md)).
 
 ## Accounts
 

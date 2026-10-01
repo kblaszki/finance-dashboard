@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { hashPassword } from "../src/auth";
+import { canonicalUsernameKey, hashPassword } from "../src/auth";
 import { seedDemoPortfolio } from "../src/domain/seedDemoPortfolio";
 
 const prisma = new PrismaClient();
@@ -15,10 +15,12 @@ async function main(): Promise<void> {
     create: {
       email: DEMO_EMAIL,
       username: DEMO_USERNAME,
+      usernameKey: canonicalUsernameKey(DEMO_USERNAME),
       passwordHash,
     },
     update: {
       username: DEMO_USERNAME,
+      usernameKey: canonicalUsernameKey(DEMO_USERNAME),
       passwordHash,
     },
   });

@@ -11,7 +11,11 @@ model User {
   id           Int        @id @default(autoincrement())
   email        String     @unique
   username     String     @unique
+  /// Lowercase username used for case-insensitive login and uniqueness.
+  usernameKey  String     @unique
   passwordHash String
+  /// Incremented on password change so older JWTs fail requireAuth.
+  tokenVersion Int        @default(0)
   createdAt    DateTime   @default(now())
   accounts     Account[]
   categories   Category[]

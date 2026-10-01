@@ -35,6 +35,7 @@ type CashTxDeps = {
 function parseOptionalDescription(value: unknown): string | null {
   if (value === undefined || value === null) return null;
   const text = String(value).trim();
+  if (text.length > 500) throw badRequest("description must be at most 500 characters");
   return text.length ? text : null;
 }
 

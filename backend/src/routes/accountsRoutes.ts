@@ -27,6 +27,7 @@ function parseOptionalDescription(value: unknown): string | null | undefined {
   if (value === undefined) return undefined;
   if (value === null) return null;
   const text = String(value).trim();
+  if (text.length > 500) throw badRequest("description must be at most 500 characters");
   return text.length ? text : null;
 }
 
@@ -96,6 +97,7 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
       const accountType = parseAccountType(body.accountType);
 
       const name = parseRequiredString(body.name, "name");
+      if (name.length > 100) throw badRequest("name must be at most 100 characters");
       const currency = normalizeCurrency(body.currency);
       const openingBalance =
         body.openingBalance === undefined || body.openingBalance === null || body.openingBalance === ""
@@ -145,7 +147,9 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
       const data: Prisma.AccountUpdateInput = {};
 
       if (body.name !== undefined) {
-        data.name = parseRequiredString(body.name, "name");
+        const name = parseRequiredString(body.name, "name");
+        if (name.length > 100) throw badRequest("name must be at most 100 characters");
+        data.name = name;
       }
       if (body.currency !== undefined) {
         const nextCurrency = normalizeCurrency(body.currency);

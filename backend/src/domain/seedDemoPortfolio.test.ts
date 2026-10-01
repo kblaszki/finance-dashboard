@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { hashPassword } from "../auth";
+import { canonicalUsernameKey, hashPassword } from "../auth";
 import { aggregateCategoryBreakdown, parseMonthParam } from "./categoryBreakdown";
 import {
   buildDemoLedgerTxs,
@@ -104,6 +104,7 @@ test("seedDemoPortfolio matches ledger balances and scopes wipe to one user", as
       data: {
         email: "seed-demo@test.local",
         username: "seeddemo",
+        usernameKey: canonicalUsernameKey("seeddemo"),
         passwordHash,
       },
     });
@@ -111,6 +112,7 @@ test("seedDemoPortfolio matches ledger balances and scopes wipe to one user", as
       data: {
         email: "seed-other@test.local",
         username: "seedother",
+        usernameKey: canonicalUsernameKey("seedother"),
         passwordHash,
       },
     });

@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
-import { hashPassword, normalizeEmail, validatePassword } from "../auth";
+import { hashPassword, normalizeEmail, validatePassword, validateUsername, canonicalUsernameKey } from "../auth";
 import { seedDefaultCategories } from "../domain/categories";
 
 dotenv.config();
@@ -21,6 +21,8 @@ async function main(): Promise<void> {
   }
   const pwdErr = validatePassword(password);
   if (pwdErr) throw new Error(pwdErr);
+  const userErr = validateUsername(username);
+  if (userErr) throw new Error(userErr);
 
   const prisma = new PrismaClient();
   try {
@@ -31,7 +33,7 @@ async function main(): Promise<void> {
     const passwordHash = await hashPassword(password);
     const user = await prisma.$transaction(async (tx) => {
       const created = await tx.user.create({
-        data: { email, username, passwordHash },
+        data: { email, username, usernameKey: canonicalUsernameKey(username), passwordHash },
       });
       await seedDefaultCategories(tx, created.id);
       return created;

@@ -6,6 +6,15 @@ export function isRegisterAllowed(): boolean {
   return v !== "false" && v !== "0" && v !== "no";
 }
 
+const PUBLISHED_JWT_PLACEHOLDERS = new Set([
+  "change-me-to-a-random-string-at-least-32-characters-long",
+  "CHANGE_ME_LONG_RANDOM_32PLUS_CHARS",
+]);
+
+export function isPublishedJwtPlaceholder(secret: string): boolean {
+  return PUBLISHED_JWT_PLACEHOLDERS.has(secret.trim());
+}
+
 /** Fail fast when production is misconfigured (open registration or missing JWT). */
 export function assertProductionEnvironment(): void {
   if (process.env.NODE_ENV !== "production") return;
@@ -13,6 +22,9 @@ export function assertProductionEnvironment(): void {
   const secret = process.env.JWT_SECRET;
   if (!secret || secret.length < 32) {
     throw new Error("JWT_SECRET must be set and at least 32 characters in production");
+  }
+  if (isPublishedJwtPlaceholder(secret)) {
+    throw new Error("JWT_SECRET must not be a published placeholder in production");
   }
   if (isRegisterAllowed()) {
     throw new Error(

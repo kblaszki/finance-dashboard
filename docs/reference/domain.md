@@ -16,8 +16,10 @@ Hub: [docs/README.md](../README.md).
 |-------|------|-------|
 | id | Int | PK, autoincrement |
 | email | String | Unique |
-| username | String | Unique |
+| username | String | Unique display name |
+| usernameKey | String | Unique lowercase key for login |
 | passwordHash | String | bcrypt |
+| tokenVersion | Int | Default 0; incremented when the password changes |
 | createdAt | DateTime | Default now |
 | accounts | Account[] | Owned accounts (`onDelete: Cascade`) |
 | categories | Category[] | Owned category tree (`onDelete: Cascade`) |

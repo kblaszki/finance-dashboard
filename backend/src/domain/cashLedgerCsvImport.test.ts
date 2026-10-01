@@ -64,6 +64,28 @@ describe("parseCashLedgerCsvImport", () => {
     assert.match(rejected.errors[0]!.message, /currency/);
   });
 
+  it("restores formula text after export escaping", () => {
+    const csv = buildCashLedgerCsv({
+      currency: "PLN",
+      rows: [
+        {
+          id: 1,
+          type: "EXPENSE",
+          amount: 2,
+          occurredAt: "2024-01-01T00:00:00.000Z",
+          description: "\t=1+1",
+          categoryId: null,
+          categoryName: null,
+          createdAt: "2024-01-01T00:00:00.000Z",
+        },
+      ],
+    });
+    const result = parseCashLedgerCsvImport(csv, "PLN");
+    assert.equal(result.ok, true);
+    if (!result.ok) return;
+    assert.equal(result.drafts[0]!.description, "\t=1+1");
+  });
+
   it("rejects currency mismatch and bad type", () => {
     const csv = [
       CASH_LEDGER_CSV_HEADER,

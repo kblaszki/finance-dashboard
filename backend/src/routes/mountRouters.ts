@@ -1,9 +1,10 @@
 import type { Express } from "express";
 import type { PrismaClient } from "@prisma/client";
 import {
+  canonicalUsernameKey,
+  createRequireAuth,
   hashPassword,
   normalizeEmail,
-  requireAuth,
   signToken,
   validatePassword,
   validateUsername,
@@ -18,6 +19,7 @@ import { createCashTransactionsRouter } from "./cashTransactionsRoutes";
 import { createStatisticsRouter } from "./statisticsRoutes";
 
 export function mountApiRouters(app: Express, prisma: PrismaClient): void {
+  const requireAuth = createRequireAuth(prisma);
   app.use(
     createAuthRouter({
       prisma,

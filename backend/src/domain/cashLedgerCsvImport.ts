@@ -37,6 +37,15 @@ export type ResolveImportResult =
   | { ok: true; rows: CashLedgerImportResolved[] }
   | { ok: false; errors: ImportRowError[] };
 
+const FORMULA_PREFIX = /^[=+\-@\t\r]/;
+
+function unescapeImportedFormula(value: string): string {
+  if (value.startsWith("'") && FORMULA_PREFIX.test(value.slice(1))) {
+    return value.slice(1);
+  }
+  return value;
+}
+
 /**
  * Parse and validate cash-ledger CSV (export format). Ignores id and createdAt.
  * Does not check category ownership — use resolveImportCategoryIds.
@@ -134,7 +143,7 @@ export function parseCashLedgerCsvImport(
       continue;
     }
 
-    const descriptionTrimmed = descriptionRaw.trim();
+    const descriptionTrimmed = unescapeImportedFormula(descriptionRaw.trim());
     const description = descriptionTrimmed.length ? descriptionTrimmed : null;
 
     let categoryId: number | null = null;

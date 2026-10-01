@@ -1,9 +1,10 @@
 import { Router } from "express";
-import type { PrismaClient, User } from "@prisma/client";
+import { Prisma as PrismaNS, type PrismaClient, type User } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
+import { canonicalUsernameKey } from "../auth";
 import { isRegisterAllowed } from "../authConfig";
 import { seedDefaultCategories } from "../domain/categories";
-import { handleRouteError, forbidden } from "./httpSupport";
+import { conflict, handleRouteError, forbidden } from "./httpSupport";
 
 type AuthDeps = {
   prisma: PrismaClient;
@@ -15,11 +16,15 @@ type AuthDeps = {
   parseLoginIdentifier: (body: { login?: unknown; email?: unknown }) => string;
   hashPassword: (password: string) => Promise<string>;
   verifyPassword: (password: string, hash: string) => Promise<boolean>;
-  signToken: (userId: number) => string;
+  signToken: (userId: number, tokenVersion: number) => string;
 };
 
 function userPayload(user: User) {
   return { id: user.id, email: user.email, username: user.username };
+}
+
+function isUniqueConstraintError(error: unknown): boolean {
+  return error instanceof PrismaNS.PrismaClientKnownRequestError && error.code === "P2002";
 }
 
 async function findUserByLogin(
@@ -31,15 +36,9 @@ async function findUserByLogin(
   if (identifier.includes("@")) {
     return prisma.user.findUnique({ where: { email: normalizeEmail(identifier) } });
   }
-  const exact = await prisma.user.findUnique({ where: { username: identifier } });
-  if (exact) return exact;
-  const rows = await prisma.$queryRaw<User[]>`
-    SELECT "id", "email", "username", "passwordHash", "createdAt"
-    FROM "User"
-    WHERE lower("username") = lower(${identifier})
-    LIMIT 1
-  `;
-  return rows[0] ?? null;
+  return prisma.user.findUnique({
+    where: { usernameKey: canonicalUsernameKey(identifier) },
+  });
 }
 
 export function createAuthRouter(deps: AuthDeps): Router {
@@ -77,13 +76,24 @@ export function createAuthRouter(deps: AuthDeps): Router {
       if (pwdErr) return res.status(400).json({ error: pwdErr });
       const passwordHash = await hashPassword(password);
       const user = await prisma.$transaction(async (tx) => {
-        const created = await tx.user.create({ data: { email, username, passwordHash } });
+        const created = await tx.user.create({
+          data: {
+            email,
+            username,
+            usernameKey: canonicalUsernameKey(username),
+            passwordHash,
+          },
+        });
         await seedDefaultCategories(tx, created.id);
         return created;
       });
-      const token = signToken(user.id);
+      const token = signToken(user.id, user.tokenVersion);
       res.status(201).json({ token, user: userPayload(user) });
     } catch (e: unknown) {
+      if (isUniqueConstraintError(e)) {
+        handleRouteError(res, conflict("Email or username already exists"), "Registration failed");
+        return;
+      }
       handleRouteError(res, e, "Registration failed");
     }
   });
@@ -96,7 +106,7 @@ export function createAuthRouter(deps: AuthDeps): Router {
     if (!user || !(await verifyPassword(password, user.passwordHash))) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
-    const token = signToken(user.id);
+    const token = signToken(user.id, user.tokenVersion);
     res.json({ token, user: userPayload(user) });
   });
 
@@ -113,10 +123,14 @@ export function createAuthRouter(deps: AuthDeps): Router {
       if (userErr) return res.status(400).json({ error: userErr });
       const user = await prisma.user.update({
         where: { id: uid(req) },
-        data: { username },
+        data: { username, usernameKey: canonicalUsernameKey(username) },
       });
       res.json(userPayload(user));
     } catch (e: unknown) {
+      if (isUniqueConstraintError(e)) {
+        handleRouteError(res, conflict("Email or username already exists"), "Profile update failed");
+        return;
+      }
       handleRouteError(res, e, "Profile update failed");
     }
   });
@@ -129,12 +143,12 @@ export function createAuthRouter(deps: AuthDeps): Router {
       if (pwdErr) return res.status(400).json({ error: pwdErr });
       const user = await prisma.user.findUnique({ where: { id: uid(req) } });
       if (!user || !(await verifyPassword(currentPassword, user.passwordHash))) {
-        return res.status(401).json({ error: "Current password is incorrect" });
+        return res.status(400).json({ error: "Current password is incorrect" });
       }
       const passwordHash = await hashPassword(newPassword);
       const updated = await prisma.user.update({
         where: { id: uid(req) },
-        data: { passwordHash },
+        data: { passwordHash, tokenVersion: { increment: 1 } },
       });
       res.json(userPayload(updated));
     } catch (e: unknown) {
@@ -149,7 +163,7 @@ export function createAuthRouter(deps: AuthDeps): Router {
       if (!email) return res.status(400).json({ error: "Email required" });
       const user = await prisma.user.findUnique({ where: { id: uid(req) } });
       if (!user || !(await verifyPassword(currentPassword, user.passwordHash))) {
-        return res.status(401).json({ error: "Current password is incorrect" });
+        return res.status(400).json({ error: "Current password is incorrect" });
       }
       const updated = await prisma.user.update({
         where: { id: uid(req) },
@@ -157,6 +171,10 @@ export function createAuthRouter(deps: AuthDeps): Router {
       });
       res.json(userPayload(updated));
     } catch (e: unknown) {
+      if (isUniqueConstraintError(e)) {
+        handleRouteError(res, conflict("Email or username already exists"), "Email update failed");
+        return;
+      }
       handleRouteError(res, e, "Email update failed");
     }
   });

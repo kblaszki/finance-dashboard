@@ -17,7 +17,7 @@ export type CashLedgerCsvRow = {
 /** RFC4180 field escape + Excel formula-injection neutralization. */
 export function escapeCsvCell(value: string): string {
   let text = value;
-  if (/^[=+\-@]/.test(text)) {
+  if (/^[=+\-@\t\r]/.test(text)) {
     text = `'${text}`;
   }
   if (/[",\r\n]/.test(text)) {

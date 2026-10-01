@@ -1,5 +1,7 @@
 import type { AuthedRequest } from "../auth";
+import { unauthorized } from "../lib/errors";
 
 export function uid(req: AuthedRequest): number {
-  return req.userId!;
+  if (req.userId == null) throw unauthorized("Unauthorized");
+  return req.userId;
 }

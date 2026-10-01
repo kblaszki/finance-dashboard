@@ -19,7 +19,7 @@ Hub: [docs/README.md](../README.md).
 | Variable | Role |
 |----------|------|
 | `DATABASE_URL` | SQLite URL (local default `file:./dev.db`; Docker `file:/data/finance.db`) |
-| `JWT_SECRET` | ≥32 characters; signs JWTs |
+| `JWT_SECRET` | ≥32 characters; signs JWTs. Production rejects the placeholders published in the env templates |
 | `PORT` | Listen port (code default 4000; Docker image `3000`) |
 | `ALLOW_REGISTER` | `true`/`false` — open registration |
 | `NODE_ENV` | `production` enables auth rate limits, Helmet, closed CORS, and stricter startup checks |
@@ -38,7 +38,7 @@ Hub: [docs/README.md](../README.md).
 
 ## Production guards
 
-`assertProductionEnvironment` (`authConfig.ts`): when `NODE_ENV=production`, requires a long `JWT_SECRET` and `ALLOW_REGISTER=false`.
+`assertProductionEnvironment` (`authConfig.ts`): when `NODE_ENV=production`, requires a long `JWT_SECRET` that is not a published placeholder (`change-me-to-a-random-string-at-least-32-characters-long`, `CHANGE_ME_LONG_RANDOM_32PLUS_CHARS`) and `ALLOW_REGISTER=false`.
 
 ## Trust proxy
 
@@ -46,7 +46,7 @@ Hub: [docs/README.md](../README.md).
 
 ## Rate limits
 
-When `NODE_ENV=production`, Express rate-limits `POST /api/auth/login` and `POST /api/auth/register` (15 min window, 30 requests).
+When `NODE_ENV=production`, Express rate-limits `POST /api/auth/login`, `POST /api/auth/register`, `PATCH /api/auth/password`, and `PATCH /api/auth/email` with one shared limiter (15 min window, 30 requests). A full window returns `429`.
 
 ## Frontend
 

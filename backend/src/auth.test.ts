@@ -40,7 +40,7 @@ test("verifyToken returns null for invalid token", () => {
 test("signToken and verifyToken round-trip user id", () => {
   process.env.JWT_SECRET = JWT_SECRET;
   const token = signToken(42);
-  assert.equal(verifyToken(token), 42);
+  assert.deepEqual(verifyToken(token), { userId: 42, tokenVersion: 0 });
 });
 
 test("getJwtSecret throws when missing or too short", () => {
