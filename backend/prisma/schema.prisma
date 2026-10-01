@@ -25,6 +25,8 @@ model Category {
   id        Int       @id @default(autoincrement())
   userId    Int
   name      String
+  /// Sibling key: `{parentId or 0}:{lowercase name}`.
+  nameKey   String
   parentId  Int?
   createdAt DateTime  @default(now())
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -32,6 +34,7 @@ model Category {
   children  Category[] @relation("CategoryTree")
   cashTransactions CashTransaction[]
 
+  @@unique([userId, nameKey])
   @@index([userId])
   @@index([parentId])
 }

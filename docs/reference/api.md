@@ -54,7 +54,7 @@ Duplicate name for the same user → `400`. Unknown `accountType` → `400`.
 
 ## Categories
 
-User-scoped nested tree (`parentId`). Flat list responses include `id`, `name`, `parentId`, `createdAt`. Sibling name uniqueness is case-insensitive (domain). Delete with children → `409`.
+User-scoped nested tree (`parentId`). Flat list responses include `id`, `name`, `parentId`, `createdAt`. Sibling name uniqueness is case-insensitive and stored as `nameKey` (`{parentId or 0}:{lowercase name}`). Rename and reparent run in one transaction. Delete with children → `409`.
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|

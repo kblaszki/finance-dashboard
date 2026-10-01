@@ -1,11 +1,12 @@
 import { Router } from "express";
-import type { PrismaClient } from "@prisma/client";
+import { Prisma as PrismaNS, type PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import {
   assertCanDeleteCategory,
   assertNoCycle,
   assertParentOwned,
   assertSiblingNameUnique,
+  categoryNameKey,
   categoryPayload,
   findOwnedCategory,
   parseCategoryName,
@@ -18,6 +19,10 @@ type CategoriesDeps = {
   requireAuth: (req: AuthedRequest, res: any, next: any) => void;
   uid: (req: AuthedRequest) => number;
 };
+
+function isUniqueConstraintError(error: unknown): boolean {
+  return error instanceof PrismaNS.PrismaClientKnownRequestError && error.code === "P2002";
+}
 
 export function createCategoriesRouter(deps: CategoriesDeps): Router {
   const router = Router();
@@ -41,14 +46,23 @@ export function createCategoriesRouter(deps: CategoriesDeps): Router {
       const body = req.body ?? {};
       const name = parseCategoryName(body.name);
       const parentId = parseOptionalParentId(body.parentId) ?? null;
-      await assertParentOwned(prisma, userId, parentId);
-      await assertSiblingNameUnique(prisma, userId, name, parentId);
-
-      const created = await prisma.category.create({
-        data: { userId, name, parentId },
+      const created = await prisma.$transaction(async (tx) => {
+        await assertParentOwned(tx, userId, parentId);
+        await assertSiblingNameUnique(tx, userId, name, parentId);
+        return tx.category.create({
+          data: { userId, name, parentId, nameKey: categoryNameKey(parentId, name) },
+        });
       });
       res.status(201).json(categoryPayload(created));
     } catch (e: unknown) {
+      if (isUniqueConstraintError(e)) {
+        handleRouteError(
+          res,
+          badRequest("A category with this name already exists under the same parent"),
+          "Create category failed",
+        );
+        return;
+      }
       handleRouteError(res, e, "Create category failed");
     }
   });
@@ -57,32 +71,40 @@ export function createCategoriesRouter(deps: CategoriesDeps): Router {
     try {
       const userId = uid(req);
       const id = parseIdParam(req.params.id);
-      const existing = await findOwnedCategory(prisma, userId, id);
       const body = req.body ?? {};
-
       const nameProvided = Object.prototype.hasOwnProperty.call(body, "name");
       const parentProvided = Object.prototype.hasOwnProperty.call(body, "parentId");
       if (!nameProvided && !parentProvided) {
         throw badRequest("name or parentId required");
       }
 
-      const name = nameProvided ? parseCategoryName(body.name) : existing.name;
-      const parentId = parentProvided
-        ? (parseOptionalParentId(body.parentId) ?? null)
-        : existing.parentId;
+      const updated = await prisma.$transaction(async (tx) => {
+        const existing = await findOwnedCategory(tx, userId, id);
+        const name = nameProvided ? parseCategoryName(body.name) : existing.name;
+        const parentId = parentProvided
+          ? (parseOptionalParentId(body.parentId) ?? null)
+          : existing.parentId;
 
-      if (parentProvided) {
-        await assertParentOwned(prisma, userId, parentId);
-        await assertNoCycle(prisma, userId, id, parentId);
-      }
-      await assertSiblingNameUnique(prisma, userId, name, parentId, id);
-
-      const updated = await prisma.category.update({
-        where: { id },
-        data: { name, parentId },
+        if (parentProvided) {
+          await assertParentOwned(tx, userId, parentId);
+          await assertNoCycle(tx, userId, id, parentId);
+        }
+        await assertSiblingNameUnique(tx, userId, name, parentId, id);
+        return tx.category.update({
+          where: { id },
+          data: { name, parentId, nameKey: categoryNameKey(parentId, name) },
+        });
       });
       res.json(categoryPayload(updated));
     } catch (e: unknown) {
+      if (isUniqueConstraintError(e)) {
+        handleRouteError(
+          res,
+          badRequest("A category with this name already exists under the same parent"),
+          "Update category failed",
+        );
+        return;
+      }
       handleRouteError(res, e, "Update category failed");
     }
   });

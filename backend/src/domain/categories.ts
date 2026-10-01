@@ -8,6 +8,10 @@ const DEFAULT_TREE: Array<{ name: string; children: string[] }> = [
   { name: "Expense", children: ["Food", "Housing", "Transport", "Other"] },
 ];
 
+export function categoryNameKey(parentId: number | null, name: string): string {
+  return `${parentId ?? 0}:${name.trim().toLowerCase()}`;
+}
+
 export function parseCategoryName(value: unknown): string {
   const text = String(value ?? "").trim();
   if (!text) throw badRequest("name required");
@@ -70,6 +74,12 @@ export async function assertNoCycle(
   if (newParentId === categoryId) {
     throw badRequest("category cannot be its own parent");
   }
+  const rows = await db.category.findMany({
+    where: { userId },
+    select: { id: true, parentId: true },
+  });
+  const byId = new Map(rows.map((row) => [row.id, row.parentId]));
+  if (!byId.has(newParentId)) throw notFound("Parent category not found");
   let cursor: number | null = newParentId;
   const seen = new Set<number>([categoryId]);
   while (cursor !== null) {
@@ -77,12 +87,9 @@ export async function assertNoCycle(
       throw badRequest("reparent would create a cycle");
     }
     seen.add(cursor);
-    const row: { parentId: number | null } | null = await db.category.findFirst({
-      where: { id: cursor, userId },
-      select: { parentId: true },
-    });
-    if (!row) throw notFound("Parent category not found");
-    cursor = row.parentId;
+    const parentId = byId.get(cursor);
+    if (parentId === undefined) throw notFound("Parent category not found");
+    cursor = parentId;
   }
 }
 
@@ -106,11 +113,21 @@ export async function assertCanDeleteCategory(db: Db, categoryId: number): Promi
 export async function seedDefaultCategories(db: Db, userId: number): Promise<void> {
   for (const root of DEFAULT_TREE) {
     const parent = await db.category.create({
-      data: { userId, name: root.name, parentId: null },
+      data: {
+        userId,
+        name: root.name,
+        parentId: null,
+        nameKey: categoryNameKey(null, root.name),
+      },
     });
     for (const childName of root.children) {
       await db.category.create({
-        data: { userId, name: childName, parentId: parent.id },
+        data: {
+          userId,
+          name: childName,
+          parentId: parent.id,
+          nameKey: categoryNameKey(parent.id, childName),
+        },
       });
     }
   }

@@ -32,11 +32,12 @@ User-scoped nested label (`parentId` self-relation). No income/expense kind fiel
 |-------|------|-------|
 | id | Int | PK, autoincrement |
 | userId | Int | FK → User |
-| name | String | Sibling uniqueness enforced in domain |
+| name | String | Display name |
+| nameKey | String | Unique per user with the parent: `{parentId or 0}:{lowercase name}` |
 | parentId | Int? | FK → Category (`onDelete: Restrict`); null = root |
 | createdAt | DateTime | Default now |
 
-Indexes: `[userId]`, `[parentId]`. Domain: `backend/src/domain/categories.ts`. Seeded on register / create-user / demo seed.
+Indexes: `[userId]`, `[parentId]`, unique `[userId, nameKey]`. Domain: `backend/src/domain/categories.ts`. Seeded on register / create-user / demo seed.
 
 ## Account
 
