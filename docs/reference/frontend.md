@@ -27,7 +27,7 @@ Hub: [docs/README.md](../README.md).
 | `/dashboard` | Protected | `DashboardPage` (KPIs, net-worth donut, 12m cashflow, account mix) |
 | `/home` | Protected | Redirect → `/dashboard` |
 | `/accounts` | Protected | `AccountsPage` (multi-type create/list/edit/delete; currency on edit is read-only once the ledger has rows) |
-| `/accounts/:id` | Protected | `AccountDetailPage` (cash ledger create/list/edit/delete/CSV export+import; keyboard-first create form with type + category comboboxes; `openingCashAsOf`) |
+| `/accounts/:id` | Protected | `AccountDetailPage` (cash ledger create/list/edit/delete/CSV export+import; keyboard-first create form). Ledger pieces live in `components/account/`: `AccountLedgerHeader`, `AccountSubtitle`, `CashTransactionForm`, `TypeCombobox`, `CategoryCombobox`, `LedgerTable`, `occurredAt.ts`, `categoryScope.ts` |
 | `/categories` | Protected | `CategoriesPage` (nested tree create/rename/reparent/delete) |
 | `/statistics` | Protected | `StatisticsPage` (period KPIs, cashflow + savings-rate chart, category donuts with parent rollup) |
 | `/settings` | Protected | `SettingsPage` |

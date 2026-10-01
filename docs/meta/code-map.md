@@ -50,4 +50,5 @@ Auth + multi-type accounts + category tree + cash ledger + category statistics b
 | Shell / gates | `frontend/src/components/AppShell.tsx`, `AuthSwapShell.tsx`, `ProtectedRoute.tsx` |
 | Shared UI | `frontend/src/components/ui/{PageHeader,KpiCard,ChartCard,StatusBlock,CurrencySelect}.tsx` |
 | Pages | `frontend/src/pages/{Landing,Login,Register,Dashboard,Accounts,AccountDetail,Categories,Statistics,Settings}Page.tsx` |
+| Account ledger UI | `frontend/src/components/account/` |
 | Theme | `frontend/src/state/theme.tsx`, `ThemeToggle.tsx` (light/dark) |
