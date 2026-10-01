@@ -41,6 +41,17 @@ export async function createTransaction(
   );
 }
 
+export async function updateTransaction(
+  accountId: number,
+  id: number,
+  input: Partial<CreateCashTransactionInput>,
+): Promise<CashTransaction> {
+  return apiClient.patch<CashTransaction>(
+    `/api/accounts/${accountId}/transactions/${id}`,
+    input,
+  );
+}
+
 export async function deleteTransaction(
   accountId: number,
   id: number,

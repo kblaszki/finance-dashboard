@@ -119,11 +119,13 @@ export function SettingsPage() {
             Username
             <input
               type="text"
+              autoComplete="username"
               required
               minLength={3}
               maxLength={32}
               pattern="[A-Za-z0-9_]+"
               value={username}
+              aria-invalid={profileErr ? true : undefined}
               onChange={(e) => setUsername(e.target.value)}
             />
           </label>
@@ -155,6 +157,7 @@ export function SettingsPage() {
               autoComplete="current-password"
               required
               value={emailPassword}
+              aria-invalid={emailErr ? true : undefined}
               onChange={(e) => setEmailPassword(e.target.value)}
             />
           </label>
@@ -187,6 +190,7 @@ export function SettingsPage() {
               required
               minLength={8}
               value={newPassword}
+              aria-invalid={passwordErr ? true : undefined}
               onChange={(e) => setNewPassword(e.target.value)}
             />
           </label>

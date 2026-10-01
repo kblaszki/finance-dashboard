@@ -241,16 +241,16 @@ export function StatisticsPage() {
           <ResponsiveContainer width="100%" height={320}>
             <ComposedChart data={chartSeries}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-              <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+              <XAxis dataKey="month" tick={{ fontSize: 12, fill: "var(--color-text-muted)" }} />
               <YAxis
                 yAxisId="money"
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 12, fill: "var(--color-text-muted)" }}
                 width={70}
               />
               <YAxis
                 yAxisId="pct"
                 orientation="right"
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: 12, fill: "var(--color-text-muted)" }}
                 width={48}
                 tickFormatter={(v) => `${v}%`}
               />
@@ -311,6 +311,38 @@ export function StatisticsPage() {
               />
             </ComposedChart>
           </ResponsiveContainer>
+          <p className="muted">
+            Legend: Income, Expense, and Net use the left axis. Savings % uses the right axis.
+          </p>
+          <div className="table-wrap">
+            <table className="data-table">
+              <caption className="muted">Cashflow history values</caption>
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th className="num">Income</th>
+                  <th className="num">Expense</th>
+                  <th className="num">Net</th>
+                  <th className="num">Savings %</th>
+                </tr>
+              </thead>
+              <tbody>
+                {chartSeries.map((row) => (
+                  <tr key={row.month}>
+                    <td>{row.month}</td>
+                    <td className="num">{formatMoney(row.income, currency)}</td>
+                    <td className="num">{formatMoney(row.expense, currency)}</td>
+                    <td className="num">{formatMoney(row.net, currency)}</td>
+                    <td className="num">
+                      {row.savingsRate == null
+                        ? "—"
+                        : formatPercent(row.savingsRate, { decimals: 1 })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </ChartCard>
       )}
 

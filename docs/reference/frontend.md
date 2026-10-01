@@ -26,13 +26,13 @@ Hub: [docs/README.md](../README.md).
 | `/register` | Guest only (when `allowRegister`) | `RegisterPage` (in `AuthSwapShell`) |
 | `/dashboard` | Protected | `DashboardPage` (KPIs, net-worth donut, 12m cashflow, account mix) |
 | `/home` | Protected | Redirect → `/dashboard` |
-| `/accounts` | Protected | `AccountsPage` (multi-type create/list/edit/delete) |
-| `/accounts/:id` | Protected | `AccountDetailPage` (cash ledger create/list/delete/CSV export+import; keyboard-first create form with type + category comboboxes; `openingCashAsOf`) |
+| `/accounts` | Protected | `AccountsPage` (multi-type create/list/edit/delete; currency on edit is read-only once the ledger has rows) |
+| `/accounts/:id` | Protected | `AccountDetailPage` (cash ledger create/list/edit/delete/CSV export+import; keyboard-first create form with type + category comboboxes; `openingCashAsOf`) |
 | `/categories` | Protected | `CategoriesPage` (nested tree create/rename/reparent/delete) |
 | `/statistics` | Protected | `StatisticsPage` (period KPIs, cashflow + savings-rate chart, category donuts with parent rollup) |
 | `/settings` | Protected | `SettingsPage` |
 
-Shell: `AppShell` — fixed sidebar (brand, icon nav, user + logout, theme toggle) + topbar (page title, global `CurrencySelect`) + content. Collapses to a top drawer ≤900px. Gate: `ProtectedRoute`. `ErrorBoundary` wraps the shell outlet and the guest auth outlet.
+Shell: `AppShell` — fixed sidebar (brand, icon nav, user + logout, theme toggle) + topbar (one page `h1`, global `CurrencySelect`) + content. A skip link targets `#main-content`. Collapses to a top drawer ≤900px. Gate: `ProtectedRoute`. `ErrorBoundary` wraps the shell outlet and the guest auth outlet. Page titles inside the shell are `h2`.
 
 Shared UI: `components/ui/{PageHeader,KpiCard,ChartCard,StatusBlock,CurrencySelect}.tsx`. `StatusBlock` uses `role="alert"` for errors and `role="status"` for loading and empty states.
 

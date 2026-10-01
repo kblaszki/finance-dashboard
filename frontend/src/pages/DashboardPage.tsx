@@ -120,7 +120,7 @@ export function DashboardPage() {
         <KpiCard
           label={`Net worth (${currency})`}
           value={netWorth ? formatMoney(netWorth.netWorth, currency) : "—"}
-          sub="Cash balances by account type — no FX, no holdings"
+          sub="Cash in the top-bar currency only. Other currencies are excluded. No FX, no holdings"
         />
         <KpiCard
           label="Avg income · 12m"
@@ -151,8 +151,8 @@ export function DashboardPage() {
             <ResponsiveContainer width="100%" height={280}>
               <ComposedChart data={history.series}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} width={70} />
+                <XAxis dataKey="month" tick={{ fontSize: 12, fill: "var(--color-text-muted)" }} />
+                <YAxis tick={{ fontSize: 12, fill: "var(--color-text-muted)" }} width={70} />
                 <Tooltip
                   formatter={(value) =>
                     typeof value === "number"

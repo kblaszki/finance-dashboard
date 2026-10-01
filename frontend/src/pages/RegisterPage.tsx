@@ -65,27 +65,27 @@ export function RegisterPage() {
             onChange={(e) => setUsername(e.target.value)}
           />
         </label>
-        <label>
-          Password (min. 8 characters)
-          <span className="auth-swap-password">
-            <input
-              type={showPassword ? "text" : "password"}
-              autoComplete="new-password"
-              required
-              minLength={8}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <button
-              type="button"
-              className="auth-swap-password__toggle"
-              onClick={() => setShowPassword((v) => !v)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
-            >
-              {showPassword ? "Hide" : "Show"}
-            </button>
-          </span>
-        </label>
+        <label htmlFor="register-password">Password (min. 8 characters)</label>
+        <span className="auth-swap-password">
+          <input
+            id="register-password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="new-password"
+            required
+            minLength={8}
+            value={password}
+            aria-invalid={error ? true : undefined}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <button
+            type="button"
+            className="auth-swap-password__toggle"
+            onClick={() => setShowPassword((v) => !v)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? "Hide" : "Show"}
+          </button>
+        </span>
         {error && <p className="auth-error">{error}</p>}
         <button type="submit" className="btn-primary auth-swap-submit" disabled={submitting}>
           {submitting ? "Creating account…" : "Sign up"}

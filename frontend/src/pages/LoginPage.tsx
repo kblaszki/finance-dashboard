@@ -46,27 +46,27 @@ export function LoginPage() {
             onChange={(e) => setLoginId(e.target.value)}
           />
         </label>
-        <label>
-          Password
-          <span className="auth-swap-password">
-            <input
-              type={showPassword ? "text" : "password"}
-              autoComplete="current-password"
-              required
-              minLength={8}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <button
-              type="button"
-              className="auth-swap-password__toggle"
-              onClick={() => setShowPassword((v) => !v)}
-              aria-label={showPassword ? "Hide password" : "Show password"}
-            >
-              {showPassword ? "Hide" : "Show"}
-            </button>
-          </span>
-        </label>
+        <label htmlFor="login-password">Password</label>
+        <span className="auth-swap-password">
+          <input
+            id="login-password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="current-password"
+            required
+            minLength={8}
+            value={password}
+            aria-invalid={error ? true : undefined}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <button
+            type="button"
+            className="auth-swap-password__toggle"
+            onClick={() => setShowPassword((v) => !v)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? "Hide" : "Show"}
+          </button>
+        </span>
         {error && <p className="auth-error">{error}</p>}
         <button type="submit" className="btn-primary auth-swap-submit" disabled={submitting}>
           {submitting ? "Logging in…" : "Log in"}

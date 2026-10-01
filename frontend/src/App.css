@@ -1,4 +1,18 @@
-/* App shell (authenticated): fixed sidebar + topbar + content */
+.skip-link {
+  position: absolute;
+  left: 0.75rem;
+  top: 0.75rem;
+  z-index: 20;
+  padding: 0.45rem 0.75rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-radius: var(--radius-sm);
+  transform: translateY(-150%);
+}
+
+.skip-link:focus {
+  transform: none;
+}
 
 .shell {
   display: flex;

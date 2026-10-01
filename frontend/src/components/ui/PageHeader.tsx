@@ -6,7 +6,7 @@ export function PageHeader(props: {
   return (
     <header className="page-header">
       <div>
-        <h1 className="page-title">{props.title}</h1>
+        <h2 className="page-title">{props.title}</h2>
         {props.subtitle && <p className="page-subtitle muted">{props.subtitle}</p>}
       </div>
       {props.actions && <div className="page-header-actions">{props.actions}</div>}

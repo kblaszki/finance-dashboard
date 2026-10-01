@@ -4,16 +4,16 @@
   --color-bg: #e8eef3;
   --color-bg-elevated: #f4f7fa;
   --color-surface: #ffffff;
-  --color-border: rgba(26, 34, 44, 0.12);
+  --color-border: #5c6770;
   --color-text: #1a222c;
   --color-text-muted: #5a6570;
-  --color-accent: #059669;
-  --color-accent-subtle: rgba(5, 150, 105, 0.12);
-  --color-accent-hover: #047857;
+  --color-accent: #047857;
+  --color-accent-subtle: rgba(4, 120, 87, 0.12);
+  --color-accent-hover: #065f46;
   --color-on-accent: #ecfdf5;
   --color-negative: #c0392b;
   --color-negative-subtle: #fef2f2;
-  --color-positive: #059669;
+  --color-positive: #047857;
   --color-positive-subtle: #ecfdf5;
   --color-warning: #d68910;
   --accent: var(--color-accent);
@@ -32,7 +32,7 @@
   --font-ui: "IBM Plex Sans", system-ui, sans-serif;
   --font-display: "Space Grotesk", system-ui, sans-serif;
 
-  --chart-1: #059669;
+  --chart-1: #047857;
   --chart-2: #0e7490;
   --chart-3: #b45309;
   --chart-4: #1d4e89;
@@ -64,7 +64,7 @@
   --color-bg: #0d1218;
   --color-bg-elevated: #151b24;
   --color-surface: #1a222c;
-  --color-border: rgba(232, 238, 243, 0.12);
+  --color-border: #8b9aab;
   --color-text: #e8eef3;
   --color-text-muted: #9aa8b5;
   --color-accent: #34d399;

@@ -18,6 +18,7 @@ import {
   CASH_TX_TYPES,
   createTransaction,
   deleteTransaction,
+  updateTransaction,
   exportTransactionsCsv,
   importTransactionsCsv,
   fetchTransactions,
@@ -97,6 +98,10 @@ export function AccountDetailPage() {
   const [createErr, setCreateErr] = useState<string | null>(null);
   const [createBusy, setCreateBusy] = useState(false);
   const [actionErr, setActionErr] = useState<string | null>(null);
+  const [editingTxId, setEditingTxId] = useState<number | null>(null);
+  const [editAmount, setEditAmount] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editBusy, setEditBusy] = useState(false);
   const [importMsg, setImportMsg] = useState<string | null>(null);
   const [exportBusy, setExportBusy] = useState(false);
   const [importBusy, setImportBusy] = useState(false);
@@ -250,6 +255,24 @@ export function AccountDetailPage() {
       setCreateErr(err instanceof Error ? err.message : "Create failed");
     } finally {
       setCreateBusy(false);
+    }
+  }
+
+  async function handleSaveTxEdit(e: FormEvent, tx: CashTransaction) {
+    e.preventDefault();
+    setActionErr(null);
+    setEditBusy(true);
+    try {
+      await updateTransaction(accountId, tx.id, {
+        amount: Number(editAmount),
+        description: editDescription.trim() ? editDescription.trim() : null,
+      });
+      setEditingTxId(null);
+      await refresh();
+    } catch (err) {
+      setActionErr(err instanceof Error ? err.message : "Update failed");
+    } finally {
+      setEditBusy(false);
     }
   }
 
@@ -609,6 +632,7 @@ export function AccountDetailPage() {
                   onKeyDown={handleTypeKeyDown}
                   role="combobox"
                   aria-expanded={isTypeOpen}
+                  aria-invalid={typeError ? true : undefined}
                   aria-controls="cash-type-listbox"
                   aria-activedescendant={
                     isTypeOpen && filteredTypeOptions[activeTypeIndex]
@@ -654,6 +678,7 @@ export function AccountDetailPage() {
                 type="number"
                 step="0.01"
                 min="0.01"
+                inputMode="decimal"
                 required
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
@@ -672,6 +697,7 @@ export function AccountDetailPage() {
                   onKeyDown={handleCategoryKeyDown}
                   role="combobox"
                   aria-expanded={isCategoryOpen}
+                  aria-invalid={categoryError ? true : undefined}
                   aria-controls="cash-category-listbox"
                   aria-activedescendant={
                     isCategoryOpen && filteredCategoryRows[activeCategoryIndex]
@@ -807,13 +833,66 @@ export function AccountDetailPage() {
                     </td>
                     <td>{tx.description ?? "—"}</td>
                     <td>
-                      <button
-                        type="button"
-                        className="btn-danger"
-                        onClick={() => void handleDelete(tx)}
-                      >
-                        Delete
-                      </button>
+                      {editingTxId === tx.id ? (
+                        <form className="auth-form auth-form--compact" onSubmit={(e) => void handleSaveTxEdit(e, tx)}>
+                          <label>
+                            Amount
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0.01"
+                              inputMode="decimal"
+                              required
+                              value={editAmount}
+                              onChange={(e) => setEditAmount(e.target.value)}
+                            />
+                          </label>
+                          <label>
+                            Description
+                            <input
+                              type="text"
+                              value={editDescription}
+                              onChange={(e) => setEditDescription(e.target.value)}
+                            />
+                          </label>
+                          <div className="form-actions-row">
+                            <button type="submit" className="btn-primary" disabled={editBusy}>
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-secondary"
+                              onClick={() => setEditingTxId(null)}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <div className="form-actions-row">
+                          <button
+                            type="button"
+                            className="btn-secondary"
+                            aria-label={`Edit ${tx.type} ${tx.amount}`}
+                            onClick={() => {
+                              setEditingTxId(tx.id);
+                              setEditAmount(String(tx.amount));
+                              setEditDescription(tx.description ?? "");
+                              setActionErr(null);
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-danger"
+                            aria-label={`Delete ${tx.type} ${tx.amount}`}
+                            onClick={() => void handleDelete(tx)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}

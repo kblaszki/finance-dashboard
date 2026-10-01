@@ -243,6 +243,7 @@ export function CategoriesPage() {
                           <button
                             type="button"
                             className="btn-danger"
+                            aria-label={`Delete ${category.name}`}
                             onClick={() => void handleDelete(category)}
                           >
                             Delete

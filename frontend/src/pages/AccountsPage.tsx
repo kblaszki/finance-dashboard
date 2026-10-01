@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ACCOUNT_TYPES,
@@ -8,6 +8,7 @@ import {
   type Account,
   type AccountType,
 } from "../api/accountsApi";
+import { fetchTransactions } from "../api/transactionsApi";
 import { PageHeader } from "../components/ui/PageHeader";
 import { StatusBlock } from "../components/ui/StatusBlock";
 import { useCurrency } from "../state/currency";
@@ -32,10 +33,19 @@ export function AccountsPage() {
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
+  const [editCurrency, setEditCurrency] = useState("PLN");
+  const [currencyLocked, setCurrencyLocked] = useState(false);
   const [editDescription, setEditDescription] = useState("");
   const [editErr, setEditErr] = useState<string | null>(null);
   const [editBusy, setEditBusy] = useState(false);
   const [actionErr, setActionErr] = useState<string | null>(null);
+  const editNameRef = useRef<HTMLInputElement>(null);
+  const editRequest = useRef(0);
+
+  useEffect(() => {
+    if (editingId == null) return;
+    editNameRef.current?.focus();
+  }, [editingId]);
 
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
@@ -65,11 +75,24 @@ export function AccountsPage() {
   }
 
   function startEdit(account: Account) {
+    const request = editRequest.current + 1;
+    editRequest.current = request;
     setEditingId(account.id);
     setEditName(account.name);
+    setEditCurrency(account.currency);
+    setCurrencyLocked(false);
     setEditDescription(account.description ?? "");
     setEditErr(null);
     setActionErr(null);
+    void fetchTransactions(account.id)
+      .then((rows) => {
+        if (editRequest.current !== request) return;
+        setCurrencyLocked(rows.length > 0);
+      })
+      .catch(() => {
+        if (editRequest.current !== request) return;
+        setCurrencyLocked(true);
+      });
   }
 
   function cancelEdit() {
@@ -85,6 +108,7 @@ export function AccountsPage() {
     try {
       await updateAccount(editingId, {
         name: editName,
+        currency: currencyLocked ? undefined : editCurrency,
         description: editDescription.trim() ? editDescription.trim() : null,
       });
       setEditingId(null);
@@ -166,6 +190,7 @@ export function AccountsPage() {
               <input
                 type="number"
                 step="0.01"
+                inputMode="decimal"
                 value={openingBalance}
                 onChange={(e) => setOpeningBalance(e.target.value)}
               />
@@ -219,12 +244,30 @@ export function AccountsPage() {
                           <label>
                             Name
                             <input
+                              ref={editNameRef}
                               type="text"
                               required
                               value={editName}
+                              aria-invalid={editErr ? true : undefined}
                               onChange={(e) => setEditName(e.target.value)}
                             />
                           </label>
+                          <label>
+                            Currency
+                            <input
+                              type="text"
+                              required
+                              minLength={3}
+                              maxLength={3}
+                              value={editCurrency}
+                              readOnly={currencyLocked}
+                              aria-invalid={editErr ? true : undefined}
+                              onChange={(e) => setEditCurrency(e.target.value.toUpperCase())}
+                            />
+                          </label>
+                          {currencyLocked && (
+                            <p className="muted">Currency is locked because this account has transactions.</p>
+                          )}
                           <label>
                             Description
                             <input
@@ -283,6 +326,7 @@ export function AccountsPage() {
                           <button
                             type="button"
                             className="btn-secondary"
+                            aria-label={`Edit ${account.name}`}
                             onClick={() => startEdit(account)}
                           >
                             Edit
@@ -290,6 +334,7 @@ export function AccountsPage() {
                           <button
                             type="button"
                             className="btn-danger"
+                            aria-label={`Delete ${account.name}`}
                             onClick={() => void handleDelete(account)}
                           >
                             Delete

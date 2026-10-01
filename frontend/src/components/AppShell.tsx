@@ -107,6 +107,9 @@ export function AppShell() {
   return (
     <CurrencyProvider>
       <div className="shell">
+        <a className="skip-link" href="#main-content">
+          Skip to content
+        </a>
         <aside className="shell-sidebar">
           <p className="shell-brand">
             <span className="shell-brand-mark" aria-hidden>
@@ -159,7 +162,7 @@ export function AppShell() {
               <CurrencySelect />
             </div>
           </header>
-          <main className="shell-content">
+          <main className="shell-content" id="main-content">
             <ErrorBoundary>
               <Outlet />
             </ErrorBoundary>

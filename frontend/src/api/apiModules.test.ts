@@ -34,6 +34,7 @@ import {
   fetchTransactions,
   createTransaction,
   deleteTransaction,
+  updateTransaction,
   exportTransactionsCsv,
   importTransactionsCsv,
 } from './transactionsApi'
@@ -152,6 +153,12 @@ describe('API modules', () => {
 
     await deleteTransaction(3, 9)
     expect(apiClient.delete).toHaveBeenCalledWith('/api/accounts/3/transactions/9')
+
+    await updateTransaction(3, 9, { amount: 4, type: 'EXPENSE' })
+    expect(apiClient.patch).toHaveBeenCalledWith('/api/accounts/3/transactions/9', {
+      amount: 4,
+      type: 'EXPENSE',
+    })
 
     await exportTransactionsCsv(3)
     expect(apiClient.getBlob).toHaveBeenCalledWith(
