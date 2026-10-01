@@ -24,7 +24,7 @@ Hub: [docs/README.md](../README.md). Checklist: [run-tests-and-coverage.md](../h
 ## Backend
 
 - Runner: Node test via `tsx` (`backend/package.json`), concurrency 1.
-- Unit: `backend/src/**/*.test.ts` (auth, authConfig, httpSupport, dbPath).
+- Unit: `backend/src/**/*.test.ts` (auth, money, cash ledger CSV, statistics, http support).
 - Integration / HTTP: `backend/test/*.test.ts` — `app.http.test.ts` (health + auth), `schema.integration.test.ts`, `migrateDeploy.test.ts`.
 - Ephemeral SQLite: `prismaTestClient.ts` + `setupTestEnv.ts`.
 
@@ -35,7 +35,7 @@ From `backend/.c8rc.json`: lines/statements 85, branches 75, functions 88. Inclu
 ## Frontend
 
 - Vitest + jsdom: `frontend/src/**/*.test.ts(x)`.
-- Current suites: `apiModules`, `apiContracts`, `client`, `format`, `useAsyncData`.
+- Current suites: `apiModules`, `apiContracts`, `client`, `format`, `useAsyncData`, `theme`, `AccountDetailPage`, `categoryScope`, `CashTransactionForm`.
 
 ### Coverage (Vitest)
 
@@ -45,4 +45,4 @@ New `*Api.ts` modules must extend `apiModules.test.ts`.
 
 ## CI
 
-`.github/workflows/ci.yml` — Node 24 jobs aligned with root `npm test` / coverage.
+`.github/workflows/ci.yml` — Node 22, matching the production image. Backend job runs `npm run build` then `npm test`. Coverage job runs `npm run test:coverage`. Frontend lint is `eslint . --max-warnings 0`. A `docker-build` job runs `docker build` and does not push the image.
