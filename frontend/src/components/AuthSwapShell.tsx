@@ -1,4 +1,5 @@
 import { Outlet, useLocation } from "react-router-dom";
+import { ErrorBoundary } from "./ErrorBoundary";
 import { ThemeToggle } from "./ThemeToggle";
 
 export function AuthSwapShell() {
@@ -11,7 +12,9 @@ export function AuthSwapShell() {
         <ThemeToggle />
       </div>
       <section className="auth-swap-form">
-        <Outlet />
+        <ErrorBoundary>
+          <Outlet />
+        </ErrorBoundary>
       </section>
       <section className="auth-swap-visual" aria-hidden>
         <div className="auth-swap-grid" />

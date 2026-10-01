@@ -32,9 +32,9 @@ Hub: [docs/README.md](../README.md).
 | `/statistics` | Protected | `StatisticsPage` (period KPIs, cashflow + savings-rate chart, category donuts with parent rollup) |
 | `/settings` | Protected | `SettingsPage` |
 
-Shell: `AppShell` — fixed sidebar (brand, icon nav, user + logout, theme toggle) + topbar (page title, global `CurrencySelect`) + content. Collapses to a top drawer ≤900px. Gate: `ProtectedRoute`.
+Shell: `AppShell` — fixed sidebar (brand, icon nav, user + logout, theme toggle) + topbar (page title, global `CurrencySelect`) + content. Collapses to a top drawer ≤900px. Gate: `ProtectedRoute`. `ErrorBoundary` wraps the shell outlet and the guest auth outlet.
 
-Shared UI: `components/ui/{PageHeader,KpiCard,ChartCard,StatusBlock,CurrencySelect}.tsx`.
+Shared UI: `components/ui/{PageHeader,KpiCard,ChartCard,StatusBlock,CurrencySelect}.tsx`. `StatusBlock` uses `role="alert"` for errors and `role="status"` for loading and empty states.
 
 Global currency: `state/currency.tsx` (`CurrencyProvider`) fetches accounts once, exposes `{ accounts, currencies, currency, setCurrency, refreshAccounts }`, persists selection under `localStorage` key `finance-dashboard:currency`.
 
@@ -56,7 +56,7 @@ Production Docker serves `frontend/dist` from Express (`STATIC_DIR`); deep links
 
 | Module | Role |
 |--------|------|
-| `frontend/src/api/client.ts` | `fetch` + Bearer token + 401 handler |
+| `frontend/src/api/client.ts` | `fetch` + Bearer token. Session `401` clears auth. Other errors use `body.error`. A failed `fetch` throws `Network request failed`. |
 | `frontend/src/api/authApi.ts` | config, register, login, me, profile, email, password |
 | `frontend/src/api/accountsApi.ts` | list/create/get/patch/delete accounts; `ACCOUNT_TYPES` / `AccountType` |
 | `frontend/src/api/categoriesApi.ts` | list/create/patch/delete categories; `flattenCategoryTree` |

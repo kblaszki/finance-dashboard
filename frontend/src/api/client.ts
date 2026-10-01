@@ -26,19 +26,43 @@ export function setAuthToken(token: string | null) {
   }
 }
 
+function mergedHeaders(
+  base: Record<string, string>,
+  options?: RequestInit,
+): Record<string, string> {
+  const headers: Record<string, string> = { ...base };
+  const extra = options?.headers;
+  if (extra instanceof Headers) {
+    extra.forEach((value, key) => {
+      headers[key] = value;
+    });
+  } else if (Array.isArray(extra)) {
+    for (const [key, value] of extra) headers[key] = value;
+  } else if (extra) {
+    Object.assign(headers, extra);
+  }
+  return headers;
+}
+
+async function fetchOrNetwork(url: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, init);
+  } catch {
+    throw new Error("Network request failed");
+  }
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
+  const headers = mergedHeaders({ "Content-Type": "application/json" }, options);
 
   const token = getAuthToken();
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
-    headers,
+  const response = await fetchOrNetwork(`${getApiBaseUrl()}${path}`, {
     ...options,
+    headers,
   });
 
   if (response.status === 401) {
@@ -65,16 +89,16 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 async function requestBlob(path: string, options?: RequestInit): Promise<Blob> {
-  const headers: Record<string, string> = {};
+  const headers = mergedHeaders({}, options);
 
   const token = getAuthToken();
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
-    headers,
+  const response = await fetchOrNetwork(`${getApiBaseUrl()}${path}`, {
     ...options,
+    headers,
   });
 
   if (response.status === 401) {

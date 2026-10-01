@@ -31,11 +31,11 @@ export function useAsyncData<T>(
       })
       .catch((error: unknown) => {
         if (!active) return
-        setState({
-          data: null,
+        setState((current) => ({
+          data: current.data,
           error: error instanceof Error ? error.message : 'Failed to load',
           loading: false,
-        })
+        }))
       })
 
     return () => {

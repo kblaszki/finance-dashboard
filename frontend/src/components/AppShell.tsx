@@ -1,4 +1,5 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { ErrorBoundary } from "./ErrorBoundary";
 import { ThemeToggle } from "./ThemeToggle";
 import { CurrencySelect } from "./ui/CurrencySelect";
 import { CurrencyProvider } from "../state/currency";
@@ -159,7 +160,9 @@ export function AppShell() {
             </div>
           </header>
           <main className="shell-content">
-            <Outlet />
+            <ErrorBoundary>
+              <Outlet />
+            </ErrorBoundary>
           </main>
         </div>
       </div>

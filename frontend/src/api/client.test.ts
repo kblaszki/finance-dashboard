@@ -52,6 +52,24 @@ describe("apiClient", () => {
     expect(onUnauthorized).not.toHaveBeenCalled();
   });
 
+  it("keeps Authorization when the caller also sets headers", async () => {
+    setAuthToken("test-token");
+    vi.mocked(fetch).mockResolvedValue(new Response("{}", { status: 200 }));
+
+    await apiClient.post("/api/test", { name: "A" });
+
+    const init = vi.mocked(fetch).mock.calls[0]?.[1] as RequestInit;
+    const headers = init.headers as Record<string, string>;
+    expect(headers.Authorization).toBe("Bearer test-token");
+    expect(headers["Content-Type"]).toBe("application/json");
+  });
+
+  it("maps a failed fetch to a network error", async () => {
+    vi.mocked(fetch).mockRejectedValue(new TypeError("Failed to fetch"));
+
+    await expect(apiClient.get("/api/test")).rejects.toThrow("Network request failed");
+  });
+
   it("calls unauthorized handler on 401", async () => {
     const onUnauthorized = vi.fn();
     setUnauthorizedHandler(onUnauthorized);

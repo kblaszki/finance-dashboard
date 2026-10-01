@@ -10,13 +10,25 @@ export function StatusBlock(props: {
   emptyMessage?: string;
 }) {
   if (props.loading) {
-    return <p className="loading-state">{props.loadingMessage ?? "Loading…"}</p>;
+    return (
+      <p className="loading-state" role="status" aria-live="polite">
+        {props.loadingMessage ?? "Loading…"}
+      </p>
+    );
   }
   if (props.error) {
-    return <p className="error-banner">{props.error}</p>;
+    return (
+      <p className="error-banner" role="alert">
+        {props.error}
+      </p>
+    );
   }
   if (props.empty) {
-    return <p className="empty-state">{props.emptyMessage ?? "Nothing here yet."}</p>;
+    return (
+      <p className="empty-state" role="status">
+        {props.emptyMessage ?? "Nothing here yet."}
+      </p>
+    );
   }
   return null;
 }

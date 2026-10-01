@@ -54,4 +54,28 @@ describe('useAsyncData', () => {
 
     expect(result.current.error).toBe('Failed to load')
   })
+
+  it('keeps previous data when a reload fails', async () => {
+    let fail = false
+    const loader = vi.fn(async () => {
+      if (fail) throw new Error('reload failed')
+      return { value: 1 }
+    })
+
+    const { result } = renderHook(() => useAsyncData(loader))
+
+    await waitFor(() => {
+      expect(result.current.data).toEqual({ value: 1 })
+    })
+
+    fail = true
+    result.current.reload()
+
+    await waitFor(() => {
+      expect(result.current.error).toBe('reload failed')
+    })
+
+    expect(result.current.data).toEqual({ value: 1 })
+    expect(result.current.loading).toBe(false)
+  })
 })
