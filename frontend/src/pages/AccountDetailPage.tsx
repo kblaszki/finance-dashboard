@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { fetchAccount } from "../api/accountsApi";
+import { fetchAccount, fetchAccountBalanceHistory } from "../api/accountsApi";
 import { fetchCategories } from "../api/categoriesApi";
 import {
   createTransaction,
@@ -12,6 +12,7 @@ import {
   type CashTransaction,
   type CreateCashTransactionInput,
 } from "../api/transactionsApi";
+import { AccountBalanceChart } from "../components/account/AccountBalanceChart";
 import { AccountLedgerHeader } from "../components/account/AccountLedgerHeader";
 import { AccountSubtitle } from "../components/account/AccountSubtitle";
 import { CashTransactionForm } from "../components/account/CashTransactionForm";
@@ -25,6 +26,7 @@ export function AccountDetailPage() {
   const { id } = useParams();
   const accountId = Number(id);
   const { refreshAccounts } = useCurrency();
+  const [historyMonths, setHistoryMonths] = useState(12);
 
   const loadAccount = useCallback(() => {
     if (!Number.isFinite(accountId) || accountId < 1) {
@@ -39,6 +41,13 @@ export function AccountDetailPage() {
     }
     return fetchTransactions(accountId);
   }, [accountId]);
+
+  const loadHistory = useCallback(() => {
+    if (!Number.isFinite(accountId) || accountId < 1) {
+      return Promise.reject(new Error("Invalid account"));
+    }
+    return fetchAccountBalanceHistory(accountId, { months: historyMonths });
+  }, [accountId, historyMonths]);
 
   const loadCategories = useCallback(() => fetchCategories(), []);
 
@@ -55,6 +64,13 @@ export function AccountDetailPage() {
     loading: txLoading,
     reload: reloadTx,
   } = useAsyncData(loadTx);
+
+  const {
+    data: history,
+    error: historyError,
+    loading: historyLoading,
+    reload: reloadHistory,
+  } = useAsyncData(loadHistory);
 
   const { data: categories } = useAsyncData(loadCategories);
 
@@ -75,6 +91,7 @@ export function AccountDetailPage() {
   async function refresh() {
     reloadAccount();
     reloadTx();
+    reloadHistory();
     refreshAccounts();
   }
 
@@ -181,6 +198,19 @@ export function AccountDetailPage() {
             />
           }
         />
+      )}
+
+      {account && (
+        <div className="form-section-gap">
+          <AccountBalanceChart
+            history={history}
+            loading={historyLoading}
+            error={historyError}
+            currency={account.currency}
+            months={historyMonths}
+            onMonthsChange={setHistoryMonths}
+          />
+        </div>
       )}
 
       {actionErr && <p className="error-banner">{actionErr}</p>}

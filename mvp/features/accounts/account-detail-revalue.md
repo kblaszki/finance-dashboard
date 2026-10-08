@@ -31,6 +31,7 @@ Capability tracked in the product map for agents and humans; see linked docs for
 - Docs: docs/how-to/accounts-and-holdings.md
 - Traceability: [docs/reference/requirements.md](../../../docs/reference/requirements.md) (when FR/NFR)
 - Code map: [docs/meta/code-map.md](../../../docs/meta/code-map.md)
+- Partial: ledger cash balance history chart (`GET /api/accounts/:id/balance-history` + `AccountBalanceChart`) ships without `POST .../revalue`; chart is cash-ledger only until valuations exist.
 
 ## Out of scope / follow-ups
 

@@ -504,6 +504,70 @@ test("PATCH /api/accounts/:id ignores accountType", async () => {
   assert.equal(patched.body.accountType, "CRYPTO");
 });
 
+test("GET /api/accounts/:id/balance-history returns flat opening and scopes ownership", async () => {
+  const { token } = await createUserAndToken();
+  const otherToken = await registerAndLogin("balother@test.local", "balother", "password123");
+  const account = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "BalHist", openingBalance: 250 });
+  assert.equal(account.status, 201);
+  const accountId = account.body.id as number;
+
+  const empty = await request(app)
+    .get(`/api/accounts/${accountId}/balance-history?month=2026-01&months=6`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(empty.status, 200);
+  assert.equal(empty.body.accountId, accountId);
+  assert.equal(empty.body.currency, "PLN");
+  assert.equal(empty.body.monthCount, 6);
+  assert.equal(empty.body.series.length, 6);
+  assert.equal(empty.body.series[0].month, "2025-08");
+  assert.equal(empty.body.series[5].month, "2026-01");
+  assert.ok(empty.body.series.every((p: { balance: number }) => p.balance === 250));
+
+  const forbidden = await request(app)
+    .get(`/api/accounts/${accountId}/balance-history?month=2026-01`)
+    .set("Authorization", `Bearer ${otherToken}`);
+  assert.equal(forbidden.status, 404);
+
+  const badMonths = await request(app)
+    .get(`/api/accounts/${accountId}/balance-history?month=2026-01&months=5`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(badMonths.status, 400);
+});
+
+test("GET /api/accounts/:id/balance-history aggregates end-of-month cash balances", async () => {
+  const { token } = await createUserAndToken();
+  const account = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "BalAgg", openingBalance: 100 });
+  assert.equal(account.status, 201);
+  const accountId = account.body.id as number;
+
+  await request(app)
+    .post(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "INCOME", amount: 50, occurredAt: "2025-12-10T00:00:00.000Z" });
+  await request(app)
+    .post(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "EXPENSE", amount: 20, occurredAt: "2026-01-15T00:00:00.000Z" });
+
+  const res = await request(app)
+    .get(`/api/accounts/${accountId}/balance-history?month=2026-01&months=6`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  assert.equal(res.body.monthCount, 6);
+  const byMonth = new Map(
+    (res.body.series as { month: string; balance: number }[]).map((p) => [p.month, p.balance]),
+  );
+  assert.equal(byMonth.get("2025-11"), 100);
+  assert.equal(byMonth.get("2025-12"), 150);
+  assert.equal(byMonth.get("2026-01"), 130);
+});
+
 test("POST /api/accounts/:id/transactions updates cashBalance for INCOME and EXPENSE", async () => {
   const { token } = await createUserAndToken();
   const account = await request(app)

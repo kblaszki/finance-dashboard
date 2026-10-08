@@ -54,6 +54,31 @@ export async function fetchAccount(id: number): Promise<Account> {
   return apiClient.get<Account>(`/api/accounts/${id}`);
 }
 
+export type AccountBalanceHistoryPoint = {
+  month: string;
+  balance: number;
+};
+
+export type AccountBalanceHistory = {
+  accountId: number;
+  currency: string;
+  monthCount: number;
+  series: AccountBalanceHistoryPoint[];
+};
+
+export async function fetchAccountBalanceHistory(
+  id: number,
+  options: { month?: string; months?: number } = {},
+): Promise<AccountBalanceHistory> {
+  const params = new URLSearchParams();
+  if (options.month) params.set("month", options.month);
+  if (options.months != null) params.set("months", String(options.months));
+  const query = params.toString();
+  return apiClient.get<AccountBalanceHistory>(
+    `/api/accounts/${id}/balance-history${query ? `?${query}` : ""}`,
+  );
+}
+
 export async function updateAccount(id: number, input: UpdateAccountInput): Promise<Account> {
   return apiClient.patch<Account>(`/api/accounts/${id}`, input);
 }

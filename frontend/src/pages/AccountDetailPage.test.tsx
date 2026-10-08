@@ -7,6 +7,7 @@ import { CurrencyProvider } from "../state/currency";
 vi.mock("../api/accountsApi", () => ({
   fetchAccount: vi.fn(),
   fetchAccounts: vi.fn(),
+  fetchAccountBalanceHistory: vi.fn(),
 }));
 
 vi.mock("../api/categoriesApi", async () => {
@@ -31,7 +32,11 @@ vi.mock("../api/transactionsApi", async () => {
   };
 });
 
-import { fetchAccount, fetchAccounts } from "../api/accountsApi";
+import {
+  fetchAccount,
+  fetchAccountBalanceHistory,
+  fetchAccounts,
+} from "../api/accountsApi";
 import { fetchCategories } from "../api/categoriesApi";
 import {
   createTransaction,
@@ -84,6 +89,15 @@ describe("AccountDetailPage", () => {
     cleanup();
     vi.mocked(fetchAccounts).mockResolvedValue([account]);
     vi.mocked(fetchAccount).mockResolvedValue(account);
+    vi.mocked(fetchAccountBalanceHistory).mockResolvedValue({
+      accountId: 1,
+      currency: "USD",
+      monthCount: 12,
+      series: [
+        { month: "2025-04", balance: 10 },
+        { month: "2026-03", balance: 10 },
+      ],
+    });
     vi.mocked(fetchCategories).mockResolvedValue([
       { id: 1, name: "Income", parentId: null, createdAt: "2026-01-01T00:00:00.000Z" },
       { id: 2, name: "Expense", parentId: null, createdAt: "2026-01-01T00:00:00.000Z" },

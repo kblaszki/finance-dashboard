@@ -27,6 +27,7 @@ import {
   fetchAccounts,
   createAccount,
   fetchAccount,
+  fetchAccountBalanceHistory,
   updateAccount,
   deleteAccount,
 } from './accountsApi'
@@ -123,6 +124,14 @@ describe('API modules', () => {
 
     await fetchAccount(7)
     expect(apiClient.get).toHaveBeenCalledWith('/api/accounts/7')
+
+    await fetchAccountBalanceHistory(7, { month: '2026-01', months: 6 })
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/accounts/7/balance-history?month=2026-01&months=6',
+    )
+
+    await fetchAccountBalanceHistory(7)
+    expect(apiClient.get).toHaveBeenCalledWith('/api/accounts/7/balance-history')
 
     await updateAccount(7, { name: 'Renamed', description: null })
     expect(apiClient.patch).toHaveBeenCalledWith('/api/accounts/7', {

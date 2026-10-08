@@ -27,7 +27,7 @@ Hub: [docs/README.md](../README.md).
 | `/dashboard` | Protected | `DashboardPage` (KPIs, net-worth donut, 12m cashflow, account mix) |
 | `/home` | Protected | Redirect → `/dashboard` |
 | `/accounts` | Protected | `AccountsPage` (multi-type create/list/edit/delete; currency on edit is read-only once the ledger has rows) |
-| `/accounts/:id` | Protected | `AccountDetailPage` (cash ledger create/list/edit/delete/CSV export+import; keyboard-first create form). Ledger pieces live in `components/account/`: `AccountLedgerHeader`, `AccountSubtitle`, `CashTransactionForm`, `TypeCombobox`, `CategoryCombobox`, `LedgerTable`, `occurredAt.ts`, `categoryScope.ts` |
+| `/accounts/:id` | Protected | `AccountDetailPage` (balance history chart at top; cash ledger create/list/edit/delete/CSV export+import; keyboard-first create form). Ledger pieces live in `components/account/`: `AccountBalanceChart`, `AccountLedgerHeader`, `AccountSubtitle`, `CashTransactionForm`, `TypeCombobox`, `CategoryCombobox`, `LedgerTable`, `occurredAt.ts`, `categoryScope.ts` |
 | `/categories` | Protected | `CategoriesPage` (nested tree create/rename/reparent/delete) |
 | `/statistics` | Protected | `StatisticsPage` (period KPIs, cashflow + savings-rate chart, category donuts with parent rollup) |
 | `/settings` | Protected | `SettingsPage` |
@@ -58,7 +58,7 @@ Production Docker serves `frontend/dist` from Express (`STATIC_DIR`); deep links
 |--------|------|
 | `frontend/src/api/client.ts` | `fetch` + Bearer token. Session `401` clears auth. Other errors use `body.error`. A failed `fetch` throws `Network request failed`. |
 | `frontend/src/api/authApi.ts` | config, register, login, me, profile, email, password |
-| `frontend/src/api/accountsApi.ts` | list/create/get/patch/delete accounts; `ACCOUNT_TYPES` / `AccountType` |
+| `frontend/src/api/accountsApi.ts` | list/create/get/patch/delete accounts; `fetchAccountBalanceHistory`; `ACCOUNT_TYPES` / `AccountType` |
 | `frontend/src/api/categoriesApi.ts` | list/create/patch/delete categories; `flattenCategoryTree` |
 | `frontend/src/api/transactionsApi.ts` | list/create/delete/export/import cash txs under `/api/accounts/:id/transactions` (optional `categoryId`; CSV export via `getBlob`, import via JSON `{ csv }`) |
 | `frontend/src/api/statisticsApi.ts` | `fetchCategoryBreakdown`, `fetchPeriodSummary`, `fetchCashflowHistory`, `fetchNetWorth`, `fetchCashflowRolling12m` → `/api/statistics/*` |

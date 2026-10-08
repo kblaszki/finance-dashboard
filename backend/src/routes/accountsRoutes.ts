@@ -2,6 +2,12 @@ import { Router } from "express";
 import type { Account, Prisma, PrismaClient } from "@prisma/client";
 import { Prisma as PrismaNS } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
+import {
+  aggregateAccountBalanceHistory,
+  listMonthsEndingAt,
+  parseMonthsParam,
+  resolveBalanceHistoryMonth,
+} from "../domain/accountBalanceHistory";
 import { parseAccountType } from "../domain/accountTypes";
 import { decimalToMinor, minorToMajor, normalizeCurrencyCode, parseOpeningBalance } from "../domain/money";
 import {
@@ -137,6 +143,43 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
       handleRouteError(res, e, "Failed to load account");
     }
   });
+
+  router.get(
+    "/api/accounts/:id/balance-history",
+    requireAuth,
+    async (req: AuthedRequest, res) => {
+      try {
+        const id = parseIdParam(req.params.id);
+        const account = await findOwnedAccount(prisma, uid(req), id);
+        const { month, end } = resolveBalanceHistoryMonth(req.query.month);
+        const monthCount = parseMonthsParam(req.query.months);
+        const months = listMonthsEndingAt(month, monthCount);
+        const rows = await prisma.cashTransaction.findMany({
+          where: {
+            accountId: id,
+            occurredAt: { lt: end },
+          },
+          select: {
+            type: true,
+            amount: true,
+            occurredAt: true,
+          },
+          orderBy: [{ occurredAt: "asc" }, { id: "asc" }],
+        });
+        res.json(
+          aggregateAccountBalanceHistory(
+            account.id,
+            account.currency,
+            months,
+            account.openingBalance,
+            rows,
+          ),
+        );
+      } catch (e: unknown) {
+        handleRouteError(res, e, "Failed to load balance history");
+      }
+    },
+  );
 
   router.patch("/api/accounts/:id", requireAuth, async (req: AuthedRequest, res) => {
     try {

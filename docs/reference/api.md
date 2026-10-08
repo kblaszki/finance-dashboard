@@ -47,6 +47,7 @@ User-scoped. Cross-user access returns `404`. Create accepts allow-listed `accou
 | GET | `/api/accounts` | Bearer | List own accounts (newest first); includes `totalBalance` |
 | POST | `/api/accounts` | Bearer | Body: `name`; optional `currency` (default PLN), `openingBalance` (major units, at most 2 decimal places; negative allowed), `openingCashAsOf`, `description`, `accountType` (`BANK`, `BROKERAGE`, `CRYPTO`, `PRECIOUS_METAL`, `REAL_ESTATE`, `OTHER`, `MANUAL`). Sets `cashBalance = openingBalance`. Balances are stored as integer cents and returned as major-unit numbers. 201 |
 | GET | `/api/accounts/:id` | Bearer | One owned account |
+| GET | `/api/accounts/:id/balance-history` | Bearer | End-of-month cash balances derived from `openingBalance` + ledger. Query: optional `month` (YYYY-MM, default current UTC month), `months` (`6`/`12`/`24`, default `12`). Response: `{ accountId, currency, monthCount, series: [{ month, balance }] }` (major units). 404 if not owned. |
 | PATCH | `/api/accounts/:id` | Bearer | Body: optional `name`, `currency`, `description` (no balance or `accountType` edits). Changing `currency` returns `409` when the account has any cash transaction; the same code is allowed. Invalid currency is `400`. |
 | DELETE | `/api/accounts/:id` | Bearer | 204 |
 
