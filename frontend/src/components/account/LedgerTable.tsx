@@ -169,7 +169,7 @@ export function LedgerTable(props: {
 
   return (
     <div className="table-wrap">
-      <table className="data-table">
+      <table className="data-table ledger-table">
         <thead>
           <tr>
             <th>Date</th>

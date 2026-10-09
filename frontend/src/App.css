@@ -496,6 +496,32 @@
   background: color-mix(in srgb, var(--color-accent) 5%, transparent);
 }
 
+/* Fixed layout so inline editors cannot widen columns (datetime-local/select mins). */
+.ledger-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.ledger-table th:nth-child(1) {
+  width: 18%;
+}
+
+.ledger-table th:nth-child(2) {
+  width: 11%;
+}
+
+.ledger-table th:nth-child(3) {
+  width: 14%;
+}
+
+.ledger-table th:nth-child(4) {
+  width: 16%;
+}
+
+.ledger-table th:nth-child(6) {
+  width: 5.5rem;
+}
+
 .ledger-cell--editable {
   cursor: default;
 }
@@ -508,11 +534,14 @@
 .ledger-cell--editing {
   padding-top: 0.35rem;
   padding-bottom: 0.35rem;
+  overflow: hidden;
 }
 
 .ledger-cell-input {
+  display: block;
   width: 100%;
-  max-width: 14rem;
+  max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
   font: inherit;
   padding: 0.25rem 0.4rem;
