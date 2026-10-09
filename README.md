@@ -167,6 +167,10 @@ npm run build
 
 Builds the backend (TypeScript to JS) and the frontend (Vite production bundle).
 
+## License
+
+Proprietary / [UNLICENSED](LICENSE). Source may be visible in a public repository; that does not grant permission to use or redistribute the software.
+
 ## Further documentation
 
 - [docs/README.md](docs/README.md) — Diátaxis documentation hub
