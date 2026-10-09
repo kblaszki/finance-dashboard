@@ -178,7 +178,7 @@ export function AccountDetailPage() {
       </p>
 
       <StatusBlock
-        loading={accountLoading}
+        loading={accountLoading && !account}
         error={accountError}
         loadingMessage="Loading account…"
       />
@@ -223,7 +223,7 @@ export function AccountDetailPage() {
       <section className="card form-section-gap">
         <h2 className="section-title">Ledger</h2>
         <StatusBlock
-          loading={txLoading}
+          loading={txLoading && !transactions}
           error={txError}
           empty={
             !txLoading && !txError && (transactions?.length ?? 0) === 0
@@ -231,7 +231,7 @@ export function AccountDetailPage() {
           loadingMessage="Loading ledger…"
           emptyMessage="No transactions yet."
         />
-        {!txLoading && transactions && transactions.length > 0 && (
+        {transactions && transactions.length > 0 && (
           <LedgerTable
             transactions={transactions}
             currency={account?.currency ?? null}

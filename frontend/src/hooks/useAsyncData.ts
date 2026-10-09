@@ -22,7 +22,12 @@ export function useAsyncData<T>(
 
   useEffect(() => {
     let active = true
-    setState((current) => ({ ...current, loading: true, error: null }))
+    // Keep previous data visible on reload (no full-page flash / scroll jump).
+    setState((current) => ({
+      ...current,
+      loading: current.data == null,
+      error: null,
+    }))
 
     void loader()
       .then((data) => {

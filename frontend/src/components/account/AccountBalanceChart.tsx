@@ -47,13 +47,13 @@ export function AccountBalanceChart(props: {
       }
     >
       <StatusBlock
-        loading={loading}
+        loading={loading && series.length === 0}
         error={error}
         empty={!loading && !error && series.length === 0}
         loadingMessage="Loading balance history…"
         emptyMessage="No balance history yet."
       />
-      {!loading && !error && series.length > 0 && (
+      {!error && series.length > 0 && (
         <ResponsiveContainer width="100%" height={260}>
           <AreaChart data={series}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
