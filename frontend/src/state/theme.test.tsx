@@ -1,5 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ensureTestLocalStorage } from '../test/setup'
 import { STORAGE_KEY, ThemeProvider, useTheme } from './theme'
 
 function mockMatchMedia(dark: boolean) {
@@ -30,6 +31,7 @@ describe('theme', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals()
+    ensureTestLocalStorage()
     localStorage.clear()
   })
 

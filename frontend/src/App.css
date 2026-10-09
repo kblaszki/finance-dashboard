@@ -496,6 +496,32 @@
   background: color-mix(in srgb, var(--color-accent) 5%, transparent);
 }
 
+.ledger-cell--editable {
+  cursor: default;
+}
+
+.ledger-cell--editable:not(.ledger-cell--editing):hover {
+  cursor: pointer;
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+}
+
+.ledger-cell--editing {
+  padding-top: 0.35rem;
+  padding-bottom: 0.35rem;
+}
+
+.ledger-cell-input {
+  width: 100%;
+  max-width: 14rem;
+  box-sizing: border-box;
+  font: inherit;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-surface, var(--color-bg));
+  color: var(--color-text);
+}
+
 .table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;

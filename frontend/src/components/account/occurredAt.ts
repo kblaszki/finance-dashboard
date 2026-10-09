@@ -28,9 +28,16 @@ export function shiftOccurredAtByHours(value: string, hours: number): string {
   return formatDateTimeLocal(base);
 }
 
-function formatDateTimeLocal(date: Date): string {
+export function formatDateTimeLocal(date: Date): string {
   const pad = (value: number) => String(value).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
     date.getDate(),
   )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+/** Convert an ISO instant to a `datetime-local` input value (local wall time). */
+export function toDateTimeLocalValue(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return defaultOccurredAtValue();
+  return formatDateTimeLocal(d);
 }

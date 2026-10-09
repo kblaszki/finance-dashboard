@@ -143,9 +143,9 @@ export function AccountDetailPage() {
 
   async function handleSaveTx(
     tx: CashTransaction,
-    input: { amount: number; description: string | null },
+    patch: Partial<CreateCashTransactionInput>,
   ) {
-    await updateTransaction(accountId, tx.id, input);
+    await updateTransaction(accountId, tx.id, patch);
     await refresh();
   }
 
@@ -235,6 +235,7 @@ export function AccountDetailPage() {
           <LedgerTable
             transactions={transactions}
             currency={account?.currency ?? null}
+            categories={categories ?? []}
             categoryNameById={categoryNameById}
             onDelete={(tx) => void handleDelete(tx)}
             onSave={handleSaveTx}
