@@ -11,7 +11,7 @@ related_docs:
 
 Hub: [docs/README.md](../README.md).
 
-**Shipped in code** = auth + multi-type accounts + category tree + cash ledger (optional `categoryId`, CSV export/import) + statistics (category breakdown, period KPIs, cashflow history, cash net worth, rolling 12m averages) below. Remaining backlog: [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) and `mvp/features/*`. Checklist: 16 done / 0 in_progress / 49 planned (as of 2026-09-17).
+**Shipped in code** = auth + multi-type accounts + category tree + cash ledger (optional `categoryId`, CSV export/import) + internal cash transfers + statistics (category breakdown, period KPIs, cashflow history, cash net worth, rolling 12m averages) below. Remaining backlog: [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) and `mvp/features/*`. Checklist: 17 done / 0 in_progress / 48 planned (as of 2026-10-10).
 
 ## Shipped
 
@@ -33,6 +33,7 @@ Hub: [docs/README.md](../README.md).
 | FR-004 | Cashflow history chart | `GET /api/statistics/cashflow-history`; `/statistics` Recharts series (`months` 6\|12\|24) |
 | FR-002 | Net worth (cash buckets) | `GET /api/statistics/net-worth`; `/dashboard` byBucket from `cashBalance` (liabilities 0; no holdings/FX) |
 | FR-005 | Rolling 12-month cashflow averages | `GET /api/statistics/cashflow-rolling-12m`; `/dashboard` avg income/expense/net |
+| FR-011 | Internal cash transfers | `CashTransfer` + `TRANSFER_*` legs; `/api/transfers`; `/transfers`; [internal-transfers.md](../how-to/internal-transfers.md) |
 
 ## Planned / not in this codebase
 
@@ -40,6 +41,6 @@ Hub: [docs/README.md](../README.md).
 |------|----------------|
 | Password reset (MVP-003) | [mvp/features/auth/password-reset-api.md](../../mvp/features/auth/password-reset-api.md) |
 | JWT HttpOnly cookie (MVP-004) | [mvp/features/auth/jwt-httponly-cookie.md](../../mvp/features/auth/jwt-httponly-cookie.md) |
-| Transfers, categories, holdings, tax, import, FX, budgets, … | [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) |
+| Holdings, tax, import, NBP FX, budgets, … | [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) |
 
 Do not invent “implemented” rows for domain FRs until the feature ships and docs-sync updates this page.

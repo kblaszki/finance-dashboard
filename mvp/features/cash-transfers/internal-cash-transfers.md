@@ -1,6 +1,6 @@
 ---
 id: FR-011
-status: planned
+status: done
 domain: cash-transfers
 title: Internal cash transfers with FX suggestion
 ---
@@ -9,28 +9,33 @@ title: Internal cash transfers with FX suggestion
 
 ## Summary
 
-Paired debit/credit between accounts; cross-currency FX hint.
+Paired debit/credit between accounts via `CashTransfer` + `TRANSFER_OUT` / `TRANSFER_IN` legs. Cross-currency uses a manual destination amount (`fxRate` in the payload); NBP suggestion is deferred.
 
 ## User value
 
-Capability tracked in the product map for agents and humans; see linked docs for recipes.
+Move cash between owned accounts without counting the move as income/expense.
 
 ## Surfaces
 
 | Kind | Location |
 |------|----------|
 | Primary | /transfers |
+| Ledger legs | /accounts/:id (read-only) |
 
 ## Acceptance
 
-- [ ] Create/list/delete transfer groups
+- [x] Create/list/update/delete transfer groups
+- [x] Same-currency and cross-currency (manual `amountTo`)
+- [x] Legs appear on both accounts; excluded from cashflow stats
+- [x] Account delete blocked while transfers exist (`409`)
 
 ## Implementation notes
 
 - Docs: docs/how-to/internal-transfers.md
-- Traceability: [docs/reference/requirements.md](../../../docs/reference/requirements.md) (when FR/NFR)
+- Traceability: [docs/reference/requirements.md](../../../docs/reference/requirements.md)
 - Code map: [docs/meta/code-map.md](../../../docs/meta/code-map.md)
+- Domain: `backend/src/domain/cashTransfers.ts`; API: `/api/transfers`; UI: `TransfersPage`
 
 ## Out of scope / follow-ups
 
-- See related planned/stub rows in [CHECKLIST.md](../../CHECKLIST.md)
+- NBP FX suggestion, transfer fees, recurring transfers, CSV import of transfers, create-from-ledger-row

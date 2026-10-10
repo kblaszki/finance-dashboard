@@ -1,4 +1,5 @@
 import { type KeyboardEvent, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import type { Category } from "../../api/categoriesApi";
 import {
   CASH_TX_TYPES,
@@ -13,6 +14,17 @@ import {
   normalizeCashTxType,
 } from "./LedgerCreateRow";
 import { formatOccurredAt, toDateTimeLocalValue } from "./occurredAt";
+
+function isTransferLeg(tx: CashTransaction): boolean {
+  return tx.transferId != null;
+}
+
+function transferBadgeLabel(type: string): string {
+  const upper = String(type).toUpperCase();
+  if (upper === "TRANSFER_IN") return "TRANSFER IN";
+  if (upper === "TRANSFER_OUT") return "TRANSFER OUT";
+  return upper;
+}
 
 export type EditableField =
   | "occurredAt"
@@ -117,7 +129,7 @@ export function LedgerTable(props: {
   const committingRef = useRef(false);
 
   function startEdit(tx: CashTransaction, field: EditableField) {
-    if (editBusy) return;
+    if (editBusy || isTransferLeg(tx)) return;
     setEditing({ txId: tx.id, field });
     setDraft(draftFromTx(tx, field));
     props.onActionError(null);
@@ -168,8 +180,14 @@ export function LedgerTable(props: {
     return editing?.txId === txId && editing.field === field;
   }
 
-  function cellClass(txId: number, field: EditableField, extra = ""): string {
-    const parts = ["ledger-cell", "ledger-cell--editable"];
+  function cellClass(
+    txId: number,
+    field: EditableField,
+    extra = "",
+    editable = true,
+  ): string {
+    const parts = ["ledger-cell"];
+    if (editable) parts.push("ledger-cell--editable");
     if (isEditing(txId, field)) parts.push("ledger-cell--editing");
     if (extra) parts.push(extra);
     return parts.join(" ");
@@ -228,7 +246,12 @@ function LedgerRow(props: {
   draft: string;
   editBusy: boolean;
   isEditing: (txId: number, field: EditableField) => boolean;
-  cellClass: (txId: number, field: EditableField, extra?: string) => string;
+  cellClass: (
+    txId: number,
+    field: EditableField,
+    extra?: string,
+    editable?: boolean,
+  ) => string;
   onStartEdit: (tx: CashTransaction, field: EditableField) => void;
   onDraftChange: (value: string) => void;
   onEditorKeyDown: (e: KeyboardEvent, tx: CashTransaction) => void;
@@ -236,6 +259,7 @@ function LedgerRow(props: {
   onDelete: (tx: CashTransaction) => void;
 }) {
   const { tx } = props;
+  const transferLeg = isTransferLeg(tx);
   const txType = String(tx.type).toUpperCase() as CashTxType;
   const categoryOptions = useMemo(() => {
     const typeOk = (CASH_TX_TYPES as readonly string[]).includes(txType)
@@ -248,11 +272,22 @@ function LedgerRow(props: {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [props.categories, txType]);
 
+  function onCellDoubleClick(field: EditableField) {
+    if (transferLeg) return;
+    props.onStartEdit(tx, field);
+  }
+
+  const typeBadgeClass =
+    String(tx.type).toUpperCase() === "INCOME" ||
+    String(tx.type).toUpperCase() === "TRANSFER_IN"
+      ? "badge-positive"
+      : "badge-negative";
+
   return (
     <tr>
       <td
-        className={props.cellClass(tx.id, "occurredAt")}
-        onDoubleClick={() => props.onStartEdit(tx, "occurredAt")}
+        className={props.cellClass(tx.id, "occurredAt", "", !transferLeg)}
+        onDoubleClick={() => onCellDoubleClick("occurredAt")}
       >
         {props.isEditing(tx.id, "occurredAt") ? (
           <input
@@ -271,8 +306,8 @@ function LedgerRow(props: {
         )}
       </td>
       <td
-        className={props.cellClass(tx.id, "type")}
-        onDoubleClick={() => props.onStartEdit(tx, "type")}
+        className={props.cellClass(tx.id, "type", "", !transferLeg)}
+        onDoubleClick={() => onCellDoubleClick("type")}
       >
         {props.isEditing(tx.id, "type") ? (
           <select
@@ -292,16 +327,14 @@ function LedgerRow(props: {
             ))}
           </select>
         ) : (
-          <span
-            className={`badge ${tx.type === "INCOME" ? "badge-positive" : "badge-negative"}`}
-          >
-            {tx.type}
+          <span className={`badge ${typeBadgeClass}`}>
+            {transferLeg ? transferBadgeLabel(tx.type) : tx.type}
           </span>
         )}
       </td>
       <td
-        className={props.cellClass(tx.id, "amount", "num")}
-        onDoubleClick={() => props.onStartEdit(tx, "amount")}
+        className={props.cellClass(tx.id, "amount", "num", !transferLeg)}
+        onDoubleClick={() => onCellDoubleClick("amount")}
       >
         {props.isEditing(tx.id, "amount") ? (
           <input
@@ -326,8 +359,8 @@ function LedgerRow(props: {
         )}
       </td>
       <td
-        className={props.cellClass(tx.id, "categoryId")}
-        onDoubleClick={() => props.onStartEdit(tx, "categoryId")}
+        className={props.cellClass(tx.id, "categoryId", "", !transferLeg)}
+        onDoubleClick={() => onCellDoubleClick("categoryId")}
       >
         {props.isEditing(tx.id, "categoryId") ? (
           <select
@@ -356,8 +389,8 @@ function LedgerRow(props: {
         )}
       </td>
       <td
-        className={props.cellClass(tx.id, "description")}
-        onDoubleClick={() => props.onStartEdit(tx, "description")}
+        className={props.cellClass(tx.id, "description", "", !transferLeg)}
+        onDoubleClick={() => onCellDoubleClick("description")}
       >
         {props.isEditing(tx.id, "description") ? (
           <input
@@ -378,14 +411,20 @@ function LedgerRow(props: {
       </td>
       <td>
         <div className="form-actions-row">
-          <button
-            type="button"
-            className="btn-danger"
-            aria-label={`Delete ${tx.type} ${tx.amount}`}
-            onClick={() => props.onDelete(tx)}
-          >
-            Delete
-          </button>
+          {transferLeg ? (
+            <Link to="/transfers" className="btn-secondary">
+              Transfer
+            </Link>
+          ) : (
+            <button
+              type="button"
+              className="btn-danger"
+              aria-label={`Delete ${tx.type} ${tx.amount}`}
+              onClick={() => props.onDelete(tx)}
+            >
+              Delete
+            </button>
+          )}
         </div>
       </td>
     </tr>

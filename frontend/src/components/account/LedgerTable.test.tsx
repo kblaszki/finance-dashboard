@@ -1,4 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { ReactElement } from "react";
+import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CashTransaction } from "../../api/transactionsApi";
 import { LedgerTable } from "./LedgerTable";
@@ -11,7 +13,20 @@ const coffee: CashTransaction = {
   occurredAt: "2026-03-01T12:00:00.000Z",
   description: "Coffee",
   categoryId: null,
+  transferId: null,
   createdAt: "2026-03-01T12:00:00.000Z",
+};
+
+const transferOut: CashTransaction = {
+  id: 8,
+  accountId: 1,
+  type: "TRANSFER_OUT",
+  amount: 50,
+  occurredAt: "2026-03-02T12:00:00.000Z",
+  description: "To savings",
+  categoryId: null,
+  transferId: 3,
+  createdAt: "2026-03-02T12:00:00.000Z",
 };
 
 const categories = [
@@ -45,19 +60,23 @@ function renderTable(
   const onDelete = overrides.onDelete ?? vi.fn();
   const onActionError = overrides.onActionError ?? vi.fn();
   const transactions = overrides.transactions ?? [coffee];
-  const { rerender } = render(
-    <LedgerTable
-      accountId={1}
-      transactions={transactions}
-      currency="USD"
-      categories={categories}
-      categoryNameById={new Map([[3, "Food"]])}
-      onCreate={onCreate}
-      onDelete={onDelete}
-      onSave={onSave}
-      onActionError={onActionError}
-    />,
+  const { rerender: baseRerender } = render(
+    <MemoryRouter>
+      <LedgerTable
+        accountId={1}
+        transactions={transactions}
+        currency="USD"
+        categories={categories}
+        categoryNameById={new Map([[3, "Food"]])}
+        onCreate={onCreate}
+        onDelete={onDelete}
+        onSave={onSave}
+        onActionError={onActionError}
+      />
+    </MemoryRouter>,
   );
+  const rerender = (ui: ReactElement) =>
+    baseRerender(<MemoryRouter>{ui}</MemoryRouter>);
   return { onSave, onCreate, onDelete, onActionError, rerender };
 }
 
@@ -157,5 +176,17 @@ describe("LedgerTable", () => {
     expect((screen.getByLabelText("New type") as HTMLSelectElement).value).toBe(
       "EXPENSE",
     );
+  });
+
+  it("keeps transfer legs read-only with Transfer link", () => {
+    const { onSave, onDelete } = renderTable({ transactions: [transferOut] });
+    fireEvent.doubleClick(screen.getByText("$50.00"));
+    expect(screen.queryByLabelText("Edit amount")).toBeNull();
+    expect(onSave).not.toHaveBeenCalled();
+    expect(screen.getByText("TRANSFER OUT")).toBeTruthy();
+    const link = screen.getByRole("link", { name: "Transfer" });
+    expect(link.getAttribute("href")).toBe("/transfers");
+    expect(screen.queryByRole("button", { name: /Delete/i })).toBeNull();
+    expect(onDelete).not.toHaveBeenCalled();
   });
 });

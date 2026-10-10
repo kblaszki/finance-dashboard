@@ -38,7 +38,7 @@ Last review: 2026-08-05 — statuses aligned to **auth + multi-type accounts + c
 | FR-012 | Accounts list with type filter | planned | [features/accounts/accounts-list-filter.md](features/accounts/accounts-list-filter.md) | /accounts |
 | FR-032 | Precious metal grams on account | planned | [features/accounts/precious-metal-grams.md](features/accounts/precious-metal-grams.md) | PRECIOUS_METAL account detail |
 | MVP-010 | Manual revalue and account detail | planned | [features/accounts/account-detail-revalue.md](features/accounts/account-detail-revalue.md) | /accounts/:id |
-| FR-011 | Internal cash transfers with FX suggestion | planned | [features/cash-transfers/internal-cash-transfers.md](features/cash-transfers/internal-cash-transfers.md) | /transfers |
+| FR-011 | Internal cash transfers with FX suggestion | done | [features/cash-transfers/internal-cash-transfers.md](features/cash-transfers/internal-cash-transfers.md) | /transfers |
 | FR-018 | Transaction categories and splits | done | [features/cash-transfers/transaction-categories-splits.md](features/cash-transfers/transaction-categories-splits.md) | /accounts/:id ledger |
 | MVP-011 | Cash ledger transaction types | done | [features/cash-transfers/cash-ledger-types.md](features/cash-transfers/cash-ledger-types.md) | /accounts/:id cash ledger |
 | MVP-013 | Cash ledger CSV export | done | [features/cash-transfers/cash-ledger-csv-export.md](features/cash-transfers/cash-ledger-csv-export.md) | /accounts/:id Download CSV |
@@ -105,7 +105,7 @@ Last review: 2026-08-05 — statuses aligned to **auth + multi-type accounts + c
 
 ### cash-transfers
 
-- **planned** [FR-011 Internal cash transfers with FX suggestion](features/cash-transfers/internal-cash-transfers.md)
+- **done** [FR-011 Internal cash transfers with FX suggestion](features/cash-transfers/internal-cash-transfers.md)
 - **done** [FR-018 Transaction categories and splits](features/cash-transfers/transaction-categories-splits.md)
 - **done** [MVP-011 Cash ledger transaction types](features/cash-transfers/cash-ledger-types.md)
 - **done** [MVP-013 Cash ledger CSV export](features/cash-transfers/cash-ledger-csv-export.md)

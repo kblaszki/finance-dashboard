@@ -7,11 +7,12 @@ export type CashTxType = (typeof CASH_TX_TYPES)[number];
 export type CashTransaction = {
   id: number;
   accountId: number;
-  type: CashTxType | string;
+  type: CashTxType | "TRANSFER_IN" | "TRANSFER_OUT" | string;
   amount: number;
   occurredAt: string;
   description: string | null;
   categoryId: number | null;
+  transferId: number | null;
   createdAt: string;
 };
 

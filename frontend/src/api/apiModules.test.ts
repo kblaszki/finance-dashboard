@@ -52,6 +52,12 @@ import {
   fetchNetWorth,
   fetchCashflowRolling12m,
 } from './statisticsApi'
+import {
+  fetchTransfers,
+  createTransfer,
+  updateTransfer,
+  deleteTransfer,
+} from './transfersApi'
 
 describe('API modules', () => {
   beforeEach(() => {
@@ -226,5 +232,33 @@ describe('API modules', () => {
     expect(apiClient.get).toHaveBeenCalledWith(
       '/api/statistics/cashflow-rolling-12m?currency=USD',
     )
+  })
+
+  it('transfersApi calls correct endpoints', async () => {
+    await fetchTransfers()
+    expect(apiClient.get).toHaveBeenCalledWith('/api/transfers')
+
+    await createTransfer({
+      fromAccountId: 1,
+      toAccountId: 2,
+      amountFrom: 100,
+      amountTo: 25,
+      description: 'FX move',
+    })
+    expect(apiClient.post).toHaveBeenCalledWith('/api/transfers', {
+      fromAccountId: 1,
+      toAccountId: 2,
+      amountFrom: 100,
+      amountTo: 25,
+      description: 'FX move',
+    })
+
+    await updateTransfer(9, { amountFrom: 50 })
+    expect(apiClient.patch).toHaveBeenCalledWith('/api/transfers/9', {
+      amountFrom: 50,
+    })
+
+    await deleteTransfer(9)
+    expect(apiClient.delete).toHaveBeenCalledWith('/api/transfers/9')
   })
 })
