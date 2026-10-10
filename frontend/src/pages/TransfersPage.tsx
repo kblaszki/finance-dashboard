@@ -468,27 +468,28 @@ export function TransfersPage() {
         loadingMessage="Loading transfers…"
       />
       {!loading && !error && (
-        <div className="table-wrap">
-          <table className="data-table ledger-table ledger-table--transfers">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>From</th>
-                <th>To</th>
-                <th className="num">Amount from</th>
-                <th className="num">Amount to</th>
-                <th className="num">FX rate</th>
-                <th>Description</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <TransferCreateRow
-                accounts={sortedAccounts}
-                onCreate={handleCreate}
-                onActionError={setActionError}
-              />
-              {(transfers ?? []).map((transfer) => {
+        <section className="card form-section-gap">
+          <div className="table-wrap">
+            <table className="data-table ledger-table ledger-table--transfers">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>From</th>
+                  <th>To</th>
+                  <th className="num">Amount from</th>
+                  <th className="num">Amount to</th>
+                  <th className="num">FX rate</th>
+                  <th>Description</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <TransferCreateRow
+                  accounts={sortedAccounts}
+                  onCreate={handleCreate}
+                  onActionError={setActionError}
+                />
+                {(transfers ?? []).map((transfer) => {
                 const cross = transfer.fromCurrency !== transfer.toCurrency;
                 const fromAccount = accountById.get(transfer.fromAccountId);
                 const toAccount = accountById.get(transfer.toAccountId);
@@ -669,9 +670,10 @@ export function TransfersPage() {
                   </tr>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
+              </tbody>
+            </table>
+          </div>
+        </section>
       )}
     </>
   );
