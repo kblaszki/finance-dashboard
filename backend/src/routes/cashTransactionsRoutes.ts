@@ -72,17 +72,21 @@ function parseOptionalCategoryId(value: unknown): number | null {
   return n;
 }
 
-async function assertOwnedCategoryId(
+async function assertOwnedCategoryForTx(
   prisma: PrismaClient,
   userId: number,
   categoryId: number | null,
+  txType: string,
 ): Promise<number | null> {
   if (categoryId === null) return null;
   const category = await prisma.category.findFirst({
     where: { id: categoryId, userId },
-    select: { id: true },
+    select: { id: true, ledgerType: true },
   });
   if (!category) throw notFound("Category not found");
+  if (category.ledgerType !== txType) {
+    throw badRequest("category ledgerType must match transaction type");
+  }
   return category.id;
 }
 
@@ -173,7 +177,7 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
 
         const ownedCategories = await prisma.category.findMany({
           where: { userId: uid(req) },
-          select: { id: true, name: true },
+          select: { id: true, name: true, ledgerType: true },
         });
         const resolved = resolveImportCategoryIds(parsed.drafts, ownedCategories);
         if (!resolved.ok) {
@@ -236,10 +240,11 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
         const amount = parsePositiveAmount(body.amount);
         const occurredAt = parseOccurredAt(body.occurredAt);
         const description = parseOptionalDescription(body.description);
-        const categoryId = await assertOwnedCategoryId(
+        const categoryId = await assertOwnedCategoryForTx(
           prisma,
           uid(req),
           parseOptionalCategoryId(body.categoryId),
+          type,
         );
 
         const created = await prisma.$transaction((tx) =>
@@ -290,14 +295,16 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
           body.description !== undefined
             ? parseOptionalDescription(body.description)
             : existing.description;
-        const categoryId =
+        const categoryIdRaw =
           body.categoryId !== undefined
-            ? await assertOwnedCategoryId(
-                prisma,
-                uid(req),
-                parseOptionalCategoryId(body.categoryId),
-              )
+            ? parseOptionalCategoryId(body.categoryId)
             : existing.categoryId;
+        const categoryId = await assertOwnedCategoryForTx(
+          prisma,
+          uid(req),
+          categoryIdRaw,
+          type,
+        );
 
         const updated = await prisma.$transaction((tx) =>
           updateCashTransaction(tx, accountId, existing, {

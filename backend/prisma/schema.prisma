@@ -27,6 +27,8 @@ model Category {
   name      String
   /// Sibling key: `{parentId or 0}:{lowercase name}`.
   nameKey   String
+  /// INCOME or EXPENSE; inherited from parent; fixed for the subtree.
+  ledgerType String
   parentId  Int?
   createdAt DateTime  @default(now())
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -37,6 +39,7 @@ model Category {
   @@unique([userId, nameKey])
   @@index([userId])
   @@index([parentId])
+  @@index([userId, ledgerType])
 }
 
 model Account {

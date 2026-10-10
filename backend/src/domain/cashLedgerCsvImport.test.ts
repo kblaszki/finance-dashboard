@@ -108,9 +108,10 @@ describe("parseCashLedgerCsvImport", () => {
 
 describe("resolveImportCategoryIds", () => {
   const cats = [
-    { id: 1, name: "Income" },
-    { id: 2, name: "Food" },
-    { id: 3, name: "Food" },
+    { id: 1, name: "Income", ledgerType: "INCOME" },
+    { id: 2, name: "Food", ledgerType: "EXPENSE" },
+    { id: 3, name: "Food", ledgerType: "EXPENSE" },
+    { id: 4, name: "Salary", ledgerType: "INCOME" },
   ];
 
   it("keeps owned categoryId and resolves unique name", () => {
@@ -118,18 +119,35 @@ describe("resolveImportCategoryIds", () => {
       [
         CASH_LEDGER_CSV_HEADER,
         ",INCOME,1.00,EUR,2024-01-01T00:00:00.000Z,,1,Income,",
-        ",EXPENSE,2.00,EUR,2024-01-02T00:00:00.000Z,,,Income,",
+        ",INCOME,2.00,EUR,2024-01-02T00:00:00.000Z,,,Salary,",
       ].join("\n"),
       "EUR",
     );
     assert.ok(parsed.ok);
     if (!parsed.ok) return;
-    // Second row has name Income which is unique
     const resolved = resolveImportCategoryIds(parsed.drafts, cats);
     assert.equal(resolved.ok, true);
     if (!resolved.ok) return;
     assert.equal(resolved.rows[0]!.categoryId, 1);
-    assert.equal(resolved.rows[1]!.categoryId, 1);
+    assert.equal(resolved.rows[1]!.categoryId, 4);
+  });
+
+  it("rejects ledgerType mismatch", () => {
+    const drafts = [
+      {
+        row: 1,
+        type: "EXPENSE" as const,
+        amount: 1,
+        occurredAt: new Date("2024-01-01T00:00:00.000Z"),
+        description: null,
+        categoryId: 1,
+        categoryName: null,
+      },
+    ];
+    const resolved = resolveImportCategoryIds(drafts, cats);
+    assert.equal(resolved.ok, false);
+    if (resolved.ok) return;
+    assert.match(resolved.errors[0]!.message, /ledgerType/);
   });
 
   it("rejects unknown id and ambiguous name", () => {

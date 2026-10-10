@@ -19,14 +19,13 @@ This page covers the shipped category tree and optional cash tagging. Monthly bu
 
 ## Category tree
 
-1. Register (or `create-user` / `db:seed`) seeds a default Income / Expense tree.
-2. Open `/categories` (AppShell nav) to create, rename, reparent, or delete.
+1. Register (or `create-user` / `db:seed`) seeds a default Income / Expense tree with `ledgerType` `INCOME` / `EXPENSE` on every node. Root display names may be renamed; pickers and stats scope by `ledgerType`, not by name.
+2. Open `/categories` (AppShell nav) to create, rename, reparent (same type only), or delete. Creating a root requires choosing `ledgerType`; children inherit it.
 3. API: `GET|POST /api/categories`, `PATCH|DELETE /api/categories/:id`.
 4. Delete returns `409` when the category has children. Deleting a leaf clears `CashTransaction.categoryId` (`SetNull`).
-5. Categories have no income/expense kind — any category may tag either ledger type.
 
 ## Tag a cash transaction
 
 1. Open an account ledger at `/accounts/:id`.
-2. On create, optionally pick a category (omit for uncategorized).
-3. `POST /api/accounts/:accountId/transactions` accepts optional `categoryId` (same user). Multi-line splits are deferred (out of scope for now).
+2. On create, optionally pick a non-root category whose `ledgerType` matches the row type (omit for uncategorized).
+3. `POST /api/accounts/:accountId/transactions` accepts optional `categoryId` (same user, matching `ledgerType`). Multi-line splits are deferred (out of scope for now).

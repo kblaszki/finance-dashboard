@@ -51,7 +51,7 @@ Bounds are UTC (`[month start, next month start)` on `occurredAt`). History seri
 ## Category breakdown (FR-016)
 
 1. On `/statistics`, review **Income** and **Expense** donuts for the selected month, filtered to the top-bar currency.
-2. Totals are rolled up client-side under root parent categories (e.g. Income / Expense trees via `fetchCategories`); Uncategorized stays separate. Detail tables still list leaf tags with `count`.
+2. Totals are rolled up client-side to the **child of each ledger-type root** (Salary, Food, … via `fetchCategories` + `ledgerType`); Uncategorized stays separate. Detail tables still list leaf tags with `count`.
 3. Totals use the category name currently stored (renames affect past months).
 4. API: `GET /api/statistics/category-breakdown?month=YYYY-MM` (+ `GET /api/categories` for the rollup join).
 

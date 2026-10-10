@@ -26,18 +26,19 @@ Hub: [docs/README.md](../README.md).
 
 ## Category
 
-User-scoped nested label (`parentId` self-relation). No income/expense kind field.
+User-scoped nested label (`parentId` self-relation). Each row has a fixed `ledgerType` (`INCOME` | `EXPENSE`) inherited from its parent (roots set it on create). Reparent across types is rejected. Default seed still uses display names Income / Expense, but scoping does not depend on those names.
 
 | Field | Type | Notes |
 |-------|------|-------|
 | id | Int | PK, autoincrement |
 | userId | Int | FK → User |
-| name | String | Display name |
+| name | String | Display name (roots may be renamed) |
 | nameKey | String | Unique per user with the parent: `{parentId or 0}:{lowercase name}` |
+| ledgerType | String | `INCOME` or `EXPENSE`; immutable after create |
 | parentId | Int? | FK → Category (`onDelete: Restrict`); null = root |
 | createdAt | DateTime | Default now |
 
-Indexes: `[userId]`, `[parentId]`, unique `[userId, nameKey]`. Domain: `backend/src/domain/categories.ts`. Seeded on register / create-user / demo seed.
+Indexes: `[userId]`, `[parentId]`, `[userId, ledgerType]`, unique `[userId, nameKey]`. Domain: `backend/src/domain/categories.ts`. Seeded on register / create-user / demo seed.
 
 ## Account
 

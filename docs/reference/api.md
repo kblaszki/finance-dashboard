@@ -55,26 +55,26 @@ Duplicate name for the same user → `400`. Unknown `accountType` → `400`.
 
 ## Categories
 
-User-scoped nested tree (`parentId`). Flat list responses include `id`, `name`, `parentId`, `createdAt`. Sibling name uniqueness is case-insensitive and stored as `nameKey` (`{parentId or 0}:{lowercase name}`). Rename and reparent run in one transaction. Delete with children → `409`.
+User-scoped nested tree (`parentId`). Flat list responses include `id`, `name`, `parentId`, `ledgerType` (`INCOME` \| `EXPENSE`), `createdAt`. Sibling name uniqueness is case-insensitive and stored as `nameKey` (`{parentId or 0}:{lowercase name}`). Children inherit `ledgerType` from the parent; root create requires `ledgerType`. Rename and same-type reparent run in one transaction; cross-type reparent or changing `ledgerType` → `400`. Delete with children → `409`.
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
 | GET | `/api/categories` | Bearer | Flat list, name ascending |
-| POST | `/api/categories` | Bearer | Body: `name`; optional `parentId`. 201 |
-| PATCH | `/api/categories/:id` | Bearer | Body: optional `name`, `parentId` (`null` = root). Cycle → 400 |
+| POST | `/api/categories` | Bearer | Body: `name`; optional `parentId`; `ledgerType` required when `parentId` is null/omitted. 201 |
+| PATCH | `/api/categories/:id` | Bearer | Body: optional `name`, `parentId` (`null` = root). Cycle / cross-type reparent → 400 |
 | DELETE | `/api/categories/:id` | Bearer | 409 if children; else 204 (`CashTransaction.categoryId` → null) |
 
 Unknown / other-user category or parent → `404`.
 
 ## Cash transactions
 
-Nested under an owned account. Cross-user or unknown account → `404`. `amount` must be positive, with at most 2 decimal places (stored as integer cents; JSON stays a major-unit number). `type` is `INCOME` or `EXPENSE` (case-normalized). Create, update, and delete adjust `Account.cashBalance` atomically (delete reverses; update applies the signed difference). No `balanceAfter`. Optional `categoryId` must belong to the same user. `occurredAt` is an absolute instant; month statistics bucket it in UTC.
+Nested under an owned account. Cross-user or unknown account → `404`. `amount` must be positive, with at most 2 decimal places (stored as integer cents; JSON stays a major-unit number). `type` is `INCOME` or `EXPENSE` (case-normalized). Create, update, and delete adjust `Account.cashBalance` atomically (delete reverses; update applies the signed difference). No `balanceAfter`. Optional `categoryId` must belong to the same user and have `ledgerType` equal to the transaction `type` (else `400`). `occurredAt` is an absolute instant; month statistics bucket it in UTC.
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
 | GET | `/api/accounts/:accountId/transactions` | Bearer | List for account (`occurredAt` desc, then `id` desc); includes `categoryId` |
 | GET | `/api/accounts/:accountId/transactions/export` | Bearer | CSV download (`text/csv; charset=utf-8`); header `id,type,amount,currency,occurredAt,description,categoryId,categoryName,createdAt`; rows oldest→newest; empty ledger = header only; `Content-Disposition: attachment; filename="account-{id}-cash.csv"` |
-| POST | `/api/accounts/:accountId/transactions/import` | Bearer | Body `{ csv: string }` same header as export; always creates new rows (`id`/`createdAt` ignored); currency required and must match the account; category by owned `categoryId` or unique `categoryName`; all-or-nothing; `201 { created }`; `400 { error, details: [{ row, message }] }` |
+| POST | `/api/accounts/:accountId/transactions/import` | Bearer | Body `{ csv: string }` same header as export; always creates new rows (`id`/`createdAt` ignored); currency required and must match the account; category by owned `categoryId` or unique `categoryName` with matching `ledgerType`; all-or-nothing; `201 { created }`; `400 { error, details: [{ row, message }] }` |
 | POST | `/api/accounts/:accountId/transactions` | Bearer | Body: `type`, `amount`; optional `occurredAt` (ISO instant, default now), `description`, `categoryId`. 201 |
 | PATCH | `/api/accounts/:accountId/transactions/:id` | Bearer | Body: optional `type`, `amount`, `occurredAt`, `description`, `categoryId`. At least one field. Adjusts `cashBalance` by the signed difference. 200 |
 | DELETE | `/api/accounts/:accountId/transactions/:id` | Bearer | Must match account; reverses balance. 204 |

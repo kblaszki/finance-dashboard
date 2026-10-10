@@ -6,10 +6,13 @@ import {
   flattenCategoryTree,
   updateCategory,
   type Category,
+  type CategoryLedgerType,
 } from "../api/categoriesApi";
 import { PageHeader } from "../components/ui/PageHeader";
 import { StatusBlock } from "../components/ui/StatusBlock";
 import { useAsyncData } from "../hooks/useAsyncData";
+
+const LEDGER_TYPES: CategoryLedgerType[] = ["INCOME", "EXPENSE"];
 
 export function CategoriesPage() {
   const loadCategories = useCallback(() => fetchCategories(), []);
@@ -23,6 +26,7 @@ export function CategoriesPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState("");
   const [parentId, setParentId] = useState<string>("");
+  const [ledgerType, setLedgerType] = useState<CategoryLedgerType>("EXPENSE");
   const [createErr, setCreateErr] = useState<string | null>(null);
   const [createBusy, setCreateBusy] = useState(false);
 
@@ -33,17 +37,25 @@ export function CategoriesPage() {
   const [editBusy, setEditBusy] = useState(false);
   const [actionErr, setActionErr] = useState<string | null>(null);
 
+  const editingCategory = useMemo(
+    () => (editingId == null ? null : categories?.find((c) => c.id === editingId) ?? null),
+    [categories, editingId],
+  );
+
   async function handleCreate(e: FormEvent) {
     e.preventDefault();
     setCreateErr(null);
     setCreateBusy(true);
     try {
+      const parent = parentId === "" ? null : Number(parentId);
       await createCategory({
         name,
-        parentId: parentId === "" ? null : Number(parentId),
+        parentId: parent,
+        ...(parent == null ? { ledgerType } : {}),
       });
       setName("");
       setParentId("");
+      setLedgerType("EXPENSE");
       setShowCreate(false);
       reload();
     } catch (err) {
@@ -101,7 +113,7 @@ export function CategoriesPage() {
     <>
       <PageHeader
         title="Categories"
-        subtitle="Nested labels for cash transactions. Defaults are created on register."
+        subtitle="Nested labels for cash transactions. Each category has a fixed income or expense type."
         actions={
           <button
             type="button"
@@ -138,6 +150,21 @@ export function CategoriesPage() {
                 ))}
               </select>
             </label>
+            {parentId === "" && (
+              <label>
+                Type
+                <select
+                  value={ledgerType}
+                  onChange={(e) => setLedgerType(e.target.value as CategoryLedgerType)}
+                >
+                  {LEDGER_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
             {createErr && <p className="auth-error">{createErr}</p>}
             <button type="submit" className="btn-primary" disabled={createBusy}>
               {createBusy ? "Creating…" : "Create category"}
@@ -162,6 +189,7 @@ export function CategoriesPage() {
               <thead>
                 <tr>
                   <th>Name</th>
+                  <th>Type</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -191,7 +219,12 @@ export function CategoriesPage() {
                             >
                               <option value="">— Root —</option>
                               {treeRows
-                                .filter((c) => c.id !== category.id)
+                                .filter(
+                                  (c) =>
+                                    c.id !== category.id &&
+                                    c.ledgerType ===
+                                      (editingCategory?.ledgerType ?? category.ledgerType),
+                                )
                                 .map((cat) => (
                                   <option key={cat.id} value={cat.id}>
                                     {"\u00A0".repeat(cat.depth * 2)}
@@ -229,6 +262,17 @@ export function CategoriesPage() {
                           {category.name}
                         </span>
                       )}
+                    </td>
+                    <td>
+                      <span
+                        className={`badge ${
+                          category.ledgerType === "INCOME"
+                            ? "badge-positive"
+                            : "badge-negative"
+                        }`}
+                      >
+                        {category.ledgerType}
+                      </span>
                     </td>
                     <td>
                       {editingId !== category.id && (

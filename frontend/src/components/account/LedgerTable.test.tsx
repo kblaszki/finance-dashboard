@@ -15,9 +15,27 @@ const coffee: CashTransaction = {
 };
 
 const categories = [
-  { id: 1, name: "Income", parentId: null, createdAt: "2026-01-01T00:00:00.000Z" },
-  { id: 2, name: "Expense", parentId: null, createdAt: "2026-01-01T00:00:00.000Z" },
-  { id: 3, name: "Food", parentId: 2, createdAt: "2026-01-01T00:00:00.000Z" },
+  {
+    id: 1,
+    name: "Income",
+    parentId: null,
+    ledgerType: "INCOME" as const,
+    createdAt: "2026-01-01T00:00:00.000Z",
+  },
+  {
+    id: 2,
+    name: "Expense",
+    parentId: null,
+    ledgerType: "EXPENSE" as const,
+    createdAt: "2026-01-01T00:00:00.000Z",
+  },
+  {
+    id: 3,
+    name: "Food",
+    parentId: 2,
+    ledgerType: "EXPENSE" as const,
+    createdAt: "2026-01-01T00:00:00.000Z",
+  },
 ];
 
 function renderTable(

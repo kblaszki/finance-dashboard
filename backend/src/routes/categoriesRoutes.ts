@@ -11,6 +11,7 @@ import {
   findOwnedCategory,
   parseCategoryName,
   parseOptionalParentId,
+  resolveLedgerTypeForCreate,
 } from "../domain/categories";
 import { badRequest, handleRouteError, parseIdParam } from "./httpSupport";
 
@@ -47,10 +48,21 @@ export function createCategoriesRouter(deps: CategoriesDeps): Router {
       const name = parseCategoryName(body.name);
       const parentId = parseOptionalParentId(body.parentId) ?? null;
       const created = await prisma.$transaction(async (tx) => {
-        await assertParentOwned(tx, userId, parentId);
+        const ledgerType = await resolveLedgerTypeForCreate(
+          tx,
+          userId,
+          parentId,
+          body.ledgerType,
+        );
         await assertSiblingNameUnique(tx, userId, name, parentId);
         return tx.category.create({
-          data: { userId, name, parentId, nameKey: categoryNameKey(parentId, name) },
+          data: {
+            userId,
+            name,
+            parentId,
+            ledgerType,
+            nameKey: categoryNameKey(parentId, name),
+          },
         });
       });
       res.status(201).json(categoryPayload(created));
@@ -77,6 +89,9 @@ export function createCategoriesRouter(deps: CategoriesDeps): Router {
       if (!nameProvided && !parentProvided) {
         throw badRequest("name or parentId required");
       }
+      if (Object.prototype.hasOwnProperty.call(body, "ledgerType")) {
+        throw badRequest("ledgerType cannot be changed");
+      }
 
       const updated = await prisma.$transaction(async (tx) => {
         const existing = await findOwnedCategory(tx, userId, id);
@@ -86,7 +101,10 @@ export function createCategoriesRouter(deps: CategoriesDeps): Router {
           : existing.parentId;
 
         if (parentProvided) {
-          await assertParentOwned(tx, userId, parentId);
+          const parent = await assertParentOwned(tx, userId, parentId);
+          if (parent != null && parent.ledgerType !== existing.ledgerType) {
+            throw badRequest("cannot reparent across ledgerType");
+          }
           await assertNoCycle(tx, userId, id, parentId);
         }
         await assertSiblingNameUnique(tx, userId, name, parentId, id);

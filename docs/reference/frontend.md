@@ -27,9 +27,9 @@ Hub: [docs/README.md](../README.md).
 | `/dashboard` | Protected | `DashboardPage` (KPIs, net-worth donut, 12m cashflow, account mix) |
 | `/home` | Protected | Redirect → `/dashboard` |
 | `/accounts` | Protected | `AccountsPage` (multi-type create/list/edit/delete; currency on edit is read-only once the ledger has rows) |
-| `/accounts/:id` | Protected | `AccountDetailPage` (balance history chart at top; cash ledger with inline create row + list/delete/CSV; cell edit via double-click + Enter, Escape cancels). Ledger pieces live in `components/account/`: `AccountBalanceChart`, `AccountLedgerHeader`, `AccountSubtitle`, `LedgerTable`, `LedgerCreateRow`, `occurredAt.ts`, `categoryScope.ts` |
-| `/categories` | Protected | `CategoriesPage` (nested tree create/rename/reparent/delete) |
-| `/statistics` | Protected | `StatisticsPage` (period KPIs, cashflow + savings-rate chart, category donuts with parent rollup) |
+| `/accounts/:id` | Protected | `AccountDetailPage` (balance history chart at top; cash ledger with inline create row + list/delete/CSV; cell edit via double-click + Enter, Escape cancels). Ledger pieces live in `components/account/`: `AccountBalanceChart`, `AccountLedgerHeader`, `AccountSubtitle`, `LedgerTable`, `LedgerCreateRow`, `occurredAt.ts`, `categoryScope.ts` (`categoryIdsForLedgerType`, excludes roots in pickers) |
+| `/categories` | Protected | `CategoriesPage` (nested tree create/rename/same-type reparent/delete; `ledgerType` badge; root create picks type) |
+| `/statistics` | Protected | `StatisticsPage` (period KPIs, cashflow + savings-rate chart, category donuts rolled to child-of-root by `ledgerType`) |
 | `/settings` | Protected | `SettingsPage` |
 
 Shell: `AppShell` — fixed sidebar (brand, icon nav, user + logout, theme toggle) + topbar (one page `h1`, global `CurrencySelect`) + content. A skip link targets `#main-content`. Collapses to a top drawer ≤900px. Gate: `ProtectedRoute`. `ErrorBoundary` wraps the shell outlet and the guest auth outlet. Page titles inside the shell are `h2`.
@@ -59,7 +59,7 @@ Production Docker serves `frontend/dist` from Express (`STATIC_DIR`); deep links
 | `frontend/src/api/client.ts` | `fetch` + Bearer token. Session `401` clears auth. Other errors use `body.error`. A failed `fetch` throws `Network request failed`. |
 | `frontend/src/api/authApi.ts` | config, register, login, me, profile, email, password |
 | `frontend/src/api/accountsApi.ts` | list/create/get/patch/delete accounts; `fetchAccountBalanceHistory`; `ACCOUNT_TYPES` / `AccountType` |
-| `frontend/src/api/categoriesApi.ts` | list/create/patch/delete categories; `flattenCategoryTree` |
+| `frontend/src/api/categoriesApi.ts` | list/create/patch/delete categories (`ledgerType`); `flattenCategoryTree` |
 | `frontend/src/api/transactionsApi.ts` | list/create/delete/export/import cash txs under `/api/accounts/:id/transactions` (optional `categoryId`; CSV export via `getBlob`, import via JSON `{ csv }`) |
 | `frontend/src/api/statisticsApi.ts` | `fetchCategoryBreakdown`, `fetchPeriodSummary`, `fetchCashflowHistory`, `fetchNetWorth`, `fetchCashflowRolling12m` → `/api/statistics/*` |
 

@@ -3,9 +3,15 @@ import { badRequest, conflict, notFound } from "../lib/errors";
 
 type Db = PrismaClient | Prisma.TransactionClient;
 
-const DEFAULT_TREE: Array<{ name: string; children: string[] }> = [
-  { name: "Income", children: ["Salary", "Other income"] },
-  { name: "Expense", children: ["Food", "Housing", "Transport", "Other"] },
+export type CategoryLedgerType = "INCOME" | "EXPENSE";
+
+const DEFAULT_TREE: Array<{
+  name: string;
+  ledgerType: CategoryLedgerType;
+  children: string[];
+}> = [
+  { name: "Income", ledgerType: "INCOME", children: ["Salary", "Other income"] },
+  { name: "Expense", ledgerType: "EXPENSE", children: ["Food", "Housing", "Transport", "Other"] },
 ];
 
 export function categoryNameKey(parentId: number | null, name: string): string {
@@ -17,6 +23,12 @@ export function parseCategoryName(value: unknown): string {
   if (!text) throw badRequest("name required");
   if (text.length > 80) throw badRequest("name must be at most 80 characters");
   return text;
+}
+
+export function parseLedgerType(value: unknown): CategoryLedgerType {
+  const raw = String(value ?? "").trim().toUpperCase();
+  if (raw === "INCOME" || raw === "EXPENSE") return raw;
+  throw badRequest("ledgerType must be INCOME or EXPENSE");
 }
 
 /** Parse optional parentId: undefined = omit, null = root, number = parent. */
@@ -34,13 +46,27 @@ export async function assertParentOwned(
   db: Db,
   userId: number,
   parentId: number | null | undefined,
-): Promise<void> {
-  if (parentId === undefined || parentId === null) return;
+): Promise<Category | null> {
+  if (parentId === undefined || parentId === null) return null;
   const parent = await db.category.findFirst({
     where: { id: parentId, userId },
-    select: { id: true },
   });
   if (!parent) throw notFound("Parent category not found");
+  return parent;
+}
+
+/** Root create requires body.ledgerType; child inherits from parent. */
+export async function resolveLedgerTypeForCreate(
+  db: Db,
+  userId: number,
+  parentId: number | null,
+  bodyLedgerType: unknown,
+): Promise<CategoryLedgerType> {
+  if (parentId != null) {
+    const parent = await assertParentOwned(db, userId, parentId);
+    return parseLedgerType(parent!.ledgerType);
+  }
+  return parseLedgerType(bodyLedgerType);
 }
 
 export async function assertSiblingNameUnique(
@@ -117,6 +143,7 @@ export async function seedDefaultCategories(db: Db, userId: number): Promise<voi
         userId,
         name: root.name,
         parentId: null,
+        ledgerType: root.ledgerType,
         nameKey: categoryNameKey(null, root.name),
       },
     });
@@ -126,6 +153,7 @@ export async function seedDefaultCategories(db: Db, userId: number): Promise<voi
           userId,
           name: childName,
           parentId: parent.id,
+          ledgerType: root.ledgerType,
           nameKey: categoryNameKey(parent.id, childName),
         },
       });
@@ -138,6 +166,7 @@ export function categoryPayload(category: Category) {
     id: category.id,
     name: category.name,
     parentId: category.parentId,
+    ledgerType: category.ledgerType,
     createdAt: category.createdAt.toISOString(),
   };
 }

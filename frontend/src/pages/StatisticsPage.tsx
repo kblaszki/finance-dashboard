@@ -66,7 +66,10 @@ function nameById(categories: Category[]): Map<number, string> {
   return map;
 }
 
-/** Roll child category totals under root parent (Income / Expense); keep Uncategorized. */
+/**
+ * Roll totals to the child of each ledger-type root (Salary, Food, …), not the root name.
+ * Deeper descendants roll up to that first child. Root-tagged rows keep the root label.
+ */
 function rollupByParent(
   rows: CategoryBreakdownRow[],
   currency: string,
@@ -81,14 +84,17 @@ function rollupByParent(
     let label = "Uncategorized";
     let key = "uncategorized";
     if (row.categoryId != null) {
+      const chain: number[] = [];
       let id: number | null = row.categoryId;
-      let rootId = id;
       while (id != null) {
-        rootId = id;
+        chain.push(id);
         id = parents.get(id) ?? null;
       }
-      label = names.get(rootId) ?? row.categoryName;
-      key = `cat-${rootId}`;
+      // chain: [leaf, …, childOfRoot, root]
+      const rootId = chain[chain.length - 1]!;
+      const scopeId = chain.length >= 2 ? chain[chain.length - 2]! : rootId;
+      label = names.get(scopeId) ?? row.categoryName;
+      key = `cat-${scopeId}`;
     }
     const existing = buckets.get(key);
     if (existing) {
@@ -383,7 +389,7 @@ function BreakdownPanel(props: {
   return (
     <ChartCard
       title={`${title} by category`}
-      subtitle={`Parent rollup · ${currency}`}
+      subtitle={`Child-of-root rollup · ${currency}`}
     >
       {rows.length === 0 ? (
         <p className="empty-state">{emptyLabel}</p>

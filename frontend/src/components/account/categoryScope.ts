@@ -1,35 +1,21 @@
 import type { Category } from "../../api/categoriesApi";
 import type { CashTxType } from "../../api/transactionsApi";
 
-export function rootNameForTxType(type: CashTxType): "Income" | "Expense" {
-  return type === "INCOME" ? "Income" : "Expense";
-}
-
-/** Root named Income/Expense plus all descendants (by parentId). */
-export function categoryIdsUnderRoot(
+/**
+ * Category ids with matching ledgerType.
+ * Ledger pickers pass excludeRoots so transactions are not tagged with scope roots.
+ */
+export function categoryIdsForLedgerType(
   categories: Category[],
-  rootName: "Income" | "Expense",
+  type: CashTxType,
+  options?: { excludeRoots?: boolean },
 ): Set<number> {
-  const root = categories.find(
-    (cat) => cat.parentId == null && cat.name === rootName,
-  );
-  if (!root) return new Set();
-
-  const byParent = new Map<number, Category[]>();
-  for (const cat of categories) {
-    if (cat.parentId == null) continue;
-    const list = byParent.get(cat.parentId) ?? [];
-    list.push(cat);
-    byParent.set(cat.parentId, list);
-  }
-
+  const excludeRoots = options?.excludeRoots ?? false;
   const ids = new Set<number>();
-  function walk(id: number) {
-    ids.add(id);
-    for (const child of byParent.get(id) ?? []) {
-      walk(child.id);
-    }
+  for (const cat of categories) {
+    if (cat.ledgerType !== type) continue;
+    if (excludeRoots && cat.parentId == null) continue;
+    ids.add(cat.id);
   }
-  walk(root.id);
   return ids;
 }

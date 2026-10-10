@@ -179,16 +179,16 @@ export function parseCashLedgerCsvImport(
   return { ok: true, drafts };
 }
 
-/** Resolve categoryId ownership and unique categoryName matches. */
+/** Resolve categoryId ownership, unique categoryName matches, and ledgerType. */
 export function resolveImportCategoryIds(
   drafts: CashLedgerImportDraft[],
-  ownedCategories: Array<{ id: number; name: string }>,
+  ownedCategories: Array<{ id: number; name: string; ledgerType: string }>,
 ): ResolveImportResult {
-  const byId = new Set(ownedCategories.map((c) => c.id));
-  const byName = new Map<string, number[]>();
+  const byId = new Map(ownedCategories.map((c) => [c.id, c]));
+  const byName = new Map<string, Array<{ id: number; ledgerType: string }>>();
   for (const cat of ownedCategories) {
     const list = byName.get(cat.name) ?? [];
-    list.push(cat.id);
+    list.push({ id: cat.id, ledgerType: cat.ledgerType });
     byName.set(cat.name, list);
   }
 
@@ -197,16 +197,19 @@ export function resolveImportCategoryIds(
 
   for (const draft of drafts) {
     let categoryId: number | null = null;
+    let categoryLedgerType: string | null = null;
 
     if (draft.categoryId != null) {
-      if (!byId.has(draft.categoryId)) {
+      const cat = byId.get(draft.categoryId);
+      if (!cat) {
         errors.push({
           row: draft.row,
           message: "categoryId not found",
         });
         continue;
       }
-      categoryId = draft.categoryId;
+      categoryId = cat.id;
+      categoryLedgerType = cat.ledgerType;
     } else if (draft.categoryName != null) {
       const matches = byName.get(draft.categoryName) ?? [];
       if (matches.length === 0) {
@@ -223,7 +226,16 @@ export function resolveImportCategoryIds(
         });
         continue;
       }
-      categoryId = matches[0]!;
+      categoryId = matches[0]!.id;
+      categoryLedgerType = matches[0]!.ledgerType;
+    }
+
+    if (categoryId != null && categoryLedgerType !== draft.type) {
+      errors.push({
+        row: draft.row,
+        message: "category ledgerType must match transaction type",
+      });
+      continue;
     }
 
     rows.push({

@@ -1,15 +1,20 @@
 import { apiClient } from "./client";
 
+export type CategoryLedgerType = "INCOME" | "EXPENSE";
+
 export type Category = {
   id: number;
   name: string;
   parentId: number | null;
+  ledgerType: CategoryLedgerType;
   createdAt: string;
 };
 
 export type CreateCategoryInput = {
   name: string;
   parentId?: number | null;
+  /** Required when creating a root (parentId null/omitted). */
+  ledgerType?: CategoryLedgerType;
 };
 
 export type UpdateCategoryInput = {

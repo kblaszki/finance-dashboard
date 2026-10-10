@@ -99,8 +99,20 @@ describe("AccountDetailPage", () => {
       ],
     });
     vi.mocked(fetchCategories).mockResolvedValue([
-      { id: 1, name: "Income", parentId: null, createdAt: "2026-01-01T00:00:00.000Z" },
-      { id: 2, name: "Expense", parentId: null, createdAt: "2026-01-01T00:00:00.000Z" },
+      {
+        id: 1,
+        name: "Income",
+        parentId: null,
+        ledgerType: "INCOME",
+        createdAt: "2026-01-01T00:00:00.000Z",
+      },
+      {
+        id: 2,
+        name: "Expense",
+        parentId: null,
+        ledgerType: "EXPENSE",
+        createdAt: "2026-01-01T00:00:00.000Z",
+      },
     ]);
     vi.mocked(fetchTransactions).mockResolvedValue([coffee]);
     vi.mocked(createTransaction).mockResolvedValue(coffee);

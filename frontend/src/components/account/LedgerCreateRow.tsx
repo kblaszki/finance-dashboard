@@ -12,10 +12,7 @@ import {
   type CashTxType,
   type CreateCashTransactionInput,
 } from "../../api/transactionsApi";
-import {
-  categoryIdsUnderRoot,
-  rootNameForTxType,
-} from "./categoryScope";
+import { categoryIdsForLedgerType } from "./categoryScope";
 import { defaultOccurredAtValue } from "./occurredAt";
 
 export function normalizeCashTxType(value: unknown): CashTxType {
@@ -60,10 +57,9 @@ export function LedgerCreateRow(props: {
   }, [focusNonce]);
 
   const categoryOptions = useMemo(() => {
-    const allowed = categoryIdsUnderRoot(
-      props.categories,
-      rootNameForTxType(type),
-    );
+    const allowed = categoryIdsForLedgerType(props.categories, type, {
+      excludeRoots: true,
+    });
     return props.categories
       .filter((cat) => allowed.has(cat.id))
       .slice()
@@ -73,10 +69,9 @@ export function LedgerCreateRow(props: {
   function onTypeChange(next: CashTxType) {
     setType(next);
     if (categoryId !== "") {
-      const allowed = categoryIdsUnderRoot(
-        props.categories,
-        rootNameForTxType(next),
-      );
+      const allowed = categoryIdsForLedgerType(props.categories, next, {
+        excludeRoots: true,
+      });
       if (!allowed.has(Number(categoryId))) {
         setCategoryId("");
       }

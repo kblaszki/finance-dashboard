@@ -37,5 +37,5 @@ Nested labels for organizing cash; seeded Income/Expense defaults on new users.
 
 ## Out of scope / follow-ups
 
-- Category income/expense kind enforcement
+- ~~Category income/expense kind enforcement~~ — shipped as `Category.ledgerType` (`INCOME` \| `EXPENSE`) with API/UI match checks
 - Monthly budgets (FR-017), auto-categorization (FR-034)

@@ -103,12 +103,21 @@ test("POST /api/auth/register creates user", async () => {
     .set("Authorization", `Bearer ${res.body.token}`);
   assert.equal(cats.status, 200);
   assert.equal(cats.body.length, 8);
-  const rows = cats.body as Array<{ id: number; name: string; parentId: number | null }>;
+  const rows = cats.body as Array<{
+    id: number;
+    name: string;
+    parentId: number | null;
+    ledgerType: string;
+  }>;
   const byName = new Map(rows.map((c) => [c.name, c]));
   assert.equal(byName.get("Income")?.parentId, null);
+  assert.equal(byName.get("Income")?.ledgerType, "INCOME");
   assert.equal(byName.get("Expense")?.parentId, null);
+  assert.equal(byName.get("Expense")?.ledgerType, "EXPENSE");
   assert.equal(byName.get("Salary")?.parentId, byName.get("Income")!.id);
+  assert.equal(byName.get("Salary")?.ledgerType, "INCOME");
   assert.equal(byName.get("Food")?.parentId, byName.get("Expense")!.id);
+  assert.equal(byName.get("Food")?.ledgerType, "EXPENSE");
 });
 
 test("POST /api/auth/register rejects short password", async () => {
@@ -1001,8 +1010,17 @@ test("categories CRUD supports nesting, rename, reparent, and delete rules", asy
     .get("/api/categories")
     .set("Authorization", `Bearer ${token}`);
   assert.equal(roots.status, 200);
-  const income = (roots.body as Array<{ id: number; name: string }>).find((c) => c.name === "Income")!;
+  const income = (
+    roots.body as Array<{ id: number; name: string; ledgerType: string }>
+  ).find((c) => c.name === "Income")!;
   assert.ok(income);
+  assert.equal(income.ledgerType, "INCOME");
+
+  const rootMissingType = await request(app)
+    .post("/api/categories")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Side hustle" });
+  assert.equal(rootMissingType.status, 400);
 
   const created = await request(app)
     .post("/api/categories")
@@ -1011,6 +1029,7 @@ test("categories CRUD supports nesting, rename, reparent, and delete rules", asy
   assert.equal(created.status, 201);
   assert.equal(created.body.name, "Bonus");
   assert.equal(created.body.parentId, income.id);
+  assert.equal(created.body.ledgerType, "INCOME");
 
   const dup = await request(app)
     .post("/api/categories")
@@ -1025,16 +1044,34 @@ test("categories CRUD supports nesting, rename, reparent, and delete rules", asy
   assert.equal(renamed.status, 200);
   assert.equal(renamed.body.name, "Yearly bonus");
 
-  const expense = (roots.body as Array<{ id: number; name: string }>).find((c) => c.name === "Expense")!;
-  const reparented = await request(app)
+  const expense = (roots.body as Array<{ id: number; name: string }>).find(
+    (c) => c.name === "Expense",
+  )!;
+  const crossType = await request(app)
     .patch(`/api/categories/${created.body.id}`)
     .set("Authorization", `Bearer ${token}`)
     .send({ parentId: expense.id });
+  assert.equal(crossType.status, 400);
+
+  const changeType = await request(app)
+    .patch(`/api/categories/${created.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ ledgerType: "EXPENSE" });
+  assert.equal(changeType.status, 400);
+
+  const salary = (roots.body as Array<{ id: number; name: string }>).find(
+    (c) => c.name === "Salary",
+  )!;
+  const reparented = await request(app)
+    .patch(`/api/categories/${created.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ parentId: salary.id });
   assert.equal(reparented.status, 200);
-  assert.equal(reparented.body.parentId, expense.id);
+  assert.equal(reparented.body.parentId, salary.id);
+  assert.equal(reparented.body.ledgerType, "INCOME");
 
   const cycle = await request(app)
-    .patch(`/api/categories/${expense.id}`)
+    .patch(`/api/categories/${income.id}`)
     .set("Authorization", `Bearer ${token}`)
     .send({ parentId: created.body.id });
   assert.equal(cycle.status, 400);
@@ -1127,6 +1164,12 @@ test("cash transactions accept optional categoryId and null on category delete",
     .send({ type: "EXPENSE", amount: 5, categoryId: food.id });
   assert.equal(withCat.status, 201);
   assert.equal(withCat.body.categoryId, food.id);
+
+  const mismatch = await request(app)
+    .post(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "INCOME", amount: 2, categoryId: food.id });
+  assert.equal(mismatch.status, 400);
 
   const omit = await request(app)
     .post(`/api/accounts/${accountId}/transactions`)
