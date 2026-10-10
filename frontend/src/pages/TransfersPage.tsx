@@ -19,9 +19,20 @@ import {
 } from "../api/transfersApi";
 import {
   defaultOccurredAtValue,
-  formatOccurredAt,
   toDateTimeLocalValue,
 } from "../components/account/occurredAt";
+
+function formatTransferDate(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString(undefined, {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 import { PageHeader } from "../components/ui/PageHeader";
 import { StatusBlock } from "../components/ui/StatusBlock";
 import { useAsyncData } from "../hooks/useAsyncData";
@@ -458,7 +469,7 @@ export function TransfersPage() {
       />
       {!loading && !error && (
         <div className="table-wrap">
-          <table className="data-table ledger-table">
+          <table className="data-table ledger-table ledger-table--transfers">
             <thead>
               <tr>
                 <th>Date</th>
@@ -500,11 +511,16 @@ export function TransfersPage() {
                           aria-label="Edit date"
                         />
                       ) : (
-                        formatOccurredAt(transfer.occurredAt)
+                        formatTransferDate(transfer.occurredAt)
                       )}
                     </td>
                     <td
                       className={cellClass(transfer.id, "fromAccountId", true)}
+                      title={
+                        fromAccount
+                          ? accountLabel(fromAccount)
+                          : `#${transfer.fromAccountId}`
+                      }
                       onDoubleClick={() => startEdit(transfer, "fromAccountId")}
                     >
                       {isEditing(transfer.id, "fromAccountId") ? (
@@ -530,6 +546,11 @@ export function TransfersPage() {
                     </td>
                     <td
                       className={cellClass(transfer.id, "toAccountId", true)}
+                      title={
+                        toAccount
+                          ? accountLabel(toAccount)
+                          : `#${transfer.toAccountId}`
+                      }
                       onDoubleClick={() => startEdit(transfer, "toAccountId")}
                     >
                       {isEditing(transfer.id, "toAccountId") ? (
@@ -608,7 +629,9 @@ export function TransfersPage() {
                     </td>
                     <td className="num">
                       {cross && transfer.fxRate != null
-                        ? transfer.fxRate.toFixed(6)
+                        ? transfer.fxRate.toLocaleString(undefined, {
+                            maximumFractionDigits: 4,
+                          })
                         : "—"}
                     </td>
                     <td

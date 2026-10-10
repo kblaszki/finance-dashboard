@@ -502,24 +502,68 @@
   width: 100%;
 }
 
-.ledger-table th:nth-child(1) {
+/* Account cash ledger: Date | Type | Amount | Category | Description | Actions */
+.ledger-table--account th:nth-child(1) {
   width: 18%;
 }
 
-.ledger-table th:nth-child(2) {
+.ledger-table--account th:nth-child(2) {
   width: 11%;
 }
 
-.ledger-table th:nth-child(3) {
+.ledger-table--account th:nth-child(3) {
   width: 14%;
 }
 
-.ledger-table th:nth-child(4) {
+.ledger-table--account th:nth-child(4) {
   width: 16%;
 }
 
-.ledger-table th:nth-child(6) {
+.ledger-table--account th:nth-child(6) {
   width: 5.5rem;
+}
+
+/* Transfers: Date | From | To | Amount from | Amount to | FX | Description | Actions */
+.ledger-table--transfers th:nth-child(1) {
+  width: 10.75rem;
+}
+
+.ledger-table--transfers th:nth-child(2),
+.ledger-table--transfers th:nth-child(3) {
+  width: 12%;
+}
+
+.ledger-table--transfers th:nth-child(4),
+.ledger-table--transfers th:nth-child(5) {
+  width: 9%;
+}
+
+.ledger-table--transfers th:nth-child(6) {
+  width: 6%;
+}
+
+.ledger-table--transfers th:nth-child(8) {
+  width: 6rem;
+}
+
+.ledger-table--transfers .ledger-cell-input[type="datetime-local"] {
+  font-size: 0.8rem;
+  padding-inline: 0.2rem;
+  min-width: 0;
+}
+
+.ledger-table--transfers tbody tr:not(.ledger-create-row) td:nth-child(2),
+.ledger-table--transfers tbody tr:not(.ledger-create-row) td:nth-child(3) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ledger-table--transfers td:nth-child(2).ledger-cell--editing,
+.ledger-table--transfers td:nth-child(3).ledger-cell--editing {
+  overflow: hidden;
+  white-space: normal;
+  text-overflow: clip;
 }
 
 .ledger-table td {
