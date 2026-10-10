@@ -56,7 +56,9 @@ describe('useAsyncData', () => {
   })
 
   it('keeps loading false on reload when data already exists', async () => {
-    let resolveNext: ((value: { value: number }) => void) | null = null
+    const pending: { resolve: ((value: { value: number }) => void) | null } = {
+      resolve: null,
+    }
     let calls = 0
     const loader = vi.fn(
       () =>
@@ -66,7 +68,7 @@ describe('useAsyncData', () => {
             resolve({ value: 1 })
             return
           }
-          resolveNext = resolve
+          pending.resolve = resolve
         }),
     )
 
@@ -85,7 +87,8 @@ describe('useAsyncData', () => {
     expect(result.current.loading).toBe(false)
     expect(result.current.data).toEqual({ value: 1 })
 
-    resolveNext?.({ value: 2 })
+    expect(pending.resolve).not.toBeNull()
+    pending.resolve!({ value: 2 })
     await waitFor(() => {
       expect(result.current.data).toEqual({ value: 2 })
     })

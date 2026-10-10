@@ -320,14 +320,14 @@ export function TransfersPage() {
     error: transfersError,
     loading: transfersLoading,
     reload: reloadTransfers,
-  } = useAsyncData(loadTransfers, []);
+  } = useAsyncData(loadTransfers);
 
   const loadAccounts = useCallback(() => fetchAccounts(), []);
   const {
     data: accounts,
     error: accountsError,
     loading: accountsLoading,
-  } = useAsyncData(loadAccounts, []);
+  } = useAsyncData(loadAccounts);
 
   const accountById = useMemo(() => {
     const map = new Map<number, Account>();
