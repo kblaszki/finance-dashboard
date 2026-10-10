@@ -13,7 +13,7 @@ User category tree with defaults on register.
 
 ## User value
 
-Nested labels for organizing cash; seeded Income/Expense defaults on new users.
+Nested labels for organizing cash; seeded flat roots by `ledgerType` (Salary, Food, …) on new users.
 
 ## Surfaces
 

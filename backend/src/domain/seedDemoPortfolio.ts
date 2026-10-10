@@ -37,7 +37,7 @@ export type DemoPlannedTx = {
   amount: number;
   occurredAt: Date;
   description: string;
-  category?: { parent: string; child: string };
+  category?: string;
 };
 
 /** openingBalance + Σ signedDelta(type, amount). */
@@ -145,7 +145,7 @@ type MonthPlan = {
   amountMin: number;
   amountMax: number;
   description: string;
-  category?: { parent: string; child: string };
+  category?: string;
 };
 
 function monthPlansForAccount(
@@ -160,28 +160,28 @@ function monthPlansForAccount(
           amountMin: 5100,
           amountMax: 5400,
           description: "Monthly salary",
-          category: { parent: "Income", child: "Salary" },
+          category: "Salary",
         },
         {
           type: "EXPENSE",
           amountMin: 1700,
           amountMax: 1900,
           description: "Rent",
-          category: { parent: "Expense", child: "Housing" },
+          category: "Housing",
         },
         {
           type: "EXPENSE",
           amountMin: 320,
           amountMax: 480,
           description: "Groceries",
-          category: { parent: "Expense", child: "Food" },
+          category: "Food",
         },
         {
           type: "EXPENSE",
           amountMin: 180,
           amountMax: 320,
           description: "Transit",
-          category: { parent: "Expense", child: "Transport" },
+          category: "Transport",
         },
         rng() < 0.55
           ? {
@@ -195,7 +195,7 @@ function monthPlansForAccount(
               amountMin: 60,
               amountMax: 150,
               description: "Household",
-              category: { parent: "Expense", child: "Other" },
+              category: "Other",
             },
       ];
     case "euro":
@@ -205,28 +205,28 @@ function monthPlansForAccount(
           amountMin: 90,
           amountMax: 140,
           description: "EUR top-up",
-          category: { parent: "Income", child: "Other income" },
+          category: "Other income",
         },
         {
           type: "EXPENSE",
           amountMin: 18,
           amountMax: 45,
           description: "Café",
-          category: { parent: "Expense", child: "Food" },
+          category: "Food",
         },
         {
           type: "EXPENSE",
           amountMin: 22,
           amountMax: 55,
           description: "Train",
-          category: { parent: "Expense", child: "Transport" },
+          category: "Transport",
         },
         {
           type: "EXPENSE",
           amountMin: 15,
           amountMax: 40,
           description: "Lunch",
-          category: { parent: "Expense", child: "Food" },
+          category: "Food",
         },
         rng() < 0.4
           ? {
@@ -240,7 +240,7 @@ function monthPlansForAccount(
               amountMin: 10,
               amountMax: 30,
               description: "Souvenirs",
-              category: { parent: "Expense", child: "Other" },
+              category: "Other",
             },
       ];
     case "brokerage":
@@ -250,28 +250,28 @@ function monthPlansForAccount(
           amountMin: 220,
           amountMax: 420,
           description: "Dividend cash",
-          category: { parent: "Income", child: "Other income" },
+          category: "Other income",
         },
         {
           type: "EXPENSE",
           amountMin: 25,
           amountMax: 55,
           description: "Account fee",
-          category: { parent: "Expense", child: "Other" },
+          category: "Other",
         },
         {
           type: "INCOME",
           amountMin: 40,
           amountMax: 120,
           description: "Interest credit",
-          category: { parent: "Income", child: "Other income" },
+          category: "Other income",
         },
         {
           type: "EXPENSE",
           amountMin: 15,
           amountMax: 45,
           description: "Wire fee",
-          category: { parent: "Expense", child: "Other" },
+          category: "Other",
         },
         rng() < 0.35
           ? {
@@ -285,7 +285,7 @@ function monthPlansForAccount(
               amountMin: 12,
               amountMax: 40,
               description: "Platform fee",
-              category: { parent: "Expense", child: "Other" },
+              category: "Other",
             },
       ];
     case "crypto":
@@ -295,28 +295,28 @@ function monthPlansForAccount(
           amountMin: 120,
           amountMax: 260,
           description: "Stablecoin yield",
-          category: { parent: "Income", child: "Other income" },
+          category: "Other income",
         },
         {
           type: "EXPENSE",
           amountMin: 12,
           amountMax: 40,
           description: "Network fee",
-          category: { parent: "Expense", child: "Other" },
+          category: "Other",
         },
         {
           type: "INCOME",
           amountMin: 30,
           amountMax: 90,
           description: "Airdrop cash-out",
-          category: { parent: "Income", child: "Other income" },
+          category: "Other income",
         },
         {
           type: "EXPENSE",
           amountMin: 8,
           amountMax: 28,
           description: "Withdrawal fee",
-          category: { parent: "Expense", child: "Other" },
+          category: "Other",
         },
         rng() < 0.4
           ? {
@@ -330,7 +330,7 @@ function monthPlansForAccount(
               amountMin: 6,
               amountMax: 24,
               description: "Exchange fee",
-              category: { parent: "Expense", child: "Other" },
+              category: "Other",
             },
       ];
     default: {
@@ -380,27 +380,20 @@ async function wipeDemoPortfolio(db: Db, userId: number): Promise<void> {
   await db.category.deleteMany({ where: { userId } });
 }
 
-async function categoryIdByParentChild(
+async function categoryIdByNameType(
   db: Db,
   userId: number,
-  parentName: string,
-  childName: string,
+  name: string,
+  ledgerType: "INCOME" | "EXPENSE",
 ): Promise<number> {
-  const parent = await db.category.findFirst({
-    where: { userId, name: parentName, parentId: null },
+  const row = await db.category.findFirst({
+    where: { userId, name, ledgerType, parentId: null },
     select: { id: true },
   });
-  if (!parent) {
-    throw new Error(`Demo seed missing parent category: ${parentName}`);
+  if (!row) {
+    throw new Error(`Demo seed missing category: ${ledgerType}/${name}`);
   }
-  const child = await db.category.findFirst({
-    where: { userId, name: childName, parentId: parent.id },
-    select: { id: true },
-  });
-  if (!child) {
-    throw new Error(`Demo seed missing category: ${parentName}/${childName}`);
-  }
-  return child.id;
+  return row.id;
 }
 
 /**
@@ -415,40 +408,18 @@ export async function seedDemoPortfolio(
   await wipeDemoPortfolio(db, userId);
   await seedDefaultCategories(db, userId);
 
-  const salaryId = await categoryIdByParentChild(db, userId, "Income", "Salary");
-  const otherIncomeId = await categoryIdByParentChild(
-    db,
-    userId,
-    "Income",
-    "Other income",
-  );
-  const foodId = await categoryIdByParentChild(db, userId, "Expense", "Food");
-  const housingId = await categoryIdByParentChild(
-    db,
-    userId,
-    "Expense",
-    "Housing",
-  );
-  const transportId = await categoryIdByParentChild(
-    db,
-    userId,
-    "Expense",
-    "Transport",
-  );
-  const otherExpenseId = await categoryIdByParentChild(
-    db,
-    userId,
-    "Expense",
-    "Other",
-  );
-
   const categoryMap: Record<string, number> = {
-    "Income/Salary": salaryId,
-    "Income/Other income": otherIncomeId,
-    "Expense/Food": foodId,
-    "Expense/Housing": housingId,
-    "Expense/Transport": transportId,
-    "Expense/Other": otherExpenseId,
+    Salary: await categoryIdByNameType(db, userId, "Salary", "INCOME"),
+    "Other income": await categoryIdByNameType(
+      db,
+      userId,
+      "Other income",
+      "INCOME",
+    ),
+    Food: await categoryIdByNameType(db, userId, "Food", "EXPENSE"),
+    Housing: await categoryIdByNameType(db, userId, "Housing", "EXPENSE"),
+    Transport: await categoryIdByNameType(db, userId, "Transport", "EXPENSE"),
+    Other: await categoryIdByNameType(db, userId, "Other", "EXPENSE"),
   };
 
   const checking = await db.account.create({
@@ -506,9 +477,7 @@ export async function seedDemoPortfolio(
   const planned = buildDemoLedgerTxs(now);
   const rows = planned.map((tx) => {
     const account = accountsByKey[tx.accountKey];
-    const categoryId = tx.category
-      ? categoryMap[`${tx.category.parent}/${tx.category.child}`]
-      : null;
+    const categoryId = tx.category ? categoryMap[tx.category] : null;
     return {
       accountId: account.id,
       type: tx.type,

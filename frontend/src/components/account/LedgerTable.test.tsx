@@ -17,22 +17,15 @@ const coffee: CashTransaction = {
 const categories = [
   {
     id: 1,
-    name: "Income",
+    name: "Salary",
     parentId: null,
     ledgerType: "INCOME" as const,
     createdAt: "2026-01-01T00:00:00.000Z",
   },
   {
-    id: 2,
-    name: "Expense",
-    parentId: null,
-    ledgerType: "EXPENSE" as const,
-    createdAt: "2026-01-01T00:00:00.000Z",
-  },
-  {
     id: 3,
     name: "Food",
-    parentId: 2,
+    parentId: null,
     ledgerType: "EXPENSE" as const,
     createdAt: "2026-01-01T00:00:00.000Z",
   },

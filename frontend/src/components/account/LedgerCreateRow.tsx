@@ -57,9 +57,7 @@ export function LedgerCreateRow(props: {
   }, [focusNonce]);
 
   const categoryOptions = useMemo(() => {
-    const allowed = categoryIdsForLedgerType(props.categories, type, {
-      excludeRoots: true,
-    });
+    const allowed = categoryIdsForLedgerType(props.categories, type);
     return props.categories
       .filter((cat) => allowed.has(cat.id))
       .slice()
@@ -69,9 +67,7 @@ export function LedgerCreateRow(props: {
   function onTypeChange(next: CashTxType) {
     setType(next);
     if (categoryId !== "") {
-      const allowed = categoryIdsForLedgerType(props.categories, next, {
-        excludeRoots: true,
-      });
+      const allowed = categoryIdsForLedgerType(props.categories, next);
       if (!allowed.has(Number(categoryId))) {
         setCategoryId("");
       }

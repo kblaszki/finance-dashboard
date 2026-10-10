@@ -173,7 +173,7 @@ test("seedDemoPortfolio matches ledger balances and scopes wipe to one user", as
     const categoryCount = await prisma.category.count({
       where: { userId: demo.id },
     });
-    assert.equal(categoryCount, 8);
+    assert.equal(categoryCount, 6);
 
     const otherAccounts = await prisma.account.findMany({
       where: { userId: other.id },

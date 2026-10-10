@@ -55,7 +55,7 @@ Money and conversion rules belong in dedicated backend modules when FX/valuation
 ## Auth
 
 - Register/login return a JWT (`signToken`, HS256, 7-day expiry) that includes `userId` and `tokenVersion`.
-- Register (when allowed) atomically creates the user and seeds a default Income/Expense category tree. Duplicate email or username (case-insensitive) returns `409`.
+- Register (when allowed) atomically creates the user and seeds default category roots by `ledgerType` (Salary, Food, …). Duplicate email or username (case-insensitive) returns `409`.
 - Protected routes use `requireAuth`: header `Authorization: Bearer <token>`. The user must still exist and the token's `tokenVersion` must match. A password change increments `tokenVersion`, so older tokens receive `401`.
 - A wrong current password on email or password change is `400` and does not clear the session. The frontend logs out only when an API call returns session `401`.
 - `ALLOW_REGISTER=false` blocks register and hides Sign up in the UI (`GET /api/auth/config`).

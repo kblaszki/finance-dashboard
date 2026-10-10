@@ -26,7 +26,7 @@ Hub: [docs/README.md](../README.md).
 
 ## Category
 
-User-scoped nested label (`parentId` self-relation). Each row has a fixed `ledgerType` (`INCOME` | `EXPENSE`) inherited from its parent (roots set it on create). Reparent across types is rejected. Default seed still uses display names Income / Expense, but scoping does not depend on those names.
+User-scoped nested label (`parentId` self-relation). Each row has a fixed `ledgerType` (`INCOME` | `EXPENSE`) inherited from its parent (roots set it on create). Reparent across types is rejected. Default seed creates flat roots (Salary, Food, …) with `ledgerType` — no Income/Expense wrapper categories.
 
 | Field | Type | Notes |
 |-------|------|-------|

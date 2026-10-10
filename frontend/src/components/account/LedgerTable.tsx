@@ -70,9 +70,7 @@ function buildPatch(
       }
       const patch: Partial<CreateCashTransactionInput> = { type };
       if (tx.categoryId != null) {
-        const allowed = categoryIdsForLedgerType(categories, type, {
-          excludeRoots: true,
-        });
+        const allowed = categoryIdsForLedgerType(categories, type);
         if (!allowed.has(tx.categoryId)) {
           patch.categoryId = null;
         }
@@ -89,9 +87,7 @@ function buildPatch(
       const txType = (CASH_TX_TYPES as readonly string[]).includes(rawType)
         ? rawType
         : "EXPENSE";
-      const allowed = categoryIdsForLedgerType(categories, txType, {
-        excludeRoots: true,
-      });
+      const allowed = categoryIdsForLedgerType(categories, txType);
       if (!allowed.has(id)) {
         throw new Error("Category does not match transaction type");
       }
@@ -233,9 +229,7 @@ function LedgerRow(props: {
     const typeOk = (CASH_TX_TYPES as readonly string[]).includes(txType)
       ? txType
       : "EXPENSE";
-    const allowed = categoryIdsForLedgerType(props.categories, typeOk, {
-      excludeRoots: true,
-    });
+    const allowed = categoryIdsForLedgerType(props.categories, typeOk);
     return props.categories
       .filter((cat) => allowed.has(cat.id))
       .slice()

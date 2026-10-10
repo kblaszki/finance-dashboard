@@ -102,7 +102,7 @@ test("POST /api/auth/register creates user", async () => {
     .get("/api/categories")
     .set("Authorization", `Bearer ${res.body.token}`);
   assert.equal(cats.status, 200);
-  assert.equal(cats.body.length, 8);
+  assert.equal(cats.body.length, 6);
   const rows = cats.body as Array<{
     id: number;
     name: string;
@@ -110,13 +110,12 @@ test("POST /api/auth/register creates user", async () => {
     ledgerType: string;
   }>;
   const byName = new Map(rows.map((c) => [c.name, c]));
-  assert.equal(byName.get("Income")?.parentId, null);
-  assert.equal(byName.get("Income")?.ledgerType, "INCOME");
-  assert.equal(byName.get("Expense")?.parentId, null);
-  assert.equal(byName.get("Expense")?.ledgerType, "EXPENSE");
-  assert.equal(byName.get("Salary")?.parentId, byName.get("Income")!.id);
+  assert.equal(byName.has("Income"), false);
+  assert.equal(byName.has("Expense"), false);
+  assert.equal(byName.get("Salary")?.parentId, null);
   assert.equal(byName.get("Salary")?.ledgerType, "INCOME");
-  assert.equal(byName.get("Food")?.parentId, byName.get("Expense")!.id);
+  assert.equal(byName.get("Other income")?.ledgerType, "INCOME");
+  assert.equal(byName.get("Food")?.parentId, null);
   assert.equal(byName.get("Food")?.ledgerType, "EXPENSE");
 });
 
@@ -721,10 +720,10 @@ test("GET /api/accounts/:id/transactions/export returns CSV with auth and owners
     .get("/api/categories")
     .set("Authorization", `Bearer ${token}`);
   assert.equal(cats.status, 200);
-  const incomeRoot = (cats.body as Array<{ id: number; name: string }>).find(
-    (c) => c.name === "Income",
+  const salary = (cats.body as Array<{ id: number; name: string }>).find(
+    (c) => c.name === "Salary",
   );
-  assert.ok(incomeRoot);
+  assert.ok(salary);
 
   await request(app)
     .post(`/api/accounts/${accountId}/transactions`)
@@ -734,7 +733,7 @@ test("GET /api/accounts/:id/transactions/export returns CSV with auth and owners
       amount: 100.5,
       occurredAt: "2024-06-15T12:00:00.000Z",
       description: "Pay, bonus",
-      categoryId: incomeRoot!.id,
+      categoryId: salary!.id,
     });
   await request(app)
     .post(`/api/accounts/${accountId}/transactions`)
@@ -759,7 +758,7 @@ test("GET /api/accounts/:id/transactions/export returns CSV with auth and owners
   assert.match(lines[1]!, /^[0-9]+,EXPENSE,10\.00,EUR,/);
   assert.match(lines[1]!, /,'=1\+1,,/);
   assert.match(lines[2]!, /,INCOME,100\.50,EUR,/);
-  assert.match(lines[2]!, /,"Pay, bonus",\d+,Income,/);
+  assert.match(lines[2]!, /,"Pay, bonus",\d+,Salary,/);
 
   const forbidden = await request(app)
     .get(`/api/accounts/${accountId}/transactions/export`)
@@ -1010,11 +1009,18 @@ test("categories CRUD supports nesting, rename, reparent, and delete rules", asy
     .get("/api/categories")
     .set("Authorization", `Bearer ${token}`);
   assert.equal(roots.status, 200);
-  const income = (
-    roots.body as Array<{ id: number; name: string; ledgerType: string }>
-  ).find((c) => c.name === "Income")!;
-  assert.ok(income);
-  assert.equal(income.ledgerType, "INCOME");
+  const cats = roots.body as Array<{
+    id: number;
+    name: string;
+    parentId: number | null;
+    ledgerType: string;
+  }>;
+  const salary = cats.find((c) => c.name === "Salary")!;
+  const food = cats.find((c) => c.name === "Food")!;
+  const otherIncome = cats.find((c) => c.name === "Other income")!;
+  assert.ok(salary);
+  assert.equal(salary.ledgerType, "INCOME");
+  assert.equal(salary.parentId, null);
 
   const rootMissingType = await request(app)
     .post("/api/categories")
@@ -1025,16 +1031,16 @@ test("categories CRUD supports nesting, rename, reparent, and delete rules", asy
   const created = await request(app)
     .post("/api/categories")
     .set("Authorization", `Bearer ${token}`)
-    .send({ name: "Bonus", parentId: income.id });
+    .send({ name: "Bonus", parentId: salary.id });
   assert.equal(created.status, 201);
   assert.equal(created.body.name, "Bonus");
-  assert.equal(created.body.parentId, income.id);
+  assert.equal(created.body.parentId, salary.id);
   assert.equal(created.body.ledgerType, "INCOME");
 
   const dup = await request(app)
     .post("/api/categories")
     .set("Authorization", `Bearer ${token}`)
-    .send({ name: "bonus", parentId: income.id });
+    .send({ name: "bonus", parentId: salary.id });
   assert.equal(dup.status, 400);
 
   const renamed = await request(app)
@@ -1044,13 +1050,10 @@ test("categories CRUD supports nesting, rename, reparent, and delete rules", asy
   assert.equal(renamed.status, 200);
   assert.equal(renamed.body.name, "Yearly bonus");
 
-  const expense = (roots.body as Array<{ id: number; name: string }>).find(
-    (c) => c.name === "Expense",
-  )!;
   const crossType = await request(app)
     .patch(`/api/categories/${created.body.id}`)
     .set("Authorization", `Bearer ${token}`)
-    .send({ parentId: expense.id });
+    .send({ parentId: food.id });
   assert.equal(crossType.status, 400);
 
   const changeType = await request(app)
@@ -1059,25 +1062,28 @@ test("categories CRUD supports nesting, rename, reparent, and delete rules", asy
     .send({ ledgerType: "EXPENSE" });
   assert.equal(changeType.status, 400);
 
-  const salary = (roots.body as Array<{ id: number; name: string }>).find(
-    (c) => c.name === "Salary",
-  )!;
   const reparented = await request(app)
     .patch(`/api/categories/${created.body.id}`)
     .set("Authorization", `Bearer ${token}`)
-    .send({ parentId: salary.id });
+    .send({ parentId: otherIncome.id });
   assert.equal(reparented.status, 200);
-  assert.equal(reparented.body.parentId, salary.id);
+  assert.equal(reparented.body.parentId, otherIncome.id);
   assert.equal(reparented.body.ledgerType, "INCOME");
 
   const cycle = await request(app)
-    .patch(`/api/categories/${income.id}`)
+    .patch(`/api/categories/${otherIncome.id}`)
     .set("Authorization", `Bearer ${token}`)
     .send({ parentId: created.body.id });
   assert.equal(cycle.status, 400);
 
+  const nestedExpense = await request(app)
+    .post("/api/categories")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Groceries", parentId: food.id });
+  assert.equal(nestedExpense.status, 201);
+
   const deleteParent = await request(app)
-    .delete(`/api/categories/${expense.id}`)
+    .delete(`/api/categories/${food.id}`)
     .set("Authorization", `Bearer ${token}`);
   assert.equal(deleteParent.status, 409);
 

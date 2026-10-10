@@ -5,13 +5,14 @@ type Db = PrismaClient | Prisma.TransactionClient;
 
 export type CategoryLedgerType = "INCOME" | "EXPENSE";
 
-const DEFAULT_TREE: Array<{
-  name: string;
-  ledgerType: CategoryLedgerType;
-  children: string[];
-}> = [
-  { name: "Income", ledgerType: "INCOME", children: ["Salary", "Other income"] },
-  { name: "Expense", ledgerType: "EXPENSE", children: ["Food", "Housing", "Transport", "Other"] },
+/** Flat roots by ledgerType — no Income/Expense wrapper categories. */
+const DEFAULT_ROOTS: Array<{ name: string; ledgerType: CategoryLedgerType }> = [
+  { name: "Salary", ledgerType: "INCOME" },
+  { name: "Other income", ledgerType: "INCOME" },
+  { name: "Food", ledgerType: "EXPENSE" },
+  { name: "Housing", ledgerType: "EXPENSE" },
+  { name: "Transport", ledgerType: "EXPENSE" },
+  { name: "Other", ledgerType: "EXPENSE" },
 ];
 
 export function categoryNameKey(parentId: number | null, name: string): string {
@@ -137,8 +138,8 @@ export async function assertCanDeleteCategory(db: Db, categoryId: number): Promi
 }
 
 export async function seedDefaultCategories(db: Db, userId: number): Promise<void> {
-  for (const root of DEFAULT_TREE) {
-    const parent = await db.category.create({
+  for (const root of DEFAULT_ROOTS) {
+    await db.category.create({
       data: {
         userId,
         name: root.name,
@@ -147,17 +148,6 @@ export async function seedDefaultCategories(db: Db, userId: number): Promise<voi
         nameKey: categoryNameKey(null, root.name),
       },
     });
-    for (const childName of root.children) {
-      await db.category.create({
-        data: {
-          userId,
-          name: childName,
-          parentId: parent.id,
-          ledgerType: root.ledgerType,
-          nameKey: categoryNameKey(parent.id, childName),
-        },
-      });
-    }
   }
 }
 

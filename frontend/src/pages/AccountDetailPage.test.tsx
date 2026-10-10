@@ -101,14 +101,14 @@ describe("AccountDetailPage", () => {
     vi.mocked(fetchCategories).mockResolvedValue([
       {
         id: 1,
-        name: "Income",
+        name: "Salary",
         parentId: null,
         ledgerType: "INCOME",
         createdAt: "2026-01-01T00:00:00.000Z",
       },
       {
         id: 2,
-        name: "Expense",
+        name: "Food",
         parentId: null,
         ledgerType: "EXPENSE",
         createdAt: "2026-01-01T00:00:00.000Z",
