@@ -522,6 +522,11 @@
   width: 5.5rem;
 }
 
+.ledger-table td {
+  vertical-align: middle;
+  height: 2.75rem;
+}
+
 .ledger-cell--editable {
   cursor: default;
 }
@@ -532,8 +537,6 @@
 }
 
 .ledger-cell--editing {
-  padding-top: 0.35rem;
-  padding-bottom: 0.35rem;
   overflow: hidden;
 }
 
@@ -542,9 +545,12 @@
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  height: 1.75rem;
   box-sizing: border-box;
   font: inherit;
-  padding: 0.25rem 0.4rem;
+  font-size: 0.875rem;
+  line-height: 1.25;
+  padding: 0 0.4rem;
   border: 1px solid var(--color-border);
   border-radius: 4px;
   background: var(--color-surface, var(--color-bg));
