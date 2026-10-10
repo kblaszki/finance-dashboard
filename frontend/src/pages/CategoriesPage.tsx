@@ -1,4 +1,11 @@
-import { type FormEvent, useCallback, useState } from "react";
+import {
+  type FormEvent,
+  type KeyboardEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   createCategory,
   deleteCategory,
@@ -17,15 +24,118 @@ const SECTIONS: Array<{ ledgerType: CategoryLedgerType; title: string }> = [
   { ledgerType: "EXPENSE", title: "Expense" },
 ];
 
+type TreeRow = Category & { depth: number };
+
+function CategoryCreateRow(props: {
+  ledgerType: CategoryLedgerType;
+  parentOptions: TreeRow[];
+  onCreate: (input: {
+    name: string;
+    parentId: number | null;
+    ledgerType: CategoryLedgerType;
+  }) => Promise<void>;
+  onActionError: (message: string | null) => void;
+}) {
+  const [name, setName] = useState("");
+  const [parentId, setParentId] = useState("");
+  const [createBusy, setCreateBusy] = useState(false);
+  const [focusNonce, setFocusNonce] = useState(0);
+  const nameRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (focusNonce === 0) return;
+    const id = window.setTimeout(() => {
+      nameRef.current?.focus();
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, [focusNonce]);
+
+  async function submit() {
+    props.onActionError(null);
+    const trimmed = name.trim();
+    if (!trimmed) {
+      props.onActionError("Name required");
+      return;
+    }
+    setCreateBusy(true);
+    try {
+      const parent = parentId === "" ? null : Number(parentId);
+      await props.onCreate({
+        name: trimmed,
+        parentId: parent,
+        ledgerType: props.ledgerType,
+      });
+      setName("");
+      setParentId("");
+      setCreateBusy(false);
+      setFocusNonce((n) => n + 1);
+    } catch (err) {
+      props.onActionError(err instanceof Error ? err.message : "Create failed");
+      setCreateBusy(false);
+    }
+  }
+
+  function onFormSubmit(e: FormEvent) {
+    e.preventDefault();
+    void submit();
+  }
+
+  function onFieldKeyDown(e: KeyboardEvent) {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    void submit();
+  }
+
+  return (
+    <tr className="ledger-create-row">
+      <td>
+        <input
+          ref={nameRef}
+          type="text"
+          className="ledger-cell-input"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={onFieldKeyDown}
+          aria-label="New category name"
+          placeholder="Name"
+        />
+      </td>
+      <td>
+        <select
+          className="ledger-cell-input"
+          value={parentId}
+          onChange={(e) => setParentId(e.target.value)}
+          onKeyDown={onFieldKeyDown}
+          aria-label="New category parent"
+        >
+          <option value="">— Root —</option>
+          {props.parentOptions.map((cat) => (
+            <option key={cat.id} value={cat.id}>
+              {"\u00A0".repeat(cat.depth * 2)}
+              {cat.name}
+            </option>
+          ))}
+        </select>
+      </td>
+      <td>
+        <form className="form-actions-row" onSubmit={onFormSubmit}>
+          <button
+            type="submit"
+            className="btn-primary"
+            disabled={createBusy}
+            aria-label="Add category"
+          >
+            {createBusy ? "…" : "Add"}
+          </button>
+        </form>
+      </td>
+    </tr>
+  );
+}
+
 export function CategoriesPage() {
   const loadCategories = useCallback(() => fetchCategories(), []);
   const { data: categories, error, loading, reload } = useAsyncData(loadCategories);
-
-  const [creatingType, setCreatingType] = useState<CategoryLedgerType | null>(null);
-  const [name, setName] = useState("");
-  const [parentId, setParentId] = useState<string>("");
-  const [createErr, setCreateErr] = useState<string | null>(null);
-  const [createBusy, setCreateBusy] = useState(false);
 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState("");
@@ -39,31 +149,17 @@ export function CategoriesPage() {
     return flattenCategoryTree(categories.filter((c) => c.ledgerType === ledgerType));
   }
 
-  function resetCreateForm() {
-    setName("");
-    setParentId("");
-    setCreateErr(null);
-    setCreatingType(null);
-  }
-
-  async function handleCreate(e: FormEvent, ledgerType: CategoryLedgerType) {
-    e.preventDefault();
-    setCreateErr(null);
-    setCreateBusy(true);
-    try {
-      const parent = parentId === "" ? null : Number(parentId);
-      await createCategory({
-        name,
-        parentId: parent,
-        ...(parent == null ? { ledgerType } : {}),
-      });
-      resetCreateForm();
-      reload();
-    } catch (err) {
-      setCreateErr(err instanceof Error ? err.message : "Create failed");
-    } finally {
-      setCreateBusy(false);
-    }
+  async function handleCreate(input: {
+    name: string;
+    parentId: number | null;
+    ledgerType: CategoryLedgerType;
+  }) {
+    await createCategory({
+      name: input.name,
+      parentId: input.parentId,
+      ...(input.parentId == null ? { ledgerType: input.ledgerType } : {}),
+    });
+    reload();
   }
 
   function startEdit(category: Category) {
@@ -72,7 +168,6 @@ export function CategoriesPage() {
     setEditParentId(category.parentId == null ? "" : String(category.parentId));
     setEditErr(null);
     setActionErr(null);
-    setCreatingType(null);
   }
 
   function cancelEdit() {
@@ -126,174 +221,129 @@ export function CategoriesPage() {
         loadingMessage="Loading categories…"
       />
 
-      {!loading && !error &&
+      {!loading &&
+        !error &&
         SECTIONS.map(({ ledgerType, title }) => {
           const rows = treeForType(ledgerType);
-          const showForm = creatingType === ledgerType;
           return (
             <section key={ledgerType} className="card form-section-gap">
-              <div className="form-actions-row" style={{ justifyContent: "space-between" }}>
-                <h2 className="section-title">{title}</h2>
-                <button
-                  type="button"
-                  className="btn-primary"
-                  onClick={() => {
-                    if (showForm) {
-                      resetCreateForm();
-                      return;
-                    }
-                    setEditingId(null);
-                    setCreateErr(null);
-                    setName("");
-                    setParentId("");
-                    setCreatingType(ledgerType);
-                  }}
-                >
-                  {showForm ? "Hide form" : `Add ${title.toLowerCase()} category`}
-                </button>
-              </div>
-
-              {showForm && (
-                <form
-                  className="auth-form"
-                  onSubmit={(e) => void handleCreate(e, ledgerType)}
-                >
-                  <label>
-                    Name
-                    <input
-                      type="text"
-                      required
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
+              <h2 className="section-title">{title}</h2>
+              <div className="table-wrap">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Parent</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <CategoryCreateRow
+                      ledgerType={ledgerType}
+                      parentOptions={rows}
+                      onCreate={handleCreate}
+                      onActionError={setActionErr}
                     />
-                  </label>
-                  <label>
-                    Parent (optional)
-                    <select
-                      value={parentId}
-                      onChange={(e) => setParentId(e.target.value)}
-                    >
-                      <option value="">— Root —</option>
-                      {rows.map((cat) => (
-                        <option key={cat.id} value={cat.id}>
-                          {"\u00A0".repeat(cat.depth * 2)}
-                          {cat.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  {createErr && <p className="auth-error">{createErr}</p>}
-                  <button type="submit" className="btn-primary" disabled={createBusy}>
-                    {createBusy ? "Creating…" : "Create category"}
-                  </button>
-                </form>
-              )}
-
-              {rows.length === 0 ? (
-                <p className="empty-state">No {title.toLowerCase()} categories yet.</p>
-              ) : (
-                <div className="table-wrap">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>Name</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rows.map((category) => (
-                        <tr key={category.id}>
-                          <td>
-                            {editingId === category.id ? (
-                              <form
-                                className="auth-form auth-form--compact"
-                                onSubmit={handleSaveEdit}
-                              >
-                                <label>
-                                  Name
-                                  <input
-                                    type="text"
-                                    required
-                                    value={editName}
-                                    onChange={(e) => setEditName(e.target.value)}
-                                  />
-                                </label>
-                                <label>
-                                  Parent
-                                  <select
-                                    value={editParentId}
-                                    onChange={(e) => setEditParentId(e.target.value)}
-                                  >
-                                    <option value="">— Root —</option>
-                                    {rows
-                                      .filter((c) => c.id !== category.id)
-                                      .map((cat) => (
-                                        <option key={cat.id} value={cat.id}>
-                                          {"\u00A0".repeat(cat.depth * 2)}
-                                          {cat.name}
-                                        </option>
-                                      ))}
-                                  </select>
-                                </label>
-                                {editErr && <p className="auth-error">{editErr}</p>}
-                                <div className="form-actions-row">
-                                  <button
-                                    type="submit"
-                                    className="btn-primary"
-                                    disabled={editBusy}
-                                  >
-                                    {editBusy ? "Saving…" : "Save"}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="btn-secondary"
-                                    onClick={cancelEdit}
-                                    disabled={editBusy}
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              </form>
-                            ) : (
-                              <span
-                                className={
-                                  category.depth === 0 ? "category-root" : undefined
-                                }
-                                style={{
-                                  paddingInlineStart: `${category.depth * 1.25}rem`,
-                                }}
-                              >
-                                {category.name}
-                              </span>
-                            )}
-                          </td>
-                          <td>
-                            {editingId !== category.id && (
+                    {rows.map((category) => (
+                      <tr key={category.id}>
+                        <td>
+                          {editingId === category.id ? (
+                            <form
+                              className="auth-form auth-form--compact"
+                              onSubmit={handleSaveEdit}
+                            >
+                              <label>
+                                Name
+                                <input
+                                  type="text"
+                                  required
+                                  value={editName}
+                                  onChange={(e) => setEditName(e.target.value)}
+                                />
+                              </label>
+                              <label>
+                                Parent
+                                <select
+                                  value={editParentId}
+                                  onChange={(e) => setEditParentId(e.target.value)}
+                                >
+                                  <option value="">— Root —</option>
+                                  {rows
+                                    .filter((c) => c.id !== category.id)
+                                    .map((cat) => (
+                                      <option key={cat.id} value={cat.id}>
+                                        {"\u00A0".repeat(cat.depth * 2)}
+                                        {cat.name}
+                                      </option>
+                                    ))}
+                                </select>
+                              </label>
+                              {editErr && <p className="auth-error">{editErr}</p>}
                               <div className="form-actions-row">
+                                <button
+                                  type="submit"
+                                  className="btn-primary"
+                                  disabled={editBusy}
+                                >
+                                  {editBusy ? "Saving…" : "Save"}
+                                </button>
                                 <button
                                   type="button"
                                   className="btn-secondary"
-                                  onClick={() => startEdit(category)}
+                                  onClick={cancelEdit}
+                                  disabled={editBusy}
                                 >
-                                  Edit
-                                </button>
-                                <button
-                                  type="button"
-                                  className="btn-danger"
-                                  aria-label={`Delete ${category.name}`}
-                                  onClick={() => void handleDelete(category)}
-                                >
-                                  Delete
+                                  Cancel
                                 </button>
                               </div>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                            </form>
+                          ) : (
+                            <span
+                              className={
+                                category.depth === 0 ? "category-root" : undefined
+                              }
+                              style={{
+                                paddingInlineStart: `${category.depth * 1.25}rem`,
+                              }}
+                            >
+                              {category.name}
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          {editingId === category.id
+                            ? null
+                            : category.parentId == null
+                              ? "—"
+                              : (categories?.find((c) => c.id === category.parentId)
+                                  ?.name ?? "—")}
+                        </td>
+                        <td>
+                          {editingId !== category.id && (
+                            <div className="form-actions-row">
+                              <button
+                                type="button"
+                                className="btn-secondary"
+                                onClick={() => startEdit(category)}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                className="btn-danger"
+                                aria-label={`Delete ${category.name}`}
+                                onClick={() => void handleDelete(category)}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </section>
           );
         })}

@@ -20,7 +20,7 @@ This page covers the shipped category tree and optional cash tagging. Monthly bu
 ## Category tree
 
 1. Register (or `create-user` / `db:seed`) seeds flat roots (Salary, Other income, Food, Housing, Transport, Other) each with `ledgerType` `INCOME` or `EXPENSE`. There are no Income/Expense wrapper categories.
-2. Open `/categories` (AppShell nav): the page has separate **Income** and **Expense** sections. Create, rename, reparent (same type only), or delete within a section; new roots inherit the section’s `ledgerType`.
+2. Open `/categories` (AppShell nav): separate **Income** and **Expense** sections, each with an inline create row (name + optional parent, Enter to add — same pattern as the cash ledger). Rename, reparent (same type only), or delete within a section; new roots inherit the section’s `ledgerType`.
 3. API: `GET|POST /api/categories`, `PATCH|DELETE /api/categories/:id`.
 4. Delete returns `409` when the category has children. Deleting a leaf clears `CashTransaction.categoryId` (`SetNull`).
 
