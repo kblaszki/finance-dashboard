@@ -42,12 +42,22 @@ export function LedgerCreateRow(props: {
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [createBusy, setCreateBusy] = useState(false);
+  const [focusNonce, setFocusNonce] = useState(0);
   const firstInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (lastEnteredType != null) return;
     setType(normalizeCashTxType(props.seedType));
   }, [props.seedType, lastEnteredType]);
+
+  useEffect(() => {
+    if (focusNonce === 0) return;
+    // Defer past disabled→enabled commit and parent soft-reload re-render.
+    const id = window.setTimeout(() => {
+      firstInputRef.current?.focus();
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, [focusNonce]);
 
   const categoryOptions = useMemo(() => {
     const allowed = categoryIdsUnderRoot(
@@ -98,10 +108,11 @@ export function LedgerCreateRow(props: {
       setAmount("");
       setDescription("");
       setCategoryId("");
-      firstInputRef.current?.focus();
+      // Focus after React re-enables controls (was focusing while still disabled).
+      setCreateBusy(false);
+      setFocusNonce((n) => n + 1);
     } catch (err) {
       props.onActionError(err instanceof Error ? err.message : "Create failed");
-    } finally {
       setCreateBusy(false);
     }
   }
@@ -125,7 +136,6 @@ export function LedgerCreateRow(props: {
           type="datetime-local"
           className="ledger-cell-input"
           value={occurredAt}
-          disabled={createBusy}
           onChange={(e) => setOccurredAt(e.target.value)}
           onKeyDown={onFieldKeyDown}
           aria-label="New date"
@@ -135,7 +145,6 @@ export function LedgerCreateRow(props: {
         <select
           className="ledger-cell-input"
           value={type}
-          disabled={createBusy}
           onChange={(e) => onTypeChange(e.target.value as CashTxType)}
           onKeyDown={onFieldKeyDown}
           aria-label="New type"
@@ -156,7 +165,6 @@ export function LedgerCreateRow(props: {
           required
           className="ledger-cell-input"
           value={amount}
-          disabled={createBusy}
           onChange={(e) => setAmount(e.target.value)}
           onKeyDown={onFieldKeyDown}
           aria-label="New amount"
@@ -167,7 +175,6 @@ export function LedgerCreateRow(props: {
         <select
           className="ledger-cell-input"
           value={categoryId}
-          disabled={createBusy}
           onChange={(e) => setCategoryId(e.target.value)}
           onKeyDown={onFieldKeyDown}
           aria-label="New category"
@@ -185,7 +192,6 @@ export function LedgerCreateRow(props: {
           type="text"
           className="ledger-cell-input"
           value={description}
-          disabled={createBusy}
           onChange={(e) => setDescription(e.target.value)}
           onKeyDown={onFieldKeyDown}
           aria-label="New description"
