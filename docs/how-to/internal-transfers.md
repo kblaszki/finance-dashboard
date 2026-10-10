@@ -37,6 +37,10 @@ Move cash between two of your accounts. The transfer header (`CashTransfer`) is 
 
 Delete an account that still appears in any transfer → `409` (“delete transfers first”). Remove or re-point transfers first so the other account’s balance stays consistent.
 
+## Demo data
+
+`npm run db:seed` loads a few sample transfers (same-currency and cross-currency) for `demo@finance.local`. See [demo-seed.md](../tutorials/demo-seed.md).
+
 ## API
 
 `GET|POST /api/transfers`, `PATCH|DELETE /api/transfers/:id`. See [api.md](../reference/api.md).

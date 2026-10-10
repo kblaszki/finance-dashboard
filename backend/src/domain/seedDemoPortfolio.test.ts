@@ -2,8 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { canonicalUsernameKey, hashPassword } from "../auth";
 import { aggregateCategoryBreakdown, parseMonthParam } from "./categoryBreakdown";
+import { parseLedgerTxType, signedMinor } from "./cashLedger";
 import {
   buildDemoLedgerTxs,
+  buildDemoTransfers,
   DEMO_ACCOUNT_NAMES,
   DEMO_LEDGER_MONTHS,
   DEMO_OPENINGS,
@@ -14,6 +16,7 @@ import {
   seedDemoPortfolio,
   utcMonthKey,
   type DemoAccountKey,
+  type LedgerDeltaInput,
 } from "./seedDemoPortfolio";
 import { minorToDecimal, quantizeMajorToMinor } from "./money";
 import {
@@ -95,6 +98,16 @@ test("buildDemoLedgerTxs is deterministic with ≥5 txs per account per month", 
   assert.ok(a.some((t) => t.category === undefined));
 });
 
+test("buildDemoTransfers is deterministic with same- and cross-currency rows", () => {
+  const a = buildDemoTransfers(FIXED_NOW);
+  const b = buildDemoTransfers(FIXED_NOW);
+  assert.deepEqual(a, b);
+  assert.ok(a.length >= 3);
+  assert.ok(a.some((t) => t.amountTo == null));
+  assert.ok(a.some((t) => t.amountTo != null && t.amountTo !== t.amountFrom));
+  assert.ok(a.every((t) => t.fromKey !== t.toKey && t.amountFrom > 0));
+});
+
 test("seedDemoPortfolio matches ledger balances and scopes wipe to one user", async () => {
   const prisma = await createTestPrisma();
   try {
@@ -141,6 +154,7 @@ test("seedDemoPortfolio matches ledger balances and scopes wipe to one user", as
     );
 
     const planned = buildDemoLedgerTxs(FIXED_NOW);
+    const plannedTransfers = buildDemoTransfers(FIXED_NOW);
     const nameToKey = new Map(
       (Object.keys(DEMO_ACCOUNT_NAMES) as DemoAccountKey[]).map((key) => [
         DEMO_ACCOUNT_NAMES[key],
@@ -148,17 +162,43 @@ test("seedDemoPortfolio matches ledger balances and scopes wipe to one user", as
       ]),
     );
 
+    const transferCount = await prisma.cashTransfer.count({
+      where: { userId: demo.id },
+    });
+    assert.equal(transferCount, plannedTransfers.length);
+
     for (const account of accounts) {
       const key = nameToKey.get(account.name)!;
-      const deltas = planned
+      const deltas: LedgerDeltaInput[] = planned
         .filter((t) => t.accountKey === key)
         .map((t) => ({ type: t.type, amount: t.amount }));
+      for (const transfer of plannedTransfers) {
+        if (transfer.fromKey === key) {
+          deltas.push({ type: "TRANSFER_OUT", amount: transfer.amountFrom });
+        }
+        if (transfer.toKey === key) {
+          deltas.push({
+            type: "TRANSFER_IN",
+            amount: transfer.amountTo ?? transfer.amountFrom,
+          });
+        }
+      }
       const expected = recomputeCashMinor(DEMO_OPENINGS[key], deltas);
       assert.equal(account.cashBalance, expected);
       assert.equal(
         account.openingBalance,
         quantizeMajorToMinor(DEMO_OPENINGS[key], "openingBalance"),
       );
+
+      const legs = await prisma.cashTransaction.findMany({
+        where: { accountId: account.id },
+        select: { type: true, amount: true },
+      });
+      let fromLedger = account.openingBalance;
+      for (const leg of legs) {
+        fromLedger += signedMinor(parseLedgerTxType(leg.type), leg.amount);
+      }
+      assert.equal(account.cashBalance, fromLedger);
     }
 
     const txCount = await prisma.cashTransaction.count({
@@ -168,7 +208,15 @@ test("seedDemoPortfolio matches ledger balances and scopes wipe to one user", as
       txCount >=
         4 * DEMO_LEDGER_MONTHS * DEMO_TXS_PER_ACCOUNT_MONTH,
     );
-    assert.equal(txCount, planned.length);
+    assert.equal(txCount, planned.length + plannedTransfers.length * 2);
+
+    const transferLegs = await prisma.cashTransaction.count({
+      where: {
+        account: { userId: demo.id },
+        transferId: { not: null },
+      },
+    });
+    assert.equal(transferLegs, plannedTransfers.length * 2);
 
     const categoryCount = await prisma.category.count({
       where: { userId: demo.id },

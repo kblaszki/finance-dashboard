@@ -1,6 +1,12 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { seedDefaultCategories } from "./categories";
-import { signedDelta, type CashTxType } from "./cashLedger";
+import {
+  signedDelta,
+  signedMinor,
+  type CashTxType,
+  type LedgerTxType,
+} from "./cashLedger";
+import { createTransfer } from "./cashTransfers";
 import { quantizeMajorToMinor } from "./money";
 
 type Db = PrismaClient | Prisma.TransactionClient;
@@ -27,7 +33,7 @@ export const DEMO_OPENINGS: Record<DemoAccountKey, number> = {
 };
 
 export type LedgerDeltaInput = {
-  type: CashTxType;
+  type: LedgerTxType;
   amount: number;
 };
 
@@ -38,6 +44,16 @@ export type DemoPlannedTx = {
   occurredAt: Date;
   description: string;
   category?: string;
+};
+
+export type DemoPlannedTransfer = {
+  fromKey: DemoAccountKey;
+  toKey: DemoAccountKey;
+  amountFrom: number;
+  /** Required when from/to currencies differ; omitted → equals amountFrom. */
+  amountTo?: number;
+  occurredAt: Date;
+  description: string;
 };
 
 /** openingBalance + Σ signedDelta(type, amount). */
@@ -60,7 +76,7 @@ export function recomputeCashMinor(
   let minor = quantizeMajorToMinor(openingBalance, "openingBalance");
   for (const tx of txs) {
     const amount = quantizeMajorToMinor(tx.amount);
-    minor += tx.type === "INCOME" ? amount : -amount;
+    minor += signedMinor(tx.type, amount);
   }
   return minor;
 }
@@ -371,7 +387,53 @@ export function buildDemoLedgerTxs(now = new Date()): DemoPlannedTx[] {
   return planned;
 }
 
+/**
+ * Deterministic internal transfers showcasing same-currency and cross-currency
+ * flows across the demo accounts (dates near the end of the ledger window).
+ */
+export function buildDemoTransfers(now = new Date()): DemoPlannedTransfer[] {
+  const months = listMonthsEndingAt(utcMonthKey(now), DEMO_LEDGER_MONTHS);
+  const recent = months[months.length - 1]!;
+  const previous = months[months.length - 2] ?? recent;
+  const older = months[months.length - 4] ?? months[0]!;
+
+  return [
+    {
+      fromKey: "checking",
+      toKey: "brokerage",
+      amountFrom: 2500,
+      occurredAt: utcMidMonth(older, 8),
+      description: `Monthly invest transfer (${older})`,
+    },
+    {
+      fromKey: "checking",
+      toKey: "euro",
+      amountFrom: 1200,
+      amountTo: 280,
+      occurredAt: utcMidMonth(previous, 12),
+      description: `EUR travel top-up (${previous})`,
+    },
+    {
+      fromKey: "checking",
+      toKey: "crypto",
+      amountFrom: 800,
+      amountTo: 200,
+      occurredAt: utcMidMonth(recent, 5),
+      description: `USD crypto float (${recent})`,
+    },
+    {
+      fromKey: "brokerage",
+      toKey: "checking",
+      amountFrom: 500,
+      occurredAt: utcMidMonth(recent, 20),
+      description: `Cash back from brokerage (${recent})`,
+    },
+  ];
+}
+
 async function wipeDemoPortfolio(db: Db, userId: number): Promise<void> {
+  // CashTransfer Restricts account delete — clear headers (cascades legs) first.
+  await db.cashTransfer.deleteMany({ where: { userId } });
   await db.account.deleteMany({ where: { userId } });
   await db.category.updateMany({
     where: { userId },
@@ -397,8 +459,9 @@ async function categoryIdByNameType(
 }
 
 /**
- * Wipe and rebuild demo portfolio for userId (categories, accounts, cash txs).
- * Must be called with a demo (or test) user — scopes all deletes by userId.
+ * Wipe and rebuild demo portfolio for userId (categories, accounts, cash txs,
+ * internal transfers). Must be called with a demo (or test) user — scopes all
+ * deletes by userId.
  */
 export async function seedDemoPortfolio(
   db: Db,
@@ -510,6 +573,18 @@ export async function seedDemoPortfolio(
     await db.account.update({
       where: { id: accountsByKey[key].id },
       data: { cashBalance },
+    });
+  }
+
+  for (const transfer of buildDemoTransfers(now)) {
+    const amountTo = transfer.amountTo ?? transfer.amountFrom;
+    await createTransfer(db, userId, {
+      fromAccountId: accountsByKey[transfer.fromKey].id,
+      toAccountId: accountsByKey[transfer.toKey].id,
+      amountFrom: new Prisma.Decimal(transfer.amountFrom.toString()),
+      amountTo: new Prisma.Decimal(amountTo.toString()),
+      occurredAt: transfer.occurredAt,
+      description: transfer.description,
     });
   }
 }

@@ -12,11 +12,11 @@ related_code:
 
 # Tutorial: demo user seed
 
-Goal: upsert the demo login and load a **sample portfolio** that showcases shipped features (accounts, categories, cash ledger, statistics, home KPIs).
+Goal: upsert the demo login and load a **sample portfolio** that showcases shipped features (accounts, categories, cash ledger, internal transfers, statistics, home KPIs).
 
 ## Warning
 
-**Re-running the seed wipes all data owned by the demo user** (categories, accounts, cash transactions), then recreates the sample set. Do not store real personal data under `demo@finance.local`.
+**Re-running the seed wipes all data owned by the demo user** (categories, accounts, cash transactions, transfers), then recreates the sample set. Do not store real personal data under `demo@finance.local`.
 
 ## Steps
 
@@ -36,14 +36,15 @@ npm run db:seed
 |---------|----------------|
 | `/accounts` | Everyday Checking (BANK/PLN), Euro Travel (BANK/EUR), Brokerage Cash (BROKERAGE/PLN), Crypto Spot (CRYPTO/USD) |
 | `/categories` | Default flat roots by ledgerType (Salary, Food, …) |
-| `/accounts/:id` | ~24 months of INCOME/EXPENSE rows (≥5 per month per account); tagged categories + occasional uncategorized expenses |
+| `/accounts/:id` | ~24 months of INCOME/EXPENSE rows (≥5 per month per account); tagged categories + occasional uncategorized expenses; read-only `TRANSFER IN/OUT` legs from seeded transfers |
+| `/transfers` | Same-currency (Checking ↔ Brokerage) and cross-currency (PLN→EUR, PLN→USD) sample transfers |
 | `/dashboard` | Cash net-worth buckets, rolling 12m averages, cashflow chart, account mix (pick PLN in top bar) |
-| `/statistics` | Period KPIs, cashflow chart, and category breakdown across the seeded history |
+| `/statistics` | Period KPIs, cashflow chart, and category breakdown across the seeded history (transfer legs excluded) |
 
 ## Notes
 
 - Implementation: [`backend/prisma/seed.ts`](../../backend/prisma/seed.ts) + [`seedDemoPortfolio.ts`](../../backend/src/domain/seedDemoPortfolio.ts).
-- Ledger is **deterministic** (PRNG seed `demo-portfolio-v2`): same amounts on every run. Each account `cashBalance` is recomputed from opening + signed ledger deltas.
+- Ledger is **deterministic** (PRNG seed `demo-portfolio-v2`): same amounts on every run. Transfers are a fixed list (`buildDemoTransfers`). Each account `cashBalance` is opening + signed ledger deltas including transfer legs.
 - Password hash is reset to the known demo password on every run.
 - Other users in the same database are not modified.
 - Hub: [docs/README.md](../README.md).
