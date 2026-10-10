@@ -11,7 +11,7 @@ related_docs:
 
 Hub: [docs/README.md](../README.md).
 
-**Shipped in code** = auth + multi-type accounts + category tree + cash ledger (optional `categoryId`, CSV export/import) + internal cash transfers + statistics (category breakdown, period KPIs, cashflow history, cash net worth, rolling 12m averages) below. Remaining backlog: [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) and `mvp/features/*`. Checklist: 17 done / 0 in_progress / 48 planned (as of 2026-10-10).
+**Shipped in code** = auth + multi-type accounts + category tree + cash ledger (optional `categoryId`, CSV export/import) + internal cash transfers + statistics (category breakdown, period KPIs, cashflow history, cash net worth, rolling 12m averages) below. Remaining backlog: [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) and `mvp/features/*`. Checklist: 17 done / 0 in_progress / 46 planned (as of 2026-10-10).
 
 ## Shipped
 

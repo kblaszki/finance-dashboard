@@ -1,6 +1,6 @@
 # MVP feature checklist
 
-Last review: 2026-08-05 — statuses aligned to **auth + multi-type accounts + category tree + cash ledger + ledger CSV export/import + statistics + dashboard KPIs** baseline (JWT auth, settings, health, private-deploy CLIs, prod auth rate limits, account CRUD, nested categories, INCOME/EXPENSE cash txs with optional `categoryId`, per-account cash ledger CSV export/import, month category breakdown, period KPIs, cashflow history chart, cash net-worth buckets, rolling 12m cashflow averages). Feature specs under `mvp/features/**` remain the backlog; do not treat `planned` rows as shipped code.
+Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + category tree + cash ledger + ledger CSV export/import + internal cash transfers + statistics + dashboard KPIs** baseline (JWT auth, settings, health, private-deploy CLIs, prod auth rate limits, account CRUD, nested categories, INCOME/EXPENSE cash txs with optional `categoryId`, per-account cash ledger CSV export/import, `CashTransfer` / `/transfers`, month category breakdown, period KPIs, cashflow history chart, cash net-worth buckets, rolling 12m cashflow averages). Feature specs under `mvp/features/**` remain the backlog; do not treat `planned` rows as shipped code.
 
 ## Legend
 
@@ -15,7 +15,7 @@ Last review: 2026-08-05 — statuses aligned to **auth + multi-type accounts + c
 
 | done | stub | planned | in_progress | total |
 |------|------|---------|-------------|-------|
-| 16 | 0 | 49 | 0 | 65 |
+| 17 | 0 | 46 | 0 | 63 |
 
 ## Master table
 
