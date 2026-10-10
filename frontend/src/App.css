@@ -557,6 +557,10 @@
   color: var(--color-text);
 }
 
+.ledger-create-row td {
+  background: color-mix(in srgb, var(--color-accent) 4%, transparent);
+}
+
 .table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;

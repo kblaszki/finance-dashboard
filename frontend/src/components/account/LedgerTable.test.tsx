@@ -23,27 +23,31 @@ const categories = [
 function renderTable(
   overrides: Partial<{
     onSave: ReturnType<typeof vi.fn>;
+    onCreate: ReturnType<typeof vi.fn>;
     onDelete: ReturnType<typeof vi.fn>;
     onActionError: ReturnType<typeof vi.fn>;
-    tx: CashTransaction;
+    transactions: CashTransaction[];
   }> = {},
 ) {
   const onSave = overrides.onSave ?? vi.fn().mockResolvedValue(undefined);
+  const onCreate = overrides.onCreate ?? vi.fn().mockResolvedValue(undefined);
   const onDelete = overrides.onDelete ?? vi.fn();
   const onActionError = overrides.onActionError ?? vi.fn();
-  const tx = overrides.tx ?? coffee;
-  render(
+  const transactions = overrides.transactions ?? [coffee];
+  const { rerender } = render(
     <LedgerTable
-      transactions={[tx]}
+      accountId={1}
+      transactions={transactions}
       currency="USD"
       categories={categories}
       categoryNameById={new Map([[3, "Food"]])}
+      onCreate={onCreate}
       onDelete={onDelete}
       onSave={onSave}
       onActionError={onActionError}
     />,
   );
-  return { onSave, onDelete, onActionError };
+  return { onSave, onCreate, onDelete, onActionError, rerender };
 }
 
 describe("LedgerTable", () => {
@@ -81,5 +85,54 @@ describe("LedgerTable", () => {
     await waitFor(() => {
       expect(onSave).toHaveBeenCalledWith(coffee, { description: null });
     });
+  });
+
+  it("seeds create type from newest ledger row", () => {
+    renderTable();
+    expect((screen.getByLabelText("New type") as HTMLSelectElement).value).toBe(
+      "EXPENSE",
+    );
+  });
+
+  it("keeps session type after create even when seed becomes INCOME", async () => {
+    const onCreate = vi.fn().mockResolvedValue(undefined);
+    const { rerender } = renderTable({ onCreate });
+
+    fireEvent.change(screen.getByLabelText("New amount"), {
+      target: { value: "3" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Add transaction" }));
+
+    await waitFor(() => {
+      expect(onCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ type: "EXPENSE", amount: 3 }),
+      );
+    });
+
+    const incomeNewest: CashTransaction = {
+      ...coffee,
+      id: 99,
+      type: "INCOME",
+      amount: 100,
+      description: "Pay",
+    };
+
+    rerender(
+      <LedgerTable
+        accountId={1}
+        transactions={[incomeNewest, coffee]}
+        currency="USD"
+        categories={categories}
+        categoryNameById={new Map([[3, "Food"]])}
+        onCreate={onCreate}
+        onDelete={vi.fn()}
+        onSave={vi.fn()}
+        onActionError={vi.fn()}
+      />,
+    );
+
+    expect((screen.getByLabelText("New type") as HTMLSelectElement).value).toBe(
+      "EXPENSE",
+    );
   });
 });

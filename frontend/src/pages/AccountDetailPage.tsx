@@ -15,7 +15,6 @@ import {
 import { AccountBalanceChart } from "../components/account/AccountBalanceChart";
 import { AccountLedgerHeader } from "../components/account/AccountLedgerHeader";
 import { AccountSubtitle } from "../components/account/AccountSubtitle";
-import { CashTransactionForm } from "../components/account/CashTransactionForm";
 import { LedgerTable } from "../components/account/LedgerTable";
 import { PageHeader } from "../components/ui/PageHeader";
 import { StatusBlock } from "../components/ui/StatusBlock";
@@ -82,7 +81,6 @@ export function AccountDetailPage() {
     return map;
   }, [categories]);
 
-  const [showCreate, setShowCreate] = useState(false);
   const [actionErr, setActionErr] = useState<string | null>(null);
   const [importMsg, setImportMsg] = useState<string | null>(null);
   const [exportBusy, setExportBusy] = useState(false);
@@ -189,10 +187,8 @@ export function AccountDetailPage() {
           subtitle={<AccountSubtitle account={account} />}
           actions={
             <AccountLedgerHeader
-              showCreate={showCreate}
               exportBusy={exportBusy}
               importBusy={importBusy}
-              onToggleCreate={() => setShowCreate((open) => !open)}
               onExport={() => void handleExportCsv()}
               onImportFile={handleImportCsvFile}
             />
@@ -216,32 +212,34 @@ export function AccountDetailPage() {
       {actionErr && <p className="error-banner">{actionErr}</p>}
       {importMsg && <p className="success-banner">{importMsg}</p>}
 
-      {showCreate && (
-        <CashTransactionForm categories={categories ?? null} onSubmit={handleCreate} />
-      )}
-
       <section className="card form-section-gap">
         <h2 className="section-title">Ledger</h2>
         <StatusBlock
           loading={txLoading && !transactions}
           error={txError}
-          empty={
-            !txLoading && !txError && (transactions?.length ?? 0) === 0
-          }
           loadingMessage="Loading ledger…"
-          emptyMessage="No transactions yet."
         />
-        {transactions && transactions.length > 0 && (
+        {account && (!txLoading || transactions) && (
           <LedgerTable
-            transactions={transactions}
-            currency={account?.currency ?? null}
+            accountId={accountId}
+            transactions={transactions ?? []}
+            currency={account.currency}
             categories={categories ?? []}
             categoryNameById={categoryNameById}
+            onCreate={handleCreate}
             onDelete={(tx) => void handleDelete(tx)}
             onSave={handleSaveTx}
             onActionError={setActionErr}
           />
         )}
+        {!txLoading &&
+          !txError &&
+          transactions &&
+          transactions.length === 0 && (
+            <p className="muted empty-state">
+              No transactions yet — use the row above to add one.
+            </p>
+          )}
       </section>
     </>
   );

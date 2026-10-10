@@ -1,10 +1,8 @@
 import { useRef } from "react";
 
 export function AccountLedgerHeader(props: {
-  showCreate: boolean;
   exportBusy: boolean;
   importBusy: boolean;
-  onToggleCreate: () => void;
   onExport: () => void;
   onImportFile: (file: File) => Promise<void>;
 }) {
@@ -42,9 +40,6 @@ export function AccountLedgerHeader(props: {
         disabled={props.exportBusy || props.importBusy}
       >
         {props.exportBusy ? "Downloading…" : "Download CSV"}
-      </button>
-      <button type="button" className="btn-primary" onClick={props.onToggleCreate}>
-        {props.showCreate ? "Hide form" : "Add transaction"}
       </button>
     </div>
   );

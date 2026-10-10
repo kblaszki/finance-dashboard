@@ -11,6 +11,10 @@ import {
   categoryIdsUnderRoot,
   rootNameForTxType,
 } from "./categoryScope";
+import {
+  LedgerCreateRow,
+  normalizeCashTxType,
+} from "./LedgerCreateRow";
 import { formatOccurredAt, toDateTimeLocalValue } from "./occurredAt";
 
 export type EditableField =
@@ -102,10 +106,12 @@ function buildPatch(
 }
 
 export function LedgerTable(props: {
+  accountId: number;
   transactions: CashTransaction[];
   currency: string | null;
   categories: Category[];
   categoryNameById: Map<number, string>;
+  onCreate: (input: CreateCashTransactionInput) => Promise<void>;
   onDelete: (tx: CashTransaction) => void;
   onSave: (
     tx: CashTransaction,
@@ -113,6 +119,7 @@ export function LedgerTable(props: {
   ) => Promise<void>;
   onActionError: (message: string | null) => void;
 }) {
+  const seedType = normalizeCashTxType(props.transactions[0]?.type);
   const [editing, setEditing] = useState<EditingState | null>(null);
   const [draft, setDraft] = useState("");
   const [editBusy, setEditBusy] = useState(false);
@@ -181,6 +188,13 @@ export function LedgerTable(props: {
           </tr>
         </thead>
         <tbody>
+          <LedgerCreateRow
+            key={props.accountId}
+            seedType={seedType}
+            categories={props.categories}
+            onCreate={props.onCreate}
+            onActionError={props.onActionError}
+          />
           {props.transactions.map((tx) => (
             <LedgerRow
               key={tx.id}

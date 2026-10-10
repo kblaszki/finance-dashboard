@@ -35,7 +35,7 @@ From `backend/.c8rc.json`: lines/statements 85, branches 75, functions 88. Inclu
 ## Frontend
 
 - Vitest + jsdom: `frontend/src/**/*.test.ts(x)`.
-- Current suites: `apiModules`, `apiContracts`, `client`, `format`, `useAsyncData`, `theme`, `AccountDetailPage`, `categoryScope`, `CashTransactionForm`.
+- Current suites: `apiModules`, `apiContracts`, `client`, `format`, `useAsyncData`, `theme`, `AccountDetailPage`, `categoryScope`, `LedgerTable`.
 
 ### Coverage (Vitest)
 

@@ -119,17 +119,18 @@ describe("AccountDetailPage", () => {
     expect(fetchTransactions).toHaveBeenCalledWith(1);
   });
 
-  it("creates a cash transaction from the form", async () => {
+  it("creates a cash transaction from the ledger create row", async () => {
     renderLedger();
     await screen.findByText("Coffee");
+    fireEvent.change(screen.getByLabelText("New amount"), {
+      target: { value: "12.5" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Add transaction" }));
-    fireEvent.change(screen.getByLabelText("Amount"), { target: { value: "12.5" } });
-    fireEvent.click(screen.getByRole("button", { name: "Add transaction (Enter)" }));
     await waitFor(() => {
       expect(createTransaction).toHaveBeenCalledWith(
         1,
         expect.objectContaining({
-          type: "INCOME",
+          type: "EXPENSE",
           amount: 12.5,
           description: null,
           categoryId: null,
