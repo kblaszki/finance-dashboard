@@ -1658,3 +1658,283 @@ test("GET /api/statistics/cashflow-rolling-12m requires auth and valid currency"
   assert.equal(empty.body.avgExpense, 0);
   assert.equal(empty.body.avgNet, 0);
 });
+
+test("POST /api/transfers same currency updates both balances", async () => {
+  const token = await registerAndLogin("xfer@test.local", "xferuser", "password123");
+  const from = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "From PLN", currency: "PLN", openingBalance: 1000 });
+  const to = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "To PLN", currency: "PLN", openingBalance: 100 });
+  const fromId = from.body.id as number;
+  const toId = to.body.id as number;
+
+  const created = await request(app)
+    .post("/api/transfers")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      fromAccountId: fromId,
+      toAccountId: toId,
+      amountFrom: 250,
+      occurredAt: "2026-08-15T12:00:00.000Z",
+      description: "move",
+    });
+  assert.equal(created.status, 201);
+  assert.equal(created.body.amountFrom, 250);
+  assert.equal(created.body.amountTo, 250);
+  assert.equal(created.body.fromCurrency, "PLN");
+  assert.equal(created.body.toCurrency, "PLN");
+  assert.equal(created.body.fxRate, 1);
+  assert.equal(created.body.description, "move");
+
+  const fromAfter = await request(app)
+    .get(`/api/accounts/${fromId}`)
+    .set("Authorization", `Bearer ${token}`);
+  const toAfter = await request(app)
+    .get(`/api/accounts/${toId}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(fromAfter.body.cashBalance, 750);
+  assert.equal(toAfter.body.cashBalance, 350);
+
+  const fromTx = await request(app)
+    .get(`/api/accounts/${fromId}/transactions`)
+    .set("Authorization", `Bearer ${token}`);
+  const toTx = await request(app)
+    .get(`/api/accounts/${toId}/transactions`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(fromTx.body.length, 1);
+  assert.equal(fromTx.body[0].type, "TRANSFER_OUT");
+  assert.equal(fromTx.body[0].transferId, created.body.id);
+  assert.equal(toTx.body[0].type, "TRANSFER_IN");
+  assert.equal(toTx.body[0].transferId, created.body.id);
+});
+
+test("POST /api/transfers cross currency requires amountTo and returns fxRate", async () => {
+  const token = await registerAndLogin("xferfx@test.local", "xferfx", "password123");
+  const from = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "PLN", currency: "PLN", openingBalance: 1000 });
+  const to = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "EUR", currency: "EUR", openingBalance: 0 });
+
+  const missing = await request(app)
+    .post("/api/transfers")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      fromAccountId: from.body.id,
+      toAccountId: to.body.id,
+      amountFrom: 400,
+    });
+  assert.equal(missing.status, 400);
+
+  const created = await request(app)
+    .post("/api/transfers")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      fromAccountId: from.body.id,
+      toAccountId: to.body.id,
+      amountFrom: 400,
+      amountTo: 100,
+      occurredAt: "2026-08-01T00:00:00.000Z",
+    });
+  assert.equal(created.status, 201);
+  assert.equal(created.body.amountFrom, 400);
+  assert.equal(created.body.amountTo, 100);
+  assert.equal(created.body.fxRate, 0.25);
+});
+
+test("POST /api/transfers rejects same account and foreign account", async () => {
+  const token = await registerAndLogin("xferbad@test.local", "xferbad", "password123");
+  const other = await registerAndLogin("xferoth@test.local", "xferoth", "password123");
+  const mine = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Mine", currency: "PLN", openingBalance: 100 });
+  const theirs = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${other}`)
+    .send({ name: "Theirs", currency: "PLN", openingBalance: 100 });
+
+  const same = await request(app)
+    .post("/api/transfers")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      fromAccountId: mine.body.id,
+      toAccountId: mine.body.id,
+      amountFrom: 10,
+    });
+  assert.equal(same.status, 400);
+
+  const foreign = await request(app)
+    .post("/api/transfers")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      fromAccountId: mine.body.id,
+      toAccountId: theirs.body.id,
+      amountFrom: 10,
+    });
+  assert.equal(foreign.status, 404);
+});
+
+test("PATCH/DELETE /api/transfers adjust balances; leg endpoints reject edits", async () => {
+  const token = await registerAndLogin("xferupd@test.local", "xferupd", "password123");
+  const a = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "A", currency: "PLN", openingBalance: 1000 });
+  const b = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "B", currency: "PLN", openingBalance: 0 });
+  const c = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "C", currency: "PLN", openingBalance: 50 });
+  const aId = a.body.id as number;
+  const bId = b.body.id as number;
+  const cId = c.body.id as number;
+
+  const created = await request(app)
+    .post("/api/transfers")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ fromAccountId: aId, toAccountId: bId, amountFrom: 200 });
+  assert.equal(created.status, 201);
+  const transferId = created.body.id as number;
+
+  const legsA = await request(app)
+    .get(`/api/accounts/${aId}/transactions`)
+    .set("Authorization", `Bearer ${token}`);
+  const legId = legsA.body[0].id as number;
+
+  const patchLeg = await request(app)
+    .patch(`/api/accounts/${aId}/transactions/${legId}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ amount: 1 });
+  assert.equal(patchLeg.status, 400);
+  assert.match(String(patchLeg.body.error), /\/api\/transfers/);
+
+  const deleteLeg = await request(app)
+    .delete(`/api/accounts/${aId}/transactions/${legId}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(deleteLeg.status, 400);
+
+  const patched = await request(app)
+    .patch(`/api/transfers/${transferId}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ amountFrom: 300, toAccountId: cId });
+  assert.equal(patched.status, 200);
+  assert.equal(patched.body.amountFrom, 300);
+  assert.equal(patched.body.toAccountId, cId);
+
+  const aAfter = await request(app)
+    .get(`/api/accounts/${aId}`)
+    .set("Authorization", `Bearer ${token}`);
+  const bAfter = await request(app)
+    .get(`/api/accounts/${bId}`)
+    .set("Authorization", `Bearer ${token}`);
+  const cAfter = await request(app)
+    .get(`/api/accounts/${cId}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(aAfter.body.cashBalance, 700);
+  assert.equal(bAfter.body.cashBalance, 0);
+  assert.equal(cAfter.body.cashBalance, 350);
+
+  const deleted = await request(app)
+    .delete(`/api/transfers/${transferId}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(deleted.status, 204);
+
+  const aFinal = await request(app)
+    .get(`/api/accounts/${aId}`)
+    .set("Authorization", `Bearer ${token}`);
+  const cFinal = await request(app)
+    .get(`/api/accounts/${cId}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(aFinal.body.cashBalance, 1000);
+  assert.equal(cFinal.body.cashBalance, 50);
+});
+
+test("transfers are excluded from cashflow stats and included in balance-history", async () => {
+  const token = await registerAndLogin("xferstat@test.local", "xferstat", "password123");
+  const from = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Stat From", currency: "PLN", openingBalance: 500 });
+  const to = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Stat To", currency: "PLN", openingBalance: 0 });
+  const fromId = from.body.id as number;
+  const toId = to.body.id as number;
+
+  await request(app)
+    .post(`/api/accounts/${fromId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "INCOME", amount: 100, occurredAt: "2026-08-05T00:00:00.000Z" });
+  await request(app)
+    .post("/api/transfers")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      fromAccountId: fromId,
+      toAccountId: toId,
+      amountFrom: 200,
+      occurredAt: "2026-08-10T00:00:00.000Z",
+    });
+
+  const summary = await request(app)
+    .get("/api/statistics/period-summary?month=2026-08&currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(summary.status, 200);
+  assert.equal(summary.body.income, 100);
+  assert.equal(summary.body.expense, 0);
+  assert.equal(summary.body.net, 100);
+
+  const breakdown = await request(app)
+    .get("/api/statistics/category-breakdown?month=2026-08")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(breakdown.status, 200);
+  assert.equal(breakdown.body.income.length, 1);
+  assert.equal(breakdown.body.income[0].total, 100);
+  assert.equal(breakdown.body.expense.length, 0);
+
+  const history = await request(app)
+    .get(`/api/accounts/${fromId}/balance-history?month=2026-08&months=6`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(history.status, 200);
+  const aug = history.body.series.find((p: { month: string }) => p.month === "2026-08");
+  // opening 500 + income 100 - transfer out 200
+  assert.equal(aug.balance, 400);
+});
+
+test("DELETE /api/accounts/:id returns 409 when account has transfers", async () => {
+  const token = await registerAndLogin("xferdel@test.local", "xferdel", "password123");
+  const from = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Del From", currency: "PLN", openingBalance: 100 });
+  const to = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Del To", currency: "PLN", openingBalance: 0 });
+
+  await request(app)
+    .post("/api/transfers")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      fromAccountId: from.body.id,
+      toAccountId: to.body.id,
+      amountFrom: 25,
+    });
+
+  const del = await request(app)
+    .delete(`/api/accounts/${from.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(del.status, 409);
+  assert.match(String(del.body.error), /delete transfers first/i);
+});

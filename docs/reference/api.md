@@ -8,6 +8,7 @@ related_code:
   - backend/src/routes/accountsRoutes.ts
   - backend/src/routes/categoriesRoutes.ts
   - backend/src/routes/cashTransactionsRoutes.ts
+  - backend/src/routes/transfersRoutes.ts
   - backend/src/routes/statisticsRoutes.ts
   - backend/src/routes/mountRouters.ts
 ---
@@ -49,7 +50,7 @@ User-scoped. Cross-user access returns `404`. Create accepts allow-listed `accou
 | GET | `/api/accounts/:id` | Bearer | One owned account |
 | GET | `/api/accounts/:id/balance-history` | Bearer | End-of-month cash balances derived from `openingBalance` + ledger. Query: optional `month` (YYYY-MM, default current UTC month), `months` (`6`/`12`/`24`, default `12`). Response: `{ accountId, currency, monthCount, series: [{ month, balance }] }` (major units). 404 if not owned. |
 | PATCH | `/api/accounts/:id` | Bearer | Body: optional `name`, `currency`, `description` (no balance or `accountType` edits). Changing `currency` returns `409` when the account has any cash transaction; the same code is allowed. Invalid currency is `400`. |
-| DELETE | `/api/accounts/:id` | Bearer | 204 |
+| DELETE | `/api/accounts/:id` | Bearer | 204; `409` when the account appears in any `CashTransfer` (delete transfers first) |
 
 Duplicate name for the same user → `400`. Unknown `accountType` → `400`.
 
@@ -68,20 +69,31 @@ Unknown / other-user category or parent → `404`.
 
 ## Cash transactions
 
-Nested under an owned account. Cross-user or unknown account → `404`. `amount` must be positive, with at most 2 decimal places (stored as integer cents; JSON stays a major-unit number). `type` is `INCOME` or `EXPENSE` (case-normalized). Create, update, and delete adjust `Account.cashBalance` atomically (delete reverses; update applies the signed difference). No `balanceAfter`. Optional `categoryId` must belong to the same user and have `ledgerType` equal to the transaction `type` (else `400`). `occurredAt` is an absolute instant; month statistics bucket it in UTC.
+Nested under an owned account. Cross-user or unknown account → `404`. `amount` must be positive, with at most 2 decimal places (stored as integer cents; JSON stays a major-unit number). User create/update `type` is `INCOME` or `EXPENSE` (case-normalized). Transfer legs (`TRANSFER_IN` / `TRANSFER_OUT`) appear in list/export with `transferId` set; PATCH/DELETE on those rows → `400` (“edit or delete via /api/transfers”). Create, update, and delete of user cash rows adjust `Account.cashBalance` atomically. No `balanceAfter`. Optional `categoryId` must belong to the same user and have `ledgerType` equal to the transaction `type` (else `400`). `occurredAt` is an absolute instant; month statistics bucket it in UTC. CSV import rejects `TRANSFER_*` types.
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
-| GET | `/api/accounts/:accountId/transactions` | Bearer | List for account (`occurredAt` desc, then `id` desc); includes `categoryId` |
-| GET | `/api/accounts/:accountId/transactions/export` | Bearer | CSV download (`text/csv; charset=utf-8`); header `id,type,amount,currency,occurredAt,description,categoryId,categoryName,createdAt`; rows oldest→newest; empty ledger = header only; `Content-Disposition: attachment; filename="account-{id}-cash.csv"` |
-| POST | `/api/accounts/:accountId/transactions/import` | Bearer | Body `{ csv: string }` same header as export; always creates new rows (`id`/`createdAt` ignored); currency required and must match the account; category by owned `categoryId` or unique `categoryName` with matching `ledgerType`; all-or-nothing; `201 { created }`; `400 { error, details: [{ row, message }] }` |
+| GET | `/api/accounts/:accountId/transactions` | Bearer | List for account (`occurredAt` desc, then `id` desc); includes `categoryId`, `transferId` |
+| GET | `/api/accounts/:accountId/transactions/export` | Bearer | CSV download (`text/csv; charset=utf-8`); header `id,type,amount,currency,occurredAt,description,categoryId,categoryName,createdAt`; rows oldest→newest (includes `TRANSFER_*` legs); empty ledger = header only; `Content-Disposition: attachment; filename="account-{id}-cash.csv"` |
+| POST | `/api/accounts/:accountId/transactions/import` | Bearer | Body `{ csv: string }` same header as export; always creates new rows (`id`/`createdAt` ignored); currency required and must match the account; category by owned `categoryId` or unique `categoryName` with matching `ledgerType`; `TRANSFER_*` rows rejected; all-or-nothing; `201 { created }`; `400 { error, details: [{ row, message }] }` |
 | POST | `/api/accounts/:accountId/transactions` | Bearer | Body: `type`, `amount`; optional `occurredAt` (ISO instant, default now), `description`, `categoryId`. 201 |
-| PATCH | `/api/accounts/:accountId/transactions/:id` | Bearer | Body: optional `type`, `amount`, `occurredAt`, `description`, `categoryId`. At least one field. Adjusts `cashBalance` by the signed difference. 200 |
-| DELETE | `/api/accounts/:accountId/transactions/:id` | Bearer | Must match account; reverses balance. 204 |
+| PATCH | `/api/accounts/:accountId/transactions/:id` | Bearer | Body: optional `type`, `amount`, `occurredAt`, `description`, `categoryId`. At least one field. Adjusts `cashBalance` by the signed difference. Transfer legs → 400. 200 |
+| DELETE | `/api/accounts/:accountId/transactions/:id` | Bearer | Must match account; reverses balance. Transfer legs → 400. 204 |
+
+## Transfers
+
+User-scoped internal cash transfers (`CashTransfer` header + two ledger legs). Cross-user or unknown account → `404`. Same currency: `amountTo` optional (defaults to `amountFrom`); mismatched values → `400`. Different currencies: `amountTo` required. Response includes major-unit `amountFrom` / `amountTo`, account currencies, and computed `fxRate` (`amountTo / amountFrom`). Create/update/delete run in one DB transaction and reverse/recreate legs as needed.
+
+| Method | Path | Auth | Notes |
+|--------|------|------|-------|
+| GET | `/api/transfers` | Bearer | List own transfers (`occurredAt` desc, then `id` desc) |
+| POST | `/api/transfers` | Bearer | Body: `fromAccountId`, `toAccountId`, `amountFrom`; optional `amountTo`, `occurredAt`, `description`. Same account → 400. 201 |
+| PATCH | `/api/transfers/:id` | Bearer | Body: any subset of create fields; validated on merged state. 200 |
+| DELETE | `/api/transfers/:id` | Bearer | Reverses both legs and deletes header. 204 |
 
 ## Statistics
 
-Month bounds are **UTC** `[start, end)` on `CashTransaction.occurredAt`. No FX. Missing/invalid `month` → `400`. Period summary and cashflow history require `currency` as a 3-letter code (`^[A-Z]{3}$`); a currency the user does not hold returns zeros. History `months` must be `6`, `12`, or `24` when present (default `12`). Series is oldest → newest and zero-filled.
+Month bounds are **UTC** `[start, end)` on `CashTransaction.occurredAt`. Cashflow endpoints (`period-summary`, `category-breakdown`, `cashflow-history`, rolling averages) count only `INCOME` / `EXPENSE` — transfer legs are ignored. Account `balance-history` includes all ledger types (`TRANSFER_*` too). No FX conversion in stats. Missing/invalid `month` → `400`. Period summary and cashflow history require `currency` as a 3-letter code (`^[A-Z]{3}$`); a currency the user does not hold returns zeros. History `months` must be `6`, `12`, or `24` when present (default `12`). Series is oldest → newest and zero-filled.
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|

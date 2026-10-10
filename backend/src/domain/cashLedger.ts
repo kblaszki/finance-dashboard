@@ -4,11 +4,22 @@ import { decimalToMinor, parsePositiveAmount } from "./money";
 
 export { parsePositiveAmount };
 
+/** User-created cashflow types (also the stats filter). */
 export const CASH_TX_TYPES = ["INCOME", "EXPENSE"] as const;
 
 export type CashTxType = (typeof CASH_TX_TYPES)[number];
 
-const ALLOWED = new Set<string>(CASH_TX_TYPES);
+/** Transfer legs mirrored from CashTransfer — excluded from cashflow stats. */
+export const TRANSFER_TX_TYPES = ["TRANSFER_IN", "TRANSFER_OUT"] as const;
+
+export type TransferTxType = (typeof TRANSFER_TX_TYPES)[number];
+
+export const LEDGER_TX_TYPES = [...CASH_TX_TYPES, ...TRANSFER_TX_TYPES] as const;
+
+export type LedgerTxType = (typeof LEDGER_TX_TYPES)[number];
+
+const CASH_ALLOWED = new Set<string>(CASH_TX_TYPES);
+const LEDGER_ALLOWED = new Set<string>(LEDGER_TX_TYPES);
 
 type Db = PrismaClient | Prisma.TransactionClient;
 
@@ -17,28 +28,44 @@ export function parseCashTxType(value: unknown): CashTxType {
     throw badRequest(`type must be one of: ${CASH_TX_TYPES.join(", ")}`);
   }
   const raw = String(value).trim().toUpperCase();
-  if (!ALLOWED.has(raw)) {
+  if (!CASH_ALLOWED.has(raw)) {
     throw badRequest(`type must be one of: ${CASH_TX_TYPES.join(", ")}`);
   }
   return raw as CashTxType;
 }
 
-/** INCOME → +amount, EXPENSE → −amount. Amount is a major-unit Decimal. */
-export function signedDelta(type: CashTxType, amount: Prisma.Decimal): Prisma.Decimal {
-  return type === "INCOME" ? amount : amount.negated();
+export function parseLedgerTxType(value: unknown): LedgerTxType {
+  if (value === undefined || value === null || value === "") {
+    throw badRequest(`type must be one of: ${LEDGER_TX_TYPES.join(", ")}`);
+  }
+  const raw = String(value).trim().toUpperCase();
+  if (!LEDGER_ALLOWED.has(raw)) {
+    throw badRequest(`type must be one of: ${LEDGER_TX_TYPES.join(", ")}`);
+  }
+  return raw as LedgerTxType;
 }
 
-export function signedMinor(type: CashTxType, amountMinor: number): number {
-  return type === "INCOME" ? amountMinor : -amountMinor;
+function isCreditType(type: LedgerTxType): boolean {
+  return type === "INCOME" || type === "TRANSFER_IN";
+}
+
+/** INCOME/TRANSFER_IN → +amount; EXPENSE/TRANSFER_OUT → −amount. */
+export function signedDelta(type: LedgerTxType, amount: Prisma.Decimal): Prisma.Decimal {
+  return isCreditType(type) ? amount : amount.negated();
+}
+
+export function signedMinor(type: LedgerTxType, amountMinor: number): number {
+  return isCreditType(type) ? amountMinor : -amountMinor;
 }
 
 export type CashPostInput = {
   accountId: number;
-  type: CashTxType;
+  type: LedgerTxType;
   amount: Prisma.Decimal;
   occurredAt: Date;
   description: string | null;
   categoryId: number | null;
+  transferId?: number | null;
 };
 
 /** Insert one ledger row and apply its signed minor-unit delta to cashBalance. */
@@ -55,6 +82,7 @@ export async function postCashTransaction(
       occurredAt: input.occurredAt,
       description: input.description,
       categoryId: input.categoryId,
+      transferId: input.transferId ?? null,
     },
   });
   await db.account.update({
@@ -67,7 +95,7 @@ export async function postCashTransaction(
 export async function postCashTransactionBatch(
   db: Db,
   accountId: number,
-  rows: Array<Omit<CashPostInput, "accountId">>,
+  rows: Array<Omit<CashPostInput, "accountId" | "transferId">>,
 ): Promise<number> {
   if (rows.length === 0) return 0;
   let totalMinor = 0;
@@ -104,7 +132,7 @@ export async function updateCashTransaction(
     categoryId: number | null;
   },
 ): Promise<CashTransaction> {
-  const oldSigned = signedMinor(parseCashTxType(existing.type), existing.amount);
+  const oldSigned = signedMinor(parseLedgerTxType(existing.type), existing.amount);
   const amountMinor = decimalToMinor(next.amount, "amount");
   const delta = signedMinor(next.type, amountMinor) - oldSigned;
   const row = await db.cashTransaction.update({
@@ -132,7 +160,7 @@ export async function reverseCashTransaction(
   accountId: number,
   existing: { id: number; type: string; amount: number },
 ): Promise<void> {
-  const type = parseCashTxType(existing.type);
+  const type = parseLedgerTxType(existing.type);
   const reverse = -signedMinor(type, existing.amount);
   await db.account.update({
     where: { id: accountId },

@@ -232,6 +232,14 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
     try {
       const id = parseIdParam(req.params.id);
       await findOwnedAccount(prisma, uid(req), id);
+      const transferCount = await prisma.cashTransfer.count({
+        where: {
+          OR: [{ fromAccountId: id }, { toAccountId: id }],
+        },
+      });
+      if (transferCount > 0) {
+        throw conflict("Cannot delete account while it has transfers; delete transfers first");
+      }
       await prisma.account.delete({ where: { id } });
       res.status(204).send();
     } catch (e: unknown) {

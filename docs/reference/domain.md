@@ -23,6 +23,7 @@ Hub: [docs/README.md](../README.md).
 | createdAt | DateTime | Default now |
 | accounts | Account[] | Owned accounts (`onDelete: Cascade`) |
 | categories | Category[] | Owned category tree (`onDelete: Cascade`) |
+| cashTransfers | CashTransfer[] | Owned internal transfers (`onDelete: Cascade`) |
 
 ## Category
 
@@ -58,21 +59,41 @@ User-scoped financial account. Create accepts allow-listed types; `accountType` 
 | createdAt | DateTime | Default now |
 | updatedAt | DateTime | `@updatedAt` |
 
-Indexes: `[userId, accountType]`. API responses also expose computed `totalBalance` (= `cashBalance` until holdings exist). Allow-list: `backend/src/domain/accountTypes.ts`. Relation: `cashTransactions` → `CashTransaction[]` (`onDelete: Cascade`).
+Indexes: `[userId, accountType]`. API responses also expose computed `totalBalance` (= `cashBalance` until holdings exist). Allow-list: `backend/src/domain/accountTypes.ts`. Relations: `cashTransactions` → `CashTransaction[]` (`onDelete: Cascade`); `transfersFrom` / `transfersTo` → `CashTransfer[]` (`onDelete: Restrict` — delete account while transfers exist → API `409`).
+
+## CashTransfer
+
+Source of truth for an internal cash transfer between two owned accounts. Create/update/delete mirror two ledger legs (`TRANSFER_OUT` / `TRANSFER_IN`) and adjust both balances atomically. Domain: `backend/src/domain/cashTransfers.ts`.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id | Int | PK, autoincrement |
+| userId | Int | FK → User (`onDelete: Cascade`) |
+| fromAccountId | Int | FK → Account (`onDelete: Restrict`) |
+| toAccountId | Int | FK → Account (`onDelete: Restrict`) |
+| amountFrom | Int | Positive minor units on the source account |
+| amountTo | Int | Positive minor units on the destination account |
+| occurredAt | DateTime | Transfer time (default now) |
+| description | String? | Optional note |
+| createdAt | DateTime | Default now |
+| updatedAt | DateTime | `@updatedAt` |
+
+Indexes: `[userId, occurredAt]`, `[fromAccountId]`, `[toAccountId]`. Same-currency transfers keep `amountTo = amountFrom`; cross-currency requires an explicit `amountTo` (manual FX; no NBP). Relation: `legs` → `CashTransaction[]` (`onDelete: Cascade`).
 
 ## CashTransaction
 
-Single-account cash ledger row (INCOME / EXPENSE). Positive `amount`; type drives signed effect on `Account.cashBalance`. No `balanceAfter`. Optional category tag.
+Single-account cash ledger row. Positive `amount`; type drives signed effect on `Account.cashBalance`. User-created types are `INCOME` / `EXPENSE`. Transfer legs use `TRANSFER_OUT` / `TRANSFER_IN` and are excluded from cashflow statistics. No `balanceAfter`. Optional category tag (user cash types only).
 
 | Field | Type | Notes |
 |-------|------|-------|
 | id | Int | PK, autoincrement |
 | accountId | Int | FK → Account (`onDelete: Cascade`) |
-| type | String | `INCOME` or `EXPENSE` |
+| type | String | `INCOME`, `EXPENSE`, `TRANSFER_IN`, or `TRANSFER_OUT` |
 | amount | Int | Always positive, minor units (cents). API JSON uses major units |
 | occurredAt | DateTime | Movement time (default now) |
 | description | String? | Optional note |
 | categoryId | Int? | FK → Category (`onDelete: SetNull`) |
+| transferId | Int? | FK → CashTransfer (`onDelete: Cascade`); set on transfer legs |
 | createdAt | DateTime | Default now |
 
-Indexes: `[accountId, occurredAt]`, `[categoryId]`. Domain rules: `backend/src/domain/cashLedger.ts`. Parsing and minor-unit conversion: `backend/src/domain/money.ts`. SQLite stores these integers so cent arithmetic does not pass through REAL.
+Indexes: `[accountId, occurredAt]`, `[categoryId]`, `[transferId]`. Domain rules: `backend/src/domain/cashLedger.ts` (`CASH_TX_TYPES` vs `LEDGER_TX_TYPES`). Parsing and minor-unit conversion: `backend/src/domain/money.ts`. SQLite stores these integers so cent arithmetic does not pass through REAL.

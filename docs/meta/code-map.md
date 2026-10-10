@@ -21,10 +21,12 @@ Auth + multi-type accounts + category tree + cash ledger + category statistics b
 | Accounts HTTP routes | `backend/src/routes/accountsRoutes.ts` |
 | Categories HTTP routes | `backend/src/routes/categoriesRoutes.ts` |
 | Cash transactions routes | `backend/src/routes/cashTransactionsRoutes.ts` |
+| Transfers routes | `backend/src/routes/transfersRoutes.ts` |
 | Statistics routes | `backend/src/routes/statisticsRoutes.ts` |
 | Account type allow-list | `backend/src/domain/accountTypes.ts` |
 | Categories domain | `backend/src/domain/categories.ts` |
 | Cash ledger domain | `backend/src/domain/cashLedger.ts`, `money.ts`, `cashLedgerCsv.ts`, `cashLedgerCsvImport.ts` |
+| Cash transfers domain | `backend/src/domain/cashTransfers.ts` |
 | Category breakdown domain | `backend/src/domain/categoryBreakdown.ts` |
 | Cashflow stats domain | `backend/src/domain/cashflowStats.ts` |
 | Account balance history domain | `backend/src/domain/accountBalanceHistory.ts` |
@@ -32,7 +34,7 @@ Auth + multi-type accounts + category tree + cash ledger + category statistics b
 | Router mount | `backend/src/routes/mountRouters.ts` |
 | HTTP helpers / errors | `backend/src/routes/httpSupport.ts`, `backend/src/lib/errors.ts` |
 | Route uid helper | `backend/src/routes/routeSupport.ts` |
-| Prisma schema | `backend/prisma/schema.prisma` (`User`, `Category`, `Account`, `CashTransaction`) |
+| Prisma schema | `backend/prisma/schema.prisma` (`User`, `Category`, `Account`, `CashTransfer`, `CashTransaction`) |
 | Migrations | `backend/prisma/migrations/` |
 | Demo user seed | `backend/prisma/seed.ts`, `backend/src/domain/seedDemoPortfolio.ts` |
 | Create user CLI | `backend/src/scripts/createUser.ts` |

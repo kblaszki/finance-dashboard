@@ -59,6 +59,7 @@ export function cashTransactionPayload(tx: CashTransaction) {
     occurredAt: tx.occurredAt.toISOString(),
     description: tx.description,
     categoryId: tx.categoryId,
+    transferId: tx.transferId ?? null,
     createdAt: tx.createdAt.toISOString(),
   };
 }
@@ -278,6 +279,9 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
           where: { id, accountId },
         });
         if (!existing) throw notFound("Transaction not found");
+        if (existing.transferId != null) {
+          throw badRequest("edit or delete via /api/transfers");
+        }
 
         const body = req.body ?? {};
         const hasField = ["type", "amount", "occurredAt", "description", "categoryId"].some(
@@ -335,6 +339,9 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
           where: { id, accountId },
         });
         if (!existing) throw notFound("Transaction not found");
+        if (existing.transferId != null) {
+          throw badRequest("edit or delete via /api/transfers");
+        }
 
         await prisma.$transaction((tx) =>
           reverseCashTransaction(tx, accountId, existing),

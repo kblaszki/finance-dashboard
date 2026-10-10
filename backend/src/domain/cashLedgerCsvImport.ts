@@ -99,14 +99,15 @@ export function parseCashLedgerCsvImport(
     const categoryIdRaw = cells[6]!.trim();
     const categoryNameRaw = cells[7]!;
 
-    const type = parseTypeCell(typeRaw);
-    if (type == null) {
+    const typeResult = parseTypeCell(typeRaw);
+    if (!typeResult.ok) {
       errors.push({
         row: dataRow,
-        message: `type must be one of: ${CASH_TX_TYPES.join(", ")}`,
+        message: typeResult.message,
       });
       continue;
     }
+    const type = typeResult.type;
 
     let amount: number;
     try {
@@ -266,10 +267,23 @@ export function formatImportErrors(errors: ImportRowError[]): string {
     .join("; ");
 }
 
-function parseTypeCell(raw: string): CashTxType | null {
-  const upper = raw.toUpperCase();
-  if (upper === "INCOME" || upper === "EXPENSE") return upper;
-  return null;
+function parseTypeCell(
+  raw: string,
+): { ok: true; type: CashTxType } | { ok: false; message: string } {
+  const upper = raw.trim().toUpperCase();
+  if (upper === "TRANSFER_IN" || upper === "TRANSFER_OUT") {
+    return {
+      ok: false,
+      message: "TRANSFER_* rows cannot be imported; manage transfers via /api/transfers",
+    };
+  }
+  if (upper === "INCOME" || upper === "EXPENSE") {
+    return { ok: true, type: upper };
+  }
+  return {
+    ok: false,
+    message: `type must be one of: ${CASH_TX_TYPES.join(", ")}`,
+  };
 }
 
 function stripBom(text: string): string {

@@ -58,7 +58,7 @@ test("aggregateAccountBalanceHistory accumulates end-of-month balances", () => {
       occurredAt: new Date("2026-03-31T23:59:59.000Z"),
     },
     {
-      type: "TRANSFER",
+      type: "UNKNOWN",
       amount: 999_00,
       occurredAt: new Date("2026-02-15T00:00:00.000Z"),
     },
@@ -70,6 +70,26 @@ test("aggregateAccountBalanceHistory accumulates end-of-month balances", () => {
     { month: "2026-01", balance: 175 },
     { month: "2026-02", balance: 165 },
     { month: "2026-03", balance: 160 },
+  ]);
+});
+
+test("aggregateAccountBalanceHistory includes TRANSFER_IN and TRANSFER_OUT", () => {
+  const months = listMonthsEndingAt("2026-02", 2);
+  const result = aggregateAccountBalanceHistory(1, "PLN", months, 100_00, [
+    {
+      type: "TRANSFER_OUT",
+      amount: 40_00,
+      occurredAt: new Date("2026-01-10T00:00:00.000Z"),
+    },
+    {
+      type: "TRANSFER_IN",
+      amount: 15_00,
+      occurredAt: new Date("2026-02-05T00:00:00.000Z"),
+    },
+  ]);
+  assert.deepEqual(result.series, [
+    { month: "2026-01", balance: 60 },
+    { month: "2026-02", balance: 75 },
   ]);
 });
 

@@ -1,4 +1,4 @@
-import { CASH_TX_TYPES, signedMinor, type CashTxType } from "./cashLedger";
+import { LEDGER_TX_TYPES, signedMinor, type LedgerTxType } from "./cashLedger";
 import { parseMonthParam } from "./categoryBreakdown";
 import { listMonthsEndingAt, parseMonthsParam } from "./cashflowStats";
 import { minorToMajor } from "./money";
@@ -46,6 +46,7 @@ export { listMonthsEndingAt, parseMonthsParam };
 /**
  * End-of-month cash balances: openingBalance + signed ledger deltas with
  * occurredAt before the start of the next month. Months with no activity stay flat.
+ * Includes INCOME/EXPENSE and TRANSFER_IN/TRANSFER_OUT legs.
  */
 export function aggregateAccountBalanceHistory(
   accountId: number,
@@ -57,10 +58,10 @@ export function aggregateAccountBalanceHistory(
   const sorted = rows
     .filter((row) => {
       const type = String(row.type).trim().toUpperCase();
-      return (CASH_TX_TYPES as readonly string[]).includes(type);
+      return (LEDGER_TX_TYPES as readonly string[]).includes(type);
     })
     .map((row) => ({
-      type: String(row.type).trim().toUpperCase() as CashTxType,
+      type: String(row.type).trim().toUpperCase() as LedgerTxType,
       amount: row.amount,
       occurredAt: row.occurredAt,
     }))
