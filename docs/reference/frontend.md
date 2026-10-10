@@ -28,7 +28,7 @@ Hub: [docs/README.md](../README.md).
 | `/home` | Protected | Redirect → `/dashboard` |
 | `/accounts` | Protected | `AccountsPage` (multi-type create/list/edit/delete; currency on edit is read-only once the ledger has rows) |
 | `/accounts/:id` | Protected | `AccountDetailPage` (balance history chart at top; cash ledger with inline create row + list/delete/CSV; cell edit via double-click + Enter, Escape cancels). Ledger pieces live in `components/account/`: `AccountBalanceChart`, `AccountLedgerHeader`, `AccountSubtitle`, `LedgerTable`, `LedgerCreateRow`, `occurredAt.ts`, `categoryScope.ts` (`categoryIdsForLedgerType`) |
-| `/categories` | Protected | `CategoriesPage` (Income / Expense sections; inline create row like ledger; rename/same-type reparent/delete; section fixes `ledgerType`) |
+| `/categories` | Protected | `CategoriesPage` (Income / Expense sections; inline create row; double-click Name/Parent + Enter to PATCH, Escape cancels; delete; section fixes `ledgerType`) |
 | `/statistics` | Protected | `StatisticsPage` (period KPIs, cashflow + savings-rate chart, category donuts rolled to tree roots) |
 | `/settings` | Protected | `SettingsPage` |
 

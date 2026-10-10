@@ -25,6 +25,8 @@ const SECTIONS: Array<{ ledgerType: CategoryLedgerType; title: string }> = [
 ];
 
 type TreeRow = Category & { depth: number };
+type EditableField = "name" | "parentId";
+type EditingState = { categoryId: number; field: EditableField };
 
 function CategoryCreateRow(props: {
   ledgerType: CategoryLedgerType;
@@ -133,16 +135,101 @@ function CategoryCreateRow(props: {
   );
 }
 
+function CategoryRow(props: {
+  category: TreeRow;
+  parentOptions: TreeRow[];
+  parentName: string;
+  draft: string;
+  editBusy: boolean;
+  isEditing: (categoryId: number, field: EditableField) => boolean;
+  cellClass: (categoryId: number, field: EditableField, extra?: string) => string;
+  onStartEdit: (category: TreeRow, field: EditableField) => void;
+  onDraftChange: (value: string) => void;
+  onEditorKeyDown: (e: KeyboardEvent, category: TreeRow) => void;
+  onDelete: (category: Category) => void;
+}) {
+  const { category } = props;
+
+  return (
+    <tr>
+      <td
+        className={props.cellClass(category.id, "name")}
+        onDoubleClick={() => props.onStartEdit(category, "name")}
+      >
+        {props.isEditing(category.id, "name") ? (
+          <input
+            type="text"
+            className="ledger-cell-input"
+            value={props.draft}
+            disabled={props.editBusy}
+            autoFocus
+            onChange={(e) => props.onDraftChange(e.target.value)}
+            onKeyDown={(e) => props.onEditorKeyDown(e, category)}
+            aria-label="Edit name"
+          />
+        ) : (
+          <span
+            className={category.depth === 0 ? "category-root" : undefined}
+            style={{ paddingInlineStart: `${category.depth * 1.25}rem` }}
+          >
+            {category.name}
+          </span>
+        )}
+      </td>
+      <td
+        className={props.cellClass(category.id, "parentId")}
+        onDoubleClick={() => props.onStartEdit(category, "parentId")}
+      >
+        {props.isEditing(category.id, "parentId") ? (
+          <select
+            className="ledger-cell-input"
+            value={props.draft}
+            disabled={props.editBusy}
+            autoFocus
+            onChange={(e) => props.onDraftChange(e.target.value)}
+            onKeyDown={(e) => props.onEditorKeyDown(e, category)}
+            aria-label="Edit parent"
+          >
+            <option value="">— Root —</option>
+            {props.parentOptions
+              .filter((c) => c.id !== category.id)
+              .map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {"\u00A0".repeat(cat.depth * 2)}
+                  {cat.name}
+                </option>
+              ))}
+          </select>
+        ) : (
+          props.parentName
+        )}
+      </td>
+      <td>
+        <div className="form-actions-row">
+          <button
+            type="button"
+            className="btn-danger"
+            aria-label={`Delete ${category.name}`}
+            onClick={() => props.onDelete(category)}
+          >
+            Delete
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 export function CategoriesPage() {
   const loadCategories = useCallback(() => fetchCategories(), []);
   const { data: categories, error, loading, reload } = useAsyncData(loadCategories);
 
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [editName, setEditName] = useState("");
-  const [editParentId, setEditParentId] = useState<string>("");
-  const [editErr, setEditErr] = useState<string | null>(null);
+  const [editing, setEditing] = useState<EditingState | null>(null);
+  const [draft, setDraft] = useState("");
   const [editBusy, setEditBusy] = useState(false);
   const [actionErr, setActionErr] = useState<string | null>(null);
+
+  const nameById = new Map((categories ?? []).map((c) => [c.id, c.name]));
 
   function treeForType(ledgerType: CategoryLedgerType) {
     if (!categories) return [];
@@ -162,36 +249,75 @@ export function CategoriesPage() {
     reload();
   }
 
-  function startEdit(category: Category) {
-    setEditingId(category.id);
-    setEditName(category.name);
-    setEditParentId(category.parentId == null ? "" : String(category.parentId));
-    setEditErr(null);
+  function startEdit(category: TreeRow, field: EditableField) {
+    if (editBusy) return;
+    setEditing({ categoryId: category.id, field });
+    setDraft(
+      field === "name"
+        ? category.name
+        : category.parentId == null
+          ? ""
+          : String(category.parentId),
+    );
     setActionErr(null);
   }
 
   function cancelEdit() {
-    setEditingId(null);
-    setEditErr(null);
+    setEditing(null);
+    setDraft("");
   }
 
-  async function handleSaveEdit(e: FormEvent) {
-    e.preventDefault();
-    if (editingId == null) return;
-    setEditErr(null);
+  async function commitEdit(category: TreeRow) {
+    if (!editing || editing.categoryId !== category.id || editBusy) return;
+    setActionErr(null);
     setEditBusy(true);
     try {
-      await updateCategory(editingId, {
-        name: editName,
-        parentId: editParentId === "" ? null : Number(editParentId),
-      });
-      setEditingId(null);
-      reload();
+      if (editing.field === "name") {
+        const trimmed = draft.trim();
+        if (!trimmed) throw new Error("Name required");
+        if (trimmed !== category.name) {
+          await updateCategory(category.id, { name: trimmed });
+          reload();
+        }
+      } else {
+        const parentId = draft === "" ? null : Number(draft);
+        if (draft !== "" && (!Number.isInteger(parentId) || parentId! < 1)) {
+          throw new Error("Invalid parent");
+        }
+        if (parentId !== category.parentId) {
+          await updateCategory(category.id, { parentId });
+          reload();
+        }
+      }
+      cancelEdit();
     } catch (err) {
-      setEditErr(err instanceof Error ? err.message : "Update failed");
+      setActionErr(err instanceof Error ? err.message : "Update failed");
     } finally {
       setEditBusy(false);
     }
+  }
+
+  function onEditorKeyDown(e: KeyboardEvent, category: TreeRow) {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      cancelEdit();
+      return;
+    }
+    if (e.key === "Enter") {
+      e.preventDefault();
+      void commitEdit(category);
+    }
+  }
+
+  function isEditing(categoryId: number, field: EditableField): boolean {
+    return editing?.categoryId === categoryId && editing.field === field;
+  }
+
+  function cellClass(categoryId: number, field: EditableField, extra = ""): string {
+    const parts = ["ledger-cell", "ledger-cell--editable"];
+    if (isEditing(categoryId, field)) parts.push("ledger-cell--editing");
+    if (extra) parts.push(extra);
+    return parts.join(" ");
   }
 
   async function handleDelete(category: Category) {
@@ -199,7 +325,7 @@ export function CategoriesPage() {
     setActionErr(null);
     try {
       await deleteCategory(category.id);
-      if (editingId === category.id) setEditingId(null);
+      if (editing?.categoryId === category.id) cancelEdit();
       reload();
     } catch (err) {
       setActionErr(err instanceof Error ? err.message : "Delete failed");
@@ -210,7 +336,7 @@ export function CategoriesPage() {
     <>
       <PageHeader
         title="Categories"
-        subtitle="Labels for cash transactions, split by income and expense type."
+        subtitle="Labels for cash transactions, split by income and expense type. Double-click a name or parent to edit."
       />
 
       {actionErr && <p className="error-banner">{actionErr}</p>}
@@ -245,101 +371,24 @@ export function CategoriesPage() {
                       onActionError={setActionErr}
                     />
                     {rows.map((category) => (
-                      <tr key={category.id}>
-                        <td>
-                          {editingId === category.id ? (
-                            <form
-                              className="auth-form auth-form--compact"
-                              onSubmit={handleSaveEdit}
-                            >
-                              <label>
-                                Name
-                                <input
-                                  type="text"
-                                  required
-                                  value={editName}
-                                  onChange={(e) => setEditName(e.target.value)}
-                                />
-                              </label>
-                              <label>
-                                Parent
-                                <select
-                                  value={editParentId}
-                                  onChange={(e) => setEditParentId(e.target.value)}
-                                >
-                                  <option value="">— Root —</option>
-                                  {rows
-                                    .filter((c) => c.id !== category.id)
-                                    .map((cat) => (
-                                      <option key={cat.id} value={cat.id}>
-                                        {"\u00A0".repeat(cat.depth * 2)}
-                                        {cat.name}
-                                      </option>
-                                    ))}
-                                </select>
-                              </label>
-                              {editErr && <p className="auth-error">{editErr}</p>}
-                              <div className="form-actions-row">
-                                <button
-                                  type="submit"
-                                  className="btn-primary"
-                                  disabled={editBusy}
-                                >
-                                  {editBusy ? "Saving…" : "Save"}
-                                </button>
-                                <button
-                                  type="button"
-                                  className="btn-secondary"
-                                  onClick={cancelEdit}
-                                  disabled={editBusy}
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            </form>
-                          ) : (
-                            <span
-                              className={
-                                category.depth === 0 ? "category-root" : undefined
-                              }
-                              style={{
-                                paddingInlineStart: `${category.depth * 1.25}rem`,
-                              }}
-                            >
-                              {category.name}
-                            </span>
-                          )}
-                        </td>
-                        <td>
-                          {editingId === category.id
-                            ? null
-                            : category.parentId == null
-                              ? "—"
-                              : (categories?.find((c) => c.id === category.parentId)
-                                  ?.name ?? "—")}
-                        </td>
-                        <td>
-                          {editingId !== category.id && (
-                            <div className="form-actions-row">
-                              <button
-                                type="button"
-                                className="btn-secondary"
-                                onClick={() => startEdit(category)}
-                              >
-                                Edit
-                              </button>
-                              <button
-                                type="button"
-                                className="btn-danger"
-                                aria-label={`Delete ${category.name}`}
-                                onClick={() => void handleDelete(category)}
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          )}
-                        </td>
-                      </tr>
+                      <CategoryRow
+                        key={category.id}
+                        category={category}
+                        parentOptions={rows}
+                        parentName={
+                          category.parentId == null
+                            ? "—"
+                            : (nameById.get(category.parentId) ?? "—")
+                        }
+                        draft={draft}
+                        editBusy={editBusy}
+                        isEditing={isEditing}
+                        cellClass={cellClass}
+                        onStartEdit={startEdit}
+                        onDraftChange={setDraft}
+                        onEditorKeyDown={onEditorKeyDown}
+                        onDelete={handleDelete}
+                      />
                     ))}
                   </tbody>
                 </table>
