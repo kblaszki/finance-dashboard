@@ -42,7 +42,7 @@ export function LedgerCreateRow(props: {
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [createBusy, setCreateBusy] = useState(false);
-  const amountRef = useRef<HTMLInputElement | null>(null);
+  const firstInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (lastEnteredType != null) return;
@@ -98,7 +98,7 @@ export function LedgerCreateRow(props: {
       setAmount("");
       setDescription("");
       setCategoryId("");
-      amountRef.current?.focus();
+      firstInputRef.current?.focus();
     } catch (err) {
       props.onActionError(err instanceof Error ? err.message : "Create failed");
     } finally {
@@ -121,6 +121,7 @@ export function LedgerCreateRow(props: {
     <tr className="ledger-create-row">
       <td>
         <input
+          ref={firstInputRef}
           type="datetime-local"
           className="ledger-cell-input"
           value={occurredAt}
@@ -148,7 +149,6 @@ export function LedgerCreateRow(props: {
       </td>
       <td className="num">
         <input
-          ref={amountRef}
           type="number"
           step="0.01"
           min="0.01"
