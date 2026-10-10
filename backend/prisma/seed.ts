@@ -35,7 +35,7 @@ async function main(): Promise<void> {
       id: user.id,
       email: user.email,
       username: user.username,
-      note: "Demo user + sample portfolio (accounts, categories, cash txs). Re-run wipes demo data.",
+      note: "Demo user + sample portfolio (accounts, categories, cash txs, transfers). Re-run wipes demo data.",
     }),
   );
 }
