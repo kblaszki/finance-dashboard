@@ -87,6 +87,18 @@ describe("LedgerTable", () => {
     expect(screen.getByText("Coffee")).toBeTruthy();
   });
 
+  it("cancels on blur without calling onSave", async () => {
+    const { onSave } = renderTable();
+    fireEvent.doubleClick(screen.getByText("Coffee"));
+    const input = screen.getByLabelText("Edit description");
+    fireEvent.change(input, { target: { value: "Tea" } });
+    fireEvent.blur(input);
+    await waitFor(() => {
+      expect(screen.getByText("Coffee")).toBeTruthy();
+    });
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
   it("saves empty description as null", async () => {
     const { onSave } = renderTable();
     fireEvent.doubleClick(screen.getByText("Coffee"));

@@ -1,4 +1,4 @@
-import { type KeyboardEvent, useMemo, useState } from "react";
+import { type KeyboardEvent, useMemo, useRef, useState } from "react";
 import type { Category } from "../../api/categoriesApi";
 import {
   CASH_TX_TYPES,
@@ -114,6 +114,7 @@ export function LedgerTable(props: {
   const [editing, setEditing] = useState<EditingState | null>(null);
   const [draft, setDraft] = useState("");
   const [editBusy, setEditBusy] = useState(false);
+  const committingRef = useRef(false);
 
   function startEdit(tx: CashTransaction, field: EditableField) {
     if (editBusy) return;
@@ -127,9 +128,17 @@ export function LedgerTable(props: {
     setDraft("");
   }
 
+  /** Blur cancels; defer so Enter commit can set committingRef first. */
+  function onEditorBlur() {
+    window.setTimeout(() => {
+      if (!committingRef.current) cancelEdit();
+    }, 0);
+  }
+
   async function commitEdit(tx: CashTransaction) {
     if (!editing || editing.txId !== tx.id || editBusy) return;
     props.onActionError(null);
+    committingRef.current = true;
     setEditBusy(true);
     try {
       const patch = buildPatch(tx, editing.field, draft, props.categories);
@@ -138,6 +147,7 @@ export function LedgerTable(props: {
     } catch (err) {
       props.onActionError(err instanceof Error ? err.message : "Update failed");
     } finally {
+      committingRef.current = false;
       setEditBusy(false);
     }
   }
@@ -200,6 +210,7 @@ export function LedgerTable(props: {
               onStartEdit={startEdit}
               onDraftChange={setDraft}
               onEditorKeyDown={onEditorKeyDown}
+              onEditorBlur={onEditorBlur}
               onDelete={props.onDelete}
             />
           ))}
@@ -221,6 +232,7 @@ function LedgerRow(props: {
   onStartEdit: (tx: CashTransaction, field: EditableField) => void;
   onDraftChange: (value: string) => void;
   onEditorKeyDown: (e: KeyboardEvent, tx: CashTransaction) => void;
+  onEditorBlur: () => void;
   onDelete: (tx: CashTransaction) => void;
 }) {
   const { tx } = props;
@@ -251,6 +263,7 @@ function LedgerRow(props: {
             autoFocus
             onChange={(e) => props.onDraftChange(e.target.value)}
             onKeyDown={(e) => props.onEditorKeyDown(e, tx)}
+            onBlur={props.onEditorBlur}
             aria-label="Edit date"
           />
         ) : (
@@ -269,6 +282,7 @@ function LedgerRow(props: {
             autoFocus
             onChange={(e) => props.onDraftChange(e.target.value)}
             onKeyDown={(e) => props.onEditorKeyDown(e, tx)}
+            onBlur={props.onEditorBlur}
             aria-label="Edit type"
           >
             {CASH_TX_TYPES.map((t) => (
@@ -302,6 +316,7 @@ function LedgerRow(props: {
             onFocus={(e) => e.currentTarget.select()}
             onChange={(e) => props.onDraftChange(e.target.value)}
             onKeyDown={(e) => props.onEditorKeyDown(e, tx)}
+            onBlur={props.onEditorBlur}
             aria-label="Edit amount"
           />
         ) : props.currency ? (
@@ -322,6 +337,7 @@ function LedgerRow(props: {
             autoFocus
             onChange={(e) => props.onDraftChange(e.target.value)}
             onKeyDown={(e) => props.onEditorKeyDown(e, tx)}
+            onBlur={props.onEditorBlur}
             aria-label="Edit category"
           >
             <option value="">—</option>
@@ -353,6 +369,7 @@ function LedgerRow(props: {
             onFocus={(e) => e.currentTarget.select()}
             onChange={(e) => props.onDraftChange(e.target.value)}
             onKeyDown={(e) => props.onEditorKeyDown(e, tx)}
+            onBlur={props.onEditorBlur}
             aria-label="Edit description"
           />
         ) : (

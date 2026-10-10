@@ -146,6 +146,7 @@ function CategoryRow(props: {
   onStartEdit: (category: TreeRow, field: EditableField) => void;
   onDraftChange: (value: string) => void;
   onEditorKeyDown: (e: KeyboardEvent, category: TreeRow) => void;
+  onEditorBlur: () => void;
   onDelete: (category: Category) => void;
 }) {
   const { category } = props;
@@ -165,6 +166,7 @@ function CategoryRow(props: {
             autoFocus
             onChange={(e) => props.onDraftChange(e.target.value)}
             onKeyDown={(e) => props.onEditorKeyDown(e, category)}
+            onBlur={props.onEditorBlur}
             aria-label="Edit name"
           />
         ) : (
@@ -188,6 +190,7 @@ function CategoryRow(props: {
             autoFocus
             onChange={(e) => props.onDraftChange(e.target.value)}
             onKeyDown={(e) => props.onEditorKeyDown(e, category)}
+            onBlur={props.onEditorBlur}
             aria-label="Edit parent"
           >
             <option value="">— Root —</option>
@@ -228,6 +231,7 @@ export function CategoriesPage() {
   const [draft, setDraft] = useState("");
   const [editBusy, setEditBusy] = useState(false);
   const [actionErr, setActionErr] = useState<string | null>(null);
+  const committingRef = useRef(false);
 
   const nameById = new Map((categories ?? []).map((c) => [c.id, c.name]));
 
@@ -267,9 +271,17 @@ export function CategoriesPage() {
     setDraft("");
   }
 
+  /** Blur cancels; defer so Enter commit can set committingRef first. */
+  function onEditorBlur() {
+    window.setTimeout(() => {
+      if (!committingRef.current) cancelEdit();
+    }, 0);
+  }
+
   async function commitEdit(category: TreeRow) {
     if (!editing || editing.categoryId !== category.id || editBusy) return;
     setActionErr(null);
+    committingRef.current = true;
     setEditBusy(true);
     try {
       if (editing.field === "name") {
@@ -293,6 +305,7 @@ export function CategoriesPage() {
     } catch (err) {
       setActionErr(err instanceof Error ? err.message : "Update failed");
     } finally {
+      committingRef.current = false;
       setEditBusy(false);
     }
   }
@@ -387,6 +400,7 @@ export function CategoriesPage() {
                         onStartEdit={startEdit}
                         onDraftChange={setDraft}
                         onEditorKeyDown={onEditorKeyDown}
+                        onEditorBlur={onEditorBlur}
                         onDelete={handleDelete}
                       />
                     ))}
