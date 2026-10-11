@@ -58,6 +58,9 @@ import {
   createTransfer,
   updateTransfer,
   deleteTransfer,
+  exportTransfersCsv,
+  previewTransfersImport,
+  importTransfersCsv,
 } from './transfersApi'
 
 describe('API modules', () => {
@@ -67,6 +70,7 @@ describe('API modules', () => {
     vi.mocked(apiClient.put).mockResolvedValue({})
     vi.mocked(apiClient.patch).mockResolvedValue({})
     vi.mocked(apiClient.delete).mockResolvedValue(undefined)
+    vi.mocked(apiClient.getBlob).mockResolvedValue(new Blob(['csv']))
   })
 
   afterEach(() => {
@@ -267,5 +271,32 @@ describe('API modules', () => {
 
     await deleteTransfer(9)
     expect(apiClient.delete).toHaveBeenCalledWith('/api/transfers/9')
+
+    await exportTransfersCsv()
+    expect(apiClient.getBlob).toHaveBeenCalledWith('/api/transfers/export')
+
+    await previewTransfersImport('csv-body')
+    expect(apiClient.post).toHaveBeenCalledWith('/api/transfers/import/preview', {
+      csv: 'csv-body',
+    })
+
+    await previewTransfersImport('csv-body', [
+      { name: 'A', currency: 'PLN', accountId: 1 },
+    ])
+    expect(apiClient.post).toHaveBeenCalledWith('/api/transfers/import/preview', {
+      csv: 'csv-body',
+      accountMappings: [{ name: 'A', currency: 'PLN', accountId: 1 }],
+    })
+
+    await importTransfersCsv(
+      'csv-body',
+      [{ name: 'A', currency: 'PLN', accountId: 1 }],
+      [2],
+    )
+    expect(apiClient.post).toHaveBeenCalledWith('/api/transfers/import', {
+      csv: 'csv-body',
+      accountMappings: [{ name: 'A', currency: 'PLN', accountId: 1 }],
+      skipRows: [2],
+    })
   })
 })

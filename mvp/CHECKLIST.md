@@ -43,6 +43,7 @@ Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + c
 | MVP-011 | Cash ledger transaction types | done | [features/cash-transfers/cash-ledger-types.md](features/cash-transfers/cash-ledger-types.md) | /accounts/:id cash ledger |
 | MVP-013 | Cash ledger CSV export | done | [features/cash-transfers/cash-ledger-csv-export.md](features/cash-transfers/cash-ledger-csv-export.md) | /accounts/:id Download CSV |
 | MVP-014 | Cash ledger CSV import | done | [features/cash-transfers/cash-ledger-csv-import.md](features/cash-transfers/cash-ledger-csv-import.md) | /accounts/:id Upload CSV |
+| MVP-015 | Transfers CSV export and mapped import | done | [features/cash-transfers/transfers-csv-export-import.md](features/cash-transfers/transfers-csv-export-import.md) | /transfers Download/Upload CSV |
 | FR-007 | Asset trades with commission and settlementDate | planned | [features/holdings-trades/asset-trades-commission.md](features/holdings-trades/asset-trades-commission.md) | /transactions, lots |
 | FR-009 | Instrument price chart and manual valuations | planned | [features/holdings-trades/instrument-price-chart.md](features/holdings-trades/instrument-price-chart.md) | /assets/:id |
 | FR-014 | Account-scoped holding detail | planned | [features/holdings-trades/holding-detail.md](features/holdings-trades/holding-detail.md) | /accounts/:id/assets/:instrumentId |
@@ -110,6 +111,7 @@ Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + c
 - **done** [MVP-011 Cash ledger transaction types](features/cash-transfers/cash-ledger-types.md)
 - **done** [MVP-013 Cash ledger CSV export](features/cash-transfers/cash-ledger-csv-export.md)
 - **done** [MVP-014 Cash ledger CSV import](features/cash-transfers/cash-ledger-csv-import.md)
+- **done** [MVP-015 Transfers CSV export and mapped import](features/cash-transfers/transfers-csv-export-import.md)
 
 ### holdings-trades
 

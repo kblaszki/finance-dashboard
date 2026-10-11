@@ -37,10 +37,19 @@ Move cash between two of your accounts. The transfer header (`CashTransfer`) is 
 
 Delete an account that still appears in any transfer → `409` (“delete transfers first”). Remove or re-point transfers first so the other account’s balance stays consistent.
 
+## Export / import CSV
+
+1. On `/transfers`, use **Download CSV** for a portable snapshot (accounts by name + currency, no DB ids).
+2. **Upload CSV** opens a two-step flow:
+   - Map each file account `(name, currency)` to one of your existing accounts with the same currency (suggestions when names match).
+   - Review rows: exact duplicates of existing transfers are unchecked; enable them only if you want a second copy.
+3. Import creates transfer headers + ledger legs via the same rules as the UI create form. Ledger CSV import still rejects `TRANSFER_*` rows — restore transfers here, then INCOME/EXPENSE via the account ledger.
+4. Recommended restore order: **accounts → transfers → ledger**.
+
 ## Demo data
 
 `npm run db:seed` loads a few sample transfers (same-currency and cross-currency) for `demo@finance.local`. See [demo-seed.md](../tutorials/demo-seed.md).
 
 ## API
 
-`GET|POST /api/transfers`, `PATCH|DELETE /api/transfers/:id`. See [api.md](../reference/api.md).
+`GET|POST /api/transfers`, `GET /api/transfers/export`, `POST /api/transfers/import/preview`, `POST /api/transfers/import`, `PATCH|DELETE /api/transfers/:id`. See [api.md](../reference/api.md).

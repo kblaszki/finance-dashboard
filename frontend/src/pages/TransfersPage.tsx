@@ -11,16 +11,29 @@ import { fetchAccounts, type Account } from "../api/accountsApi";
 import {
   createTransfer,
   deleteTransfer,
+  exportTransfersCsv,
   fetchTransfers,
+  importTransfersCsv,
+  previewTransfersImport,
   updateTransfer,
   type CashTransfer,
   type CreateTransferInput,
+  type TransferAccountMapping,
+  type TransferAccountPreview,
+  type TransferImportRowPreview,
   type UpdateTransferInput,
 } from "../api/transfersApi";
 import {
   defaultOccurredAtValue,
   toDateTimeLocalValue,
 } from "../components/account/occurredAt";
+import { AccountLedgerHeader } from "../components/account/AccountLedgerHeader";
+import { TransferImportPanel } from "../components/transfers/TransferImportPanel";
+import { PageHeader } from "../components/ui/PageHeader";
+import { StatusBlock } from "../components/ui/StatusBlock";
+import { useAsyncData } from "../hooks/useAsyncData";
+import { useCurrency } from "../state/currency";
+import { formatMoney } from "../utils/format";
 
 function formatTransferDate(iso: string): string {
   const d = new Date(iso);
@@ -33,11 +46,14 @@ function formatTransferDate(iso: string): string {
     minute: "2-digit",
   });
 }
-import { PageHeader } from "../components/ui/PageHeader";
-import { StatusBlock } from "../components/ui/StatusBlock";
-import { useAsyncData } from "../hooks/useAsyncData";
-import { useCurrency } from "../state/currency";
-import { formatMoney } from "../utils/format";
+
+type PendingTransferImport = {
+  csv: string;
+  rowCount: number;
+  accounts: TransferAccountPreview[];
+  rows: TransferImportRowPreview[] | null;
+  mappings: TransferAccountMapping[] | null;
+};
 
 type EditableField =
   | "occurredAt"
@@ -320,9 +336,14 @@ function buildPatch(
 export function TransfersPage() {
   const { refreshAccounts } = useCurrency();
   const [actionError, setActionError] = useState<string | null>(null);
+  const [importMsg, setImportMsg] = useState<string | null>(null);
   const [editing, setEditing] = useState<EditingState | null>(null);
   const [draft, setDraft] = useState("");
   const [editBusy, setEditBusy] = useState(false);
+  const [exportBusy, setExportBusy] = useState(false);
+  const [importBusy, setImportBusy] = useState(false);
+  const [pendingImport, setPendingImport] =
+    useState<PendingTransferImport | null>(null);
   const committingRef = useRef(false);
 
   const loadTransfers = useCallback(() => fetchTransfers(), []);
@@ -338,6 +359,7 @@ export function TransfersPage() {
     data: accounts,
     error: accountsError,
     loading: accountsLoading,
+    reload: reloadAccounts,
   } = useAsyncData(loadAccounts);
 
   const accountById = useMemo(() => {
@@ -451,6 +473,103 @@ export function TransfersPage() {
     }
   }
 
+  async function handleExportCsv() {
+    setActionError(null);
+    setImportMsg(null);
+    setExportBusy(true);
+    try {
+      const blob = await exportTransfersCsv();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "transfers.csv";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Export failed");
+    } finally {
+      setExportBusy(false);
+    }
+  }
+
+  async function handleImportCsvFile(file: File) {
+    setActionError(null);
+    setImportMsg(null);
+    setPendingImport(null);
+    setImportBusy(true);
+    try {
+      const csv = await file.text();
+      const preview = await previewTransfersImport(csv);
+      if (preview.rowCount === 0) {
+        setImportMsg("No transfers in the CSV.");
+        return;
+      }
+      setPendingImport({
+        csv,
+        rowCount: preview.rowCount,
+        accounts: preview.accounts,
+        rows: null,
+        mappings: null,
+      });
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Import failed");
+    } finally {
+      setImportBusy(false);
+    }
+  }
+
+  async function handleImportContinue(mappings: TransferAccountMapping[]) {
+    if (!pendingImport) return;
+    setImportBusy(true);
+    setActionError(null);
+    try {
+      const preview = await previewTransfersImport(
+        pendingImport.csv,
+        mappings,
+      );
+      setPendingImport({
+        ...pendingImport,
+        accounts: preview.accounts,
+        rows: preview.rows ?? [],
+        mappings,
+      });
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Import failed");
+    } finally {
+      setImportBusy(false);
+    }
+  }
+
+  async function handleImportConfirm(
+    mappings: TransferAccountMapping[],
+    skipRows: number[],
+  ) {
+    if (!pendingImport) return;
+    setImportBusy(true);
+    setActionError(null);
+    setImportMsg(null);
+    try {
+      const result = await importTransfersCsv(
+        pendingImport.csv,
+        mappings,
+        skipRows,
+      );
+      setImportMsg(
+        `Imported ${result.created} transfer(s); skipped ${result.skipped}.`,
+      );
+      setPendingImport(null);
+      reloadTransfers();
+      reloadAccounts();
+      refreshAccounts();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Import failed");
+    } finally {
+      setImportBusy(false);
+    }
+  }
+
   const loading = transfersLoading || accountsLoading;
   const error = transfersError ?? accountsError;
 
@@ -459,8 +578,35 @@ export function TransfersPage() {
       <PageHeader
         title="Transfers"
         subtitle="Move cash between your accounts. Ledger legs stay read-only."
+        actions={
+          <AccountLedgerHeader
+            exportBusy={exportBusy}
+            importBusy={importBusy}
+            onExport={() => void handleExportCsv()}
+            onImportFile={handleImportCsvFile}
+          />
+        }
       />
       {actionError && <p className="error-banner">{actionError}</p>}
+      {importMsg && <p className="success-banner">{importMsg}</p>}
+      {pendingImport && (
+        <TransferImportPanel
+          key={pendingImport.csv.slice(0, 120)}
+          accountsPreview={pendingImport.accounts}
+          ownedAccounts={accounts ?? []}
+          rowCount={pendingImport.rowCount}
+          rows={pendingImport.rows}
+          busy={importBusy}
+          accountById={accountById}
+          onContinue={(mappings) => {
+            void handleImportContinue(mappings);
+          }}
+          onImport={(mappings, skipRows) => {
+            void handleImportConfirm(mappings, skipRows);
+          }}
+          onCancel={() => setPendingImport(null)}
+        />
+      )}
       <StatusBlock
         loading={loading}
         error={error}

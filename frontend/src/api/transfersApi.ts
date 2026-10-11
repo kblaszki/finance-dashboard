@@ -25,6 +25,41 @@ export type CreateTransferInput = {
 
 export type UpdateTransferInput = Partial<CreateTransferInput>;
 
+export type TransferAccountPreview = {
+  name: string;
+  currency: string;
+  rowCount: number;
+  suggestedAccountId: number | null;
+};
+
+export type TransferImportRowPreview = {
+  row: number;
+  occurredAt: string;
+  fromAccountId: number;
+  toAccountId: number;
+  amountFrom: number;
+  amountTo: number;
+  description: string | null;
+  duplicate: boolean;
+};
+
+export type TransferImportPreview = {
+  rowCount: number;
+  accounts: TransferAccountPreview[];
+  rows?: TransferImportRowPreview[];
+};
+
+export type TransferAccountMapping = {
+  name: string;
+  currency: string;
+  accountId: number;
+};
+
+export type ImportTransfersResult = {
+  created: number;
+  skipped: number;
+};
+
 export async function fetchTransfers(): Promise<CashTransfer[]> {
   return apiClient.get<CashTransfer[]>("/api/transfers");
 }
@@ -44,4 +79,30 @@ export async function updateTransfer(
 
 export async function deleteTransfer(id: number): Promise<void> {
   await apiClient.delete(`/api/transfers/${id}`);
+}
+
+export async function exportTransfersCsv(): Promise<Blob> {
+  return apiClient.getBlob("/api/transfers/export");
+}
+
+export async function previewTransfersImport(
+  csv: string,
+  accountMappings?: TransferAccountMapping[],
+): Promise<TransferImportPreview> {
+  return apiClient.post<TransferImportPreview>("/api/transfers/import/preview", {
+    csv,
+    ...(accountMappings !== undefined ? { accountMappings } : {}),
+  });
+}
+
+export async function importTransfersCsv(
+  csv: string,
+  accountMappings: TransferAccountMapping[],
+  skipRows: number[] = [],
+): Promise<ImportTransfersResult> {
+  return apiClient.post<ImportTransfersResult>("/api/transfers/import", {
+    csv,
+    accountMappings,
+    skipRows,
+  });
 }
