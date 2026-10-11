@@ -36,15 +36,15 @@ npm run db:seed
 |---------|----------------|
 | `/accounts` | Everyday Checking (BANK/PLN), Euro Travel (BANK/EUR), Brokerage Cash (BROKERAGE/PLN), Crypto Spot (CRYPTO/USD), Everyday Credit Card (CREDIT_CARD/PLN, debt), IKE Brokerage (IKE/PLN cash sleeve) |
 | `/categories` | Default flat roots by ledgerType (Salary, Food, …) |
-| `/accounts/:id` | ~24 months of INCOME/EXPENSE rows (≥5 per month per account); tagged categories + occasional uncategorized expenses; read-only `TRANSFER IN/OUT` legs from seeded transfers |
-| `/transfers` | Same-currency (Checking ↔ Brokerage) and cross-currency (PLN→EUR, PLN→USD) sample transfers |
+| `/accounts/:id` | ~24 months of INCOME/EXPENSE rows (≥5 per month per account, including card purchases and light IKE fees/interest); tagged categories + occasional uncategorized expenses; read-only `TRANSFER IN/OUT` legs from seeded transfers |
+| `/transfers` | Same-/cross-currency showcase rows, plus monthly Checking → Credit Card payments (450 PLN) and Checking → IKE contributions (500 PLN) for each ledger month |
 | `/dashboard` | Cash net-worth buckets (credit-card debt in liabilities), rolling 12m averages, cashflow chart, account mix (pick PLN in top bar) |
 | `/statistics` | Period KPIs, cashflow chart, and category breakdown across the seeded history (transfer legs excluded) |
 
 ## Notes
 
 - Implementation: [`backend/prisma/seed.ts`](../../backend/prisma/seed.ts) + [`seedDemoPortfolio.ts`](../../backend/src/domain/seedDemoPortfolio.ts).
-- Ledger is **deterministic** (PRNG seed `demo-portfolio-v2`): same amounts on every run. Transfers are a fixed list (`buildDemoTransfers`). Each account `cashBalance` is opening + signed ledger deltas including transfer legs.
+- Ledger is **deterministic** (PRNG seed `demo-portfolio-v2`): same amounts on every run. Transfers (`buildDemoTransfers`) include showcase rows plus one card payment and one IKE contribution per month. Each account `cashBalance` is opening + signed ledger deltas including transfer legs.
 - Password hash is reset to the known demo password on every run.
 - Other users in the same database are not modified.
 - Hub: [docs/README.md](../README.md).

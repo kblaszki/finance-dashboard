@@ -7,6 +7,8 @@ import {
   buildDemoLedgerTxs,
   buildDemoTransfers,
   DEMO_ACCOUNT_NAMES,
+  DEMO_CARD_PAYMENT,
+  DEMO_IKE_CONTRIBUTION,
   DEMO_LEDGER_MONTHS,
   DEMO_OPENINGS,
   DEMO_TXS_PER_ACCOUNT_MONTH,
@@ -89,23 +91,41 @@ test("buildDemoLedgerTxs is deterministic with ≥5 txs per account per month", 
     const balance = Number(
       recomputeCashBalance(DEMO_OPENINGS[key], deltas),
     );
-    assert.ok(
-      balance >= 0,
-      `${key} ending balance should be ≥ 0, got ${balance}`,
-    );
+    if (key === "creditCard") {
+      assert.ok(
+        balance < 0,
+        `${key} ending balance should stay in debt before payments, got ${balance}`,
+      );
+    } else {
+      assert.ok(
+        balance >= 0,
+        `${key} ending balance should be ≥ 0, got ${balance}`,
+      );
+    }
   }
 
   assert.ok(a.some((t) => t.category === undefined));
+  assert.ok(a.every((t) => t.accountKey !== "creditCard" || t.type === "EXPENSE"));
 });
 
 test("buildDemoTransfers is deterministic with same- and cross-currency rows", () => {
   const a = buildDemoTransfers(FIXED_NOW);
   const b = buildDemoTransfers(FIXED_NOW);
   assert.deepEqual(a, b);
-  assert.ok(a.length >= 3);
+  assert.ok(a.length >= 3 + DEMO_LEDGER_MONTHS * 2);
   assert.ok(a.some((t) => t.amountTo == null));
   assert.ok(a.some((t) => t.amountTo != null && t.amountTo !== t.amountFrom));
   assert.ok(a.every((t) => t.fromKey !== t.toKey && t.amountFrom > 0));
+  const cardPayments = a.filter((t) => t.toKey === "creditCard");
+  const ikeContributions = a.filter((t) => t.toKey === "ike");
+  assert.equal(cardPayments.length, DEMO_LEDGER_MONTHS);
+  assert.equal(ikeContributions.length, DEMO_LEDGER_MONTHS);
+  assert.ok(cardPayments.every((t) => t.fromKey === "checking" && t.amountFrom === DEMO_CARD_PAYMENT));
+  assert.ok(
+    ikeContributions.every(
+      (t) => t.fromKey === "checking" && t.amountFrom === DEMO_IKE_CONTRIBUTION,
+    ),
+  );
 });
 
 test("seedDemoPortfolio matches ledger balances and scopes wipe to one user", async () => {
@@ -153,8 +173,6 @@ test("seedDemoPortfolio matches ledger balances and scopes wipe to one user", as
     }
     assert.ok(accounts.some((a) => a.accountType === "CREDIT_CARD"));
     assert.ok(accounts.some((a) => a.accountType === "IKE"));
-    const card = accounts.find((a) => a.accountType === "CREDIT_CARD")!;
-    assert.equal(card.cashBalance, quantizeMajorToMinor(-800, "openingBalance"));
 
     const planned = buildDemoLedgerTxs(FIXED_NOW);
     const plannedTransfers = buildDemoTransfers(FIXED_NOW);
@@ -172,7 +190,7 @@ test("seedDemoPortfolio matches ledger balances and scopes wipe to one user", as
 
     for (const account of accounts) {
       const key = nameToKey.get(account.name);
-      if (!key) continue;
+      assert.ok(key, `unexpected account name ${account.name}`);
       const deltas: LedgerDeltaInput[] = planned
         .filter((t) => t.accountKey === key)
         .map((t) => ({ type: t.type, amount: t.amount }));
@@ -205,12 +223,22 @@ test("seedDemoPortfolio matches ledger balances and scopes wipe to one user", as
       assert.equal(account.cashBalance, fromLedger);
     }
 
+    const card = accounts.find((a) => a.accountType === "CREDIT_CARD")!;
+    assert.ok(card.cashBalance < 0, "credit card should still show debt after payments");
+    const ike = accounts.find((a) => a.accountType === "IKE")!;
+    assert.ok(
+      ike.cashBalance > quantizeMajorToMinor(DEMO_OPENINGS.ike, "openingBalance"),
+      "IKE should grow from monthly contributions",
+    );
+
     const txCount = await prisma.cashTransaction.count({
       where: { account: { userId: demo.id } },
     });
     assert.ok(
       txCount >=
-        4 * DEMO_LEDGER_MONTHS * DEMO_TXS_PER_ACCOUNT_MONTH,
+        Object.keys(DEMO_ACCOUNT_NAMES).length *
+          DEMO_LEDGER_MONTHS *
+          DEMO_TXS_PER_ACCOUNT_MONTH,
     );
     assert.equal(txCount, planned.length + plannedTransfers.length * 2);
 
@@ -246,7 +274,10 @@ test("seedDemoPortfolio matches ledger balances and scopes wipe to one user", as
         category: { select: { id: true, name: true } },
       },
     });
-    assert.ok(rows.length >= 4 * DEMO_TXS_PER_ACCOUNT_MONTH);
+    assert.ok(
+      rows.length >=
+        Object.keys(DEMO_ACCOUNT_NAMES).length * DEMO_TXS_PER_ACCOUNT_MONTH,
+    );
     const breakdown = aggregateCategoryBreakdown(
       current,
       rows.map((row) => ({ ...row, amount: minorToDecimal(row.amount) })),

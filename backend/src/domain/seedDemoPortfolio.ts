@@ -16,6 +16,8 @@ export const DEMO_ACCOUNT_NAMES = {
   euro: "Euro Travel",
   brokerage: "Brokerage Cash",
   crypto: "Crypto Spot",
+  creditCard: "Everyday Credit Card",
+  ike: "IKE Brokerage",
 } as const;
 
 export type DemoAccountKey = keyof typeof DEMO_ACCOUNT_NAMES;
@@ -24,12 +26,18 @@ export type DemoAccountKey = keyof typeof DEMO_ACCOUNT_NAMES;
 export const DEMO_LEDGER_RNG_SEED = "demo-portfolio-v2";
 export const DEMO_LEDGER_MONTHS = 24;
 export const DEMO_TXS_PER_ACCOUNT_MONTH = 5;
+/** Fixed monthly checking → credit card payment (PLN). */
+export const DEMO_CARD_PAYMENT = 450;
+/** Fixed monthly checking → IKE contribution (PLN). */
+export const DEMO_IKE_CONTRIBUTION = 500;
 
 export const DEMO_OPENINGS: Record<DemoAccountKey, number> = {
   checking: 2500,
   euro: 400,
   brokerage: 10000,
   crypto: 1500,
+  creditCard: -800,
+  ike: 3000,
 };
 
 export type LedgerDeltaInput = {
@@ -349,6 +357,96 @@ function monthPlansForAccount(
               category: "Other",
             },
       ];
+    case "creditCard":
+      return [
+        {
+          type: "EXPENSE",
+          amountMin: 100,
+          amountMax: 220,
+          description: "Online shopping",
+          category: "Other",
+        },
+        {
+          type: "EXPENSE",
+          amountMin: 60,
+          amountMax: 150,
+          description: "Restaurant",
+          category: "Food",
+        },
+        {
+          type: "EXPENSE",
+          amountMin: 80,
+          amountMax: 180,
+          description: "Card groceries",
+          category: "Food",
+        },
+        {
+          type: "EXPENSE",
+          amountMin: 35,
+          amountMax: 70,
+          description: "Subscriptions",
+          category: "Other",
+        },
+        rng() < 0.45
+          ? {
+              type: "EXPENSE",
+              amountMin: 40,
+              amountMax: 120,
+              description: "Card misc",
+            }
+          : {
+              type: "EXPENSE",
+              amountMin: 50,
+              amountMax: 110,
+              description: "Fuel",
+              category: "Transport",
+            },
+      ];
+    case "ike":
+      return [
+        {
+          type: "INCOME",
+          amountMin: 8,
+          amountMax: 28,
+          description: "IKE interest credit",
+          category: "Other income",
+        },
+        {
+          type: "EXPENSE",
+          amountMin: 2,
+          amountMax: 8,
+          description: "IKE account fee",
+          category: "Other",
+        },
+        {
+          type: "INCOME",
+          amountMin: 12,
+          amountMax: 40,
+          description: "IKE dividend cash",
+          category: "Other income",
+        },
+        {
+          type: "EXPENSE",
+          amountMin: 1,
+          amountMax: 5,
+          description: "IKE custody fee",
+          category: "Other",
+        },
+        rng() < 0.35
+          ? {
+              type: "EXPENSE",
+              amountMin: 1,
+              amountMax: 6,
+              description: "IKE misc",
+            }
+          : {
+              type: "EXPENSE",
+              amountMin: 2,
+              amountMax: 7,
+              description: "IKE platform fee",
+              category: "Other",
+            },
+      ];
     default: {
       const _exhaustive: never = accountKey;
       return _exhaustive;
@@ -388,8 +486,8 @@ export function buildDemoLedgerTxs(now = new Date()): DemoPlannedTx[] {
 }
 
 /**
- * Deterministic internal transfers showcasing same-currency and cross-currency
- * flows across the demo accounts (dates near the end of the ledger window).
+ * Deterministic internal transfers: showcase same-/cross-currency flows, plus
+ * monthly credit-card payments and IKE contributions from checking.
  */
 export function buildDemoTransfers(now = new Date()): DemoPlannedTransfer[] {
   const months = listMonthsEndingAt(utcMonthKey(now), DEMO_LEDGER_MONTHS);
@@ -397,7 +495,7 @@ export function buildDemoTransfers(now = new Date()): DemoPlannedTransfer[] {
   const previous = months[months.length - 2] ?? recent;
   const older = months[months.length - 4] ?? months[0]!;
 
-  return [
+  const transfers: DemoPlannedTransfer[] = [
     {
       fromKey: "checking",
       toKey: "brokerage",
@@ -429,6 +527,25 @@ export function buildDemoTransfers(now = new Date()): DemoPlannedTransfer[] {
       description: `Cash back from brokerage (${recent})`,
     },
   ];
+
+  for (const month of months) {
+    transfers.push({
+      fromKey: "checking",
+      toKey: "creditCard",
+      amountFrom: DEMO_CARD_PAYMENT,
+      occurredAt: utcMidMonth(month, 25),
+      description: `Credit card payment (${month})`,
+    });
+    transfers.push({
+      fromKey: "checking",
+      toKey: "ike",
+      amountFrom: DEMO_IKE_CONTRIBUTION,
+      occurredAt: utcMidMonth(month, 3),
+      description: `IKE contribution (${month})`,
+    });
+  }
+
+  return transfers;
 }
 
 async function wipeDemoPortfolio(db: Db, userId: number): Promise<void> {
@@ -485,81 +602,58 @@ export async function seedDemoPortfolio(
     Other: await categoryIdByNameType(db, userId, "Other", "EXPENSE"),
   };
 
-  const checking = await db.account.create({
-    data: {
-      userId,
-      name: DEMO_ACCOUNT_NAMES.checking,
+  const accountSpecs: Record<
+    DemoAccountKey,
+    { accountType: string; currency: string; description: string }
+  > = {
+    checking: {
       accountType: "BANK",
       currency: "PLN",
-      openingBalance: quantizeMajorToMinor(DEMO_OPENINGS.checking, "openingBalance"),
-      cashBalance: quantizeMajorToMinor(DEMO_OPENINGS.checking, "openingBalance"),
       description: "Primary PLN checking — salary and everyday expenses",
     },
-  });
-  const euro = await db.account.create({
-    data: {
-      userId,
-      name: DEMO_ACCOUNT_NAMES.euro,
+    euro: {
       accountType: "BANK",
       currency: "EUR",
-      openingBalance: quantizeMajorToMinor(DEMO_OPENINGS.euro, "openingBalance"),
-      cashBalance: quantizeMajorToMinor(DEMO_OPENINGS.euro, "openingBalance"),
       description: "EUR travel wallet — multi-currency stats demo",
     },
-  });
-  const brokerage = await db.account.create({
-    data: {
-      userId,
-      name: DEMO_ACCOUNT_NAMES.brokerage,
+    brokerage: {
       accountType: "BROKERAGE",
       currency: "PLN",
-      openingBalance: quantizeMajorToMinor(DEMO_OPENINGS.brokerage, "openingBalance"),
-      cashBalance: quantizeMajorToMinor(DEMO_OPENINGS.brokerage, "openingBalance"),
       description: "Brokerage cash sleeve (no holdings yet)",
     },
-  });
-  const crypto = await db.account.create({
-    data: {
-      userId,
-      name: DEMO_ACCOUNT_NAMES.crypto,
+    crypto: {
       accountType: "CRYPTO",
       currency: "USD",
-      openingBalance: quantizeMajorToMinor(DEMO_OPENINGS.crypto, "openingBalance"),
-      cashBalance: quantizeMajorToMinor(DEMO_OPENINGS.crypto, "openingBalance"),
       description: "Crypto spot cash (USD)",
     },
-  });
-
-  const accountsByKey: Record<DemoAccountKey, { id: number }> = {
-    checking,
-    euro,
-    brokerage,
-    crypto,
-  };
-
-  // Extra account types (no generated monthly ledger — cash sleeve / debt only).
-  await db.account.create({
-    data: {
-      userId,
-      name: "Everyday Credit Card",
+    creditCard: {
       accountType: "CREDIT_CARD",
       currency: "PLN",
-      openingBalance: quantizeMajorToMinor(-800, "openingBalance"),
-      cashBalance: quantizeMajorToMinor(-800, "openingBalance"),
       description: "Credit card — negative balance is amount owed",
     },
-  });
-  await db.account.create({
-    data: {
-      userId,
-      name: "IKE Brokerage",
+    ike: {
       accountType: "IKE",
       currency: "PLN",
-      openingBalance: quantizeMajorToMinor(3000, "openingBalance"),
-      cashBalance: quantizeMajorToMinor(3000, "openingBalance"),
       description: "IKE cash sleeve (holdings later)",
     },
-  });
+  };
+
+  const accountsByKey = {} as Record<DemoAccountKey, { id: number }>;
+  for (const key of Object.keys(DEMO_ACCOUNT_NAMES) as DemoAccountKey[]) {
+    const spec = accountSpecs[key];
+    const opening = quantizeMajorToMinor(DEMO_OPENINGS[key], "openingBalance");
+    accountsByKey[key] = await db.account.create({
+      data: {
+        userId,
+        name: DEMO_ACCOUNT_NAMES[key],
+        accountType: spec.accountType,
+        currency: spec.currency,
+        openingBalance: opening,
+        cashBalance: opening,
+        description: spec.description,
+      },
+    });
+  }
 
   const planned = buildDemoLedgerTxs(now);
   const rows = planned.map((tx) => {
