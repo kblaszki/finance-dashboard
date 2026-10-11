@@ -11,6 +11,21 @@ import {
   updateTransfer,
   type OwnedAccountRef,
 } from "../domain/cashTransfers";
+import { minorToMajor } from "../domain/money";
+import {
+  buildTransfersCsv,
+  formatImportErrors,
+  parseTransfersCsv,
+  transfersExportFilename,
+} from "../domain/transfersCsv";
+import {
+  collectUsedAccounts,
+  findDuplicateRows,
+  parseAccountMappings,
+  parseSkipRows,
+  resolveTransferDrafts,
+  suggestAccountMatches,
+} from "../domain/transfersImport";
 import { badRequest, handleRouteError, parseIdParam } from "./httpSupport";
 
 type TransfersDeps = {
@@ -28,6 +43,13 @@ async function loadOwnedAccountsMap(
     select: { id: true, currency: true },
   });
   return new Map(rows.map((row) => [row.id, row]));
+}
+
+async function loadOwnedAccountsForImport(prisma: PrismaClient, userId: number) {
+  return prisma.account.findMany({
+    where: { userId },
+    select: { id: true, name: true, currency: true },
+  });
 }
 
 export function createTransfersRouter(deps: TransfersDeps): Router {
@@ -49,6 +71,208 @@ export function createTransfersRouter(deps: TransfersDeps): Router {
       handleRouteError(res, e, "Failed to list transfers");
     }
   });
+
+  router.get(
+    "/api/transfers/export",
+    requireAuth,
+    async (req: AuthedRequest, res) => {
+      try {
+        const rows = await prisma.cashTransfer.findMany({
+          where: { userId: uid(req) },
+          include: {
+            fromAccount: { select: { name: true, currency: true } },
+            toAccount: { select: { name: true, currency: true } },
+          },
+          orderBy: [{ occurredAt: "asc" }, { id: "asc" }],
+        });
+        const csv = buildTransfersCsv(
+          rows.map((row) => ({
+            id: row.id,
+            occurredAt: row.occurredAt,
+            fromAccount: row.fromAccount.name,
+            fromCurrency: row.fromAccount.currency,
+            toAccount: row.toAccount.name,
+            toCurrency: row.toAccount.currency,
+            amountFrom: minorToMajor(row.amountFrom),
+            amountTo: minorToMajor(row.amountTo),
+            description: row.description,
+            createdAt: row.createdAt,
+          })),
+        );
+        res.setHeader("Content-Type", "text/csv; charset=utf-8");
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="${transfersExportFilename()}"`,
+        );
+        res.status(200).send(csv);
+      } catch (e: unknown) {
+        handleRouteError(res, e, "Failed to export transfers");
+      }
+    },
+  );
+
+  router.post(
+    "/api/transfers/import/preview",
+    requireAuth,
+    async (req: AuthedRequest, res) => {
+      try {
+        const userId = uid(req);
+        const csv = req.body?.csv;
+        if (typeof csv !== "string") throw badRequest("csv string required");
+
+        const parsed = parseTransfersCsv(csv);
+        if (!parsed.ok) {
+          res.status(400).json({
+            error: formatImportErrors(parsed.errors),
+            details: parsed.errors,
+          });
+          return;
+        }
+
+        const owned = await loadOwnedAccountsForImport(prisma, userId);
+        const used = collectUsedAccounts(parsed.drafts);
+        const accounts = suggestAccountMatches(used, owned);
+        const body: {
+          rowCount: number;
+          accounts: typeof accounts;
+          rows?: Array<{
+            row: number;
+            occurredAt: string;
+            fromAccountId: number;
+            toAccountId: number;
+            amountFrom: number;
+            amountTo: number;
+            description: string | null;
+            duplicate: boolean;
+          }>;
+        } = {
+          rowCount: parsed.drafts.length,
+          accounts,
+        };
+
+        if (req.body?.accountMappings !== undefined) {
+          const mappings = parseAccountMappings(
+            req.body.accountMappings,
+            used,
+            owned,
+          );
+          if (!mappings.ok) {
+            res.status(400).json({
+              error: formatImportErrors(mappings.errors),
+              details: mappings.errors,
+            });
+            return;
+          }
+          const resolved = resolveTransferDrafts(parsed.drafts, mappings.byKey);
+          if (!resolved.ok) {
+            res.status(400).json({
+              error: formatImportErrors(resolved.errors),
+              details: resolved.errors,
+            });
+            return;
+          }
+          const existing = await prisma.cashTransfer.findMany({
+            where: { userId },
+            select: {
+              fromAccountId: true,
+              toAccountId: true,
+              amountFrom: true,
+              amountTo: true,
+              occurredAt: true,
+              description: true,
+            },
+          });
+          const marked = findDuplicateRows(resolved.rows, existing);
+          body.rows = marked.map((r) => ({
+            row: r.row,
+            occurredAt: r.input.occurredAt.toISOString(),
+            fromAccountId: r.input.fromAccountId,
+            toAccountId: r.input.toAccountId,
+            amountFrom: Number(r.input.amountFrom),
+            amountTo: Number(r.input.amountTo),
+            description: r.input.description,
+            duplicate: r.duplicate,
+          }));
+        }
+
+        res.status(200).json(body);
+      } catch (e: unknown) {
+        handleRouteError(res, e, "Failed to preview transfer import");
+      }
+    },
+  );
+
+  router.post(
+    "/api/transfers/import",
+    requireAuth,
+    async (req: AuthedRequest, res) => {
+      try {
+        const userId = uid(req);
+        const csv = req.body?.csv;
+        if (typeof csv !== "string") throw badRequest("csv string required");
+
+        const parsed = parseTransfersCsv(csv);
+        if (!parsed.ok) {
+          res.status(400).json({
+            error: formatImportErrors(parsed.errors),
+            details: parsed.errors,
+          });
+          return;
+        }
+
+        const owned = await loadOwnedAccountsForImport(prisma, userId);
+        const used = collectUsedAccounts(parsed.drafts);
+        const mappings = parseAccountMappings(
+          req.body?.accountMappings,
+          used,
+          owned,
+        );
+        if (!mappings.ok) {
+          res.status(400).json({
+            error: formatImportErrors(mappings.errors),
+            details: mappings.errors,
+          });
+          return;
+        }
+
+        const resolved = resolveTransferDrafts(parsed.drafts, mappings.byKey);
+        if (!resolved.ok) {
+          res.status(400).json({
+            error: formatImportErrors(resolved.errors),
+            details: resolved.errors,
+          });
+          return;
+        }
+
+        const skipParsed = parseSkipRows(
+          req.body?.skipRows,
+          resolved.rows.map((r) => r.row),
+        );
+        if (!skipParsed.ok) {
+          res.status(400).json({
+            error: formatImportErrors(skipParsed.errors),
+            details: skipParsed.errors,
+          });
+          return;
+        }
+
+        const toCreate = resolved.rows.filter(
+          (r) => !skipParsed.skip.has(r.row),
+        );
+        const skipped = resolved.rows.length - toCreate.length;
+
+        await prisma.$transaction(async (tx) => {
+          for (const item of toCreate) {
+            await createTransfer(tx, userId, item.input);
+          }
+        });
+
+        res.status(201).json({ created: toCreate.length, skipped });
+      } catch (e: unknown) {
+        handleRouteError(res, e, "Failed to import transfers");
+      }
+    },
+  );
 
   router.post("/api/transfers", requireAuth, async (req: AuthedRequest, res) => {
     try {

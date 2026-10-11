@@ -2107,3 +2107,251 @@ test("DELETE /api/accounts/:id returns 409 when account has transfers", async ()
   assert.equal(del.status, 409);
   assert.match(String(del.body.error), /delete transfers first/i);
 });
+
+test("GET/POST /api/transfers export import preview with account mapping", async () => {
+  const tokenA = await registerAndLogin(
+    "xfercsv-a@test.local",
+    "xfercsva",
+    "password123",
+  );
+  const tokenB = await registerAndLogin(
+    "xfercsv-b@test.local",
+    "xfercsvb",
+    "password123",
+  );
+
+  const unauth = await request(app).get("/api/transfers/export");
+  assert.equal(unauth.status, 401);
+
+  const aFrom = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${tokenA}`)
+    .send({ name: "Alpha Checking", currency: "PLN", openingBalance: 1000 });
+  const aTo = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${tokenA}`)
+    .send({ name: "Alpha Brokerage", currency: "PLN", openingBalance: 100 });
+  const aEuro = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${tokenA}`)
+    .send({ name: "Alpha Euro", currency: "EUR", openingBalance: 50 });
+
+  await request(app)
+    .post("/api/transfers")
+    .set("Authorization", `Bearer ${tokenA}`)
+    .send({
+      fromAccountId: aFrom.body.id,
+      toAccountId: aTo.body.id,
+      amountFrom: 200,
+      occurredAt: "2024-05-01T12:00:00.000Z",
+      description: "invest",
+    });
+  await request(app)
+    .post("/api/transfers")
+    .set("Authorization", `Bearer ${tokenA}`)
+    .send({
+      fromAccountId: aFrom.body.id,
+      toAccountId: aEuro.body.id,
+      amountFrom: 400,
+      amountTo: 90,
+      occurredAt: "2024-05-02T12:00:00.000Z",
+      description: "travel",
+    });
+
+  const exported = await request(app)
+    .get("/api/transfers/export")
+    .set("Authorization", `Bearer ${tokenA}`);
+  assert.equal(exported.status, 200);
+  assert.match(String(exported.headers["content-type"]), /text\/csv/);
+  const lines = exported.text.trimEnd().split("\n");
+  assert.equal(
+    lines[0],
+    "id,occurredAt,fromAccount,fromCurrency,toAccount,toCurrency,amountFrom,amountTo,description,createdAt",
+  );
+  assert.equal(lines.length, 3);
+  assert.match(lines[1]!, /Alpha Checking,PLN,Alpha Brokerage,PLN,200\.00,200\.00/);
+  assert.match(lines[2]!, /Alpha Checking,PLN,Alpha Euro,EUR,400\.00,90\.00/);
+
+  const otherExport = await request(app)
+    .get("/api/transfers/export")
+    .set("Authorization", `Bearer ${tokenB}`);
+  assert.equal(otherExport.status, 200);
+  assert.equal(
+    otherExport.text,
+    "id,occurredAt,fromAccount,fromCurrency,toAccount,toCurrency,amountFrom,amountTo,description,createdAt\n",
+  );
+
+  const previewBare = await request(app)
+    .post("/api/transfers/import/preview")
+    .set("Authorization", `Bearer ${tokenB}`)
+    .send({ csv: exported.text });
+  assert.equal(previewBare.status, 200);
+  assert.equal(previewBare.body.rowCount, 2);
+  assert.equal(previewBare.body.accounts.length, 3);
+  assert.ok(previewBare.body.rows === undefined);
+  assert.ok(
+    (previewBare.body.accounts as Array<{ suggestedAccountId: number | null }>).every(
+      (a) => a.suggestedAccountId == null,
+    ),
+  );
+
+  const bFrom = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${tokenB}`)
+    .send({ name: "Beta Cash", currency: "PLN", openingBalance: 1000 });
+  const bTo = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${tokenB}`)
+    .send({ name: "Beta Invest", currency: "PLN", openingBalance: 100 });
+  const bEuro = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${tokenB}`)
+    .send({ name: "Beta Euro", currency: "EUR", openingBalance: 50 });
+
+  const mappings = [
+    { name: "Alpha Checking", currency: "PLN", accountId: bFrom.body.id },
+    { name: "Alpha Brokerage", currency: "PLN", accountId: bTo.body.id },
+    { name: "Alpha Euro", currency: "EUR", accountId: bEuro.body.id },
+  ];
+
+  const missingMap = await request(app)
+    .post("/api/transfers/import")
+    .set("Authorization", `Bearer ${tokenB}`)
+    .send({ csv: exported.text, accountMappings: [] });
+  assert.equal(missingMap.status, 400);
+  assert.match(String(missingMap.body.error), /missing mapping/i);
+
+  const badCurrency = await request(app)
+    .post("/api/transfers/import")
+    .set("Authorization", `Bearer ${tokenB}`)
+    .send({
+      csv: exported.text,
+      accountMappings: [
+        { name: "Alpha Checking", currency: "PLN", accountId: bEuro.body.id },
+        { name: "Alpha Brokerage", currency: "PLN", accountId: bTo.body.id },
+        { name: "Alpha Euro", currency: "EUR", accountId: bEuro.body.id },
+      ],
+    });
+  assert.equal(badCurrency.status, 400);
+  assert.match(String(badCurrency.body.error), /currency/i);
+
+  const foreignMap = await request(app)
+    .post("/api/transfers/import")
+    .set("Authorization", `Bearer ${tokenB}`)
+    .send({
+      csv: exported.text,
+      accountMappings: [
+        { name: "Alpha Checking", currency: "PLN", accountId: aFrom.body.id },
+        { name: "Alpha Brokerage", currency: "PLN", accountId: bTo.body.id },
+        { name: "Alpha Euro", currency: "EUR", accountId: bEuro.body.id },
+      ],
+    });
+  assert.equal(foreignMap.status, 400);
+  assert.match(String(foreignMap.body.error), /not found/i);
+
+  const previewMapped = await request(app)
+    .post("/api/transfers/import/preview")
+    .set("Authorization", `Bearer ${tokenB}`)
+    .send({ csv: exported.text, accountMappings: mappings });
+  assert.equal(previewMapped.status, 200);
+  assert.equal(previewMapped.body.rows.length, 2);
+  assert.ok(
+    (previewMapped.body.rows as Array<{ duplicate: boolean }>).every(
+      (r) => r.duplicate === false,
+    ),
+  );
+
+  const imported = await request(app)
+    .post("/api/transfers/import")
+    .set("Authorization", `Bearer ${tokenB}`)
+    .send({ csv: exported.text, accountMappings: mappings });
+  assert.equal(imported.status, 201);
+  assert.equal(imported.body.created, 2);
+  assert.equal(imported.body.skipped, 0);
+
+  const bFromAfter = await request(app)
+    .get(`/api/accounts/${bFrom.body.id}`)
+    .set("Authorization", `Bearer ${tokenB}`);
+  const bToAfter = await request(app)
+    .get(`/api/accounts/${bTo.body.id}`)
+    .set("Authorization", `Bearer ${tokenB}`);
+  const bEuroAfter = await request(app)
+    .get(`/api/accounts/${bEuro.body.id}`)
+    .set("Authorization", `Bearer ${tokenB}`);
+  assert.equal(bFromAfter.body.cashBalance, 400);
+  assert.equal(bToAfter.body.cashBalance, 300);
+  assert.equal(bEuroAfter.body.cashBalance, 140);
+
+  const legs = await request(app)
+    .get(`/api/accounts/${bFrom.body.id}/transactions`)
+    .set("Authorization", `Bearer ${tokenB}`);
+  assert.ok(
+    (legs.body as Array<{ type: string }>).some((t) => t.type === "TRANSFER_OUT"),
+  );
+
+  const rePreview = await request(app)
+    .post("/api/transfers/import/preview")
+    .set("Authorization", `Bearer ${tokenB}`)
+    .send({ csv: exported.text, accountMappings: mappings });
+  assert.equal(rePreview.status, 200);
+  assert.ok(
+    (rePreview.body.rows as Array<{ duplicate: boolean }>).every(
+      (r) => r.duplicate === true,
+    ),
+  );
+
+  const skipAll = (rePreview.body.rows as Array<{ row: number }>).map((r) => r.row);
+  const skippedImport = await request(app)
+    .post("/api/transfers/import")
+    .set("Authorization", `Bearer ${tokenB}`)
+    .send({
+      csv: exported.text,
+      accountMappings: mappings,
+      skipRows: skipAll,
+    });
+  assert.equal(skippedImport.status, 201);
+  assert.equal(skippedImport.body.created, 0);
+  assert.equal(skippedImport.body.skipped, 2);
+
+  const balAfterSkip = await request(app)
+    .get(`/api/accounts/${bFrom.body.id}`)
+    .set("Authorization", `Bearer ${tokenB}`);
+  assert.equal(balAfterSkip.body.cashBalance, 400);
+
+  const recreated = await request(app)
+    .post("/api/transfers/import")
+    .set("Authorization", `Bearer ${tokenB}`)
+    .send({ csv: exported.text, accountMappings: mappings });
+  assert.equal(recreated.status, 201);
+  assert.equal(recreated.body.created, 2);
+  const balAfterRecreate = await request(app)
+    .get(`/api/accounts/${bFrom.body.id}`)
+    .set("Authorization", `Bearer ${tokenB}`);
+  assert.equal(balAfterRecreate.body.cashBalance, -200);
+
+  const header =
+    "id,occurredAt,fromAccount,fromCurrency,toAccount,toCurrency,amountFrom,amountTo,description,createdAt";
+  const atomicCsv = [
+    header,
+    ",2024-06-01T12:00:00.000Z,Alpha Checking,PLN,Alpha Brokerage,PLN,10.00,10.00,ok,",
+    ",2024-06-02T12:00:00.000Z,Alpha Checking,PLN,Alpha Brokerage,PLN,10.00,9.00,bad,",
+  ].join("\n");
+  const beforeAtomic = await request(app)
+    .get(`/api/accounts/${bFrom.body.id}`)
+    .set("Authorization", `Bearer ${tokenB}`);
+  const atomic = await request(app)
+    .post("/api/transfers/import")
+    .set("Authorization", `Bearer ${tokenB}`)
+    .send({
+      csv: atomicCsv,
+      accountMappings: [
+        { name: "Alpha Checking", currency: "PLN", accountId: bFrom.body.id },
+        { name: "Alpha Brokerage", currency: "PLN", accountId: bTo.body.id },
+      ],
+    });
+  assert.equal(atomic.status, 400);
+  const afterAtomic = await request(app)
+    .get(`/api/accounts/${bFrom.body.id}`)
+    .set("Authorization", `Bearer ${tokenB}`);
+  assert.equal(afterAtomic.body.cashBalance, beforeAtomic.body.cashBalance);
+});

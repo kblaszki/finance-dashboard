@@ -88,6 +88,9 @@ User-scoped internal cash transfers (`CashTransfer` header + two ledger legs). C
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
 | GET | `/api/transfers` | Bearer | List own transfers (`occurredAt` desc, then `id` desc) |
+| GET | `/api/transfers/export` | Bearer | CSV download; header `id,occurredAt,fromAccount,fromCurrency,toAccount,toCurrency,amountFrom,amountTo,description,createdAt`; accounts by name (no DB ids); oldest→newest; empty = header only |
+| POST | `/api/transfers/import/preview` | Bearer | Body `{ csv, accountMappings? }`. Always `{ rowCount, accounts: [{ name, currency, rowCount, suggestedAccountId }] }` (exact name+currency suggestions). With complete `accountMappings`: also `rows: [{ row, occurredAt, fromAccountId, toAccountId, amountFrom, amountTo, description, duplicate }]` |
+| POST | `/api/transfers/import` | Bearer | Body `{ csv, accountMappings: [{ name, currency, accountId }], skipRows?: number[] }`. Map-only (no account create); every used `(name, currency)` required; currency must match mapped account; all-or-nothing via `createTransfer`. `201 { created, skipped }`. `400 { error, details }` |
 | POST | `/api/transfers` | Bearer | Body: `fromAccountId`, `toAccountId`, `amountFrom`; optional `amountTo`, `occurredAt`, `description`. Same account → 400. 201 |
 | PATCH | `/api/transfers/:id` | Bearer | Body: any subset of create fields; validated on merged state. 200 |
 | DELETE | `/api/transfers/:id` | Bearer | Reverses both legs and deletes header. 204 |

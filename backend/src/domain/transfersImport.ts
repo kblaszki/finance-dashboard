@@ -1,0 +1,344 @@
+import { decimalToMinor } from "./money";
+import type { TransferInput } from "./cashTransfers";
+import type { TransferCsvDraft } from "./transfersCsv";
+import type { ImportRowError } from "./cashLedgerCsvImport";
+
+export type UsedTransferAccount = {
+  name: string;
+  currency: string;
+  rowCount: number;
+};
+
+export type OwnedAccountForImport = {
+  id: number;
+  name: string;
+  currency: string;
+};
+
+export type AccountImportPreview = {
+  name: string;
+  currency: string;
+  rowCount: number;
+  suggestedAccountId: number | null;
+};
+
+export type AccountMapping = {
+  name: string;
+  currency: string;
+  accountId: number;
+};
+
+export type ResolvedTransferRow = {
+  row: number;
+  input: TransferInput;
+  duplicate: boolean;
+};
+
+function accountKey(name: string, currency: string): string {
+  return `${currency}\0${name.trim().toLowerCase()}`;
+}
+
+/** Collect unique (name, currency) pairs referenced as from/to in drafts. */
+export function collectUsedAccounts(
+  drafts: TransferCsvDraft[],
+): UsedTransferAccount[] {
+  const map = new Map<string, UsedTransferAccount>();
+  function bump(name: string, currency: string) {
+    const key = accountKey(name, currency);
+    const existing = map.get(key);
+    if (existing) {
+      existing.rowCount += 1;
+    } else {
+      map.set(key, { name, currency, rowCount: 1 });
+    }
+  }
+  for (const draft of drafts) {
+    bump(draft.fromName, draft.fromCurrency);
+    bump(draft.toName, draft.toCurrency);
+  }
+  return [...map.values()].sort((a, b) =>
+    a.currency === b.currency
+      ? a.name.localeCompare(b.name)
+      : a.currency.localeCompare(b.currency),
+  );
+}
+
+/** Exact case-insensitive name + matching currency suggestion. */
+export function suggestAccountMatches(
+  used: UsedTransferAccount[],
+  owned: OwnedAccountForImport[],
+): AccountImportPreview[] {
+  const byKey = new Map<string, number>();
+  for (const account of owned) {
+    const key = accountKey(account.name, account.currency);
+    if (!byKey.has(key)) byKey.set(key, account.id);
+  }
+  return used.map((u) => ({
+    name: u.name,
+    currency: u.currency,
+    rowCount: u.rowCount,
+    suggestedAccountId: byKey.get(accountKey(u.name, u.currency)) ?? null,
+  }));
+}
+
+export type ParseAccountMappingsResult =
+  | { ok: true; mappings: AccountMapping[]; byKey: Map<string, number> }
+  | { ok: false; errors: ImportRowError[] };
+
+/**
+ * Validate that accountMappings cover every used (name, currency) exactly once
+ * and that mapped accounts exist with matching currency.
+ */
+export function parseAccountMappings(
+  body: unknown,
+  used: UsedTransferAccount[],
+  owned: OwnedAccountForImport[],
+): ParseAccountMappingsResult {
+  if (!Array.isArray(body)) {
+    return {
+      ok: false,
+      errors: [{ row: 0, message: "accountMappings array required" }],
+    };
+  }
+
+  const ownedById = new Map(owned.map((a) => [a.id, a]));
+  const usedKeys = new Set(used.map((u) => accountKey(u.name, u.currency)));
+  const seen = new Set<string>();
+  const mappings: AccountMapping[] = [];
+  const byKey = new Map<string, number>();
+  const errors: ImportRowError[] = [];
+
+  for (let i = 0; i < body.length; i++) {
+    const item = body[i];
+    if (!item || typeof item !== "object") {
+      errors.push({ row: 0, message: `accountMappings[${i}] must be an object` });
+      continue;
+    }
+    const raw = item as Record<string, unknown>;
+    const name = String(raw.name ?? "").trim();
+    const currency = String(raw.currency ?? "").trim().toUpperCase();
+    const accountId = Number(raw.accountId);
+
+    if (!name) {
+      errors.push({ row: 0, message: `accountMappings[${i}].name required` });
+      continue;
+    }
+    if (!/^[A-Z]{3}$/.test(currency)) {
+      errors.push({
+        row: 0,
+        message: `accountMappings[${i}].currency must be a 3-letter code`,
+      });
+      continue;
+    }
+    if (!Number.isInteger(accountId) || accountId < 1) {
+      errors.push({
+        row: 0,
+        message: `accountMappings[${i}].accountId must be a valid id`,
+      });
+      continue;
+    }
+
+    const key = accountKey(name, currency);
+    if (!usedKeys.has(key)) {
+      errors.push({
+        row: 0,
+        message: `accountMappings[${i}] does not match any account used in the CSV`,
+      });
+      continue;
+    }
+    if (seen.has(key)) {
+      errors.push({
+        row: 0,
+        message: `duplicate mapping for ${currency} "${name}"`,
+      });
+      continue;
+    }
+    seen.add(key);
+
+    const account = ownedById.get(accountId);
+    if (!account) {
+      errors.push({
+        row: 0,
+        message: `accountId ${accountId} not found for mapping "${name}"`,
+      });
+      continue;
+    }
+    if (account.currency !== currency) {
+      errors.push({
+        row: 0,
+        message: `mapped account currency must be ${currency} for "${name}"`,
+      });
+      continue;
+    }
+
+    mappings.push({ name, currency, accountId });
+    byKey.set(key, accountId);
+  }
+
+  for (const u of used) {
+    if (!seen.has(accountKey(u.name, u.currency))) {
+      errors.push({
+        row: 0,
+        message: `missing mapping for ${u.currency} "${u.name}"`,
+      });
+    }
+  }
+
+  if (errors.length > 0) return { ok: false, errors };
+  return { ok: true, mappings, byKey };
+}
+
+export type ResolveDraftsResult =
+  | { ok: true; rows: Array<{ row: number; input: TransferInput }> }
+  | { ok: false; errors: ImportRowError[] };
+
+/** Resolve CSV drafts to TransferInput using validated account mappings. */
+export function resolveTransferDrafts(
+  drafts: TransferCsvDraft[],
+  byKey: Map<string, number>,
+): ResolveDraftsResult {
+  const errors: ImportRowError[] = [];
+  const rows: Array<{ row: number; input: TransferInput }> = [];
+
+  for (const draft of drafts) {
+    const fromId = byKey.get(accountKey(draft.fromName, draft.fromCurrency));
+    const toId = byKey.get(accountKey(draft.toName, draft.toCurrency));
+    if (fromId == null || toId == null) {
+      errors.push({
+        row: draft.row,
+        message: "account mapping incomplete",
+      });
+      continue;
+    }
+    if (fromId === toId) {
+      errors.push({
+        row: draft.row,
+        message: "fromAccount and toAccount must map to different accounts",
+      });
+      continue;
+    }
+    rows.push({
+      row: draft.row,
+      input: {
+        fromAccountId: fromId,
+        toAccountId: toId,
+        amountFrom: draft.amountFrom,
+        amountTo: draft.amountTo,
+        occurredAt: draft.occurredAt,
+        description: draft.description,
+      },
+    });
+  }
+
+  if (errors.length > 0) return { ok: false, errors };
+  return { ok: true, rows };
+}
+
+export type ExistingTransferForDup = {
+  fromAccountId: number;
+  toAccountId: number;
+  amountFrom: number;
+  amountTo: number;
+  occurredAt: Date;
+  description: string | null;
+};
+
+function transferDupKey(
+  fromAccountId: number,
+  toAccountId: number,
+  amountFromMinor: number,
+  amountToMinor: number,
+  occurredAt: Date,
+  description: string | null,
+): string {
+  const desc =
+    description == null || description.trim() === ""
+      ? ""
+      : description.trim();
+  return [
+    fromAccountId,
+    toAccountId,
+    amountFromMinor,
+    amountToMinor,
+    occurredAt.getTime(),
+    desc,
+  ].join("\0");
+}
+
+/** Mark resolved rows that exactly match an existing user transfer. */
+export function findDuplicateRows(
+  rows: Array<{ row: number; input: TransferInput }>,
+  existing: ExistingTransferForDup[],
+): ResolvedTransferRow[] {
+  const existingKeys = new Set(
+    existing.map((t) =>
+      transferDupKey(
+        t.fromAccountId,
+        t.toAccountId,
+        t.amountFrom,
+        t.amountTo,
+        t.occurredAt,
+        t.description,
+      ),
+    ),
+  );
+
+  return rows.map(({ row, input }) => {
+    const key = transferDupKey(
+      input.fromAccountId,
+      input.toAccountId,
+      decimalToMinor(input.amountFrom, "amountFrom"),
+      decimalToMinor(input.amountTo, "amountTo"),
+      input.occurredAt,
+      input.description,
+    );
+    return {
+      row,
+      input,
+      duplicate: existingKeys.has(key),
+    };
+  });
+}
+
+export type ParseSkipRowsResult =
+  | { ok: true; skip: Set<number> }
+  | { ok: false; errors: ImportRowError[] };
+
+/** Validate skipRows are a subset of draft row numbers. */
+export function parseSkipRows(
+  body: unknown,
+  validRows: number[],
+): ParseSkipRowsResult {
+  if (body === undefined || body === null) {
+    return { ok: true, skip: new Set() };
+  }
+  if (!Array.isArray(body)) {
+    return {
+      ok: false,
+      errors: [{ row: 0, message: "skipRows must be an array" }],
+    };
+  }
+  const valid = new Set(validRows);
+  const skip = new Set<number>();
+  const errors: ImportRowError[] = [];
+  for (let i = 0; i < body.length; i++) {
+    const n = Number(body[i]);
+    if (!Number.isInteger(n) || n < 1) {
+      errors.push({
+        row: 0,
+        message: `skipRows[${i}] must be a positive integer`,
+      });
+      continue;
+    }
+    if (!valid.has(n)) {
+      errors.push({
+        row: 0,
+        message: `skipRows[${i}] row ${n} is not in the CSV`,
+      });
+      continue;
+    }
+    skip.add(n);
+  }
+  if (errors.length > 0) return { ok: false, errors };
+  return { ok: true, skip };
+}

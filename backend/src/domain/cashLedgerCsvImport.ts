@@ -216,12 +216,12 @@ function parseTypeCell(
   };
 }
 
-function stripBom(text: string): string {
+export function stripBom(text: string): string {
   return text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
 }
 
 /** Split CSV text into records of cells (RFC4180-ish). */
-function splitCsvRecords(text: string): string[][] {
+export function splitCsvRecords(text: string): string[][] {
   const records: string[][] = [];
   let cell = "";
   let row: string[] = [];
