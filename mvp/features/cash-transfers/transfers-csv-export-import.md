@@ -13,7 +13,7 @@ User-scoped CSV export/import of internal cash transfers. Accounts are identifie
 
 ## User value
 
-Move or restore transfer history between environments without touching ledger CSV (which rejects `TRANSFER_*` rows).
+Move or restore transfer history between environments without relying on ledger CSV (which skips `TRANSFER_*` rows).
 
 ## Surfaces
 

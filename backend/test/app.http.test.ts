@@ -1016,6 +1016,31 @@ test("POST /api/accounts/:id/transactions/import preview and mapped import", asy
     });
   assert.equal(badAmount.status, 400);
   assert.match(badAmount.body.details[0].message, /amount|positive/i);
+
+  const withTransfersCsv = [
+    header,
+    `,INCOME,10.00,PLN,2024-05-01T12:00:00.000Z,Bonus,,`,
+    `,TRANSFER_OUT,3.00,PLN,2024-05-02T12:00:00.000Z,Move,,`,
+    `,TRANSFER_IN,3.00,PLN,2024-05-02T12:00:00.000Z,Move,,`,
+  ].join("\n");
+  const transferPreview = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import/preview`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv: withTransfersCsv });
+  assert.equal(transferPreview.status, 200);
+  assert.equal(transferPreview.body.rowCount, 1);
+  assert.equal(transferPreview.body.skipped, 2);
+  assert.equal(transferPreview.body.skippedTransfers.length, 2);
+  assert.equal(transferPreview.body.skippedTransfers[0].type, "TRANSFER_OUT");
+
+  const transferImport = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv: withTransfersCsv, categoryMappings: [] });
+  assert.equal(transferImport.status, 201);
+  assert.equal(transferImport.body.created, 1);
+  assert.equal(transferImport.body.skipped, 2);
+  assert.equal(transferImport.body.skippedTransfers.length, 2);
 });
 
 test("DELETE /api/accounts/:id/transactions/:txId reverses cashBalance", async () => {

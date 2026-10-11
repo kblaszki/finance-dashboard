@@ -12,6 +12,15 @@ export type ImportRowError = {
   message: string;
 };
 
+export type SkippedTransferRow = {
+  row: number;
+  type: "TRANSFER_IN" | "TRANSFER_OUT";
+  message: string;
+};
+
+const SKIPPED_TRANSFER_MESSAGE =
+  "Internal transfer — import via Transfers page";
+
 /** One validated CSV data row before category mapping. */
 export type CashLedgerImportDraft = {
   /** 1-based data row index (header excluded). */
@@ -34,7 +43,11 @@ export type CashLedgerImportResolved = {
 };
 
 export type ParseImportResult =
-  | { ok: true; drafts: CashLedgerImportDraft[] }
+  | {
+      ok: true;
+      drafts: CashLedgerImportDraft[];
+      skippedTransfers: SkippedTransferRow[];
+    }
   | { ok: false; errors: ImportRowError[] };
 
 const FORMULA_PREFIX = /^[=+\-@\t\r]/;
@@ -88,6 +101,7 @@ export function parseCashLedgerCsvImport(
   const expectedCurrency = String(accountCurrency || "").trim().toUpperCase();
   const errors: ImportRowError[] = [];
   const drafts: CashLedgerImportDraft[] = [];
+  const skippedTransfers: SkippedTransferRow[] = [];
 
   for (let i = 1; i < lines.length; i++) {
     const cells = lines[i]!;
@@ -111,7 +125,15 @@ export function parseCashLedgerCsvImport(
     const categoryPathRaw = cells[6]!;
 
     const typeResult = parseTypeCell(typeRaw);
-    if (!typeResult.ok) {
+    if (typeResult.kind === "transfer") {
+      skippedTransfers.push({
+        row: dataRow,
+        type: typeResult.type,
+        message: SKIPPED_TRANSFER_MESSAGE,
+      });
+      continue;
+    }
+    if (typeResult.kind === "error") {
       errors.push({
         row: dataRow,
         message: typeResult.message,
@@ -182,7 +204,7 @@ export function parseCashLedgerCsvImport(
   if (errors.length > 0) {
     return { ok: false, errors };
   }
-  return { ok: true, drafts };
+  return { ok: true, drafts, skippedTransfers };
 }
 
 export function formatImportErrors(errors: ImportRowError[]): string {
@@ -197,21 +219,21 @@ export function formatImportErrors(errors: ImportRowError[]): string {
     .join("; ");
 }
 
-function parseTypeCell(
-  raw: string,
-): { ok: true; type: CashTxType } | { ok: false; message: string } {
+type ParseTypeCellResult =
+  | { kind: "cash"; type: CashTxType }
+  | { kind: "transfer"; type: "TRANSFER_IN" | "TRANSFER_OUT" }
+  | { kind: "error"; message: string };
+
+function parseTypeCell(raw: string): ParseTypeCellResult {
   const upper = raw.trim().toUpperCase();
   if (upper === "TRANSFER_IN" || upper === "TRANSFER_OUT") {
-    return {
-      ok: false,
-      message: "TRANSFER_* rows cannot be imported; manage transfers via /api/transfers",
-    };
+    return { kind: "transfer", type: upper };
   }
   if (upper === "INCOME" || upper === "EXPENSE") {
-    return { ok: true, type: upper };
+    return { kind: "cash", type: upper };
   }
   return {
-    ok: false,
+    kind: "error",
     message: `type must be one of: ${CASH_TX_TYPES.join(", ")}`,
   };
 }

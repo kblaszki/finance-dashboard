@@ -29,7 +29,21 @@ type PendingImport = {
   csv: string;
   rowCount: number;
   categories: ImportCategoryPreview[];
+  skipped: number;
 };
+
+function formatImportSuccessMessage(result: {
+  created: number;
+  createdCategories: number;
+  skipped: number;
+}): string {
+  const createdNote =
+    result.createdCategories > 0
+      ? `Imported ${result.created} transaction(s); created ${result.createdCategories} categor${result.createdCategories === 1 ? "y" : "ies"}.`
+      : `Imported ${result.created} transaction(s).`;
+  if (result.skipped <= 0) return createdNote;
+  return `${createdNote} Skipped ${result.skipped} internal transfer row(s) — manage transfers on the Transfers page.`;
+}
 
 export function AccountDetailPage() {
   const { id } = useParams();
@@ -148,11 +162,7 @@ export function AccountDetailPage() {
         csv,
         categoryMappings,
       );
-      const createdNote =
-        result.createdCategories > 0
-          ? `Imported ${result.created} transaction(s); created ${result.createdCategories} categor${result.createdCategories === 1 ? "y" : "ies"}.`
-          : `Imported ${result.created} transaction(s).`;
-      setImportMsg(createdNote);
+      setImportMsg(formatImportSuccessMessage(result));
       setPendingImport(null);
       await refresh();
     } catch (err) {
@@ -172,7 +182,7 @@ export function AccountDetailPage() {
       const preview = await previewTransactionsImport(accountId, csv);
       if (preview.categories.length === 0) {
         const result = await importTransactionsCsv(accountId, csv, []);
-        setImportMsg(`Imported ${result.created} transaction(s).`);
+        setImportMsg(formatImportSuccessMessage(result));
         await refresh();
         return;
       }
@@ -180,6 +190,7 @@ export function AccountDetailPage() {
         csv,
         rowCount: preview.rowCount,
         categories: preview.categories,
+        skipped: preview.skipped,
       });
     } catch (err) {
       setActionErr(err instanceof Error ? err.message : "Import failed");
@@ -267,17 +278,25 @@ export function AccountDetailPage() {
       {importMsg && <p className="success-banner">{importMsg}</p>}
 
       {pendingImport && (
-        <ImportCategoryMappingPanel
-          key={`${pendingImport.rowCount}-${pendingImport.categories.map((c) => c.path).join("|")}`}
-          previewCategories={pendingImport.categories}
-          ownedCategories={categories ?? []}
-          rowCount={pendingImport.rowCount}
-          busy={importBusy}
-          onConfirm={(mappings) => {
-            void runImport(pendingImport.csv, mappings);
-          }}
-          onCancel={() => setPendingImport(null)}
-        />
+        <>
+          {pendingImport.skipped > 0 && (
+            <p className="muted form-section-gap">
+              Skipping {pendingImport.skipped} internal transfer row(s) — manage
+              transfers on the Transfers page.
+            </p>
+          )}
+          <ImportCategoryMappingPanel
+            key={`${pendingImport.rowCount}-${pendingImport.categories.map((c) => c.path).join("|")}`}
+            previewCategories={pendingImport.categories}
+            ownedCategories={categories ?? []}
+            rowCount={pendingImport.rowCount}
+            busy={importBusy}
+            onConfirm={(mappings) => {
+              void runImport(pendingImport.csv, mappings);
+            }}
+            onCancel={() => setPendingImport(null)}
+          />
+        </>
       )}
 
       <section className="card form-section-gap">

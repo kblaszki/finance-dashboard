@@ -62,7 +62,7 @@ Production Docker serves `frontend/dist` from Express (`STATIC_DIR`); deep links
 | `frontend/src/api/authApi.ts` | config, register, login, me, profile, email, password |
 | `frontend/src/api/accountsApi.ts` | list/create/get/patch/delete accounts; `fetchAccountBalanceHistory`; `ACCOUNT_TYPES` / `AccountType` / `accountTypeLabel` |
 | `frontend/src/api/categoriesApi.ts` | list/create/patch/delete categories (`ledgerType`); `flattenCategoryTree` |
-| `frontend/src/api/transactionsApi.ts` | list/create/delete/export/import cash txs under `/api/accounts/:id/transactions` (optional `categoryId`; `transferId` on rows; CSV export via `getBlob`; import preview `{ csv }` → categories; import `{ csv, categoryMappings }`) |
+| `frontend/src/api/transactionsApi.ts` | list/create/delete/export/import cash txs under `/api/accounts/:id/transactions` (optional `categoryId`; `transferId` on rows; CSV export via `getBlob`; import preview `{ csv }` → categories + `skippedTransfers`; import `{ csv, categoryMappings }` → `{ created, createdCategories, skipped, skippedTransfers }`) |
 | `frontend/src/api/transfersApi.ts` | list/create/patch/delete + CSV export/preview/import → `/api/transfers` (`exportTransfersCsv`, `previewTransfersImport`, `importTransfersCsv`) |
 | `frontend/src/api/statisticsApi.ts` | `fetchCategoryBreakdown`, `fetchPeriodSummary`, `fetchCashflowHistory`, `fetchNetWorth`, `fetchCashflowRolling12m` → `/api/statistics/*` |
 

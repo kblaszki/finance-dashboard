@@ -14,7 +14,10 @@ describe("parseCashLedgerCsvImport", () => {
   it("accepts header-only CSV", () => {
     const result = parseCashLedgerCsvImport(`${CASH_LEDGER_CSV_HEADER}\n`, "EUR");
     assert.equal(result.ok, true);
-    if (result.ok) assert.equal(result.drafts.length, 0);
+    if (result.ok) {
+      assert.equal(result.drafts.length, 0);
+      assert.equal(result.skippedTransfers.length, 0);
+    }
   });
 
   it("parses export round-trip rows and ignores id/createdAt", () => {
@@ -123,6 +126,52 @@ describe("parseCashLedgerCsvImport", () => {
     assert.equal(result.ok, true);
     if (!result.ok) return;
     assert.deepEqual(result.drafts[0]!.categoryPath, ["Food", "Groceries"]);
+  });
+
+  it("skips TRANSFER_* rows and keeps INCOME/EXPENSE drafts", () => {
+    const csv = [
+      CASH_LEDGER_CSV_HEADER,
+      ",INCOME,50.00,EUR,2024-01-01T00:00:00.000Z,Pay,,",
+      ",TRANSFER_OUT,20.00,EUR,2024-01-02T00:00:00.000Z,Move,,",
+      ",EXPENSE,5.00,EUR,2024-01-03T00:00:00.000Z,Coffee,Food,",
+      ",TRANSFER_IN,20.00,EUR,2024-01-02T00:00:00.000Z,Move,,",
+    ].join("\n");
+    const result = parseCashLedgerCsvImport(csv, "EUR");
+    assert.equal(result.ok, true);
+    if (!result.ok) return;
+    assert.equal(result.drafts.length, 2);
+    assert.equal(result.drafts[0]!.type, "INCOME");
+    assert.equal(result.drafts[1]!.type, "EXPENSE");
+    assert.equal(result.skippedTransfers.length, 2);
+    assert.equal(result.skippedTransfers[0]!.row, 2);
+    assert.equal(result.skippedTransfers[0]!.type, "TRANSFER_OUT");
+    assert.match(result.skippedTransfers[0]!.message, /Transfers page/i);
+    assert.equal(result.skippedTransfers[1]!.row, 4);
+    assert.equal(result.skippedTransfers[1]!.type, "TRANSFER_IN");
+  });
+
+  it("accepts transfer-only CSV with empty drafts", () => {
+    const csv = [
+      CASH_LEDGER_CSV_HEADER,
+      ",TRANSFER_OUT,20.00,EUR,2024-01-02T00:00:00.000Z,Move,,",
+    ].join("\n");
+    const result = parseCashLedgerCsvImport(csv, "EUR");
+    assert.equal(result.ok, true);
+    if (!result.ok) return;
+    assert.equal(result.drafts.length, 0);
+    assert.equal(result.skippedTransfers.length, 1);
+  });
+
+  it("still hard-fails invalid INCOME/EXPENSE rows", () => {
+    const csv = [
+      CASH_LEDGER_CSV_HEADER,
+      ",TRANSFER_OUT,20.00,EUR,2024-01-02T00:00:00.000Z,Move,,",
+      ",INCOME,-1,EUR,2024-01-01T00:00:00.000Z,Bad,,",
+    ].join("\n");
+    const result = parseCashLedgerCsvImport(csv, "EUR");
+    assert.equal(result.ok, false);
+    if (result.ok) return;
+    assert.match(result.errors[0]!.message, /amount|positive/i);
   });
 });
 

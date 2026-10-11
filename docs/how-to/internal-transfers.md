@@ -43,7 +43,7 @@ Delete an account that still appears in any transfer → `409` (“delete transf
 2. **Upload CSV** opens a two-step flow:
    - Map each file account `(name, currency)` to one of your existing accounts with the same currency (suggestions when names match).
    - Review rows: exact duplicates of existing transfers are unchecked; enable them only if you want a second copy.
-3. Import creates transfer headers + ledger legs via the same rules as the UI create form. Ledger CSV import still rejects `TRANSFER_*` rows — restore transfers here, then INCOME/EXPENSE via the account ledger.
+3. Import creates transfer headers + ledger legs via the same rules as the UI create form. Ledger CSV import skips `TRANSFER_*` rows (with a count in the success message) — restore transfers here, then INCOME/EXPENSE via the account ledger.
 4. Recommended restore order: **accounts → transfers → ledger**.
 
 ## Demo data

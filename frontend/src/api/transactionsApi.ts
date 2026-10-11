@@ -71,9 +71,17 @@ export type ImportCategoryPreview = {
   suggestedCategoryId: number | null;
 };
 
+export type SkippedTransferRow = {
+  row: number;
+  type: "TRANSFER_IN" | "TRANSFER_OUT";
+  message: string;
+};
+
 export type ImportPreviewResult = {
   rowCount: number;
   categories: ImportCategoryPreview[];
+  skipped: number;
+  skippedTransfers: SkippedTransferRow[];
 };
 
 export type ImportCategoryMapping =
@@ -97,6 +105,8 @@ export type ImportCategoryMapping =
 export type ImportTransactionsResult = {
   created: number;
   createdCategories: number;
+  skipped: number;
+  skippedTransfers: SkippedTransferRow[];
 };
 
 export async function previewTransactionsImport(

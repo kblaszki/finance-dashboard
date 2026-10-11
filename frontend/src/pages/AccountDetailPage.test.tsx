@@ -124,10 +124,14 @@ describe("AccountDetailPage", () => {
     vi.mocked(previewTransactionsImport).mockResolvedValue({
       rowCount: 0,
       categories: [],
+      skipped: 0,
+      skippedTransfers: [],
     });
     vi.mocked(importTransactionsCsv).mockResolvedValue({
       created: 1,
       createdCategories: 0,
+      skipped: 0,
+      skippedTransfers: [],
     });
     URL.createObjectURL = vi.fn(() => "blob:ledger");
     URL.revokeObjectURL = vi.fn();
@@ -192,6 +196,42 @@ describe("AccountDetailPage", () => {
     expect(await screen.findByText("Imported 1 transaction(s).")).toBeTruthy();
   });
 
+  it("mentions skipped transfer rows after a direct import", async () => {
+    vi.mocked(importTransactionsCsv).mockResolvedValue({
+      created: 1,
+      createdCategories: 0,
+      skipped: 2,
+      skippedTransfers: [
+        {
+          row: 2,
+          type: "TRANSFER_OUT",
+          message: "Internal transfer — import via Transfers page",
+        },
+        {
+          row: 3,
+          type: "TRANSFER_IN",
+          message: "Internal transfer — import via Transfers page",
+        },
+      ],
+    });
+
+    renderLedger();
+    await screen.findByText("Coffee");
+
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(["csv"], "ledger.csv", { type: "text/csv" });
+    Object.defineProperty(file, "text", {
+      value: () => Promise.resolve("with-transfers\n"),
+    });
+    fireEvent.change(input, { target: { files: [file] } });
+
+    expect(
+      await screen.findByText(
+        "Imported 1 transaction(s). Skipped 2 internal transfer row(s) — manage transfers on the Transfers page.",
+      ),
+    ).toBeTruthy();
+  });
+
   it("shows mapping panel and imports after category decisions", async () => {
     vi.mocked(previewTransactionsImport).mockResolvedValue({
       rowCount: 2,
@@ -209,6 +249,14 @@ describe("AccountDetailPage", () => {
           suggestedCategoryId: null,
         },
       ],
+      skipped: 1,
+      skippedTransfers: [
+        {
+          row: 3,
+          type: "TRANSFER_OUT",
+          message: "Internal transfer — import via Transfers page",
+        },
+      ],
     });
 
     renderLedger();
@@ -222,6 +270,11 @@ describe("AccountDetailPage", () => {
     fireEvent.change(input, { target: { files: [file] } });
 
     expect(await screen.findByText("Map import categories")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Skipping 1 internal transfer row(s) — manage transfers on the Transfers page.",
+      ),
+    ).toBeTruthy();
     const importBtn = screen.getByRole("button", {
       name: "Import",
     }) as HTMLButtonElement;

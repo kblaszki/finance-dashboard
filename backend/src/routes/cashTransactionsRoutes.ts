@@ -211,6 +211,8 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
         res.status(200).json({
           rowCount: parsed.drafts.length,
           categories,
+          skipped: parsed.skippedTransfers.length,
+          skippedTransfers: parsed.skippedTransfers,
         });
       } catch (e: unknown) {
         handleRouteError(res, e, "Failed to preview import");
@@ -289,7 +291,12 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
           },
         );
 
-        res.status(201).json({ created, createdCategories });
+        res.status(201).json({
+          created,
+          createdCategories,
+          skipped: parsed.skippedTransfers.length,
+          skippedTransfers: parsed.skippedTransfers,
+        });
       } catch (e: unknown) {
         handleRouteError(res, e, "Failed to import transactions");
       }
