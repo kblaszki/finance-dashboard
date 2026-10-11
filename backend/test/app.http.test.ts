@@ -326,6 +326,10 @@ test("POST /api/accounts creates each allowed accountType", async () => {
     "CRYPTO",
     "PRECIOUS_METAL",
     "REAL_ESTATE",
+    "CREDIT_CARD",
+    "IKE",
+    "IKZE",
+    "TREASURY_BONDS",
     "OTHER",
     "MANUAL",
   ];
@@ -1619,6 +1623,33 @@ test("GET /api/statistics/net-worth aggregates cashBalance by bucket with tenanc
     liabilities: 0,
     netWorth: 3500,
   });
+
+  await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      name: "NW Card",
+      currency: "PLN",
+      accountType: "CREDIT_CARD",
+      openingBalance: -100,
+    });
+  await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      name: "NW IKE",
+      currency: "PLN",
+      accountType: "IKE",
+      openingBalance: 400,
+    });
+
+  const withCard = await request(app)
+    .get("/api/statistics/net-worth?currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(withCard.status, 200);
+  assert.equal(withCard.body.liabilities, 100);
+  assert.equal(withCard.body.byBucket.stock, 2900);
+  assert.equal(withCard.body.netWorth, 3500 + 400 - 100);
 
   const unknown = await request(app)
     .get("/api/statistics/net-worth?currency=EUR")

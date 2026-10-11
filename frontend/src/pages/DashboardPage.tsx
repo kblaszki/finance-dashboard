@@ -120,7 +120,11 @@ export function DashboardPage() {
         <KpiCard
           label={`Net worth (${currency})`}
           value={netWorth ? formatMoney(netWorth.netWorth, currency) : "—"}
-          sub="Cash in the top-bar currency only. Other currencies are excluded. No FX, no holdings"
+          sub={
+            netWorth && netWorth.liabilities > 0
+              ? `Assets minus ${formatMoney(netWorth.liabilities, currency)} liabilities (credit cards). No FX, no holdings`
+              : "Cash in the top-bar currency only. Other currencies are excluded. No FX, no holdings"
+          }
         />
         <KpiCard
           label="Avg income · 12m"
@@ -299,6 +303,14 @@ function NetWorthDonut({ data }: { data: NetWorth }) {
             </span>
           </li>
         ))}
+        {data.liabilities > 0 ? (
+          <li className="legend-row">
+            <span className="legend-name">Liabilities</span>
+            <span className="legend-value">
+              −{formatMoney(data.liabilities, data.currency)}
+            </span>
+          </li>
+        ) : null}
         <li className="legend-row legend-total">
           <span className="legend-name">Total</span>
           <span className="legend-value">

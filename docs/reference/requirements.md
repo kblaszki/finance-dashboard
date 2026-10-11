@@ -22,7 +22,7 @@ Hub: [docs/README.md](../README.md).
 | MVP-050 | Health endpoint | `GET /api/health` |
 | MVP-051 | Private deploy tooling | `create-user`, `db:backup`, [private-deploy.md](../how-to/private-deploy.md) |
 | MVP-052 | Production auth rate limits | `app.ts` (login, register, password, email share one limiter) |
-| FR-006 | Extended account types | `Account` model; allow-list in `domain/accountTypes.ts`; `/api/accounts`; `/accounts` UI type select — type-specific fields still planned |
+| FR-006 | Extended account types | `Account` model; allow-list in `domain/accountTypes.ts` includes `CREDIT_CARD`, `IKE`, `IKZE`, `TREASURY_BONDS`; `/api/accounts`; `/accounts` UI type select — type-specific fields still planned |
 | MVP-011 | Cash ledger INCOME/EXPENSE | `CashTransaction`; `domain/cashLedger.ts`; `/api/accounts/:id/transactions`; `/accounts/:id` |
 | MVP-013 | Cash ledger CSV export | `GET /api/accounts/:id/transactions/export`; `domain/cashLedgerCsv.ts`; Download CSV on `/accounts/:id` |
 | MVP-014 | Cash ledger CSV import | `POST /api/accounts/:id/transactions/import`; `domain/cashLedgerCsvImport.ts`; Upload CSV on `/accounts/:id` |
@@ -31,7 +31,7 @@ Hub: [docs/README.md](../README.md).
 | FR-016 | Category spend breakdown | `GET /api/statistics/category-breakdown`; `/statistics` month Income/Expense lists (UTC, no FX) |
 | FR-003 | Statistics period cashflow summary | `GET /api/statistics/period-summary`; `/statistics` income/expense/net KPIs for one currency |
 | FR-004 | Cashflow history chart | `GET /api/statistics/cashflow-history`; `/statistics` Recharts series (`months` 6\|12\|24) |
-| FR-002 | Net worth (cash buckets) | `GET /api/statistics/net-worth`; `/dashboard` byBucket from `cashBalance` (liabilities 0; no holdings/FX) |
+| FR-002 | Net worth (cash buckets) | `GET /api/statistics/net-worth`; `/dashboard` byBucket from `cashBalance`; `CREDIT_CARD` debt → `liabilities` (no holdings/FX) |
 | FR-005 | Rolling 12-month cashflow averages | `GET /api/statistics/cashflow-rolling-12m`; `/dashboard` avg income/expense/net |
 | FR-011 | Internal cash transfers | `CashTransfer` + `TRANSFER_*` legs; `/api/transfers`; `/transfers`; [internal-transfers.md](../how-to/internal-transfers.md) |
 

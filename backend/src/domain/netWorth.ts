@@ -33,6 +33,9 @@ const TYPE_TO_BUCKET: Record<string, NetWorthBucket> = {
   CRYPTO: "crypto",
   PRECIOUS_METAL: "metal",
   REAL_ESTATE: "real_estate",
+  IKE: "stock",
+  IKZE: "stock",
+  TREASURY_BONDS: "other",
   OTHER: "other",
   MANUAL: "other",
 };
@@ -53,21 +56,36 @@ function emptyBuckets(): NetWorthByBucket {
   };
 }
 
+function isCreditCard(accountType: string): boolean {
+  return String(accountType).trim().toUpperCase() === "CREDIT_CARD";
+}
+
 export function aggregateNetWorth(
   currency: string,
   accounts: NetWorthAccountRow[],
 ): NetWorthResult {
   const byBucket = emptyBuckets();
+  let liabilities = new Prisma.Decimal(0);
 
   for (const account of accounts) {
     if (account.currency !== currency) continue;
     const amount = majorToDecimal(account.cashBalance);
     if (!amount) continue;
+
+    if (isCreditCard(account.accountType)) {
+      if (amount.isNegative()) {
+        liabilities = liabilities.add(amount.negated());
+      } else if (amount.isPositive()) {
+        byBucket.cash = new Prisma.Decimal(byBucket.cash).add(amount).toNumber();
+      }
+      continue;
+    }
+
     const bucket = accountTypeToBucket(account.accountType);
     byBucket[bucket] = new Prisma.Decimal(byBucket[bucket]).add(amount).toNumber();
   }
 
-  const liabilities = 0;
+  const liabilitiesMajor = liabilities.toNumber();
   const bucketSum = NET_WORTH_BUCKETS.reduce(
     (sum, key) => sum + byBucket[key],
     0,
@@ -76,7 +94,7 @@ export function aggregateNetWorth(
   return {
     currency,
     byBucket,
-    liabilities,
-    netWorth: bucketSum - liabilities,
+    liabilities: liabilitiesMajor,
+    netWorth: bucketSum - liabilitiesMajor,
   };
 }

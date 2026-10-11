@@ -2,6 +2,7 @@ import { type FormEvent, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ACCOUNT_TYPES,
+  accountTypeLabel,
   createAccount,
   deleteAccount,
   updateAccount,
@@ -160,7 +161,7 @@ export function AccountsPage() {
               >
                 {ACCOUNT_TYPES.map((type) => (
                   <option key={type} value={type}>
-                    {type}
+                    {accountTypeLabel(type)}
                   </option>
                 ))}
               </select>
@@ -309,7 +310,9 @@ export function AccountsPage() {
                       )}
                     </td>
                     <td>
-                      <span className="badge">{account.accountType}</span>
+                      <span className="badge">
+                        {accountTypeLabel(account.accountType)}
+                      </span>
                     </td>
                     <td className="num">
                       {formatMoney(account.totalBalance, account.currency)}

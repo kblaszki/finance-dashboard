@@ -25,7 +25,7 @@ Hub: [docs/README.md](../README.md).
 | `/` | Guest → Landing; authed → redirect `/dashboard` | `LandingPage` / navigate |
 | `/login` | Guest only | `LoginPage` (in `AuthSwapShell`) |
 | `/register` | Guest only (when `allowRegister`) | `RegisterPage` (in `AuthSwapShell`) |
-| `/dashboard` | Protected | `DashboardPage` (KPIs, net-worth donut, 12m cashflow, account mix) |
+| `/dashboard` | Protected | `DashboardPage` (KPIs including liabilities when > 0, net-worth donut, 12m cashflow, account mix) |
 | `/home` | Protected | Redirect → `/dashboard` |
 | `/accounts` | Protected | `AccountsPage` (multi-type create/list/edit/delete; currency on edit is read-only once the ledger has rows) |
 | `/accounts/:id` | Protected | `AccountDetailPage` (balance history chart at top; cash ledger with inline create row + list/delete/CSV; cell edit via double-click + Enter, Escape or blur cancels). Transfer legs (`transferId` set) are read-only with `TRANSFER IN/OUT` badges and a link to `/transfers`. Ledger pieces live in `components/account/`: `AccountBalanceChart`, `AccountLedgerHeader`, `AccountSubtitle`, `LedgerTable`, `LedgerCreateRow`, `occurredAt.ts`, `categoryScope.ts` (`categoryIdsForLedgerType`) |
@@ -60,7 +60,7 @@ Production Docker serves `frontend/dist` from Express (`STATIC_DIR`); deep links
 |--------|------|
 | `frontend/src/api/client.ts` | `fetch` + Bearer token. Session `401` clears auth. Other errors use `body.error`. A failed `fetch` throws `Network request failed`. |
 | `frontend/src/api/authApi.ts` | config, register, login, me, profile, email, password |
-| `frontend/src/api/accountsApi.ts` | list/create/get/patch/delete accounts; `fetchAccountBalanceHistory`; `ACCOUNT_TYPES` / `AccountType` |
+| `frontend/src/api/accountsApi.ts` | list/create/get/patch/delete accounts; `fetchAccountBalanceHistory`; `ACCOUNT_TYPES` / `AccountType` / `accountTypeLabel` |
 | `frontend/src/api/categoriesApi.ts` | list/create/patch/delete categories (`ledgerType`); `flattenCategoryTree` |
 | `frontend/src/api/transactionsApi.ts` | list/create/delete/export/import cash txs under `/api/accounts/:id/transactions` (optional `categoryId`; `transferId` on rows; CSV export via `getBlob`, import via JSON `{ csv }`) |
 | `frontend/src/api/transfersApi.ts` | list/create/patch/delete internal transfers → `/api/transfers` |

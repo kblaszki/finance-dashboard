@@ -34,11 +34,11 @@ npm run db:seed
 
 | Surface | Sample content |
 |---------|----------------|
-| `/accounts` | Everyday Checking (BANK/PLN), Euro Travel (BANK/EUR), Brokerage Cash (BROKERAGE/PLN), Crypto Spot (CRYPTO/USD) |
+| `/accounts` | Everyday Checking (BANK/PLN), Euro Travel (BANK/EUR), Brokerage Cash (BROKERAGE/PLN), Crypto Spot (CRYPTO/USD), Everyday Credit Card (CREDIT_CARD/PLN, debt), IKE Brokerage (IKE/PLN cash sleeve) |
 | `/categories` | Default flat roots by ledgerType (Salary, Food, …) |
 | `/accounts/:id` | ~24 months of INCOME/EXPENSE rows (≥5 per month per account); tagged categories + occasional uncategorized expenses; read-only `TRANSFER IN/OUT` legs from seeded transfers |
 | `/transfers` | Same-currency (Checking ↔ Brokerage) and cross-currency (PLN→EUR, PLN→USD) sample transfers |
-| `/dashboard` | Cash net-worth buckets, rolling 12m averages, cashflow chart, account mix (pick PLN in top bar) |
+| `/dashboard` | Cash net-worth buckets (credit-card debt in liabilities), rolling 12m averages, cashflow chart, account mix (pick PLN in top bar) |
 | `/statistics` | Period KPIs, cashflow chart, and category breakdown across the seeded history (transfer legs excluded) |
 
 ## Notes

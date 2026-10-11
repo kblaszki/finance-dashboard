@@ -12,6 +12,9 @@ test("accountTypeToBucket maps known types and unknowns to other", () => {
   assert.equal(accountTypeToBucket("CRYPTO"), "crypto");
   assert.equal(accountTypeToBucket("PRECIOUS_METAL"), "metal");
   assert.equal(accountTypeToBucket("REAL_ESTATE"), "real_estate");
+  assert.equal(accountTypeToBucket("IKE"), "stock");
+  assert.equal(accountTypeToBucket("IKZE"), "stock");
+  assert.equal(accountTypeToBucket("TREASURY_BONDS"), "other");
   assert.equal(accountTypeToBucket("OTHER"), "other");
   assert.equal(accountTypeToBucket("MANUAL"), "other");
   assert.equal(accountTypeToBucket("WEIRD"), "other");
@@ -64,4 +67,24 @@ test("aggregateNetWorth returns zeros for unused currency", () => {
     liabilities: 0,
     netWorth: 0,
   });
+});
+
+test("aggregateNetWorth treats CREDIT_CARD debt as liabilities", () => {
+  const result = aggregateNetWorth("PLN", [
+    { accountType: "BANK", currency: "PLN", cashBalance: 1000 },
+    { accountType: "CREDIT_CARD", currency: "PLN", cashBalance: -250 },
+    { accountType: "CREDIT_CARD", currency: "PLN", cashBalance: 40 },
+    { accountType: "IKE", currency: "PLN", cashBalance: 500 },
+    { accountType: "TREASURY_BONDS", currency: "PLN", cashBalance: 100 },
+  ]);
+  assert.equal(result.liabilities, 250);
+  assert.deepEqual(result.byBucket, {
+    cash: 1040,
+    stock: 500,
+    crypto: 0,
+    metal: 0,
+    real_estate: 0,
+    other: 100,
+  });
+  assert.equal(result.netWorth, 1040 + 500 + 100 - 250);
 });

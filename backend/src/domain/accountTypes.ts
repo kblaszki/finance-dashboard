@@ -6,6 +6,10 @@ export const ACCOUNT_TYPES = [
   "CRYPTO",
   "PRECIOUS_METAL",
   "REAL_ESTATE",
+  "CREDIT_CARD",
+  "IKE",
+  "IKZE",
+  "TREASURY_BONDS",
   "OTHER",
   "MANUAL",
 ] as const;

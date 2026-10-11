@@ -537,6 +537,30 @@ export async function seedDemoPortfolio(
     crypto,
   };
 
+  // Extra account types (no generated monthly ledger — cash sleeve / debt only).
+  await db.account.create({
+    data: {
+      userId,
+      name: "Everyday Credit Card",
+      accountType: "CREDIT_CARD",
+      currency: "PLN",
+      openingBalance: quantizeMajorToMinor(-800, "openingBalance"),
+      cashBalance: quantizeMajorToMinor(-800, "openingBalance"),
+      description: "Credit card — negative balance is amount owed",
+    },
+  });
+  await db.account.create({
+    data: {
+      userId,
+      name: "IKE Brokerage",
+      accountType: "IKE",
+      currency: "PLN",
+      openingBalance: quantizeMajorToMinor(3000, "openingBalance"),
+      cashBalance: quantizeMajorToMinor(3000, "openingBalance"),
+      description: "IKE cash sleeve (holdings later)",
+    },
+  });
+
   const planned = buildDemoLedgerTxs(now);
   const rows = planned.map((tx) => {
     const account = accountsByKey[tx.accountKey];

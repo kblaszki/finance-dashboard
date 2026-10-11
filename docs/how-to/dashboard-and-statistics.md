@@ -34,7 +34,7 @@ This page covers shipped dashboard KPIs (`/dashboard`) and statistics (`/statist
    - `GET /api/statistics/cashflow-history?month=YYYY-MM&currency=XXX&months=12`
    - `GET /api/accounts` (shared via `CurrencyProvider`)
 
-No FX conversion. Mapping: `BANK→cash`, `BROKERAGE→stock`, `CRYPTO→crypto`, `PRECIOUS_METAL→metal`, `REAL_ESTATE→real_estate`, `OTHER|MANUAL→other`. Liabilities are always `0` until a liability model ships. Holdings valuations are not included. Rolling averages use the last 12 **complete** UTC months (excludes the current calendar month).
+No FX conversion. Mapping: `BANK→cash`, `BROKERAGE|IKE|IKZE→stock`, `CRYPTO→crypto`, `PRECIOUS_METAL→metal`, `REAL_ESTATE→real_estate`, `OTHER|MANUAL|TREASURY_BONDS→other`. `CREDIT_CARD` debt (`cashBalance < 0`) adds to `liabilities` (shown when > 0); overpayment goes to `cash`. Mortgage-style liabilities (FR-029) are separate. Holdings valuations are not included. Rolling averages use the last 12 **complete** UTC months (excludes the current calendar month).
 
 ## Period KPIs and cashflow chart (FR-003 / FR-004)
 

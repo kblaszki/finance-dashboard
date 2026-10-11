@@ -147,11 +147,14 @@ test("seedDemoPortfolio matches ledger balances and scopes wipe to one user", as
       where: { userId: demo.id },
       orderBy: { name: "asc" },
     });
-    assert.equal(accounts.length, 4);
-    assert.deepEqual(
-      accounts.map((a) => a.name).sort(),
-      Object.values(DEMO_ACCOUNT_NAMES).slice().sort(),
-    );
+    assert.equal(accounts.length, 6);
+    for (const name of Object.values(DEMO_ACCOUNT_NAMES)) {
+      assert.ok(accounts.some((a) => a.name === name));
+    }
+    assert.ok(accounts.some((a) => a.accountType === "CREDIT_CARD"));
+    assert.ok(accounts.some((a) => a.accountType === "IKE"));
+    const card = accounts.find((a) => a.accountType === "CREDIT_CARD")!;
+    assert.equal(card.cashBalance, quantizeMajorToMinor(-800, "openingBalance"));
 
     const planned = buildDemoLedgerTxs(FIXED_NOW);
     const plannedTransfers = buildDemoTransfers(FIXED_NOW);
@@ -168,7 +171,8 @@ test("seedDemoPortfolio matches ledger balances and scopes wipe to one user", as
     assert.equal(transferCount, plannedTransfers.length);
 
     for (const account of accounts) {
-      const key = nameToKey.get(account.name)!;
+      const key = nameToKey.get(account.name);
+      if (!key) continue;
       const deltas: LedgerDeltaInput[] = planned
         .filter((t) => t.accountKey === key)
         .map((t) => ({ type: t.type, amount: t.amount }));

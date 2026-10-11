@@ -6,11 +6,34 @@ export const ACCOUNT_TYPES = [
   "CRYPTO",
   "PRECIOUS_METAL",
   "REAL_ESTATE",
+  "CREDIT_CARD",
+  "IKE",
+  "IKZE",
+  "TREASURY_BONDS",
   "OTHER",
   "MANUAL",
 ] as const;
 
 export type AccountType = (typeof ACCOUNT_TYPES)[number];
+
+const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
+  BANK: "Bank",
+  BROKERAGE: "Brokerage",
+  CRYPTO: "Crypto",
+  PRECIOUS_METAL: "Precious metal",
+  REAL_ESTATE: "Real estate",
+  CREDIT_CARD: "Credit card",
+  IKE: "IKE",
+  IKZE: "IKZE",
+  TREASURY_BONDS: "Treasury bonds",
+  OTHER: "Other",
+  MANUAL: "Manual",
+};
+
+export function accountTypeLabel(type: string): string {
+  const key = String(type).trim().toUpperCase() as AccountType;
+  return ACCOUNT_TYPE_LABELS[key] ?? type;
+}
 
 export type Account = {
   id: number;
