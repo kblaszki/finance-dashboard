@@ -64,16 +64,58 @@ export async function exportTransactionsCsv(accountId: number): Promise<Blob> {
   return apiClient.getBlob(`/api/accounts/${accountId}/transactions/export`);
 }
 
+export type ImportCategoryPreview = {
+  path: string;
+  ledgerType: CashTxType;
+  rowCount: number;
+  suggestedCategoryId: number | null;
+};
+
+export type ImportPreviewResult = {
+  rowCount: number;
+  categories: ImportCategoryPreview[];
+};
+
+export type ImportCategoryMapping =
+  | {
+      path: string;
+      ledgerType: CashTxType;
+      action: "map";
+      categoryId: number;
+    }
+  | {
+      path: string;
+      ledgerType: CashTxType;
+      action: "create";
+    }
+  | {
+      path: string;
+      ledgerType: CashTxType;
+      action: "none";
+    };
+
 export type ImportTransactionsResult = {
   created: number;
+  createdCategories: number;
 };
+
+export async function previewTransactionsImport(
+  accountId: number,
+  csv: string,
+): Promise<ImportPreviewResult> {
+  return apiClient.post<ImportPreviewResult>(
+    `/api/accounts/${accountId}/transactions/import/preview`,
+    { csv },
+  );
+}
 
 export async function importTransactionsCsv(
   accountId: number,
   csv: string,
+  categoryMappings: ImportCategoryMapping[],
 ): Promise<ImportTransactionsResult> {
   return apiClient.post<ImportTransactionsResult>(
     `/api/accounts/${accountId}/transactions/import`,
-    { csv },
+    { csv, categoryMappings },
   );
 }

@@ -28,6 +28,7 @@ vi.mock("../api/transactionsApi", async () => {
     deleteTransaction: vi.fn(),
     updateTransaction: vi.fn(),
     exportTransactionsCsv: vi.fn(),
+    previewTransactionsImport: vi.fn(),
     importTransactionsCsv: vi.fn(),
   };
 });
@@ -44,6 +45,7 @@ import {
   exportTransactionsCsv,
   fetchTransactions,
   importTransactionsCsv,
+  previewTransactionsImport,
 } from "../api/transactionsApi";
 
 const account = {
@@ -119,7 +121,14 @@ describe("AccountDetailPage", () => {
     vi.mocked(createTransaction).mockResolvedValue(coffee);
     vi.mocked(deleteTransaction).mockResolvedValue(undefined);
     vi.mocked(exportTransactionsCsv).mockResolvedValue(new Blob(["id\n"]));
-    vi.mocked(importTransactionsCsv).mockResolvedValue({ created: 1 });
+    vi.mocked(previewTransactionsImport).mockResolvedValue({
+      rowCount: 0,
+      categories: [],
+    });
+    vi.mocked(importTransactionsCsv).mockResolvedValue({
+      created: 1,
+      createdCategories: 0,
+    });
     URL.createObjectURL = vi.fn(() => "blob:ledger");
     URL.revokeObjectURL = vi.fn();
     vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
@@ -162,7 +171,7 @@ describe("AccountDetailPage", () => {
     });
   });
 
-  it("triggers CSV export and import", async () => {
+  it("triggers CSV export and imports when preview has no categories", async () => {
     renderLedger();
     await screen.findByText("Coffee");
     fireEvent.click(screen.getByRole("button", { name: "Download CSV" }));
@@ -171,13 +180,74 @@ describe("AccountDetailPage", () => {
     });
 
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
-    const file = new File(["id\n"], "ledger.csv", { type: "text/csv" });
-    Object.defineProperty(file, "text", { value: () => Promise.resolve("id\n") });
+    const file = new File(["csv"], "ledger.csv", { type: "text/csv" });
+    Object.defineProperty(file, "text", {
+      value: () => Promise.resolve("header-only\n"),
+    });
     fireEvent.change(input, { target: { files: [file] } });
     await waitFor(() => {
-      expect(importTransactionsCsv).toHaveBeenCalledWith(1, "id\n");
+      expect(previewTransactionsImport).toHaveBeenCalledWith(1, "header-only\n");
+      expect(importTransactionsCsv).toHaveBeenCalledWith(1, "header-only\n", []);
     });
     expect(await screen.findByText("Imported 1 transaction(s).")).toBeTruthy();
+  });
+
+  it("shows mapping panel and imports after category decisions", async () => {
+    vi.mocked(previewTransactionsImport).mockResolvedValue({
+      rowCount: 2,
+      categories: [
+        {
+          path: "Food",
+          ledgerType: "EXPENSE",
+          rowCount: 1,
+          suggestedCategoryId: 2,
+        },
+        {
+          path: "NewPath",
+          ledgerType: "EXPENSE",
+          rowCount: 1,
+          suggestedCategoryId: null,
+        },
+      ],
+    });
+
+    renderLedger();
+    await screen.findByText("Coffee");
+
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File(["csv-body"], "ledger.csv", { type: "text/csv" });
+    Object.defineProperty(file, "text", {
+      value: () => Promise.resolve("csv-body"),
+    });
+    fireEvent.change(input, { target: { files: [file] } });
+
+    expect(await screen.findByText("Map import categories")).toBeTruthy();
+    const importBtn = screen.getByRole("button", {
+      name: "Import",
+    }) as HTMLButtonElement;
+    expect(importBtn.disabled).toBe(true);
+
+    fireEvent.change(screen.getByLabelText("Mapping for NewPath"), {
+      target: { value: "create" },
+    });
+    expect(importBtn.disabled).toBe(false);
+
+    fireEvent.click(importBtn);
+    await waitFor(() => {
+      expect(importTransactionsCsv).toHaveBeenCalledWith(1, "csv-body", [
+        {
+          path: "Food",
+          ledgerType: "EXPENSE",
+          action: "map",
+          categoryId: 2,
+        },
+        {
+          path: "NewPath",
+          ledgerType: "EXPENSE",
+          action: "create",
+        },
+      ]);
+    });
   });
 
   it("rejects an invalid account id", () => {

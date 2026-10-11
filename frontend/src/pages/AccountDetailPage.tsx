@@ -8,18 +8,28 @@ import {
   updateTransaction,
   exportTransactionsCsv,
   importTransactionsCsv,
+  previewTransactionsImport,
   fetchTransactions,
   type CashTransaction,
   type CreateCashTransactionInput,
+  type ImportCategoryMapping,
+  type ImportCategoryPreview,
 } from "../api/transactionsApi";
 import { AccountBalanceChart } from "../components/account/AccountBalanceChart";
 import { AccountLedgerHeader } from "../components/account/AccountLedgerHeader";
 import { AccountSubtitle } from "../components/account/AccountSubtitle";
+import { ImportCategoryMappingPanel } from "../components/account/ImportCategoryMappingPanel";
 import { LedgerTable } from "../components/account/LedgerTable";
 import { PageHeader } from "../components/ui/PageHeader";
 import { StatusBlock } from "../components/ui/StatusBlock";
 import { useAsyncData } from "../hooks/useAsyncData";
 import { useCurrency } from "../state/currency";
+
+type PendingImport = {
+  csv: string;
+  rowCount: number;
+  categories: ImportCategoryPreview[];
+};
 
 export function AccountDetailPage() {
   const { id } = useParams();
@@ -71,7 +81,10 @@ export function AccountDetailPage() {
     reload: reloadHistory,
   } = useAsyncData(loadHistory);
 
-  const { data: categories } = useAsyncData(loadCategories);
+  const {
+    data: categories,
+    reload: reloadCategories,
+  } = useAsyncData(loadCategories);
 
   const categoryNameById = useMemo(() => {
     const map = new Map<number, string>();
@@ -85,11 +98,15 @@ export function AccountDetailPage() {
   const [importMsg, setImportMsg] = useState<string | null>(null);
   const [exportBusy, setExportBusy] = useState(false);
   const [importBusy, setImportBusy] = useState(false);
+  const [pendingImport, setPendingImport] = useState<PendingImport | null>(
+    null,
+  );
 
   async function refresh() {
     reloadAccount();
     reloadTx();
     reloadHistory();
+    reloadCategories();
     refreshAccounts();
   }
 
@@ -118,15 +135,52 @@ export function AccountDetailPage() {
     }
   }
 
+  async function runImport(
+    csv: string,
+    categoryMappings: ImportCategoryMapping[],
+  ) {
+    setImportBusy(true);
+    setActionErr(null);
+    setImportMsg(null);
+    try {
+      const result = await importTransactionsCsv(
+        accountId,
+        csv,
+        categoryMappings,
+      );
+      const createdNote =
+        result.createdCategories > 0
+          ? `Imported ${result.created} transaction(s); created ${result.createdCategories} categor${result.createdCategories === 1 ? "y" : "ies"}.`
+          : `Imported ${result.created} transaction(s).`;
+      setImportMsg(createdNote);
+      setPendingImport(null);
+      await refresh();
+    } catch (err) {
+      setActionErr(err instanceof Error ? err.message : "Import failed");
+    } finally {
+      setImportBusy(false);
+    }
+  }
+
   async function handleImportCsvFile(file: File) {
     setActionErr(null);
     setImportMsg(null);
+    setPendingImport(null);
     setImportBusy(true);
     try {
       const csv = await file.text();
-      const result = await importTransactionsCsv(accountId, csv);
-      setImportMsg(`Imported ${result.created} transaction(s).`);
-      await refresh();
+      const preview = await previewTransactionsImport(accountId, csv);
+      if (preview.categories.length === 0) {
+        const result = await importTransactionsCsv(accountId, csv, []);
+        setImportMsg(`Imported ${result.created} transaction(s).`);
+        await refresh();
+        return;
+      }
+      setPendingImport({
+        csv,
+        rowCount: preview.rowCount,
+        categories: preview.categories,
+      });
     } catch (err) {
       setActionErr(err instanceof Error ? err.message : "Import failed");
     } finally {
@@ -211,6 +265,20 @@ export function AccountDetailPage() {
 
       {actionErr && <p className="error-banner">{actionErr}</p>}
       {importMsg && <p className="success-banner">{importMsg}</p>}
+
+      {pendingImport && (
+        <ImportCategoryMappingPanel
+          key={`${pendingImport.rowCount}-${pendingImport.categories.map((c) => c.path).join("|")}`}
+          previewCategories={pendingImport.categories}
+          ownedCategories={categories ?? []}
+          rowCount={pendingImport.rowCount}
+          busy={importBusy}
+          onConfirm={(mappings) => {
+            void runImport(pendingImport.csv, mappings);
+          }}
+          onCancel={() => setPendingImport(null)}
+        />
+      )}
 
       <section className="card form-section-gap">
         <h2 className="section-title">Ledger</h2>

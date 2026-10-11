@@ -19,17 +19,20 @@ Restore or bulk-load ledger rows from a spreadsheet or prior export without rety
 
 | Kind | Location |
 |------|----------|
-| UI | `/accounts/:id` — Upload CSV on `AccountDetailPage` |
-| API | `POST /api/accounts/:accountId/transactions/import` |
-| Code | `domain/cashLedgerCsvImport.ts`; `cashTransactionsRoutes.ts`; `transactionsApi.importTransactionsCsv` |
+| UI | `/accounts/:id` — Upload CSV → `ImportCategoryMappingPanel` when categories are present |
+| API | `POST …/import/preview`, `POST …/import` with `categoryMappings` |
+| Code | `cashLedgerCsvImport.ts`; `cashLedgerImportCategories.ts`; `cashTransactionsRoutes.ts`; `transactionsApi.previewTransactionsImport` / `importTransactionsCsv` |
 
 ## Acceptance
 
 - [x] Owner imports CSV matching export header; new rows created; balance updated
 - [x] `id` / `createdAt` ignored (re-import duplicates)
-- [x] Currency empty or must match account; category by owned id or unique name
+- [x] Currency required and must match account
+- [x] Each used `(categoryPath, ledgerType)` requires explicit `map` / `create` / `none`
+- [x] Preview suggests exact path matches; UI blocks Import until every category is decided
+- [x] Legacy `categoryId,categoryName` header → `400` (re-export required)
 - [x] Invalid row → `400` with `details`; nothing written
-- [x] Header-only → `{ created: 0 }`
+- [x] Header-only / no categories → `{ created, createdCategories: 0 }`
 - [x] UI Upload CSV next to Download CSV
 
 ## Implementation notes
@@ -40,4 +43,5 @@ Restore or bulk-load ledger rows from a spreadsheet or prior export without rety
 ## Out of scope / follow-ups
 
 - Bank/broker CSV import — [FR-019](../import/csv-import-bank-broker.md)
+- Fuzzy matching / saved mapping presets
 - Idempotent / upsert by id

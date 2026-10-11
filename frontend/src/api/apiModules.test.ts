@@ -38,6 +38,7 @@ import {
   updateTransaction,
   exportTransactionsCsv,
   importTransactionsCsv,
+  previewTransactionsImport,
 } from './transactionsApi'
 import {
   fetchCategories,
@@ -180,10 +181,16 @@ describe('API modules', () => {
       '/api/accounts/3/transactions/export',
     )
 
-    await importTransactionsCsv(3, 'id,type\n')
+    await previewTransactionsImport(3, 'id,type\n')
+    expect(apiClient.post).toHaveBeenCalledWith(
+      '/api/accounts/3/transactions/import/preview',
+      { csv: 'id,type\n' },
+    )
+
+    await importTransactionsCsv(3, 'id,type\n', [])
     expect(apiClient.post).toHaveBeenCalledWith(
       '/api/accounts/3/transactions/import',
-      { csv: 'id,type\n' },
+      { csv: 'id,type\n', categoryMappings: [] },
     )
   })
 

@@ -27,12 +27,14 @@ Users can take a portable snapshot of an account’s cash movements for spreadsh
 
 - [x] Owner downloads CSV of all cash txs for any owned allow-listed account
 - [x] Unauthenticated → 401; unknown/unowned → 404; malformed id → 400
-- [x] Stable header; RFC4180 escaping; category name when tagged; Excel formula neutralization
+- [x] Stable header `…,categoryPath,createdAt`; RFC4180 escaping; full category path when tagged; Excel formula neutralization
 - [x] Empty ledger returns header-only CSV (`200`)
 - [x] UI Download CSV on account detail
+- [x] No DB `categoryId` in the file (path text only)
 
 ## Implementation notes
 
+- Path segments join with `/`; escape `\` and `/` inside names (`Food/A\/B`)
 - Docs: [docs/reference/api.md](../../../docs/reference/api.md), [docs/reference/frontend.md](../../../docs/reference/frontend.md)
 - Traceability: [docs/reference/requirements.md](../../../docs/reference/requirements.md)
 - Code map: [docs/meta/code-map.md](../../../docs/meta/code-map.md)
