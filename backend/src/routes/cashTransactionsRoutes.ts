@@ -12,13 +12,20 @@ import {
 import { minorToDecimal, minorToMajor } from "../domain/money";
 import {
   buildCashLedgerCsv,
+  buildCategoryPathMap,
   cashLedgerExportFilename,
 } from "../domain/cashLedgerCsv";
 import {
   formatImportErrors,
   parseCashLedgerCsvImport,
-  resolveImportCategoryIds,
 } from "../domain/cashLedgerCsvImport";
+import {
+  applyCategoryMappings,
+  collectUsedCategories,
+  parseCategoryMappings,
+  resolveDraftsWithMappings,
+  suggestCategoryMatches,
+} from "../domain/cashLedgerImportCategories";
 import {
   badRequest,
   handleRouteError,
@@ -123,12 +130,28 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
     async (req: AuthedRequest, res) => {
       try {
         const accountId = parseIdParam(req.params.accountId, "accountId");
-        const account = await findOwnedAccount(prisma, uid(req), accountId);
-        const rows = await prisma.cashTransaction.findMany({
-          where: { accountId },
-          orderBy: [{ occurredAt: "asc" }, { id: "asc" }],
-          include: { category: { select: { name: true } } },
-        });
+        const userId = uid(req);
+        const account = await findOwnedAccount(prisma, userId, accountId);
+        const [rows, categories] = await Promise.all([
+          prisma.cashTransaction.findMany({
+            where: { accountId },
+            orderBy: [{ occurredAt: "asc" }, { id: "asc" }],
+            select: {
+              id: true,
+              type: true,
+              amount: true,
+              occurredAt: true,
+              description: true,
+              categoryId: true,
+              createdAt: true,
+            },
+          }),
+          prisma.category.findMany({
+            where: { userId },
+            select: { id: true, name: true, parentId: true },
+          }),
+        ]);
+        const pathById = buildCategoryPathMap(categories);
         const csv = buildCashLedgerCsv({
           currency: account.currency,
           rows: rows.map((row) => ({
@@ -137,8 +160,10 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
             amount: minorToMajor(row.amount),
             occurredAt: row.occurredAt,
             description: row.description,
-            categoryId: row.categoryId,
-            categoryName: row.category?.name ?? null,
+            categoryPath:
+              row.categoryId == null
+                ? null
+                : (pathById.get(row.categoryId) ?? null),
             createdAt: row.createdAt,
           })),
         });
@@ -156,12 +181,13 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
   );
 
   router.post(
-    "/api/accounts/:accountId/transactions/import",
+    "/api/accounts/:accountId/transactions/import/preview",
     requireAuth,
     async (req: AuthedRequest, res) => {
       try {
         const accountId = parseIdParam(req.params.accountId, "accountId");
-        const account = await findOwnedAccount(prisma, uid(req), accountId);
+        const userId = uid(req);
+        const account = await findOwnedAccount(prisma, userId, accountId);
         const csv = req.body?.csv;
         if (typeof csv !== "string") {
           throw badRequest("csv string required");
@@ -177,33 +203,93 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
         }
 
         const ownedCategories = await prisma.category.findMany({
-          where: { userId: uid(req) },
-          select: { id: true, name: true, ledgerType: true },
+          where: { userId },
+          select: { id: true, name: true, parentId: true, ledgerType: true },
         });
-        const resolved = resolveImportCategoryIds(parsed.drafts, ownedCategories);
-        if (!resolved.ok) {
+        const used = collectUsedCategories(parsed.drafts);
+        const categories = suggestCategoryMatches(used, ownedCategories);
+        res.status(200).json({
+          rowCount: parsed.drafts.length,
+          categories,
+        });
+      } catch (e: unknown) {
+        handleRouteError(res, e, "Failed to preview import");
+      }
+    },
+  );
+
+  router.post(
+    "/api/accounts/:accountId/transactions/import",
+    requireAuth,
+    async (req: AuthedRequest, res) => {
+      try {
+        const accountId = parseIdParam(req.params.accountId, "accountId");
+        const userId = uid(req);
+        const account = await findOwnedAccount(prisma, userId, accountId);
+        const csv = req.body?.csv;
+        if (typeof csv !== "string") {
+          throw badRequest("csv string required");
+        }
+
+        const parsed = parseCashLedgerCsvImport(csv, account.currency);
+        if (!parsed.ok) {
           res.status(400).json({
-            error: formatImportErrors(resolved.errors),
-            details: resolved.errors,
+            error: formatImportErrors(parsed.errors),
+            details: parsed.errors,
           });
           return;
         }
 
-        const created = await prisma.$transaction((tx) =>
-          postCashTransactionBatch(
-            tx,
-            accountId,
-            resolved.rows.map((row) => ({
-              type: row.type,
-              amount: parsePositiveAmount(row.amount),
-              occurredAt: row.occurredAt,
-              description: row.description,
-              categoryId: row.categoryId,
-            })),
-          ),
+        const used = collectUsedCategories(parsed.drafts);
+        const mappingsResult = parseCategoryMappings(
+          req.body?.categoryMappings,
+          used,
+        );
+        if (!mappingsResult.ok) {
+          res.status(400).json({
+            error: formatImportErrors(mappingsResult.errors),
+            details: mappingsResult.errors,
+          });
+          return;
+        }
+
+        const ownedCategories = await prisma.category.findMany({
+          where: { userId },
+          select: { id: true, name: true, parentId: true, ledgerType: true },
+        });
+
+        const { created, createdCategories } = await prisma.$transaction(
+          async (tx) => {
+            const applied = await applyCategoryMappings(
+              tx,
+              userId,
+              mappingsResult.mappings,
+              used,
+              ownedCategories,
+            );
+            const resolved = resolveDraftsWithMappings(
+              parsed.drafts,
+              applied.resolvedIds,
+            );
+            const createdCount = await postCashTransactionBatch(
+              tx,
+              accountId,
+              resolved.map((row) => ({
+                type: row.type,
+                amount: parsePositiveAmount(row.amount),
+                occurredAt: row.occurredAt,
+                description: row.description,
+                categoryId: row.categoryId,
+              })),
+            );
+            return {
+              created: createdCount,
+              createdCategories: applied.createdCategories,
+            };
+          },
         );
 
-        res.status(201).json({ created });
+        res.status(201).json({ created, createdCategories });
       } catch (e: unknown) {
         handleRouteError(res, e, "Failed to import transactions");
       }

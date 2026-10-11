@@ -717,7 +717,7 @@ test("GET /api/accounts/:id/transactions/export returns CSV with auth and owners
   );
   assert.equal(
     empty.text,
-    "id,type,amount,currency,occurredAt,description,categoryId,categoryName,createdAt\n",
+    "id,type,amount,currency,occurredAt,description,categoryPath,createdAt\n",
   );
 
   const cats = await request(app)
@@ -756,13 +756,13 @@ test("GET /api/accounts/:id/transactions/export returns CSV with auth and owners
   const lines = exported.text.trimEnd().split("\n");
   assert.equal(
     lines[0],
-    "id,type,amount,currency,occurredAt,description,categoryId,categoryName,createdAt",
+    "id,type,amount,currency,occurredAt,description,categoryPath,createdAt",
   );
   assert.equal(lines.length, 3);
   assert.match(lines[1]!, /^[0-9]+,EXPENSE,10\.00,EUR,/);
   assert.match(lines[1]!, /,'=1\+1,,/);
   assert.match(lines[2]!, /,INCOME,100\.50,EUR,/);
-  assert.match(lines[2]!, /,"Pay, bonus",\d+,Salary,/);
+  assert.match(lines[2]!, /,"Pay, bonus",Salary,/);
 
   const forbidden = await request(app)
     .get(`/api/accounts/${accountId}/transactions/export`)
@@ -770,7 +770,7 @@ test("GET /api/accounts/:id/transactions/export returns CSV with auth and owners
   assert.equal(forbidden.status, 404);
 });
 
-test("POST /api/accounts/:id/transactions/import creates rows and updates balance", async () => {
+test("POST /api/accounts/:id/transactions/import preview and mapped import", async () => {
   const token = await registerAndLogin(
     "csvimport@test.local",
     "csvimport",
@@ -782,7 +782,9 @@ test("POST /api/accounts/:id/transactions/import creates rows and updates balanc
     "password123",
   );
 
-  const unauth = await request(app).post("/api/accounts/1/transactions/import");
+  const unauth = await request(app).post(
+    "/api/accounts/1/transactions/import/preview",
+  );
   assert.equal(unauth.status, 401);
 
   const account = await request(app)
@@ -807,44 +809,178 @@ test("POST /api/accounts/:id/transactions/import creates rows and updates balanc
   assert.ok(food);
 
   const header =
-    "id,type,amount,currency,occurredAt,description,categoryId,categoryName,createdAt";
+    "id,type,amount,currency,occurredAt,description,categoryPath,createdAt";
   const csv = [
     header,
-    `,INCOME,50.00,PLN,2024-03-01T12:00:00.000Z,Salary,,,`,
-    `,EXPENSE,20.00,PLN,2024-03-02T12:00:00.000Z,Lunch,${food!.id},Food,`,
+    `,INCOME,50.00,PLN,2024-03-01T12:00:00.000Z,Pay,,`,
+    `,EXPENSE,20.00,PLN,2024-03-02T12:00:00.000Z,Lunch,Food,`,
+    `,EXPENSE,5.00,PLN,2024-03-03T12:00:00.000Z,Shop,Food/Groceries,`,
   ].join("\n");
+
+  const legacy = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import/preview`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      csv: "id,type,amount,currency,occurredAt,description,categoryId,categoryName,createdAt\n",
+    });
+  assert.equal(legacy.status, 400);
+  assert.match(String(legacy.body.error), /re-export/i);
+
+  const preview = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import/preview`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv });
+  assert.equal(preview.status, 200);
+  assert.equal(preview.body.rowCount, 3);
+  assert.equal(preview.body.categories.length, 2);
+  const foodPreview = (
+    preview.body.categories as Array<{
+      path: string;
+      suggestedCategoryId: number | null;
+    }>
+  ).find((c) => c.path === "Food");
+  assert.ok(foodPreview);
+  assert.equal(foodPreview!.suggestedCategoryId, food!.id);
+  const groceriesPreview = (
+    preview.body.categories as Array<{
+      path: string;
+      suggestedCategoryId: number | null;
+    }>
+  ).find((c) => c.path === "Food/Groceries");
+  assert.ok(groceriesPreview);
+  assert.equal(groceriesPreview!.suggestedCategoryId, null);
+
+  const missingMap = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv, categoryMappings: [] });
+  assert.equal(missingMap.status, 400);
+  assert.match(String(missingMap.body.error), /missing mapping/i);
+
+  const foreignMap = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      csv,
+      categoryMappings: [
+        { path: "Food", ledgerType: "EXPENSE", action: "map", categoryId: 999999 },
+        { path: "Food/Groceries", ledgerType: "EXPENSE", action: "create" },
+      ],
+    });
+  assert.equal(foreignMap.status, 400);
+  assert.match(String(foreignMap.body.error), /not found/i);
 
   const imported = await request(app)
     .post(`/api/accounts/${accountId}/transactions/import`)
     .set("Authorization", `Bearer ${token}`)
-    .send({ csv });
+    .send({
+      csv,
+      categoryMappings: [
+        {
+          path: "Food",
+          ledgerType: "EXPENSE",
+          action: "map",
+          categoryId: food!.id,
+        },
+        { path: "Food/Groceries", ledgerType: "EXPENSE", action: "create" },
+      ],
+    });
   assert.equal(imported.status, 201);
-  assert.equal(imported.body.created, 2);
+  assert.equal(imported.body.created, 3);
+  assert.equal(imported.body.createdCategories, 1);
 
   const listed = await request(app)
     .get(`/api/accounts/${accountId}/transactions`)
     .set("Authorization", `Bearer ${token}`);
   assert.equal(listed.status, 200);
-  assert.equal(listed.body.length, 2);
+  assert.equal(listed.body.length, 3);
+  const lunch = (
+    listed.body as Array<{ description: string | null; categoryId: number | null }>
+  ).find((t) => t.description === "Lunch");
+  assert.equal(lunch!.categoryId, food!.id);
+
+  const catsAfter = await request(app)
+    .get("/api/categories")
+    .set("Authorization", `Bearer ${token}`);
+  const groceries = (
+    catsAfter.body as Array<{ id: number; name: string; parentId: number | null }>
+  ).find((c) => c.name === "Groceries" && c.parentId === food!.id);
+  assert.ok(groceries);
 
   const detail = await request(app)
     .get(`/api/accounts/${accountId}`)
     .set("Authorization", `Bearer ${token}`);
   assert.equal(detail.status, 200);
-  assert.equal(detail.body.cashBalance, 130);
+  assert.equal(detail.body.cashBalance, 125);
+
+  const roundTrip = await request(app)
+    .get(`/api/accounts/${accountId}/transactions/export`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(roundTrip.status, 200);
+  const reimportPreview = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import/preview`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv: roundTrip.text });
+  assert.equal(reimportPreview.status, 200);
+  assert.ok(reimportPreview.body.rowCount >= 3);
+  const suggested = (
+    reimportPreview.body.categories as Array<{
+      path: string;
+      ledgerType: string;
+      suggestedCategoryId: number | null;
+    }>
+  ).filter((c) => c.suggestedCategoryId != null);
+  assert.ok(suggested.length >= 1);
+  const reimported = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      csv: roundTrip.text,
+      categoryMappings: (
+        reimportPreview.body.categories as Array<{
+          path: string;
+          ledgerType: string;
+          suggestedCategoryId: number | null;
+        }>
+      ).map((c) =>
+        c.suggestedCategoryId != null
+          ? {
+              path: c.path,
+              ledgerType: c.ledgerType,
+              action: "map" as const,
+              categoryId: c.suggestedCategoryId,
+            }
+          : {
+              path: c.path,
+              ledgerType: c.ledgerType,
+              action: "none" as const,
+            },
+      ),
+    });
+  assert.equal(reimported.status, 201);
+  assert.equal(reimported.body.created, reimportPreview.body.rowCount);
+
+  const noCatCsv = `${header}\n,INCOME,10.00,PLN,2024-04-01T12:00:00.000Z,Bonus,,\n`;
+  const emptyCats = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv: noCatCsv, categoryMappings: [] });
+  assert.equal(emptyCats.status, 201);
+  assert.equal(emptyCats.body.created, 1);
+  assert.equal(emptyCats.body.createdCategories, 0);
 
   const empty = await request(app)
     .post(`/api/accounts/${accountId}/transactions/import`)
     .set("Authorization", `Bearer ${token}`)
-    .send({ csv: `${header}\n` });
+    .send({ csv: `${header}\n`, categoryMappings: [] });
   assert.equal(empty.status, 201);
   assert.equal(empty.body.created, 0);
 
   const badCurrency = await request(app)
-    .post(`/api/accounts/${accountId}/transactions/import`)
+    .post(`/api/accounts/${accountId}/transactions/import/preview`)
     .set("Authorization", `Bearer ${token}`)
     .send({
-      csv: `${header}\n,INCOME,1.00,USD,2024-01-01T00:00:00.000Z,,,,\n`,
+      csv: `${header}\n,INCOME,1.00,USD,2024-01-01T00:00:00.000Z,,,\n`,
     });
   assert.equal(badCurrency.status, 400);
   assert.ok(Array.isArray(badCurrency.body.details));
@@ -852,7 +988,7 @@ test("POST /api/accounts/:id/transactions/import creates rows and updates balanc
   const forbidden = await request(app)
     .post(`/api/accounts/${accountId}/transactions/import`)
     .set("Authorization", `Bearer ${otherToken}`)
-    .send({ csv: `${header}\n` });
+    .send({ csv: `${header}\n`, categoryMappings: [] });
   assert.equal(forbidden.status, 404);
 
   const missingCsv = await request(app)
@@ -865,7 +1001,8 @@ test("POST /api/accounts/:id/transactions/import creates rows and updates balanc
     .post(`/api/accounts/${accountId}/transactions/import`)
     .set("Authorization", `Bearer ${token}`)
     .send({
-      csv: `${header}\n,EXPENSE,1.00,,2024-01-01T00:00:00.000Z,,,,\n`,
+      csv: `${header}\n,EXPENSE,1.00,,2024-01-01T00:00:00.000Z,,,\n`,
+      categoryMappings: [],
     });
   assert.equal(emptyCurrency.status, 400);
   assert.match(emptyCurrency.body.details[0].message, /currency/);
@@ -874,7 +1011,8 @@ test("POST /api/accounts/:id/transactions/import creates rows and updates balanc
     .post(`/api/accounts/${accountId}/transactions/import`)
     .set("Authorization", `Bearer ${token}`)
     .send({
-      csv: `${header}\n,EXPENSE,0,PLN,2024-01-01T00:00:00.000Z,,,,\n`,
+      csv: `${header}\n,EXPENSE,0,PLN,2024-01-01T00:00:00.000Z,,,\n`,
+      categoryMappings: [],
     });
   assert.equal(badAmount.status, 400);
   assert.match(badAmount.body.details[0].message, /amount|positive/i);
