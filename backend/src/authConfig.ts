@@ -15,7 +15,7 @@ export function isPublishedJwtPlaceholder(secret: string): boolean {
   return PUBLISHED_JWT_PLACEHOLDERS.has(secret.trim());
 }
 
-/** Fail fast when production is misconfigured (open registration or missing JWT). */
+/** Fail fast when production is misconfigured (missing / placeholder JWT). */
 export function assertProductionEnvironment(): void {
   if (process.env.NODE_ENV !== "production") return;
 
@@ -25,11 +25,6 @@ export function assertProductionEnvironment(): void {
   }
   if (isPublishedJwtPlaceholder(secret)) {
     throw new Error("JWT_SECRET must not be a published placeholder in production");
-  }
-  if (isRegisterAllowed()) {
-    throw new Error(
-      "ALLOW_REGISTER must be false in production — set ALLOW_REGISTER=false after creating your user",
-    );
   }
 }
 

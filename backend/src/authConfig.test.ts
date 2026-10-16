@@ -32,7 +32,7 @@ test("isRegisterAllowed allows explicit true", () => {
   withEnv("true", () => assert.equal(isRegisterAllowed(), true));
 });
 
-test("assertProductionEnvironment requires JWT_SECRET and closed registration", () => {
+test("assertProductionEnvironment requires JWT_SECRET only", () => {
   const prevNode = process.env.NODE_ENV;
   const prevJwt = process.env.JWT_SECRET;
   const prevReg = process.env.ALLOW_REGISTER;
@@ -42,8 +42,8 @@ test("assertProductionEnvironment requires JWT_SECRET and closed registration", 
   try {
     assert.throws(() => assertProductionEnvironment(), /JWT_SECRET/);
     process.env.JWT_SECRET = "x".repeat(32);
-    assert.throws(() => assertProductionEnvironment(), /ALLOW_REGISTER/);
-    process.env.ALLOW_REGISTER = "false";
+    assert.doesNotThrow(() => assertProductionEnvironment());
+    process.env.ALLOW_REGISTER = "true";
     assert.doesNotThrow(() => assertProductionEnvironment());
     process.env.JWT_SECRET = "change-me-to-a-random-string-at-least-32-characters-long";
     assert.throws(() => assertProductionEnvironment(), /placeholder/);

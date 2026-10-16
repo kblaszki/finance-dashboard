@@ -38,7 +38,7 @@ Hub: [docs/README.md](../README.md).
 
 ## Production guards
 
-`assertProductionEnvironment` (`authConfig.ts`): when `NODE_ENV=production`, requires a long `JWT_SECRET` that is not a published placeholder (`change-me-to-a-random-string-at-least-32-characters-long`, `CHANGE_ME_LONG_RANDOM_32PLUS_CHARS`) and `ALLOW_REGISTER=false`.
+`assertProductionEnvironment` (`authConfig.ts`): when `NODE_ENV=production`, requires a long `JWT_SECRET` that is not a published placeholder (`change-me-to-a-random-string-at-least-32-characters-long`, `CHANGE_ME_LONG_RANDOM_32PLUS_CHARS`). `ALLOW_REGISTER` is independent — set `false` for closed private deploy, or `true` to allow self-service sign-up.
 
 ## Trust proxy
 
