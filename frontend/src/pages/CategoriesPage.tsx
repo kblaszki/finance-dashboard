@@ -9,15 +9,25 @@ import {
 import {
   createCategory,
   deleteCategory,
+  exportCategoriesCsv,
   fetchCategories,
   flattenCategoryTree,
+  importCategoriesCsv,
+  previewCategoriesImport,
   updateCategory,
+  type CategoriesImportPreview,
   type Category,
   type CategoryLedgerType,
 } from "../api/categoriesApi";
+import { AccountLedgerHeader } from "../components/account/AccountLedgerHeader";
 import { PageHeader } from "../components/ui/PageHeader";
 import { StatusBlock } from "../components/ui/StatusBlock";
 import { useAsyncData } from "../hooks/useAsyncData";
+
+type PendingCategoriesImport = {
+  csv: string;
+  preview: CategoriesImportPreview;
+};
 
 const SECTIONS: Array<{ ledgerType: CategoryLedgerType; title: string }> = [
   { ledgerType: "INCOME", title: "Income" },
@@ -231,6 +241,11 @@ export function CategoriesPage() {
   const [draft, setDraft] = useState("");
   const [editBusy, setEditBusy] = useState(false);
   const [actionErr, setActionErr] = useState<string | null>(null);
+  const [importMsg, setImportMsg] = useState<string | null>(null);
+  const [exportBusy, setExportBusy] = useState(false);
+  const [importBusy, setImportBusy] = useState(false);
+  const [pendingImport, setPendingImport] =
+    useState<PendingCategoriesImport | null>(null);
   const committingRef = useRef(false);
 
   const nameById = new Map((categories ?? []).map((c) => [c.id, c.name]));
@@ -345,14 +360,117 @@ export function CategoriesPage() {
     }
   }
 
+  async function handleExportCsv() {
+    setActionErr(null);
+    setImportMsg(null);
+    setExportBusy(true);
+    try {
+      const blob = await exportCategoriesCsv();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "categories.csv";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setActionErr(err instanceof Error ? err.message : "Export failed");
+    } finally {
+      setExportBusy(false);
+    }
+  }
+
+  async function handleImportCsvFile(file: File) {
+    setActionErr(null);
+    setImportMsg(null);
+    setPendingImport(null);
+    setImportBusy(true);
+    try {
+      const csv = await file.text();
+      const preview = await previewCategoriesImport(csv);
+      if (preview.rowCount === 0) {
+        setImportMsg("No categories in the CSV.");
+        return;
+      }
+      if (preview.toCreate === 0) {
+        setImportMsg(
+          preview.existing === 1
+            ? "All 1 category already exists."
+            : `All ${preview.existing} categories already exist.`,
+        );
+        return;
+      }
+      setPendingImport({ csv, preview });
+    } catch (err) {
+      setActionErr(err instanceof Error ? err.message : "Import failed");
+    } finally {
+      setImportBusy(false);
+    }
+  }
+
+  async function handleImportConfirm() {
+    if (!pendingImport) return;
+    setImportBusy(true);
+    setActionErr(null);
+    setImportMsg(null);
+    try {
+      const result = await importCategoriesCsv(pendingImport.csv);
+      setImportMsg(
+        `Created ${result.created}; skipped ${result.skipped}.`,
+      );
+      setPendingImport(null);
+      reload();
+    } catch (err) {
+      setActionErr(err instanceof Error ? err.message : "Import failed");
+    } finally {
+      setImportBusy(false);
+    }
+  }
+
   return (
     <>
       <PageHeader
         title="Categories"
         subtitle="Labels for cash transactions, split by income and expense type. Double-click a name or parent to edit."
+        actions={
+          <AccountLedgerHeader
+            exportBusy={exportBusy}
+            importBusy={importBusy}
+            onExport={() => void handleExportCsv()}
+            onImportFile={handleImportCsvFile}
+          />
+        }
       />
 
       {actionErr && <p className="error-banner">{actionErr}</p>}
+      {importMsg && <p className="success-banner">{importMsg}</p>}
+      {pendingImport && (
+        <section className="card form-section-gap" aria-label="Import categories">
+          <p>
+            Will create {pendingImport.preview.toCreate};{" "}
+            {pendingImport.preview.existing} already exist.
+          </p>
+          <div className="form-actions-row">
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={importBusy}
+              onClick={() => void handleImportConfirm()}
+            >
+              {importBusy ? "Importing…" : "Import"}
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={importBusy}
+              onClick={() => setPendingImport(null)}
+            >
+              Cancel
+            </button>
+          </div>
+        </section>
+      )}
       <StatusBlock
         loading={loading}
         error={error}

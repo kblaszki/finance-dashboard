@@ -41,6 +41,47 @@ export async function deleteCategory(id: number): Promise<void> {
   await apiClient.delete(`/api/categories/${id}`);
 }
 
+export type CategoryImportRowStatus = "exists" | "create";
+
+export type CategoryImportPreviewRow = {
+  path: string;
+  ledgerType: CategoryLedgerType;
+  status: CategoryImportRowStatus;
+};
+
+export type CategoriesImportPreview = {
+  rowCount: number;
+  existing: number;
+  toCreate: number;
+  rows: CategoryImportPreviewRow[];
+};
+
+export type ImportCategoriesResult = {
+  created: number;
+  skipped: number;
+};
+
+export async function exportCategoriesCsv(): Promise<Blob> {
+  return apiClient.getBlob("/api/categories/export");
+}
+
+export async function previewCategoriesImport(
+  csv: string,
+): Promise<CategoriesImportPreview> {
+  return apiClient.post<CategoriesImportPreview>(
+    "/api/categories/import/preview",
+    { csv },
+  );
+}
+
+export async function importCategoriesCsv(
+  csv: string,
+): Promise<ImportCategoriesResult> {
+  return apiClient.post<ImportCategoriesResult>("/api/categories/import", {
+    csv,
+  });
+}
+
 /** Flat list → depth-first rows ordered for indented UI. */
 export function flattenCategoryTree(categories: Category[]): Array<Category & { depth: number }> {
   const byParent = new Map<number | null, Category[]>();

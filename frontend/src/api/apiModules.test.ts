@@ -45,6 +45,9 @@ import {
   createCategory,
   updateCategory,
   deleteCategory,
+  exportCategoriesCsv,
+  previewCategoriesImport,
+  importCategoriesCsv,
 } from './categoriesApi'
 import {
   fetchCategoryBreakdown,
@@ -216,6 +219,19 @@ describe('API modules', () => {
 
     await deleteCategory(2)
     expect(apiClient.delete).toHaveBeenCalledWith('/api/categories/2')
+
+    await exportCategoriesCsv()
+    expect(apiClient.getBlob).toHaveBeenCalledWith('/api/categories/export')
+
+    await previewCategoriesImport('csv-body')
+    expect(apiClient.post).toHaveBeenCalledWith('/api/categories/import/preview', {
+      csv: 'csv-body',
+    })
+
+    await importCategoriesCsv('csv-body')
+    expect(apiClient.post).toHaveBeenCalledWith('/api/categories/import', {
+      csv: 'csv-body',
+    })
   })
 
   it('statisticsApi calls correct endpoints', async () => {
