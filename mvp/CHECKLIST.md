@@ -15,7 +15,7 @@ Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + c
 
 | done | stub | planned | in_progress | total |
 |------|------|---------|-------------|-------|
-| 17 | 0 | 46 | 0 | 63 |
+| 18 | 0 | 46 | 0 | 64 |
 
 ## Master table
 
@@ -55,6 +55,7 @@ Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + c
 | FR-031 | Crypto EOD sync on CRYPTO accounts | planned | [features/market-fx/crypto-eod-sync.md](features/market-fx/crypto-eod-sync.md) | MarketPricesStatus |
 | MVP-021 | STOCK/ETF market data sync | planned | [features/market-fx/stock-etf-market-sync.md](features/market-fx/stock-etf-market-sync.md) | Market sync + CLI |
 | FR-015 | Category tree CRUD | done | [features/budgets-categories/category-tree.md](features/budgets-categories/category-tree.md) | /categories |
+| MVP-016 | Categories CSV export and merge import | done | [features/budgets-categories/categories-csv-export-import.md](features/budgets-categories/categories-csv-export-import.md) | /categories Download/Upload CSV |
 | FR-017 | Monthly budgets vs spend | planned | [features/budgets-categories/monthly-budgets.md](features/budgets-categories/monthly-budgets.md) | /budgets |
 | FR-034 | Auto-categorization rules | planned | [features/budgets-categories/categorization-rules.md](features/budgets-categories/categorization-rules.md) | /categories |
 | FR-024 | Income events CRUD | planned | [features/income-liabilities/income-events.md](features/income-liabilities/income-events.md) | /income-events |
@@ -147,6 +148,7 @@ Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + c
 ### budgets-categories
 
 - **done** [FR-015 Category tree CRUD](features/budgets-categories/category-tree.md)
+- **done** [MVP-016 Categories CSV export and merge import](features/budgets-categories/categories-csv-export-import.md)
 - **planned** [FR-017 Monthly budgets vs spend](features/budgets-categories/monthly-budgets.md)
 - **planned** [FR-034 Auto-categorization rules](features/budgets-categories/categorization-rules.md)
 

@@ -13,6 +13,17 @@ import {
   parseOptionalParentId,
   resolveLedgerTypeForCreate,
 } from "../domain/categories";
+import {
+  buildCategoriesCsv,
+  categoriesExportFilename,
+  parseCategoriesCsv,
+} from "../domain/categoriesCsv";
+import {
+  applyCategoriesImport,
+  previewCategoriesImport,
+} from "../domain/categoriesImport";
+import { buildCategoryPathMap } from "../domain/cashLedgerCsv";
+import { formatImportErrors } from "../domain/cashLedgerCsvImport";
 import { badRequest, handleRouteError, parseIdParam } from "./httpSupport";
 
 type CategoriesDeps = {
@@ -40,6 +51,109 @@ export function createCategoriesRouter(deps: CategoriesDeps): Router {
       handleRouteError(res, e, "Failed to list categories");
     }
   });
+
+  router.get(
+    "/api/categories/export",
+    requireAuth,
+    async (req: AuthedRequest, res) => {
+      try {
+        const rows = await prisma.category.findMany({
+          where: { userId: uid(req) },
+          select: { id: true, name: true, parentId: true, ledgerType: true },
+        });
+        const pathById = buildCategoryPathMap(rows);
+        const csvRows = rows
+          .map((row) => {
+            const path = pathById.get(row.id);
+            if (!path) return null;
+            if (row.ledgerType !== "INCOME" && row.ledgerType !== "EXPENSE") {
+              return null;
+            }
+            return {
+              path,
+              ledgerType: row.ledgerType as "INCOME" | "EXPENSE",
+            };
+          })
+          .filter((r): r is { path: string; ledgerType: "INCOME" | "EXPENSE" } =>
+            r != null,
+          );
+        const csv = buildCategoriesCsv(csvRows);
+        res.setHeader("Content-Type", "text/csv; charset=utf-8");
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="${categoriesExportFilename()}"`,
+        );
+        res.status(200).send(csv);
+      } catch (e: unknown) {
+        handleRouteError(res, e, "Failed to export categories");
+      }
+    },
+  );
+
+  router.post(
+    "/api/categories/import/preview",
+    requireAuth,
+    async (req: AuthedRequest, res) => {
+      try {
+        const userId = uid(req);
+        const csv = req.body?.csv;
+        if (typeof csv !== "string") throw badRequest("csv string required");
+
+        const parsed = parseCategoriesCsv(csv);
+        if (!parsed.ok) {
+          res.status(400).json({
+            error: formatImportErrors(parsed.errors),
+            details: parsed.errors,
+          });
+          return;
+        }
+
+        const owned = await prisma.category.findMany({
+          where: { userId },
+          select: { id: true, name: true, parentId: true, ledgerType: true },
+        });
+        const preview = previewCategoriesImport(parsed.drafts, owned);
+        if (!preview.ok) {
+          throw badRequest(preview.message);
+        }
+        res.status(200).json(preview.preview);
+      } catch (e: unknown) {
+        handleRouteError(res, e, "Failed to preview categories import");
+      }
+    },
+  );
+
+  router.post(
+    "/api/categories/import",
+    requireAuth,
+    async (req: AuthedRequest, res) => {
+      try {
+        const userId = uid(req);
+        const csv = req.body?.csv;
+        if (typeof csv !== "string") throw badRequest("csv string required");
+
+        const parsed = parseCategoriesCsv(csv);
+        if (!parsed.ok) {
+          res.status(400).json({
+            error: formatImportErrors(parsed.errors),
+            details: parsed.errors,
+          });
+          return;
+        }
+
+        const owned = await prisma.category.findMany({
+          where: { userId },
+          select: { id: true, name: true, parentId: true, ledgerType: true },
+        });
+        const result = await prisma.$transaction(async (tx) =>
+          applyCategoriesImport(tx, userId, parsed.drafts, owned),
+        );
+        res.status(201).json(result);
+      } catch (e: unknown) {
+        handleRouteError(res, e, "Failed to import categories");
+      }
+    },
+  );
 
   router.post("/api/categories", requireAuth, async (req: AuthedRequest, res) => {
     try {

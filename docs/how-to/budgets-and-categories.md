@@ -23,6 +23,7 @@ This page covers the shipped category tree and optional cash tagging. Monthly bu
 2. Open `/categories` (AppShell nav): separate **Income** and **Expense** sections, each with an inline create row (name + optional parent, Enter to add). Edit like the cash ledger: double-click Name or Parent, Enter to save, Escape or click outside to cancel (same-type reparent only). Delete from the Actions column; new roots inherit the section’s `ledgerType`.
 3. API: `GET|POST /api/categories`, `PATCH|DELETE /api/categories/:id`.
 4. Delete returns `409` when the category has children. Deleting a leaf clears `CashTransaction.categoryId` (`SetNull`).
+5. **CSV:** Download / Upload on `/categories` (`GET /api/categories/export`, `POST …/import/preview`, `POST …/import`). Format `path,ledgerType`. Import **merges**: existing path+type skipped, missing paths created; never deletes. Prefer importing the category tree before a ledger CSV when moving between environments.
 
 ## Tag a cash transaction
 

@@ -1300,6 +1300,89 @@ test("categories CRUD supports nesting, rename, reparent, and delete rules", asy
   assert.equal(deleted.status, 204);
 });
 
+test("GET/POST /api/categories export import preview merge", async () => {
+  const token = await registerAndLogin(
+    "catscsv@test.local",
+    "catscsv",
+    "password123",
+  );
+  const otherToken = await registerAndLogin(
+    "catscsvother@test.local",
+    "catscsvother",
+    "password123",
+  );
+
+  const unauth = await request(app).get("/api/categories/export");
+  assert.equal(unauth.status, 401);
+
+  const exported = await request(app)
+    .get("/api/categories/export")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(exported.status, 200);
+  assert.match(exported.headers["content-type"] ?? "", /text\/csv/);
+  assert.match(exported.text, /^path,ledgerType\n/);
+  assert.match(exported.text, /Food,EXPENSE/);
+  assert.match(exported.text, /Salary,INCOME/);
+
+  const csv = [
+    "path,ledgerType",
+    "Food,EXPENSE",
+    "Food/Groceries,EXPENSE",
+    "Side hustle,INCOME",
+  ].join("\n");
+
+  const preview = await request(app)
+    .post("/api/categories/import/preview")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv });
+  assert.equal(preview.status, 200);
+  assert.equal(preview.body.rowCount, 3);
+  assert.equal(preview.body.existing, 1);
+  assert.equal(preview.body.toCreate, 2);
+
+  const imported = await request(app)
+    .post("/api/categories/import")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv });
+  assert.equal(imported.status, 201);
+  assert.equal(imported.body.created, 2);
+  assert.equal(imported.body.skipped, 1);
+
+  const listed = await request(app)
+    .get("/api/categories")
+    .set("Authorization", `Bearer ${token}`);
+  const names = (listed.body as Array<{ name: string }>).map((c) => c.name);
+  assert.ok(names.includes("Groceries"));
+  assert.ok(names.includes("Side hustle"));
+
+  const reimport = await request(app)
+    .post("/api/categories/import")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv });
+  assert.equal(reimport.status, 201);
+  assert.equal(reimport.body.created, 0);
+  assert.equal(reimport.body.skipped, 3);
+
+  const conflict = await request(app)
+    .post("/api/categories/import/preview")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv: "path,ledgerType\nFood,INCOME\n" });
+  assert.equal(conflict.status, 400);
+
+  const foreign = await request(app)
+    .post("/api/categories/import")
+    .set("Authorization", `Bearer ${otherToken}`)
+    .send({ csv: "path,ledgerType\nOnlyOther,EXPENSE\n" });
+  assert.equal(foreign.status, 201);
+  const otherList = await request(app)
+    .get("/api/categories")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(
+    (otherList.body as Array<{ name: string }>).some((c) => c.name === "OnlyOther"),
+    false,
+  );
+});
+
 test("category and foreign-account writes return 404 for another user", async () => {
   const token = await registerAndLogin("owneridor@test.local", "owneridor", "password123");
   const otherToken = await registerAndLogin("otheridor@test.local", "otheridor", "password123");
