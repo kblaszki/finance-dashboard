@@ -60,6 +60,29 @@ function usedKey(path: string, ledgerType: string): string {
   return `${ledgerType}\0${path}`;
 }
 
+/**
+ * Resolve legacy categoryId onto full categoryPath when the id is owned and
+ * ledgerType matches the row. Otherwise keep the parser's name-based path (or null).
+ */
+export function enrichLegacyCategoryPaths(
+  drafts: CashLedgerImportDraft[],
+  owned: OwnedCategoryRow[],
+): CashLedgerImportDraft[] {
+  const byId = new Map(owned.map((c) => [c.id, c]));
+  const pathById = buildCategoryPathMap(owned);
+
+  return drafts.map((draft) => {
+    if (draft.legacyCategoryId == null) return draft;
+    const cat = byId.get(draft.legacyCategoryId);
+    if (!cat || cat.ledgerType !== draft.type) return draft;
+    const pathStr = pathById.get(cat.id);
+    if (!pathStr) return draft;
+    const parsed = parseCategoryPath(pathStr);
+    if (!parsed.ok || parsed.segments.length === 0) return draft;
+    return { ...draft, categoryPath: parsed.segments };
+  });
+}
+
 /** Collect unique (path, ledgerType) pairs from drafts that have a category path. */
 export function collectUsedCategories(
   drafts: CashLedgerImportDraft[],

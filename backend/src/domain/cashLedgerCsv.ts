@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 export const CASH_LEDGER_CSV_HEADER =
   "id,type,amount,currency,occurredAt,description,categoryPath,createdAt" as const;
 
-/** Previous export header — rejected on import with a re-export message. */
+/** Previous export header (319e8fa) — accepted on import via legacyCategoryId enrichment. */
 export const LEGACY_CASH_LEDGER_CSV_HEADER =
   "id,type,amount,currency,occurredAt,description,categoryId,categoryName,createdAt" as const;
 

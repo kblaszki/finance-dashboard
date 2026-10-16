@@ -5,7 +5,8 @@ import {
   parseCategoryPath,
 } from "./cashLedgerCsv";
 
-const HEADER_COLUMNS = CASH_LEDGER_CSV_HEADER.split(",");
+const CURRENT_HEADER_COLUMNS = CASH_LEDGER_CSV_HEADER.split(",");
+const LEGACY_HEADER_COLUMNS = LEGACY_CASH_LEDGER_CSV_HEADER.split(",");
 
 export type ImportRowError = {
   row: number;
@@ -31,6 +32,11 @@ export type CashLedgerImportDraft = {
   description: string | null;
   /** Path segments; null means uncategorized in the file. */
   categoryPath: string[] | null;
+  /**
+   * Set only for legacy (categoryId/categoryName) CSV rows.
+   * Resolved to a path via enrichLegacyCategoryPaths when the id is owned.
+   */
+  legacyCategoryId?: number | null;
 };
 
 export type CashLedgerImportResolved = {
@@ -59,9 +65,12 @@ function unescapeImportedFormula(value: string): string {
   return value;
 }
 
+type CsvFormat = "current" | "legacy";
+
 /**
- * Parse and validate cash-ledger CSV (export format). Ignores id and createdAt.
- * Category paths are not resolved here — use import preview + categoryMappings.
+ * Parse and validate cash-ledger CSV (current or legacy 319e8fa export).
+ * Ignores id and createdAt. Category paths are not fully resolved here —
+ * legacy rows may carry legacyCategoryId for enrichLegacyCategoryPaths.
  */
 export function parseCashLedgerCsvImport(
   csv: string,
@@ -74,19 +83,15 @@ export function parseCashLedgerCsvImport(
   }
 
   const headerJoined = lines[0]!.join(",");
-  if (headerJoined === LEGACY_CASH_LEDGER_CSV_HEADER) {
-    return {
-      ok: false,
-      errors: [
-        {
-          row: 0,
-          message:
-            "Legacy CSV header (categoryId/categoryName) is no longer supported; re-export the file from the account ledger",
-        },
-      ],
-    };
-  }
-  if (headerJoined !== CASH_LEDGER_CSV_HEADER) {
+  let format: CsvFormat;
+  let expectedColumns: number;
+  if (headerJoined === CASH_LEDGER_CSV_HEADER) {
+    format = "current";
+    expectedColumns = CURRENT_HEADER_COLUMNS.length;
+  } else if (headerJoined === LEGACY_CASH_LEDGER_CSV_HEADER) {
+    format = "legacy";
+    expectedColumns = LEGACY_HEADER_COLUMNS.length;
+  } else {
     return {
       ok: false,
       errors: [
@@ -109,10 +114,10 @@ export function parseCashLedgerCsvImport(
     if (cells.length === 1 && cells[0] === "") {
       continue; // trailing blank line
     }
-    if (cells.length !== HEADER_COLUMNS.length) {
+    if (cells.length !== expectedColumns) {
       errors.push({
         row: dataRow,
-        message: `expected ${HEADER_COLUMNS.length} columns, got ${cells.length}`,
+        message: `expected ${expectedColumns} columns, got ${cells.length}`,
       });
       continue;
     }
@@ -122,7 +127,6 @@ export function parseCashLedgerCsvImport(
     const currencyRaw = cells[3]!.trim();
     const occurredAtRaw = cells[4]!.trim();
     const descriptionRaw = cells[5]!;
-    const categoryPathRaw = cells[6]!;
 
     const typeResult = parseTypeCell(typeRaw);
     if (typeResult.kind === "transfer") {
@@ -180,16 +184,45 @@ export function parseCashLedgerCsvImport(
     const descriptionTrimmed = unescapeImportedFormula(descriptionRaw.trim());
     const description = descriptionTrimmed.length ? descriptionTrimmed : null;
 
-    const pathResult = parseCategoryPath(categoryPathRaw);
-    if (!pathResult.ok) {
-      errors.push({
+    if (format === "current") {
+      const pathResult = parseCategoryPath(cells[6]!);
+      if (!pathResult.ok) {
+        errors.push({
+          row: dataRow,
+          message: pathResult.message,
+        });
+        continue;
+      }
+      drafts.push({
         row: dataRow,
-        message: pathResult.message,
+        type,
+        amount,
+        occurredAt,
+        description,
+        categoryPath:
+          pathResult.segments.length === 0 ? null : pathResult.segments,
       });
       continue;
     }
-    const categoryPath =
-      pathResult.segments.length === 0 ? null : pathResult.segments;
+
+    // legacy: categoryId, categoryName
+    const categoryIdRaw = cells[6]!.trim();
+    const categoryNameRaw = cells[7]!;
+    let legacyCategoryId: number | null = null;
+    if (categoryIdRaw !== "") {
+      const id = Number(categoryIdRaw);
+      if (!Number.isInteger(id) || id < 1) {
+        errors.push({
+          row: dataRow,
+          message: "categoryId must be a positive integer",
+        });
+        continue;
+      }
+      legacyCategoryId = id;
+    }
+
+    const nameTrimmed = unescapeImportedFormula(categoryNameRaw.trim());
+    const categoryPath = nameTrimmed.length ? [nameTrimmed] : null;
 
     drafts.push({
       row: dataRow,
@@ -198,6 +231,7 @@ export function parseCashLedgerCsvImport(
       occurredAt,
       description,
       categoryPath,
+      legacyCategoryId,
     });
   }
 

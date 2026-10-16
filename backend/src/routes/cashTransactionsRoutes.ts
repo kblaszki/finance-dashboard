@@ -22,6 +22,7 @@ import {
 import {
   applyCategoryMappings,
   collectUsedCategories,
+  enrichLegacyCategoryPaths,
   parseCategoryMappings,
   resolveDraftsWithMappings,
   suggestCategoryMatches,
@@ -206,10 +207,14 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
           where: { userId },
           select: { id: true, name: true, parentId: true, ledgerType: true },
         });
-        const used = collectUsedCategories(parsed.drafts);
+        const drafts = enrichLegacyCategoryPaths(
+          parsed.drafts,
+          ownedCategories,
+        );
+        const used = collectUsedCategories(drafts);
         const categories = suggestCategoryMatches(used, ownedCategories);
         res.status(200).json({
-          rowCount: parsed.drafts.length,
+          rowCount: drafts.length,
           categories,
           skipped: parsed.skippedTransfers.length,
           skippedTransfers: parsed.skippedTransfers,
@@ -242,7 +247,15 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
           return;
         }
 
-        const used = collectUsedCategories(parsed.drafts);
+        const ownedCategories = await prisma.category.findMany({
+          where: { userId },
+          select: { id: true, name: true, parentId: true, ledgerType: true },
+        });
+        const drafts = enrichLegacyCategoryPaths(
+          parsed.drafts,
+          ownedCategories,
+        );
+        const used = collectUsedCategories(drafts);
         const mappingsResult = parseCategoryMappings(
           req.body?.categoryMappings,
           used,
@@ -255,11 +268,6 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
           return;
         }
 
-        const ownedCategories = await prisma.category.findMany({
-          where: { userId },
-          select: { id: true, name: true, parentId: true, ledgerType: true },
-        });
-
         const { created, createdCategories } = await prisma.$transaction(
           async (tx) => {
             const applied = await applyCategoryMappings(
@@ -270,7 +278,7 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
               ownedCategories,
             );
             const resolved = resolveDraftsWithMappings(
-              parsed.drafts,
+              drafts,
               applied.resolvedIds,
             );
             const createdCount = await postCashTransactionBatch(

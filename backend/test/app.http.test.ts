@@ -817,15 +817,6 @@ test("POST /api/accounts/:id/transactions/import preview and mapped import", asy
     `,EXPENSE,5.00,PLN,2024-03-03T12:00:00.000Z,Shop,Food/Groceries,`,
   ].join("\n");
 
-  const legacy = await request(app)
-    .post(`/api/accounts/${accountId}/transactions/import/preview`)
-    .set("Authorization", `Bearer ${token}`)
-    .send({
-      csv: "id,type,amount,currency,occurredAt,description,categoryId,categoryName,createdAt\n",
-    });
-  assert.equal(legacy.status, 400);
-  assert.match(String(legacy.body.error), /re-export/i);
-
   const preview = await request(app)
     .post(`/api/accounts/${accountId}/transactions/import/preview`)
     .set("Authorization", `Bearer ${token}`)
@@ -1041,6 +1032,55 @@ test("POST /api/accounts/:id/transactions/import preview and mapped import", asy
   assert.equal(transferImport.body.created, 1);
   assert.equal(transferImport.body.skipped, 2);
   assert.equal(transferImport.body.skippedTransfers.length, 2);
+
+  const legacyHeader =
+    "id,type,amount,currency,occurredAt,description,categoryId,categoryName,createdAt";
+  const legacyCsv = [
+    legacyHeader,
+    `,INCOME,15.00,PLN,2024-06-01T12:00:00.000Z,Legacy pay,,,`,
+    `,EXPENSE,7.00,PLN,2024-06-02T12:00:00.000Z,Legacy lunch,${food!.id},Food,`,
+    `,EXPENSE,3.00,PLN,2024-06-03T12:00:00.000Z,Unknown cat,,Mystery,`,
+  ].join("\n");
+  const legacyPreview = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import/preview`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv: legacyCsv });
+  assert.equal(legacyPreview.status, 200);
+  assert.equal(legacyPreview.body.rowCount, 3);
+  const legacyFood = (
+    legacyPreview.body.categories as Array<{
+      path: string;
+      suggestedCategoryId: number | null;
+    }>
+  ).find((c) => c.path === "Food");
+  assert.ok(legacyFood);
+  assert.equal(legacyFood!.suggestedCategoryId, food!.id);
+  const mystery = (
+    legacyPreview.body.categories as Array<{
+      path: string;
+      suggestedCategoryId: number | null;
+    }>
+  ).find((c) => c.path === "Mystery");
+  assert.ok(mystery);
+  assert.equal(mystery!.suggestedCategoryId, null);
+
+  const legacyImported = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      csv: legacyCsv,
+      categoryMappings: [
+        {
+          path: "Food",
+          ledgerType: "EXPENSE",
+          action: "map",
+          categoryId: food!.id,
+        },
+        { path: "Mystery", ledgerType: "EXPENSE", action: "none" },
+      ],
+    });
+  assert.equal(legacyImported.status, 201);
+  assert.equal(legacyImported.body.created, 3);
 });
 
 test("DELETE /api/accounts/:id/transactions/:txId reverses cashBalance", async () => {

@@ -107,14 +107,44 @@ describe("parseCashLedgerCsvImport", () => {
     assert.equal(result.ok, false);
   });
 
-  it("rejects legacy categoryId/categoryName header", () => {
-    const result = parseCashLedgerCsvImport(
+  it("accepts legacy categoryId/categoryName header", () => {
+    const headerOnly = parseCashLedgerCsvImport(
       `${LEGACY_CASH_LEDGER_CSV_HEADER}\n`,
       "EUR",
     );
+    assert.equal(headerOnly.ok, true);
+    if (!headerOnly.ok) return;
+    assert.equal(headerOnly.drafts.length, 0);
+
+    const csv = [
+      LEGACY_CASH_LEDGER_CSV_HEADER,
+      ",INCOME,50.00,EUR,2024-01-01T00:00:00.000Z,Pay,12,Salary,",
+      ",EXPENSE,5.00,EUR,2024-01-03T00:00:00.000Z,Coffee,,Food,",
+      ",TRANSFER_OUT,20.00,EUR,2024-01-02T00:00:00.000Z,Move,,,",
+      ",INCOME,10.00,EUR,2024-01-04T00:00:00.000Z,Bonus,,,",
+    ].join("\n");
+    const result = parseCashLedgerCsvImport(csv, "EUR");
+    assert.equal(result.ok, true);
+    if (!result.ok) return;
+    assert.equal(result.drafts.length, 3);
+    assert.equal(result.skippedTransfers.length, 1);
+    assert.equal(result.drafts[0]!.legacyCategoryId, 12);
+    assert.deepEqual(result.drafts[0]!.categoryPath, ["Salary"]);
+    assert.equal(result.drafts[1]!.legacyCategoryId, null);
+    assert.deepEqual(result.drafts[1]!.categoryPath, ["Food"]);
+    assert.equal(result.drafts[2]!.legacyCategoryId, null);
+    assert.equal(result.drafts[2]!.categoryPath, null);
+  });
+
+  it("rejects non-integer legacy categoryId", () => {
+    const csv = [
+      LEGACY_CASH_LEDGER_CSV_HEADER,
+      ",INCOME,10.00,EUR,2024-01-01T00:00:00.000Z,Pay,abc,Salary,",
+    ].join("\n");
+    const result = parseCashLedgerCsvImport(csv, "EUR");
     assert.equal(result.ok, false);
     if (result.ok) return;
-    assert.match(result.errors[0]!.message, /re-export/i);
+    assert.match(result.errors[0]!.message, /categoryId/);
   });
 
   it("parses nested category paths", () => {

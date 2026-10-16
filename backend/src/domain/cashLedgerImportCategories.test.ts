@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   collectUsedCategories,
+  enrichLegacyCategoryPaths,
   parseCategoryMappings,
   suggestCategoryMatches,
 } from "./cashLedgerImportCategories";
@@ -18,6 +19,58 @@ function draft(
     ...partial,
   };
 }
+
+describe("enrichLegacyCategoryPaths", () => {
+  const owned = [
+    { id: 10, name: "Food", parentId: null, ledgerType: "EXPENSE" },
+    { id: 11, name: "Groceries", parentId: 10, ledgerType: "EXPENSE" },
+    { id: 20, name: "Salary", parentId: null, ledgerType: "INCOME" },
+  ];
+
+  it("replaces path from owned legacyCategoryId with matching ledgerType", () => {
+    const enriched = enrichLegacyCategoryPaths(
+      [
+        draft({
+          row: 1,
+          type: "EXPENSE",
+          categoryPath: ["Groceries"],
+          legacyCategoryId: 11,
+        }),
+      ],
+      owned,
+    );
+    assert.deepEqual(enriched[0]!.categoryPath, ["Food", "Groceries"]);
+  });
+
+  it("keeps name path when id is missing or ledgerType mismatches", () => {
+    const enriched = enrichLegacyCategoryPaths(
+      [
+        draft({
+          row: 1,
+          type: "EXPENSE",
+          categoryPath: ["Food"],
+          legacyCategoryId: 999,
+        }),
+        draft({
+          row: 2,
+          type: "EXPENSE",
+          categoryPath: ["Wrong"],
+          legacyCategoryId: 20,
+        }),
+        draft({
+          row: 3,
+          type: "INCOME",
+          categoryPath: ["Bonus"],
+          legacyCategoryId: null,
+        }),
+      ],
+      owned,
+    );
+    assert.deepEqual(enriched[0]!.categoryPath, ["Food"]);
+    assert.deepEqual(enriched[1]!.categoryPath, ["Wrong"]);
+    assert.deepEqual(enriched[2]!.categoryPath, ["Bonus"]);
+  });
+});
 
 describe("collectUsedCategories", () => {
   it("groups by path and ledgerType", () => {

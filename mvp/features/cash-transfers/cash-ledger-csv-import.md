@@ -9,7 +9,7 @@ title: Cash ledger CSV import
 
 ## Summary
 
-Per-account import of cash ledger rows in the same CSV format as export. Always creates new transactions (`id` / `createdAt` ignored). INCOME/EXPENSE all-or-nothing validation; `TRANSFER_*` rows are skipped and reported.
+Per-account import of cash ledger rows in the export CSV format (and legacy `categoryId`/`categoryName` exports from older builds). Always creates new transactions (`id` / `createdAt` ignored). INCOME/EXPENSE all-or-nothing validation; `TRANSFER_*` rows are skipped and reported.
 
 ## User value
 
@@ -30,7 +30,7 @@ Restore or bulk-load ledger rows from a spreadsheet or prior export without rety
 - [x] Currency required and must match account
 - [x] Each used `(categoryPath, ledgerType)` requires explicit `map` / `create` / `none`
 - [x] Preview suggests exact path matches; UI blocks Import until every category is decided
-- [x] Legacy `categoryId,categoryName` header → `400` (re-export required)
+- [x] Legacy `categoryId,categoryName` header accepted; owned id → full path, else name as single segment
 - [x] Invalid INCOME/EXPENSE row → `400` with `details`; nothing written
 - [x] `TRANSFER_*` rows skipped (`skipped` / `skippedTransfers`); UI mentions Transfers page
 - [x] Header-only / no categories → `{ created, createdCategories: 0, skipped: 0 }`
