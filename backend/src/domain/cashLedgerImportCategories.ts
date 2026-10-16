@@ -1,4 +1,4 @@
-import type { Prisma, PrismaClient } from "@prisma/client";
+import type { Category, Prisma, PrismaClient } from "@prisma/client";
 import {
   buildCategoryPathMap,
   categoryPathKey,
@@ -314,7 +314,8 @@ export async function applyCategoryMappings(
         leafId = existing.id;
         continue;
       }
-      const created = await db.category.create({
+      // Explicit type: Prisma's recursive Category.parentId otherwise makes TS7022.
+      const created: Category = await db.category.create({
         data: {
           userId,
           name: segment,
