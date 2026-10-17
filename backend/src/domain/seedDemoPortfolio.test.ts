@@ -116,14 +116,25 @@ test("buildDemoTransfers is deterministic with same- and cross-currency rows", (
   assert.ok(a.some((t) => t.amountTo == null));
   assert.ok(a.some((t) => t.amountTo != null && t.amountTo !== t.amountFrom));
   assert.ok(a.every((t) => t.fromKey !== t.toKey && t.amountFrom > 0));
+  assert.ok(a.every((t) => typeof t.category === "string" && t.category.length > 0));
   const cardPayments = a.filter((t) => t.toKey === "creditCard");
   const ikeContributions = a.filter((t) => t.toKey === "ike");
   assert.equal(cardPayments.length, DEMO_LEDGER_MONTHS);
   assert.equal(ikeContributions.length, DEMO_LEDGER_MONTHS);
-  assert.ok(cardPayments.every((t) => t.fromKey === "checking" && t.amountFrom === DEMO_CARD_PAYMENT));
+  assert.ok(
+    cardPayments.every(
+      (t) =>
+        t.fromKey === "checking" &&
+        t.amountFrom === DEMO_CARD_PAYMENT &&
+        t.category === "Credit card payment",
+    ),
+  );
   assert.ok(
     ikeContributions.every(
-      (t) => t.fromKey === "checking" && t.amountFrom === DEMO_IKE_CONTRIBUTION,
+      (t) =>
+        t.fromKey === "checking" &&
+        t.amountFrom === DEMO_IKE_CONTRIBUTION &&
+        t.category === "Retirement savings",
     ),
   );
 });
@@ -253,7 +264,22 @@ test("seedDemoPortfolio matches ledger balances and scopes wipe to one user", as
     const categoryCount = await prisma.category.count({
       where: { userId: demo.id },
     });
-    assert.equal(categoryCount, 7);
+    // 7 default roots + 4 demo TRANSFER children under Internal transfer
+    assert.equal(categoryCount, 11);
+
+    const taggedTransfers = await prisma.cashTransfer.count({
+      where: { userId: demo.id, categoryId: { not: null } },
+    });
+    assert.equal(taggedTransfers, plannedTransfers.length);
+
+    const taggedLegs = await prisma.cashTransaction.count({
+      where: {
+        account: { userId: demo.id },
+        transferId: { not: null },
+        categoryId: { not: null },
+      },
+    });
+    assert.equal(taggedLegs, plannedTransfers.length * 2);
 
     const otherAccounts = await prisma.account.findMany({
       where: { userId: other.id },

@@ -1,5 +1,5 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
-import { seedDefaultCategories } from "./categories";
+import { categoryNameKey, seedDefaultCategories } from "./categories";
 import {
   signedDelta,
   signedMinor,
@@ -8,6 +8,14 @@ import {
 } from "./cashLedger";
 import { createTransfer } from "./cashTransfers";
 import { quantizeMajorToMinor } from "./money";
+
+/** Demo-only TRANSFER children under seeded "Internal transfer". */
+const DEMO_TRANSFER_CHILDREN = [
+  "Investment",
+  "Credit card payment",
+  "Retirement savings",
+  "Travel FX",
+] as const;
 
 type Db = PrismaClient | Prisma.TransactionClient;
 
@@ -62,6 +70,8 @@ export type DemoPlannedTransfer = {
   amountTo?: number;
   occurredAt: Date;
   description: string;
+  /** TRANSFER-group category name (root or demo child). */
+  category: string;
 };
 
 /** openingBalance + Σ signedDelta(type, amount). */
@@ -502,6 +512,7 @@ export function buildDemoTransfers(now = new Date()): DemoPlannedTransfer[] {
       amountFrom: 2500,
       occurredAt: utcMidMonth(older, 8),
       description: `Monthly invest transfer (${older})`,
+      category: "Investment",
     },
     {
       fromKey: "checking",
@@ -510,6 +521,7 @@ export function buildDemoTransfers(now = new Date()): DemoPlannedTransfer[] {
       amountTo: 280,
       occurredAt: utcMidMonth(previous, 12),
       description: `EUR travel top-up (${previous})`,
+      category: "Travel FX",
     },
     {
       fromKey: "checking",
@@ -518,6 +530,7 @@ export function buildDemoTransfers(now = new Date()): DemoPlannedTransfer[] {
       amountTo: 200,
       occurredAt: utcMidMonth(recent, 5),
       description: `USD crypto float (${recent})`,
+      category: "Investment",
     },
     {
       fromKey: "brokerage",
@@ -525,6 +538,7 @@ export function buildDemoTransfers(now = new Date()): DemoPlannedTransfer[] {
       amountFrom: 500,
       occurredAt: utcMidMonth(recent, 20),
       description: `Cash back from brokerage (${recent})`,
+      category: "Internal transfer",
     },
   ];
 
@@ -535,6 +549,7 @@ export function buildDemoTransfers(now = new Date()): DemoPlannedTransfer[] {
       amountFrom: DEMO_CARD_PAYMENT,
       occurredAt: utcMidMonth(month, 25),
       description: `Credit card payment (${month})`,
+      category: "Credit card payment",
     });
     transfers.push({
       fromKey: "checking",
@@ -542,6 +557,7 @@ export function buildDemoTransfers(now = new Date()): DemoPlannedTransfer[] {
       amountFrom: DEMO_IKE_CONTRIBUTION,
       occurredAt: utcMidMonth(month, 3),
       description: `IKE contribution (${month})`,
+      category: "Retirement savings",
     });
   }
 
@@ -563,16 +579,36 @@ async function categoryIdByNameType(
   db: Db,
   userId: number,
   name: string,
-  ledgerType: "INCOME" | "EXPENSE",
+  ledgerType: "INCOME" | "EXPENSE" | "TRANSFER",
+  parentId: number | null = null,
 ): Promise<number> {
   const row = await db.category.findFirst({
-    where: { userId, name, ledgerType, parentId: null },
+    where: { userId, name, ledgerType, parentId },
     select: { id: true },
   });
   if (!row) {
     throw new Error(`Demo seed missing category: ${ledgerType}/${name}`);
   }
   return row.id;
+}
+
+/** Children under Internal transfer for varied demo transfer tags. */
+async function seedDemoTransferCategories(
+  db: Db,
+  userId: number,
+  parentId: number,
+): Promise<void> {
+  for (const name of DEMO_TRANSFER_CHILDREN) {
+    await db.category.create({
+      data: {
+        userId,
+        name,
+        parentId,
+        ledgerType: "TRANSFER",
+        nameKey: categoryNameKey(parentId, name),
+      },
+    });
+  }
 }
 
 /**
@@ -588,6 +624,14 @@ export async function seedDemoPortfolio(
   await wipeDemoPortfolio(db, userId);
   await seedDefaultCategories(db, userId);
 
+  const internalTransferId = await categoryIdByNameType(
+    db,
+    userId,
+    "Internal transfer",
+    "TRANSFER",
+  );
+  await seedDemoTransferCategories(db, userId, internalTransferId);
+
   const categoryMap: Record<string, number> = {
     Salary: await categoryIdByNameType(db, userId, "Salary", "INCOME"),
     "Other income": await categoryIdByNameType(
@@ -600,6 +644,35 @@ export async function seedDemoPortfolio(
     Housing: await categoryIdByNameType(db, userId, "Housing", "EXPENSE"),
     Transport: await categoryIdByNameType(db, userId, "Transport", "EXPENSE"),
     Other: await categoryIdByNameType(db, userId, "Other", "EXPENSE"),
+    "Internal transfer": internalTransferId,
+    Investment: await categoryIdByNameType(
+      db,
+      userId,
+      "Investment",
+      "TRANSFER",
+      internalTransferId,
+    ),
+    "Credit card payment": await categoryIdByNameType(
+      db,
+      userId,
+      "Credit card payment",
+      "TRANSFER",
+      internalTransferId,
+    ),
+    "Retirement savings": await categoryIdByNameType(
+      db,
+      userId,
+      "Retirement savings",
+      "TRANSFER",
+      internalTransferId,
+    ),
+    "Travel FX": await categoryIdByNameType(
+      db,
+      userId,
+      "Travel FX",
+      "TRANSFER",
+      internalTransferId,
+    ),
   };
 
   const accountSpecs: Record<
@@ -696,6 +769,10 @@ export async function seedDemoPortfolio(
 
   for (const transfer of buildDemoTransfers(now)) {
     const amountTo = transfer.amountTo ?? transfer.amountFrom;
+    const categoryId = categoryMap[transfer.category];
+    if (categoryId == null) {
+      throw new Error(`Demo seed missing transfer category: ${transfer.category}`);
+    }
     await createTransfer(db, userId, {
       fromAccountId: accountsByKey[transfer.fromKey].id,
       toAccountId: accountsByKey[transfer.toKey].id,
@@ -703,6 +780,7 @@ export async function seedDemoPortfolio(
       amountTo: new Prisma.Decimal(amountTo.toString()),
       occurredAt: transfer.occurredAt,
       description: transfer.description,
+      categoryId,
     });
   }
 }

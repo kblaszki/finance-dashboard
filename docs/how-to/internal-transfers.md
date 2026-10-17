@@ -48,7 +48,7 @@ Delete an account that still appears in any transfer → `409` (“delete transf
 
 ## Demo data
 
-`npm run db:seed` loads a few sample transfers (same-currency and cross-currency) for `demo@finance.local`. See [demo-seed.md](../tutorials/demo-seed.md).
+`npm run db:seed` loads sample transfers (same-/cross-currency) with TRANSFER categories for `demo@finance.local`. See [demo-seed.md](../tutorials/demo-seed.md).
 
 ## API
 
