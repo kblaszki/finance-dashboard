@@ -127,7 +127,7 @@ export function LedgerCreateRow(props: {
 
   return (
     <tr className="ledger-create-row">
-      <td>
+      <td className="col-date">
         <input
           ref={firstInputRef}
           type="datetime-local"
@@ -138,7 +138,7 @@ export function LedgerCreateRow(props: {
           aria-label="New date"
         />
       </td>
-      <td>
+      <td className="col-status">
         <select
           className="ledger-cell-input"
           value={type}
@@ -168,7 +168,7 @@ export function LedgerCreateRow(props: {
           placeholder="0.00"
         />
       </td>
-      <td>
+      <td className="col-text">
         <select
           className="ledger-cell-input"
           value={categoryId}
@@ -184,7 +184,7 @@ export function LedgerCreateRow(props: {
           ))}
         </select>
       </td>
-      <td>
+      <td className="col-text">
         <LedgerTagField
           tags={props.tags}
           selectedIds={tagIds}
@@ -193,7 +193,7 @@ export function LedgerCreateRow(props: {
           aria-label="New tags"
         />
       </td>
-      <td>
+      <td className="col-text">
         <input
           type="text"
           className="ledger-cell-input"

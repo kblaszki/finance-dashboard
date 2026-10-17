@@ -197,7 +197,7 @@ function TransferCreateRow(props: {
 
   return (
     <tr className="ledger-create-row">
-      <td>
+      <td className="col-date">
         <input
           ref={dateRef}
           type="datetime-local"
@@ -209,7 +209,7 @@ function TransferCreateRow(props: {
           aria-label="New transfer date"
         />
       </td>
-      <td>
+      <td className="col-text">
         <select
           className="ledger-cell-input"
           value={fromAccountId}
@@ -226,7 +226,7 @@ function TransferCreateRow(props: {
           ))}
         </select>
       </td>
-      <td>
+      <td className="col-text">
         <select
           className="ledger-cell-input"
           value={toAccountId}
@@ -274,7 +274,7 @@ function TransferCreateRow(props: {
         />
       </td>
       <td className="num">—</td>
-      <td>
+      <td className="col-text">
         <select
           className="ledger-cell-input"
           value={categoryId}
@@ -291,7 +291,7 @@ function TransferCreateRow(props: {
           ))}
         </select>
       </td>
-      <td>
+      <td className="col-text">
         <input
           type="text"
           className="ledger-cell-input"
@@ -678,14 +678,14 @@ export function TransfersPage() {
             <table className="data-table ledger-table ledger-table--transfers">
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>From</th>
-                  <th>To</th>
+                  <th className="col-date">Date</th>
+                  <th className="col-text">From</th>
+                  <th className="col-text">To</th>
                   <th className="num">Amount from</th>
                   <th className="num">Amount to</th>
                   <th className="num">FX rate</th>
-                  <th>Category</th>
-                  <th>Description</th>
+                  <th className="col-text">Category</th>
+                  <th className="col-text">Description</th>
                   <th className="col-actions">Actions</th>
                 </tr>
               </thead>
@@ -703,7 +703,7 @@ export function TransfersPage() {
                 return (
                   <tr key={transfer.id}>
                     <td
-                      className={cellClass(transfer.id, "occurredAt", true)}
+                      className={cellClass(transfer.id, "occurredAt", true, "col-date")}
                       onDoubleClick={() => startEdit(transfer, "occurredAt")}
                     >
                       {isEditing(transfer.id, "occurredAt") ? (
@@ -723,7 +723,7 @@ export function TransfersPage() {
                       )}
                     </td>
                     <td
-                      className={cellClass(transfer.id, "fromAccountId", true)}
+                      className={cellClass(transfer.id, "fromAccountId", true, "col-text")}
                       title={
                         fromAccount
                           ? accountLabel(fromAccount)
@@ -753,7 +753,7 @@ export function TransfersPage() {
                       )}
                     </td>
                     <td
-                      className={cellClass(transfer.id, "toAccountId", true)}
+                      className={cellClass(transfer.id, "toAccountId", true, "col-text")}
                       title={
                         toAccount
                           ? accountLabel(toAccount)
@@ -843,7 +843,7 @@ export function TransfersPage() {
                         : "—"}
                     </td>
                     <td
-                      className={cellClass(transfer.id, "categoryId", true)}
+                      className={cellClass(transfer.id, "categoryId", true, "col-text")}
                       onDoubleClick={() => startEdit(transfer, "categoryId")}
                     >
                       {isEditing(transfer.id, "categoryId") ? (
@@ -869,7 +869,7 @@ export function TransfersPage() {
                       )}
                     </td>
                     <td
-                      className={cellClass(transfer.id, "description", true)}
+                      className={cellClass(transfer.id, "description", true, "col-text")}
                       onDoubleClick={() => startEdit(transfer, "description")}
                     >
                       {isEditing(transfer.id, "description") ? (

@@ -233,12 +233,12 @@ export function LedgerTable(props: {
       <table className="data-table ledger-table ledger-table--account">
         <thead>
           <tr>
-            <th>Date</th>
-            <th>Type</th>
+            <th className="col-date">Date</th>
+            <th className="col-status">Type</th>
             <th className="num">Amount</th>
-            <th>Category</th>
-            <th>Tags</th>
-            <th>Description</th>
+            <th className="col-text">Category</th>
+            <th className="col-text">Tags</th>
+            <th className="col-text">Description</th>
             <th className="col-actions">Actions</th>
           </tr>
         </thead>
@@ -332,7 +332,7 @@ function LedgerRow(props: {
   return (
     <tr>
       <td
-        className={props.cellClass(tx.id, "occurredAt", "", !transferLeg)}
+        className={props.cellClass(tx.id, "occurredAt", "col-date", !transferLeg)}
         onDoubleClick={() => onCellDoubleClick("occurredAt")}
       >
         {props.isEditing(tx.id, "occurredAt") ? (
@@ -352,7 +352,7 @@ function LedgerRow(props: {
         )}
       </td>
       <td
-        className={props.cellClass(tx.id, "type", "", !transferLeg)}
+        className={props.cellClass(tx.id, "type", "col-status", !transferLeg)}
         onDoubleClick={() => onCellDoubleClick("type")}
       >
         {props.isEditing(tx.id, "type") ? (
@@ -405,7 +405,7 @@ function LedgerRow(props: {
         )}
       </td>
       <td
-        className={props.cellClass(tx.id, "categoryId", "", !transferLeg)}
+        className={props.cellClass(tx.id, "categoryId", "col-text", !transferLeg)}
         onDoubleClick={() => onCellDoubleClick("categoryId")}
       >
         {props.isEditing(tx.id, "categoryId") ? (
@@ -435,7 +435,7 @@ function LedgerRow(props: {
         )}
       </td>
       <td
-        className={props.cellClass(tx.id, "tagIds", "", !transferLeg)}
+        className={props.cellClass(tx.id, "tagIds", "col-text", !transferLeg)}
         onDoubleClick={() => onCellDoubleClick("tagIds")}
       >
         {props.isEditing(tx.id, "tagIds") ? (
@@ -469,7 +469,7 @@ function LedgerRow(props: {
         )}
       </td>
       <td
-        className={props.cellClass(tx.id, "description", "", !transferLeg)}
+        className={props.cellClass(tx.id, "description", "col-text", !transferLeg)}
         onDoubleClick={() => onCellDoubleClick("description")}
       >
         {props.isEditing(tx.id, "description") ? (

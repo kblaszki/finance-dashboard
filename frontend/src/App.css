@@ -586,80 +586,15 @@
   box-sizing: border-box;
 }
 
-/* Account: Date | Type | Amount | Category | Tags | Description | Actions */
-.ledger-table--account th:nth-child(1),
-.ledger-table--account td:nth-child(1),
-.ledger-table--account th:nth-child(2),
-.ledger-table--account td:nth-child(2),
-.ledger-table--account th:nth-child(3),
-.ledger-table--account td:nth-child(3),
-.ledger-table--account th:nth-child(7),
-.ledger-table--account td:nth-child(7) {
-  white-space: nowrap;
+.ledger-table :is(.col-date, .col-status, .num, .col-actions) {
   width: 1%;
 }
 
-.ledger-table--account th:nth-child(4),
-.ledger-table--account td:nth-child(4),
-.ledger-table--account th:nth-child(5),
-.ledger-table--account td:nth-child(5) {
-  white-space: normal;
-  overflow-wrap: break-word;
-  word-break: normal;
-  min-width: 7rem;
+.ledger-table .col-text {
+  --col-text-min: 8rem;
 }
 
-.ledger-table--account th:nth-child(6),
-.ledger-table--account td:nth-child(6) {
-  white-space: normal;
-  overflow-wrap: break-word;
-  word-break: normal;
-  min-width: 10rem;
-}
-
-/* Transfers: Date | From | To | Amount from | Amount to | FX | Category | Description | Actions */
-.ledger-table--transfers th:nth-child(1),
-.ledger-table--transfers td:nth-child(1),
-.ledger-table--transfers th:nth-child(4),
-.ledger-table--transfers td:nth-child(4),
-.ledger-table--transfers th:nth-child(5),
-.ledger-table--transfers td:nth-child(5),
-.ledger-table--transfers th:nth-child(6),
-.ledger-table--transfers td:nth-child(6),
-.ledger-table--transfers th:nth-child(9),
-.ledger-table--transfers td:nth-child(9) {
-  white-space: nowrap;
-  width: 1%;
-}
-
-.ledger-table--transfers th:nth-child(2),
-.ledger-table--transfers td:nth-child(2),
-.ledger-table--transfers th:nth-child(3),
-.ledger-table--transfers td:nth-child(3) {
-  white-space: normal;
-  overflow-wrap: break-word;
-  word-break: normal;
-  min-width: 8rem;
-}
-
-.ledger-table--transfers th:nth-child(7),
-.ledger-table--transfers td:nth-child(7) {
-  white-space: normal;
-  overflow-wrap: break-word;
-  word-break: normal;
-  min-width: 7rem;
-}
-
-.ledger-table--transfers th:nth-child(8),
-.ledger-table--transfers td:nth-child(8) {
-  white-space: normal;
-  overflow-wrap: break-word;
-  word-break: normal;
-  min-width: 10rem;
-}
-
-.ledger-table--account .ledger-cell-input[type="datetime-local"],
-.ledger-table--transfers .ledger-cell-input[type="datetime-local"] {
+.ledger-table .col-date .ledger-cell-input[type="datetime-local"] {
   font-size: var(--text-xs);
   padding-inline: 0.2rem;
 }
@@ -689,13 +624,13 @@
   overflow: visible;
 }
 
-/* Keep editors usable while auto columns resize */
-.ledger-table td:nth-child(1).ledger-cell--editing .ledger-cell-input[type="datetime-local"] {
+.ledger-table td.col-date.ledger-cell--editing .ledger-cell-input[type="datetime-local"] {
   min-width: 11rem;
 }
 
-.ledger-table td.ledger-cell--editing select.ledger-cell-input,
-.ledger-table td.ledger-cell--editing .ledger-tags-field .ledger-cell-input {
+.ledger-table td.col-text.ledger-cell--editing select.ledger-cell-input,
+.ledger-table td.col-text.ledger-cell--editing .ledger-tags-field .ledger-cell-input,
+.ledger-table td.col-status.ledger-cell--editing select.ledger-cell-input {
   min-width: 8rem;
 }
 
