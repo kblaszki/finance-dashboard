@@ -267,6 +267,13 @@ test("seedDemoPortfolio matches ledger balances and scopes wipe to one user", as
     // 7 default roots + 4 demo TRANSFER children under Internal transfer
     assert.equal(categoryCount, 11);
 
+    const tagCount = await prisma.tag.count({ where: { userId: demo.id } });
+    assert.equal(tagCount, 3);
+    const taggedCash = await prisma.cashTransactionTag.count({
+      where: { cashTransaction: { account: { userId: demo.id } } },
+    });
+    assert.ok(taggedCash > 0);
+
     const taggedTransfers = await prisma.cashTransfer.count({
       where: { userId: demo.id, categoryId: { not: null } },
     });

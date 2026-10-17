@@ -1,5 +1,8 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { categoryNameKey, seedDefaultCategories } from "./categories";
+import { tagNameKey } from "./tags";
+
+const DEMO_TAG_NAMES = ["Work", "Personal", "Reimbursable"] as const;
 import {
   signedDelta,
   signedMinor,
@@ -568,6 +571,7 @@ async function wipeDemoPortfolio(db: Db, userId: number): Promise<void> {
   // CashTransfer Restricts account delete — clear headers (cascades legs) first.
   await db.cashTransfer.deleteMany({ where: { userId } });
   await db.account.deleteMany({ where: { userId } });
+  await db.tag.deleteMany({ where: { userId } });
   await db.category.updateMany({
     where: { userId },
     data: { parentId: null },
@@ -728,6 +732,18 @@ export async function seedDemoPortfolio(
     });
   }
 
+  const tagIdsByName: Record<string, number> = {};
+  for (const name of DEMO_TAG_NAMES) {
+    const tag = await db.tag.create({
+      data: {
+        userId,
+        name,
+        nameKey: tagNameKey(name),
+      },
+    });
+    tagIdsByName[name] = tag.id;
+  }
+
   const planned = buildDemoLedgerTxs(now);
   const rows = planned.map((tx) => {
     const account = accountsByKey[tx.accountKey];
@@ -747,6 +763,36 @@ export async function seedDemoPortfolio(
     await db.cashTransaction.createMany({
       data: rows.slice(i, i + chunkSize),
     });
+  }
+
+  // Deterministic tags on a subset of EXPENSE cash rows (not transfer legs).
+  const expenseRows = await db.cashTransaction.findMany({
+    where: {
+      account: { userId },
+      type: "EXPENSE",
+      transferId: null,
+    },
+    select: { id: true },
+    orderBy: [{ occurredAt: "asc" }, { id: "asc" }],
+  });
+  const tagLinks: Array<{ cashTransactionId: number; tagId: number }> = [];
+  for (let i = 0; i < expenseRows.length; i++) {
+    const txId = expenseRows[i]!.id;
+    if (i % 3 === 0) {
+      tagLinks.push({ cashTransactionId: txId, tagId: tagIdsByName.Personal! });
+    }
+    if (i % 5 === 0) {
+      tagLinks.push({ cashTransactionId: txId, tagId: tagIdsByName.Work! });
+    }
+    if (i % 7 === 0) {
+      tagLinks.push({
+        cashTransactionId: txId,
+        tagId: tagIdsByName.Reimbursable!,
+      });
+    }
+  }
+  if (tagLinks.length > 0) {
+    await db.cashTransactionTag.createMany({ data: tagLinks });
   }
 
   const deltasByKey = new Map<DemoAccountKey, LedgerDeltaInput[]>();

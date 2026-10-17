@@ -29,6 +29,12 @@ import {
 } from "../domain/cashLedgerImportCategories";
 import { expectedCategoryLedgerType } from "../domain/categories";
 import {
+  assertOwnedTagIds,
+  loadTagIdsForTransactions,
+  parseOptionalTagIds,
+  setTransactionTags,
+} from "../domain/tags";
+import {
   badRequest,
   handleRouteError,
   notFound,
@@ -59,7 +65,10 @@ function parseOccurredAt(value: unknown): Date {
   return date;
 }
 
-export function cashTransactionPayload(tx: CashTransaction) {
+export function cashTransactionPayload(
+  tx: CashTransaction,
+  tagIds: number[] = [],
+) {
   return {
     id: tx.id,
     accountId: tx.accountId,
@@ -68,6 +77,7 @@ export function cashTransactionPayload(tx: CashTransaction) {
     occurredAt: tx.occurredAt.toISOString(),
     description: tx.description,
     categoryId: tx.categoryId,
+    tagIds,
     transferId: tx.transferId ?? null,
     createdAt: tx.createdAt.toISOString(),
   };
@@ -324,7 +334,15 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
           where: { accountId },
           orderBy: [{ occurredAt: "desc" }, { id: "desc" }],
         });
-        res.json(rows.map(cashTransactionPayload));
+        const tagMap = await loadTagIdsForTransactions(
+          prisma,
+          rows.map((r) => r.id),
+        );
+        res.json(
+          rows.map((row) =>
+            cashTransactionPayload(row, tagMap.get(row.id) ?? []),
+          ),
+        );
       } catch (e: unknown) {
         handleRouteError(res, e, "Failed to list transactions");
       }
@@ -337,7 +355,8 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
     async (req: AuthedRequest, res) => {
       try {
         const accountId = parseIdParam(req.params.accountId, "accountId");
-        await findOwnedAccountId(prisma, uid(req), accountId);
+        const userId = uid(req);
+        await findOwnedAccountId(prisma, userId, accountId);
 
         const body = req.body ?? {};
         const type = parseCashTxType(body.type);
@@ -346,23 +365,27 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
         const description = parseOptionalDescription(body.description);
         const categoryId = await assertOwnedCategoryForTx(
           prisma,
-          uid(req),
+          userId,
           parseOptionalCategoryId(body.categoryId),
           type,
         );
+        const rawTagIds = parseOptionalTagIds(body.tagIds) ?? [];
+        const tagIds = await assertOwnedTagIds(prisma, userId, rawTagIds);
 
-        const created = await prisma.$transaction((tx) =>
-          postCashTransaction(tx, {
+        const created = await prisma.$transaction(async (tx) => {
+          const row = await postCashTransaction(tx, {
             accountId,
             type,
             amount,
             occurredAt,
             description,
             categoryId,
-          }),
-        );
+          });
+          await setTransactionTags(tx, row.id, tagIds);
+          return row;
+        });
 
-        res.status(201).json(cashTransactionPayload(created));
+        res.status(201).json(cashTransactionPayload(created, tagIds));
       } catch (e: unknown) {
         handleRouteError(res, e, "Create transaction failed");
       }
@@ -376,7 +399,8 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
       try {
         const accountId = parseIdParam(req.params.accountId, "accountId");
         const id = parseIdParam(req.params.id);
-        await findOwnedAccountId(prisma, uid(req), accountId);
+        const userId = uid(req);
+        await findOwnedAccountId(prisma, userId, accountId);
 
         const existing = await prisma.cashTransaction.findFirst({
           where: { id, accountId },
@@ -387,9 +411,14 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
         }
 
         const body = req.body ?? {};
-        const hasField = ["type", "amount", "occurredAt", "description", "categoryId"].some(
-          (key) => body[key] !== undefined,
-        );
+        const hasField = [
+          "type",
+          "amount",
+          "occurredAt",
+          "description",
+          "categoryId",
+          "tagIds",
+        ].some((key) => body[key] !== undefined);
         if (!hasField) throw badRequest("No updatable fields provided");
 
         const type =
@@ -408,21 +437,38 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
             : existing.categoryId;
         const categoryId = await assertOwnedCategoryForTx(
           prisma,
-          uid(req),
+          userId,
           categoryIdRaw,
           type,
         );
 
-        const updated = await prisma.$transaction((tx) =>
-          updateCashTransaction(tx, accountId, existing, {
+        const tagIdsProvided = body.tagIds !== undefined;
+        const nextTagIds = tagIdsProvided
+          ? await assertOwnedTagIds(
+              prisma,
+              userId,
+              parseOptionalTagIds(body.tagIds) ?? [],
+            )
+          : null;
+
+        const updated = await prisma.$transaction(async (tx) => {
+          const row = await updateCashTransaction(tx, accountId, existing, {
             type,
             amount,
             occurredAt,
             description,
             categoryId,
-          }),
+          });
+          if (nextTagIds != null) {
+            await setTransactionTags(tx, row.id, nextTagIds);
+          }
+          return row;
+        });
+
+        const tagMap = await loadTagIdsForTransactions(prisma, [updated.id]);
+        res.json(
+          cashTransactionPayload(updated, tagMap.get(updated.id) ?? []),
         );
-        res.json(cashTransactionPayload(updated));
       } catch (e: unknown) {
         handleRouteError(res, e, "Update transaction failed");
       }

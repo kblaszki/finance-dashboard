@@ -1509,6 +1509,106 @@ test("cash transactions accept optional categoryId and null on category delete",
   assert.equal(tagged?.categoryId, null);
 });
 
+test("tags CRUD and cash transaction tagIds", async () => {
+  const token = await registerAndLogin("tags@test.local", "tagsuser", "password123");
+  const otherToken = await registerAndLogin(
+    "tagsother@test.local",
+    "tagsother",
+    "password123",
+  );
+
+  const unauth = await request(app).get("/api/tags");
+  assert.equal(unauth.status, 401);
+
+  const created = await request(app)
+    .post("/api/tags")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Work" });
+  assert.equal(created.status, 201);
+  assert.equal(created.body.name, "Work");
+  const tagId = created.body.id as number;
+
+  const dup = await request(app)
+    .post("/api/tags")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "work" });
+  assert.equal(dup.status, 400);
+
+  const personal = await request(app)
+    .post("/api/tags")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Personal" });
+  assert.equal(personal.status, 201);
+
+  const listed = await request(app)
+    .get("/api/tags")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(listed.status, 200);
+  assert.equal(listed.body.length, 2);
+
+  const renamed = await request(app)
+    .patch(`/api/tags/${tagId}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Office" });
+  assert.equal(renamed.status, 200);
+  assert.equal(renamed.body.name, "Office");
+
+  const foreignPatch = await request(app)
+    .patch(`/api/tags/${tagId}`)
+    .set("Authorization", `Bearer ${otherToken}`)
+    .send({ name: "Hijack" });
+  assert.equal(foreignPatch.status, 404);
+
+  const account = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "TagLedger", openingBalance: 100 });
+  const accountId = account.body.id as number;
+
+  const withTags = await request(app)
+    .post(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      type: "EXPENSE",
+      amount: 12,
+      tagIds: [tagId, personal.body.id],
+    });
+  assert.equal(withTags.status, 201);
+  assert.deepEqual(withTags.body.tagIds, [tagId, personal.body.id].sort((a, b) => a - b));
+
+  const replaced = await request(app)
+    .patch(`/api/accounts/${accountId}/transactions/${withTags.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ tagIds: [personal.body.id] });
+  assert.equal(replaced.status, 200);
+  assert.deepEqual(replaced.body.tagIds, [personal.body.id]);
+
+  const cleared = await request(app)
+    .patch(`/api/accounts/${accountId}/transactions/${withTags.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ tagIds: [] });
+  assert.equal(cleared.status, 200);
+  assert.deepEqual(cleared.body.tagIds, []);
+
+  await request(app)
+    .patch(`/api/accounts/${accountId}/transactions/${withTags.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ tagIds: [tagId] });
+
+  const delTag = await request(app)
+    .delete(`/api/tags/${tagId}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(delTag.status, 204);
+
+  const list = await request(app)
+    .get(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`);
+  const row = (list.body as Array<{ id: number; tagIds: number[] }>).find(
+    (t) => t.id === withTags.body.id,
+  );
+  assert.deepEqual(row?.tagIds, []);
+});
+
 test("GET /api/statistics/category-breakdown requires auth and valid month", async () => {
   const noAuth = await request(app).get("/api/statistics/category-breakdown?month=2026-08");
   assert.equal(noAuth.status, 401);

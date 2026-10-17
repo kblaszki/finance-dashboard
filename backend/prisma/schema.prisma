@@ -19,6 +19,7 @@ model User {
   createdAt    DateTime   @default(now())
   accounts     Account[]
   categories   Category[]
+  tags         Tag[]
   cashTransfers CashTransfer[]
 }
 
@@ -107,8 +108,34 @@ model CashTransaction {
   account     Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
   category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   transfer    CashTransfer? @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  cashTransactionTags CashTransactionTag[]
 
   @@index([accountId, occurredAt])
   @@index([categoryId])
   @@index([transferId])
+}
+
+/// User-scoped free-form label for cash ledger rows (not categories).
+model Tag {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  name      String
+  /// Lowercase trimmed name for uniqueness per user.
+  nameKey   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cashTransactionTags CashTransactionTag[]
+
+  @@unique([userId, nameKey])
+  @@index([userId])
+}
+
+model CashTransactionTag {
+  cashTransactionId Int
+  tagId             Int
+  cashTransaction   CashTransaction @relation(fields: [cashTransactionId], references: [id], onDelete: Cascade)
+  tag               Tag             @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([cashTransactionId, tagId])
+  @@index([tagId])
 }

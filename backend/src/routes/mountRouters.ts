@@ -18,6 +18,7 @@ import { createCategoriesRouter } from "./categoriesRoutes";
 import { createCashTransactionsRouter } from "./cashTransactionsRoutes";
 import { createStatisticsRouter } from "./statisticsRoutes";
 import { createTransfersRouter } from "./transfersRoutes";
+import { createTagsRouter } from "./tagsRoutes";
 
 export function mountApiRouters(app: Express, prisma: PrismaClient): void {
   const requireAuth = createRequireAuth(prisma);
@@ -44,6 +45,13 @@ export function mountApiRouters(app: Express, prisma: PrismaClient): void {
   );
   app.use(
     createCategoriesRouter({
+      prisma,
+      requireAuth,
+      uid,
+    }),
+  );
+  app.use(
+    createTagsRouter({
       prisma,
       requireAuth,
       uid,
