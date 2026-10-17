@@ -26,6 +26,7 @@
   top: 0;
   align-self: flex-start;
   height: 100vh;
+  /* Keep in sync with SHELL_SIDEBAR_WIDTH_PX in shellDrawerMode.ts */
   width: 232px;
   flex-shrink: 0;
   display: flex;
@@ -1887,73 +1888,77 @@ a.btn-secondary {
   }
 }
 
+/*
+ * Off-canvas nav when AppShell adds .shell--drawer-mode: viewport cannot fit
+ * sticky sidebar + the widest table’s readable min (see shellDrawerMode.ts).
+ */
+.shell--drawer-mode {
+  flex-direction: column;
+}
+
+.shell--drawer-mode .shell-menu-btn {
+  display: inline-flex;
+}
+
+.shell--drawer-mode .shell-backdrop {
+  display: block;
+}
+
+.shell--drawer-mode.shell--nav-open .shell-backdrop {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.shell--drawer-mode .shell-sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: min(100%, 18rem);
+  height: 100vh;
+  z-index: 30;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 1.5rem;
+  padding: 1.25rem 0.85rem;
+  border-right: 1px solid var(--sidebar-border);
+  border-bottom: none;
+  transform: translateX(-105%);
+  transition: transform 200ms ease;
+}
+
+.shell--drawer-mode .shell-sidebar--open {
+  transform: translateX(0);
+}
+
+.shell--drawer-mode .shell-nav {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 2px;
+}
+
+.shell--drawer-mode .shell-nav a {
+  min-height: 44px;
+}
+
+.shell--drawer-mode .shell-sidebar-footer {
+  margin-top: auto;
+  margin-left: 0;
+  flex-direction: column;
+  align-items: stretch;
+  padding-top: 1rem;
+  border-top: 1px solid var(--sidebar-border);
+}
+
+.shell--drawer-mode .shell-sidebar-actions {
+  flex-direction: column;
+}
+
+.shell--drawer-mode .shell-sidebar .theme-toggle,
+.shell--drawer-mode .shell-logout {
+  width: 100%;
+}
+
 @media (max-width: 900px) {
-  .shell {
-    flex-direction: column;
-  }
-
-  .shell-menu-btn {
-    display: inline-flex;
-  }
-
-  .shell-backdrop {
-    display: block;
-  }
-
-  .shell--nav-open .shell-backdrop {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  .shell-sidebar {
-    position: fixed;
-    inset: 0 auto 0 0;
-    width: min(100%, 18rem);
-    height: 100vh;
-    z-index: 30;
-    flex-direction: column;
-    flex-wrap: nowrap;
-    align-items: stretch;
-    gap: 1.5rem;
-    padding: 1.25rem 0.85rem;
-    border-right: 1px solid var(--sidebar-border);
-    border-bottom: none;
-    transform: translateX(-105%);
-    transition: transform 200ms ease;
-  }
-
-  .shell-sidebar--open {
-    transform: translateX(0);
-  }
-
-  .shell-nav {
-    flex-direction: column;
-    flex-wrap: nowrap;
-    gap: 2px;
-  }
-
-  .shell-nav a {
-    min-height: 44px;
-  }
-
-  .shell-sidebar-footer {
-    margin-top: auto;
-    margin-left: 0;
-    flex-direction: column;
-    align-items: stretch;
-    padding-top: 1rem;
-    border-top: 1px solid var(--sidebar-border);
-  }
-
-  .shell-sidebar-actions {
-    flex-direction: column;
-  }
-
-  .shell-sidebar .theme-toggle,
-  .shell-logout {
-    width: 100%;
-  }
-
   .dash-grid {
     grid-template-columns: 1fr;
   }

@@ -38,11 +38,18 @@ function renderShell(path = "/dashboard") {
   );
 }
 
+class ResizeObserverStub {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
 describe("AppShell drawer", () => {
   beforeEach(() => {
     cleanup();
     document.body.style.overflow = "";
     localStorage.setItem(STORAGE_KEY, "light");
+    vi.stubGlobal("ResizeObserver", ResizeObserverStub);
   });
 
   it("toggles the sidebar open class from the menu button", () => {

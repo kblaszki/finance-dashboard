@@ -1,10 +1,14 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ThemeToggle } from "./ThemeToggle";
 import { CurrencySelect } from "./ui/CurrencySelect";
 import { CurrencyProvider } from "../state/currency";
 import { useAuth } from "../state/auth";
+import {
+  maxTableMinWidthIn,
+  shouldUseShellDrawerMode,
+} from "./shellDrawerMode";
 
 type NavItem = {
   to: string;
@@ -126,10 +130,54 @@ export function AppShell() {
   const { user, logout } = useAuth();
   const { pathname } = useLocation();
   const [navOpen, setNavOpen] = useState(false);
+  const [drawerMode, setDrawerMode] = useState(false);
+  const contentRef = useRef<HTMLElement>(null);
   const initial = (user?.username ?? user?.email ?? "?").slice(0, 1);
 
   useEffect(() => {
     setNavOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!drawerMode) setNavOpen(false);
+  }, [drawerMode]);
+
+  useEffect(() => {
+    const root = contentRef.current;
+    if (!root) return;
+
+    let frame = 0;
+    let measuring = false;
+    const update = () => {
+      if (measuring) return;
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        measuring = true;
+        try {
+          setDrawerMode(
+            shouldUseShellDrawerMode(window.innerWidth, maxTableMinWidthIn(root)),
+          );
+        } finally {
+          // Defer clear so ResizeObserver from width:0 measure is ignored.
+          requestAnimationFrame(() => {
+            measuring = false;
+          });
+        }
+      });
+    };
+
+    update();
+    const resizeObserver = new ResizeObserver(update);
+    resizeObserver.observe(root);
+    const mutationObserver = new MutationObserver(update);
+    mutationObserver.observe(root, { childList: true, subtree: true });
+    window.addEventListener("resize", update);
+    return () => {
+      cancelAnimationFrame(frame);
+      resizeObserver.disconnect();
+      mutationObserver.disconnect();
+      window.removeEventListener("resize", update);
+    };
   }, [pathname]);
 
   useEffect(() => {
@@ -154,9 +202,17 @@ export function AppShell() {
     ? "shell-sidebar shell-sidebar--open"
     : "shell-sidebar";
 
+  const shellClass = [
+    "shell",
+    drawerMode ? "shell--drawer-mode" : "",
+    navOpen ? "shell--nav-open" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
     <CurrencyProvider>
-      <div className={navOpen ? "shell shell--nav-open" : "shell"}>
+      <div className={shellClass}>
         <a className="skip-link" href="#main-content">
           Skip to content
         </a>
@@ -243,7 +299,7 @@ export function AppShell() {
               <CurrencySelect />
             </div>
           </header>
-          <main className="shell-content" id="main-content">
+          <main className="shell-content" id="main-content" ref={contentRef}>
             <ErrorBoundary>
               <Outlet />
             </ErrorBoundary>
