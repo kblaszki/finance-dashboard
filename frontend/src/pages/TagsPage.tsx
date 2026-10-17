@@ -68,7 +68,7 @@ function TagCreateRow(props: {
 
   return (
     <tr className="ledger-create-row">
-      <td>
+      <td className="col-text">
         <input
           ref={nameRef}
           type="text"
@@ -246,7 +246,7 @@ export function TagsPage() {
             <table className="data-table data-table--tags">
               <thead>
                 <tr>
-                  <th>Name</th>
+                  <th className="col-text">Name</th>
                   <th className="col-actions">Actions</th>
                 </tr>
               </thead>
@@ -255,6 +255,7 @@ export function TagsPage() {
                 {rows.map((tag) => {
                   const isEditing = editing?.tagId === tag.id;
                   const cellClass = [
+                    "col-text",
                     "ledger-cell",
                     "ledger-cell--editable",
                     isEditing ? "ledger-cell--editing" : "",
