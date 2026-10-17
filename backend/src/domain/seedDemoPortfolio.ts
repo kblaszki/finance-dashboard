@@ -1,8 +1,5 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { categoryNameKey, seedDefaultCategories } from "./categories";
-import { tagNameKey } from "./tags";
-
-const DEMO_TAG_NAMES = ["Work", "Personal", "Reimbursable"] as const;
 import {
   signedDelta,
   signedMinor,
@@ -11,6 +8,26 @@ import {
 } from "./cashLedger";
 import { createTransfer } from "./cashTransfers";
 import { quantizeMajorToMinor } from "./money";
+import { tagNameKey } from "./tags";
+
+/**
+ * Purpose/context tags (merchant, trip, project) — categories stay the spend type.
+ * Demo examples: Lidl vs Food, wakacje-2026 vs Transport.
+ */
+export const DEMO_TAG_NAMES = [
+  "Lidl",
+  "Biedronka",
+  "wakacje-2026",
+  "wyjazd-sluzbowy",
+  "Netflix",
+  "home",
+  "urodziny",
+  "Amazon",
+  "Orlen",
+  "dojazd",
+] as const;
+
+export type DemoTagName = (typeof DEMO_TAG_NAMES)[number];
 
 /** Demo-only TRANSFER children under seeded "Internal transfer". */
 const DEMO_TRANSFER_CHILDREN = [
@@ -63,6 +80,8 @@ export type DemoPlannedTx = {
   occurredAt: Date;
   description: string;
   category?: string;
+  /** Purpose/context tags (not categories); EXPENSE only in seed. */
+  tags?: DemoTagName[];
 };
 
 export type DemoPlannedTransfer = {
@@ -183,7 +202,12 @@ type MonthPlan = {
   amountMax: number;
   description: string;
   category?: string;
+  tags?: DemoTagName[];
 };
+
+function groceryStoreTag(rng: () => number): DemoTagName {
+  return rng() < 0.55 ? "Lidl" : "Biedronka";
+}
 
 function monthPlansForAccount(
   accountKey: DemoAccountKey,
@@ -205,6 +229,7 @@ function monthPlansForAccount(
           amountMax: 1900,
           description: "Rent",
           category: "Housing",
+          tags: ["home"],
         },
         {
           type: "EXPENSE",
@@ -212,6 +237,7 @@ function monthPlansForAccount(
           amountMax: 480,
           description: "Groceries",
           category: "Food",
+          tags: [groceryStoreTag(rng)],
         },
         {
           type: "EXPENSE",
@@ -219,6 +245,7 @@ function monthPlansForAccount(
           amountMax: 320,
           description: "Transit",
           category: "Transport",
+          tags: ["dojazd"],
         },
         rng() < 0.55
           ? {
@@ -226,6 +253,7 @@ function monthPlansForAccount(
               amountMin: 40,
               amountMax: 120,
               description: "Misc uncategorized",
+              tags: rng() < 0.35 ? (["urodziny"] as DemoTagName[]) : undefined,
             }
           : {
               type: "EXPENSE",
@@ -233,6 +261,7 @@ function monthPlansForAccount(
               amountMax: 150,
               description: "Household",
               category: "Other",
+              tags: ["home"],
             },
       ];
     case "euro":
@@ -250,6 +279,7 @@ function monthPlansForAccount(
           amountMax: 45,
           description: "Café",
           category: "Food",
+          tags: ["wakacje-2026"],
         },
         {
           type: "EXPENSE",
@@ -257,6 +287,10 @@ function monthPlansForAccount(
           amountMax: 55,
           description: "Train",
           category: "Transport",
+          tags:
+            rng() < 0.4
+              ? ["wakacje-2026", "wyjazd-sluzbowy"]
+              : ["wakacje-2026"],
         },
         {
           type: "EXPENSE",
@@ -264,6 +298,7 @@ function monthPlansForAccount(
           amountMax: 40,
           description: "Lunch",
           category: "Food",
+          tags: ["wakacje-2026"],
         },
         rng() < 0.4
           ? {
@@ -271,6 +306,7 @@ function monthPlansForAccount(
               amountMin: 8,
               amountMax: 25,
               description: "Travel misc",
+              tags: ["wakacje-2026"],
             }
           : {
               type: "EXPENSE",
@@ -278,6 +314,7 @@ function monthPlansForAccount(
               amountMax: 30,
               description: "Souvenirs",
               category: "Other",
+              tags: ["wakacje-2026", "urodziny"],
             },
       ];
     case "brokerage":
@@ -378,6 +415,7 @@ function monthPlansForAccount(
           amountMax: 220,
           description: "Online shopping",
           category: "Other",
+          tags: ["Amazon"],
         },
         {
           type: "EXPENSE",
@@ -385,6 +423,7 @@ function monthPlansForAccount(
           amountMax: 150,
           description: "Restaurant",
           category: "Food",
+          tags: rng() < 0.3 ? ["urodziny"] : undefined,
         },
         {
           type: "EXPENSE",
@@ -392,6 +431,7 @@ function monthPlansForAccount(
           amountMax: 180,
           description: "Card groceries",
           category: "Food",
+          tags: [groceryStoreTag(rng)],
         },
         {
           type: "EXPENSE",
@@ -399,6 +439,7 @@ function monthPlansForAccount(
           amountMax: 70,
           description: "Subscriptions",
           category: "Other",
+          tags: ["Netflix"],
         },
         rng() < 0.45
           ? {
@@ -406,6 +447,7 @@ function monthPlansForAccount(
               amountMin: 40,
               amountMax: 120,
               description: "Card misc",
+              tags: rng() < 0.5 ? (["Amazon"] as DemoTagName[]) : undefined,
             }
           : {
               type: "EXPENSE",
@@ -413,6 +455,7 @@ function monthPlansForAccount(
               amountMax: 110,
               description: "Fuel",
               category: "Transport",
+              tags: ["Orlen", "dojazd"],
             },
       ];
     case "ike":
@@ -490,6 +533,7 @@ export function buildDemoLedgerTxs(now = new Date()): DemoPlannedTx[] {
           occurredAt: utcMidMonth(month, day),
           description: `${plan.description} (${month})`,
           ...(plan.category ? { category: plan.category } : {}),
+          ...(plan.tags && plan.tags.length > 0 ? { tags: plan.tags } : {}),
         });
       }
     }
@@ -765,30 +809,31 @@ export async function seedDemoPortfolio(
     });
   }
 
-  // Deterministic tags on a subset of EXPENSE cash rows (not transfer legs).
-  const expenseRows = await db.cashTransaction.findMany({
+  // Purpose tags from the plan (createMany order = planned order under SQLite).
+  const ledgerRows = await db.cashTransaction.findMany({
     where: {
       account: { userId },
-      type: "EXPENSE",
       transferId: null,
     },
     select: { id: true },
-    orderBy: [{ occurredAt: "asc" }, { id: "asc" }],
+    orderBy: { id: "asc" },
   });
+  if (ledgerRows.length !== planned.length) {
+    throw new Error(
+      `Demo seed tag attach: expected ${planned.length} ledger rows, got ${ledgerRows.length}`,
+    );
+  }
   const tagLinks: Array<{ cashTransactionId: number; tagId: number }> = [];
-  for (let i = 0; i < expenseRows.length; i++) {
-    const txId = expenseRows[i]!.id;
-    if (i % 3 === 0) {
-      tagLinks.push({ cashTransactionId: txId, tagId: tagIdsByName.Personal! });
-    }
-    if (i % 5 === 0) {
-      tagLinks.push({ cashTransactionId: txId, tagId: tagIdsByName.Work! });
-    }
-    if (i % 7 === 0) {
-      tagLinks.push({
-        cashTransactionId: txId,
-        tagId: tagIdsByName.Reimbursable!,
-      });
+  for (let i = 0; i < planned.length; i++) {
+    const tags = planned[i]!.tags;
+    if (!tags || tags.length === 0) continue;
+    const cashTransactionId = ledgerRows[i]!.id;
+    for (const name of tags) {
+      const tagId = tagIdsByName[name];
+      if (tagId == null) {
+        throw new Error(`Demo seed missing tag "${name}"`);
+      }
+      tagLinks.push({ cashTransactionId, tagId });
     }
   }
   if (tagLinks.length > 0) {

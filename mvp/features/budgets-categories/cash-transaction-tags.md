@@ -13,7 +13,7 @@ User-scoped flat tags with M:N assignment to cash ledger `INCOME`/`EXPENSE` rows
 
 ## User value
 
-Label transactions with multiple free-form tags (e.g. Work + Reimbursable) without changing the category tree.
+Label transactions with multiple free-form tags (e.g. Lidl + wakacje-2026) for purpose/context, while categories stay the spend type.
 
 ## Surfaces
 
@@ -29,7 +29,7 @@ Label transactions with multiple free-form tags (e.g. Work + Reimbursable) witho
 - [x] Cash create/PATCH accept `tagIds` (replace); list returns `tagIds`
 - [x] Delete tag cascades joins; transactions remain
 - [x] Transfer legs ignore tags (`tagIds: []`)
-- [x] Demo seed creates Work/Personal/Reimbursable and tags some expenses
+- [x] Demo seed creates purpose tags (Lidl, wakacje-2026, …) and assigns them on matching expenses
 - [x] Stats / budgets / CSV unchanged (no tags in this slice)
 
 ## Implementation notes

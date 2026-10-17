@@ -11,6 +11,7 @@ import {
   DEMO_IKE_CONTRIBUTION,
   DEMO_LEDGER_MONTHS,
   DEMO_OPENINGS,
+  DEMO_TAG_NAMES,
   DEMO_TXS_PER_ACCOUNT_MONTH,
   listMonthsEndingAt,
   recomputeCashBalance,
@@ -267,12 +268,34 @@ test("seedDemoPortfolio matches ledger balances and scopes wipe to one user", as
     // 7 default roots + 4 demo TRANSFER children under Internal transfer
     assert.equal(categoryCount, 11);
 
-    const tagCount = await prisma.tag.count({ where: { userId: demo.id } });
-    assert.equal(tagCount, 3);
+    const tags = await prisma.tag.findMany({
+      where: { userId: demo.id },
+      select: { name: true },
+      orderBy: { name: "asc" },
+    });
+    assert.deepEqual(
+      tags.map((t) => t.name).sort(),
+      [...DEMO_TAG_NAMES].sort(),
+    );
     const taggedCash = await prisma.cashTransactionTag.count({
       where: { cashTransaction: { account: { userId: demo.id } } },
     });
-    assert.ok(taggedCash > 0);
+    // Purpose tags on groceries, rent, travel, card spend, etc.
+    assert.ok(taggedCash > 100, `expected many tagged joins, got ${taggedCash}`);
+    const vacationLinks = await prisma.cashTransactionTag.count({
+      where: {
+        tag: { userId: demo.id, name: "wakacje-2026" },
+        cashTransaction: { account: { userId: demo.id } },
+      },
+    });
+    assert.ok(vacationLinks > 0);
+    const lidlLinks = await prisma.cashTransactionTag.count({
+      where: {
+        tag: { userId: demo.id, name: "Lidl" },
+        cashTransaction: { account: { userId: demo.id } },
+      },
+    });
+    assert.ok(lidlLinks > 0);
 
     const taggedTransfers = await prisma.cashTransfer.count({
       where: { userId: demo.id, categoryId: { not: null } },
