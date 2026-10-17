@@ -47,7 +47,7 @@
   font-size: var(--text-base);
   font-weight: var(--weight-bold);
   letter-spacing: -0.01em;
-  color: #ffffff;
+  color: var(--sidebar-brand);
 }
 
 .shell-brand-mark {
@@ -93,7 +93,7 @@
 
 .shell-nav a:hover {
   background: rgba(255, 255, 255, 0.06);
-  color: #ffffff;
+  color: var(--sidebar-brand);
 }
 
 .shell-nav a.active {
@@ -146,7 +146,7 @@
 .shell-user-name {
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
-  color: #ffffff;
+  color: var(--sidebar-brand);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -175,7 +175,7 @@
 .shell-sidebar .theme-toggle:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.06);
   border-color: var(--sidebar-muted);
-  color: #ffffff;
+  color: var(--sidebar-brand);
 }
 
 .shell-logout {
@@ -1269,7 +1269,7 @@ a.btn-secondary {
     linear-gradient(color-mix(in srgb, var(--color-text) 6%, transparent) 1px, transparent 1px),
     linear-gradient(90deg, color-mix(in srgb, var(--color-text) 6%, transparent) 1px, transparent 1px);
   background-size: 32px 32px;
-  mask-image: radial-gradient(ellipse 70% 65% at 55% 40%, #000 20%, transparent 78%);
+  mask-image: radial-gradient(ellipse 70% 65% at 55% 40%, var(--color-mask) 20%, transparent 78%);
   opacity: 0.85;
 }
 
@@ -1469,7 +1469,7 @@ a.btn-secondary {
   .auth-swap-visual {
     grid-column: 1;
     min-height: auto;
-    transform: none !important;
+    transform: none;
   }
 
   .auth-swap-form {
@@ -1751,7 +1751,7 @@ a.btn-secondary {
     linear-gradient(rgba(26, 34, 44, 0.06) 1px, transparent 1px),
     linear-gradient(90deg, rgba(26, 34, 44, 0.06) 1px, transparent 1px);
   background-size: 32px 32px;
-  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 20%, transparent 75%);
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, var(--color-mask) 20%, transparent 75%);
   pointer-events: none;
 }
 
@@ -1934,7 +1934,7 @@ a.btn-secondary {
 @media (prefers-reduced-motion: reduce) {
   .landing-anim,
   .landing-grid {
-    animation: none !important;
+    animation: none;
   }
 
   .landing-grid {

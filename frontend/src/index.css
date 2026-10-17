@@ -65,6 +65,8 @@
   --sidebar-border: rgba(232, 238, 243, 0.1);
   --sidebar-active-bg: rgba(52, 211, 153, 0.14);
   --sidebar-active-text: #34d399;
+  --sidebar-brand: #ffffff;
+  --color-mask: #000000;
 
   font-family: var(--font-ui);
   line-height: 1.5;
