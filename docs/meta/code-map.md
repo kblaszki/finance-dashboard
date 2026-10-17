@@ -61,3 +61,4 @@ Auth + multi-type accounts + category tree + cash ledger + category statistics b
 | Transfers API client | `frontend/src/api/transfersApi.ts` |
 | Account ledger UI | `frontend/src/components/account/` |
 | Theme | `frontend/src/state/theme.tsx`, `ThemeToggle.tsx` (light/dark) |
+| CSS layers / tokens | `frontend/src/styles/` (`tokens`, `base`, `layout`, `components/*`, `pages/*`, `utilities`) |

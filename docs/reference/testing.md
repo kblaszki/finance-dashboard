@@ -18,7 +18,7 @@ Hub: [docs/README.md](../README.md). Checklist: [run-tests-and-coverage.md](../h
 
 | Command | What |
 |---------|------|
-| `npm test` | Backend tests → frontend Vitest → frontend ESLint |
+| `npm test` | Backend tests → frontend Vitest → frontend lint (ESLint + Stylelint) |
 | `npm run test:coverage` | Backend c8 + frontend Vitest coverage |
 
 ## Backend
@@ -35,7 +35,8 @@ From `backend/.c8rc.json`: lines/statements 85, branches 75, functions 88. Inclu
 ## Frontend
 
 - Vitest + jsdom: `frontend/src/**/*.test.ts(x)`.
-- Current suites: `apiModules`, `apiContracts`, `client`, `format`, `useAsyncData`, `theme`, `AccountDetailPage`, `categoryScope`, `LedgerTable`.
+- Current suites: `apiModules`, `apiContracts`, `client`, `format`, `useAsyncData`, `theme`, `AccountDetailPage`, `categoryScope`, `LedgerTable`, `StatisticsPage`, `AppShell`, `shellDrawerMode`.
+- Lint: `cd frontend && npm run lint` runs ESLint (`--max-warnings 0`) then Stylelint (`npm run lint:css` on `src/**/*.css`, `--max-warnings 0`). Config: `frontend/stylelint.config.js` (extends `stylelint-config-standard`; hex colors only in `styles/tokens.css`; no `font-size` in `px`; no `!important`).
 
 ### Coverage (Vitest)
 
@@ -45,4 +46,4 @@ New `*Api.ts` modules must extend `apiModules.test.ts`.
 
 ## CI
 
-`.github/workflows/ci.yml` — Node 22, matching the production image. Backend job runs `npm run build` then `npm test`. Coverage job runs `npm run test:coverage`. Frontend lint is `eslint . --max-warnings 0`. A `docker-build` job runs `docker build` and does not push the image.
+`.github/workflows/ci.yml` — Node 22, matching the production image. Backend job runs `npm run build` then `npm test`. Coverage job runs `npm run test:coverage`. Frontend lint is ESLint + Stylelint via `frontend` `npm run lint`. A `docker-build` job runs `docker build` and does not push the image.
