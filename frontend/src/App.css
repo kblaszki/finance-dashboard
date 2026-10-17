@@ -526,40 +526,46 @@
 .data-table th,
 .data-table td {
   padding: var(--space-sm) 0.75rem;
-  border-bottom: 1px solid var(--color-border);
-  text-align: center;
+  border-bottom: 1px solid var(--color-border-subtle);
+  text-align: left;
   vertical-align: middle;
 }
 
-/* Position-based alignment: first left, last right, middle centered */
-.data-table th:first-child,
-.data-table td:first-child,
-.data-table th:only-child,
-.data-table td:only-child {
+/* Type-based alignment: numbers right, text/date/status left, icons center */
+.data-table :is(.col-num, .num) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.data-table .col-date {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.data-table .col-status {
   text-align: left;
+  white-space: nowrap;
+  width: 1%;
 }
 
-.data-table th:last-child:not(:only-child),
-.data-table td:last-child:not(:only-child) {
-  text-align: right;
-}
-
-/* Numeric columns stay tabular; middle cols center, last col stays right */
-.data-table .num {
+.data-table .col-icon {
   text-align: center;
+  width: 1%;
 }
 
-.data-table th:last-child.num,
-.data-table td:last-child.num {
-  text-align: right;
+.data-table .col-text {
+  min-width: var(--col-text-min, 8rem);
+  overflow-wrap: anywhere;
+  white-space: normal;
+  word-break: normal;
 }
 
 .data-table th {
   color: var(--color-text-muted);
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
 }
 
 .data-table tbody tr {
@@ -711,14 +717,12 @@
   color: var(--color-text);
 }
 
-/* Center text inside editors in middle columns */
-.data-table td:not(:first-child):not(:last-child) .ledger-cell-input {
-  text-align: center;
-  text-align-last: center;
+.data-table :is(.col-num, .num) .ledger-cell-input {
+  text-align: right;
+  text-align-last: right;
 }
 
-.data-table td:first-child .ledger-cell-input,
-.data-table td:last-child .ledger-cell-input {
+.data-table :is(.col-text, .col-date, .col-status) .ledger-cell-input {
   text-align: left;
   text-align-last: auto;
 }
@@ -775,7 +779,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  align-items: center;
+  align-items: stretch;
   min-width: 0;
   max-width: 100%;
 }
@@ -790,7 +794,7 @@
   flex-wrap: wrap;
   gap: 0.2rem;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   max-width: 100%;
 }
 
@@ -800,13 +804,12 @@
   overflow-wrap: break-word;
 }
 
-/* Middle-column text badges (category/tags) may wrap; type badges stay one line */
-.data-table td:not(:first-child):not(:last-child) .badge {
+.data-table .col-text .badge {
   white-space: normal;
   overflow-wrap: break-word;
 }
 
-.ledger-table--account td:nth-child(2) .badge {
+.data-table .col-status .badge {
   white-space: nowrap;
 }
 

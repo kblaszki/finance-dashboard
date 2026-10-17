@@ -5,6 +5,8 @@
   --color-bg-elevated: #f4f7fa;
   --color-surface: #ffffff;
   --color-border: #5c6770;
+  --color-border-strong: #5c6770;
+  --color-border-subtle: #c5ced6;
   --color-text: #1a222c;
   --color-text-muted: #5a6570;
   --color-accent: #047857;
@@ -65,6 +67,8 @@
   --color-bg-elevated: #151b24;
   --color-surface: #1a222c;
   --color-border: #8b9aab;
+  --color-border-strong: #8b9aab;
+  --color-border-subtle: #2a3440;
   --color-text: #e8eef3;
   --color-text-muted: #9aa8b5;
   --color-accent: #34d399;
