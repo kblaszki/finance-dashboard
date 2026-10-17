@@ -1,4 +1,4 @@
-/** Sticky sidebar width — keep in sync with `.shell-sidebar` in App.css */
+/** Fallback sticky sidebar width when `--sidebar-width` is unavailable. */
 export const SHELL_SIDEBAR_WIDTH_PX = 232;
 
 /** Approx. horizontal padding of `.shell-content` (clamp 1.25rem–2rem × 2). */
@@ -6,6 +6,25 @@ export const SHELL_CONTENT_CHROME_PX = 48;
 
 /** Fallback when the page has no data tables (mobile hamburger). */
 export const SHELL_DRAWER_FALLBACK_MAX_PX = 900;
+
+/** Read `--sidebar-width` from the document (falls back to SHELL_SIDEBAR_WIDTH_PX). */
+export function readSidebarWidthPx(
+  root: Element | null = typeof document !== "undefined" ? document.documentElement : null,
+): number {
+  if (!root || typeof getComputedStyle === "undefined") {
+    return SHELL_SIDEBAR_WIDTH_PX;
+  }
+  const raw = getComputedStyle(root).getPropertyValue("--sidebar-width").trim();
+  if (!raw) return SHELL_SIDEBAR_WIDTH_PX;
+  const probe = document.createElement("div");
+  probe.style.width = raw;
+  probe.style.position = "absolute";
+  probe.style.visibility = "hidden";
+  document.body.appendChild(probe);
+  const px = probe.getBoundingClientRect().width;
+  probe.remove();
+  return px > 0 ? px : SHELL_SIDEBAR_WIDTH_PX;
+}
 
 /**
  * Intrinsic minimum width of a table (column mins / content), independent of

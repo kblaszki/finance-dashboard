@@ -7,6 +7,7 @@ import { CurrencyProvider } from "../state/currency";
 import { useAuth } from "../state/auth";
 import {
   maxTableMinWidthIn,
+  readSidebarWidthPx,
   shouldUseShellDrawerMode,
 } from "./shellDrawerMode";
 
@@ -155,7 +156,11 @@ export function AppShell() {
         measuring = true;
         try {
           setDrawerMode(
-            shouldUseShellDrawerMode(window.innerWidth, maxTableMinWidthIn(root)),
+            shouldUseShellDrawerMode(
+              window.innerWidth,
+              maxTableMinWidthIn(root),
+              readSidebarWidthPx(),
+            ),
           );
         } finally {
           // Defer clear so ResizeObserver from width:0 measure is ignored.
