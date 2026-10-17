@@ -14,6 +14,7 @@ import {
   LedgerCreateRow,
   normalizeCashTxType,
 } from "./LedgerCreateRow";
+import { LedgerTagField } from "./LedgerTagField";
 import { formatOccurredAt, toDateTimeLocalValue } from "./occurredAt";
 
 function isTransferLeg(tx: CashTransaction): boolean {
@@ -438,28 +439,23 @@ function LedgerRow(props: {
         onDoubleClick={() => onCellDoubleClick("tagIds")}
       >
         {props.isEditing(tx.id, "tagIds") ? (
-          <select
-            multiple
-            className="ledger-cell-input ledger-tag-select"
-            value={props.draft ? props.draft.split(",") : []}
+          <LedgerTagField
+            tags={props.tags}
+            selectedIds={
+              props.draft
+                ? props.draft
+                    .split(",")
+                    .filter(Boolean)
+                    .map((part) => Number(part))
+                : []
+            }
+            onChange={(ids) => props.onDraftChange(encodeTagIds(ids))}
             disabled={props.editBusy}
             autoFocus
-            onChange={(e) => {
-              const selected = Array.from(e.target.selectedOptions).map(
-                (o) => o.value,
-              );
-              props.onDraftChange(selected.sort().join(","));
-            }}
             onKeyDown={(e) => props.onEditorKeyDown(e, tx)}
             onBlur={props.onEditorBlur}
             aria-label="Edit tags"
-          >
-            {props.tags.map((tag) => (
-              <option key={tag.id} value={tag.id}>
-                {tag.name}
-              </option>
-            ))}
-          </select>
+          />
         ) : tagLabels.length > 0 ? (
           <span className="tag-list">
             {tagLabels.map((label) => (

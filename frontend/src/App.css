@@ -564,7 +564,13 @@
 
 .ledger-table td {
   vertical-align: middle;
+  min-height: 2.75rem;
   height: 2.75rem;
+}
+
+.ledger-table td.ledger-cell--editing {
+  height: auto;
+  padding-block: 0.4rem;
 }
 
 .ledger-cell--editable {
@@ -625,6 +631,7 @@
   white-space: nowrap;
   text-align: right;
   vertical-align: middle;
+  padding-inline: 1rem 1.25rem;
 }
 
 .data-table td.col-actions .form-actions-row {
@@ -636,6 +643,17 @@
 /* Tags page: Name fills, Actions shrinks */
 .data-table--tags {
   table-layout: auto;
+}
+
+.ledger-tags-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.ledger-tags-field .ledger-cell-input {
+  width: 100%;
 }
 
 .tag-list {
@@ -651,19 +669,23 @@
   text-overflow: ellipsis;
 }
 
-select.ledger-cell-input[multiple],
-.ledger-tag-select {
-  height: auto;
-  min-height: 3.25rem;
-  max-height: 6.5rem;
-  padding: 0.15rem;
-  line-height: 1.35;
+button.badge.badge--removable {
+  cursor: pointer;
+  border: none;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
 }
 
-select.ledger-cell-input[multiple] option,
-.ledger-tag-select option {
-  padding: 0.15rem 0.35rem;
-  border-radius: 3px;
+button.badge.badge--removable:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  color: var(--color-accent);
+}
+
+button.badge.badge--removable:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 .muted {

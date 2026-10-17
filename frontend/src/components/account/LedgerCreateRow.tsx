@@ -14,6 +14,7 @@ import {
   type CreateCashTransactionInput,
 } from "../../api/transactionsApi";
 import { categoryIdsForLedgerType } from "./categoryScope";
+import { LedgerTagField } from "./LedgerTagField";
 import { defaultOccurredAtValue } from "./occurredAt";
 
 export function normalizeCashTxType(value: unknown): CashTxType {
@@ -184,24 +185,13 @@ export function LedgerCreateRow(props: {
         </select>
       </td>
       <td>
-        <select
-          multiple
-          className="ledger-cell-input ledger-tag-select"
-          value={tagIds.map(String)}
-          onChange={(e) => {
-            const selected = Array.from(e.target.selectedOptions).map((o) =>
-              Number(o.value),
-            );
-            setTagIds(selected);
-          }}
+        <LedgerTagField
+          tags={props.tags}
+          selectedIds={tagIds}
+          onChange={setTagIds}
+          onKeyDown={onFieldKeyDown}
           aria-label="New tags"
-        >
-          {props.tags.map((tag) => (
-            <option key={tag.id} value={tag.id}>
-              {tag.name}
-            </option>
-          ))}
-        </select>
+        />
       </td>
       <td>
         <input
