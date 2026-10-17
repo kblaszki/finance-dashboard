@@ -92,7 +92,7 @@ button.badge.badge--removable:disabled {
 
 .chart-container {
   width: 100%;
-  min-height: 200px;
+  min-height: clamp(220px, 40vh, 360px);
 }
 
 .chart-container .recharts-responsive-container {

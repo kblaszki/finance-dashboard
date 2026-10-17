@@ -138,7 +138,7 @@ describe("StatisticsPage period and analysis views", () => {
   it("shows KPIs including transfers and switches period to quarter", async () => {
     renderStats();
     expect(await screen.findByText(/Transfers ·/)).toBeTruthy();
-    expect(screen.getByText(/PLN\s*150\.00/)).toBeTruthy();
+    expect(screen.getAllByText(/PLN\s*150\.00/).length).toBeGreaterThan(0);
 
     fireEvent.click(screen.getByRole("button", { name: "Quarter" }));
     await waitFor(() => {

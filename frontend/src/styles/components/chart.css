@@ -46,11 +46,22 @@
 }
 
 
+.chart-card,
+.card {
+  container-type: inline-size;
+}
+
 .donut-layout {
   display: grid;
   grid-template-columns: minmax(160px, 220px) 1fr;
   gap: var(--space-md);
   align-items: center;
+}
+
+@container (max-width: 28rem) {
+  .donut-layout {
+    grid-template-columns: 1fr;
+  }
 }
 
 .legend-list {

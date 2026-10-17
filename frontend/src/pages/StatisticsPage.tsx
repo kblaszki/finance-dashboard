@@ -26,6 +26,7 @@ import {
   type TagBreakdownRow,
 } from "../api/statisticsApi";
 import { ChartCard } from "../components/ui/ChartCard";
+import { KpiCard } from "../components/ui/KpiCard";
 import { StatusBlock } from "../components/ui/StatusBlock";
 import { useAsyncData } from "../hooks/useAsyncData";
 import { useCurrency } from "../state/currency";
@@ -417,34 +418,27 @@ export function StatisticsPage() {
       />
 
       {!loading && !error && currency && summary && (
-        <ul className="stat-list card">
-          <li className="stat-row">
-            <span className="stat-row-label">Income · {periodLabel}</span>
-            <span className="stat-row-value positive">
-              {formatMoney(summary.income, currency)}
-            </span>
-          </li>
-          <li className="stat-row">
-            <span className="stat-row-label">Expense · {periodLabel}</span>
-            <span className="stat-row-value negative">
-              {formatMoney(summary.expense, currency)}
-            </span>
-          </li>
-          <li className="stat-row">
-            <span className="stat-row-label">Net · {periodLabel}</span>
-            <span
-              className={`stat-row-value ${summary.net >= 0 ? "positive" : "negative"}`}
-            >
-              {formatMoney(summary.net, currency)}
-            </span>
-          </li>
-          <li className="stat-row">
-            <span className="stat-row-label">Transfers · {periodLabel}</span>
-            <span className="stat-row-value">
-              {formatMoney(summary.transfers, currency)}
-            </span>
-          </li>
-        </ul>
+        <div className="kpi-grid">
+          <KpiCard
+            label={`Income · ${periodLabel}`}
+            value={formatMoney(summary.income, currency)}
+            tone="positive"
+          />
+          <KpiCard
+            label={`Expense · ${periodLabel}`}
+            value={formatMoney(summary.expense, currency)}
+            tone="negative"
+          />
+          <KpiCard
+            label={`Net · ${periodLabel}`}
+            value={formatMoney(summary.net, currency)}
+            tone={summary.net >= 0 ? "positive" : "negative"}
+          />
+          <KpiCard
+            label={`Transfers · ${periodLabel}`}
+            value={formatMoney(summary.transfers, currency)}
+          />
+        </div>
       )}
 
       {!loading && !error && currency && history && (

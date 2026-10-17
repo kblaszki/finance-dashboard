@@ -271,7 +271,7 @@
   color: var(--color-text-muted);
 }
 
-@media (max-width: 900px) {
+@media (max-width: 64rem) {
   .auth-swap {
     grid-template-columns: 1fr;
     grid-template-rows: auto auto;

@@ -283,6 +283,8 @@
 }
 
 .shell-content {
+  container-type: inline-size;
+  container-name: main;
   width: 100%;
   max-width: 1240px;
   margin-inline: auto;
@@ -293,7 +295,14 @@
 }
 
 
-@media (max-width: 1024px) {
+@container main (max-width: 40rem) {
+  .dash-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Canonical breakpoints: 40rem / 64rem / 80rem */
+@media (max-width: 64rem) {
   .card {
     padding: var(--space-md) var(--space-lg);
   }
@@ -377,23 +386,11 @@
   width: 100%;
 }
 
-@media (max-width: 900px) {
-  .dash-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .donut-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
+@media (max-width: 40rem) {
   .chart-container {
-    min-height: 220px;
+    min-height: clamp(220px, 40vh, 360px);
   }
-}
 
-@media (max-width: 480px) {
   .card {
     padding: var(--space-md);
   }
@@ -413,6 +410,17 @@
 
   .kpi-grid {
     grid-template-columns: 1fr;
+  }
+
+  .shell-content {
+    padding: var(--space-md) clamp(0.85rem, 3vw, var(--space-xl));
+  }
+
+  .stats-segmented__btn,
+  .data-table td.col-actions .btn-primary,
+  .data-table td.col-actions .btn-danger,
+  .data-table td.col-actions .btn-secondary {
+    min-height: var(--tap-target);
   }
 }
 }
