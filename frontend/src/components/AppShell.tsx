@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ThemeToggle } from "./ThemeToggle";
@@ -124,15 +125,50 @@ function navLinkClass({ isActive }: { isActive: boolean }) {
 export function AppShell() {
   const { user, logout } = useAuth();
   const { pathname } = useLocation();
+  const [navOpen, setNavOpen] = useState(false);
   const initial = (user?.username ?? user?.email ?? "?").slice(0, 1);
+
+  useEffect(() => {
+    setNavOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!navOpen) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setNavOpen(false);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [navOpen]);
+
+  useEffect(() => {
+    if (!navOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [navOpen]);
+
+  const sidebarClass = navOpen
+    ? "shell-sidebar shell-sidebar--open"
+    : "shell-sidebar";
 
   return (
     <CurrencyProvider>
-      <div className="shell">
+      <div className={navOpen ? "shell shell--nav-open" : "shell"}>
         <a className="skip-link" href="#main-content">
           Skip to content
         </a>
-        <aside className="shell-sidebar">
+        <button
+          type="button"
+          className="shell-backdrop"
+          aria-label="Close navigation"
+          aria-hidden={!navOpen}
+          tabIndex={navOpen ? 0 : -1}
+          onClick={() => setNavOpen(false)}
+        />
+        <aside id="shell-sidebar" className={sidebarClass}>
           <p className="shell-brand">
             <span className="shell-brand-mark" aria-hidden>
               <Icon>
@@ -142,7 +178,7 @@ export function AppShell() {
             </span>
             Finance Dashboard
           </p>
-          <nav className="shell-nav">
+          <nav className="shell-nav" aria-label="Main">
             {NAV_ITEMS.map((item) => (
               <NavLink
                 key={item.to}
@@ -179,7 +215,30 @@ export function AppShell() {
         </aside>
         <div className="shell-main">
           <header className="shell-topbar">
-            <h1 className="shell-page-title">{pageTitle(pathname)}</h1>
+            <div className="shell-topbar-start">
+              <button
+                type="button"
+                className="shell-menu-btn"
+                aria-expanded={navOpen}
+                aria-controls="shell-sidebar"
+                aria-label={navOpen ? "Close menu" : "Open menu"}
+                onClick={() => setNavOpen((open) => !open)}
+              >
+                {navOpen ? (
+                  <Icon>
+                    <path d="M6 6l12 12" />
+                    <path d="M18 6 6 18" />
+                  </Icon>
+                ) : (
+                  <Icon>
+                    <path d="M4 7h16" />
+                    <path d="M4 12h16" />
+                    <path d="M4 17h16" />
+                  </Icon>
+                )}
+              </button>
+              <h1 className="shell-page-title">{pageTitle(pathname)}</h1>
+            </div>
             <div className="shell-topbar-actions">
               <CurrencySelect />
             </div>
