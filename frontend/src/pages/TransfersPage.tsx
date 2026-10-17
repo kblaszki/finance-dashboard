@@ -9,6 +9,10 @@ import {
 } from "react";
 import { fetchAccounts, type Account } from "../api/accountsApi";
 import {
+  fetchCategories,
+  type Category,
+} from "../api/categoriesApi";
+import {
   createTransfer,
   deleteTransfer,
   exportTransfersCsv,
@@ -27,6 +31,7 @@ import {
   defaultOccurredAtValue,
   toDateTimeLocalValue,
 } from "../components/account/occurredAt";
+import { categoriesForLedgerType } from "../components/account/categoryScope";
 import { AccountLedgerHeader } from "../components/account/AccountLedgerHeader";
 import { TransferImportPanel } from "../components/transfers/TransferImportPanel";
 import { PageHeader } from "../components/ui/PageHeader";
@@ -61,12 +66,21 @@ type EditableField =
   | "toAccountId"
   | "amountFrom"
   | "amountTo"
+  | "categoryId"
   | "description";
 
 type EditingState = { transferId: number; field: EditableField };
 
 function accountLabel(account: Account): string {
   return `${account.name} (${account.currency})`;
+}
+
+function categoryNameById(
+  categories: Category[],
+  categoryId: number | null,
+): string {
+  if (categoryId == null) return "—";
+  return categories.find((c) => c.id === categoryId)?.name ?? "—";
 }
 
 function currencyForAccount(
@@ -80,6 +94,7 @@ function currencyForAccount(
 
 function TransferCreateRow(props: {
   accounts: Account[];
+  transferCategories: Category[];
   onCreate: (input: CreateTransferInput) => Promise<void>;
   onActionError: (message: string | null) => void;
 }) {
@@ -88,6 +103,7 @@ function TransferCreateRow(props: {
   const [toAccountId, setToAccountId] = useState("");
   const [amountFrom, setAmountFrom] = useState("");
   const [amountTo, setAmountTo] = useState("");
+  const [categoryId, setCategoryId] = useState("");
   const [description, setDescription] = useState("");
   const [createBusy, setCreateBusy] = useState(false);
   const [focusNonce, setFocusNonce] = useState(0);
@@ -135,7 +151,12 @@ function TransferCreateRow(props: {
       amountFrom: amountFromNumber,
       occurredAt: date.toISOString(),
       description: description.trim() ? description.trim() : null,
+      categoryId: categoryId === "" ? null : Number(categoryId),
     };
+    if (categoryId !== "" && (!Number.isInteger(input.categoryId) || (input.categoryId ?? 0) < 1)) {
+      props.onActionError("Invalid category");
+      return;
+    }
     if (crossCurrency) {
       const amountToNumber = Number(amountTo);
       if (!Number.isFinite(amountToNumber) || amountToNumber <= 0) {
@@ -153,6 +174,7 @@ function TransferCreateRow(props: {
       setToAccountId("");
       setAmountFrom("");
       setAmountTo("");
+      setCategoryId("");
       setDescription("");
       setCreateBusy(false);
       setFocusNonce((n) => n + 1);
@@ -253,6 +275,23 @@ function TransferCreateRow(props: {
       </td>
       <td className="num">—</td>
       <td>
+        <select
+          className="ledger-cell-input"
+          value={categoryId}
+          disabled={createBusy}
+          onChange={(e) => setCategoryId(e.target.value)}
+          onKeyDown={onFieldKeyDown}
+          aria-label="New category"
+        >
+          <option value="">No category</option>
+          {props.transferCategories.map((cat) => (
+            <option key={cat.id} value={cat.id}>
+              {cat.name}
+            </option>
+          ))}
+        </select>
+      </td>
+      <td>
         <input
           type="text"
           className="ledger-cell-input"
@@ -287,6 +326,8 @@ function draftFromTransfer(transfer: CashTransfer, field: EditableField): string
       return String(transfer.amountFrom);
     case "amountTo":
       return String(transfer.amountTo);
+    case "categoryId":
+      return transfer.categoryId == null ? "" : String(transfer.categoryId);
     case "description":
       return transfer.description ?? "";
   }
@@ -326,6 +367,12 @@ function buildPatch(
       }
       return { amountTo: amount };
     }
+    case "categoryId": {
+      if (draft === "") return { categoryId: null };
+      const id = Number(draft);
+      if (!Number.isInteger(id) || id < 1) throw new Error("Invalid category");
+      return { categoryId: id };
+    }
     case "description": {
       const trimmed = draft.trim();
       return { description: trimmed ? trimmed : null };
@@ -362,6 +409,13 @@ export function TransfersPage() {
     reload: reloadAccounts,
   } = useAsyncData(loadAccounts);
 
+  const loadCategories = useCallback(() => fetchCategories(), []);
+  const {
+    data: categories,
+    error: categoriesError,
+    loading: categoriesLoading,
+  } = useAsyncData(loadCategories);
+
   const accountById = useMemo(() => {
     const map = new Map<number, Account>();
     for (const account of accounts ?? []) map.set(account.id, account);
@@ -374,6 +428,11 @@ export function TransfersPage() {
         .slice()
         .sort((a, b) => a.name.localeCompare(b.name)),
     [accounts],
+  );
+
+  const transferCategories = useMemo(
+    () => categoriesForLedgerType(categories ?? [], "TRANSFER"),
+    [categories],
   );
 
   function startEdit(transfer: CashTransfer, field: EditableField) {
@@ -570,8 +629,8 @@ export function TransfersPage() {
     }
   }
 
-  const loading = transfersLoading || accountsLoading;
-  const error = transfersError ?? accountsError;
+  const loading = transfersLoading || accountsLoading || categoriesLoading;
+  const error = transfersError ?? accountsError ?? categoriesError;
 
   return (
     <>
@@ -625,6 +684,7 @@ export function TransfersPage() {
                   <th className="num">Amount from</th>
                   <th className="num">Amount to</th>
                   <th className="num">FX rate</th>
+                  <th>Category</th>
                   <th>Description</th>
                   <th>Actions</th>
                 </tr>
@@ -632,6 +692,7 @@ export function TransfersPage() {
               <tbody>
                 <TransferCreateRow
                   accounts={sortedAccounts}
+                  transferCategories={transferCategories}
                   onCreate={handleCreate}
                   onActionError={setActionError}
                 />
@@ -780,6 +841,32 @@ export function TransfersPage() {
                             maximumFractionDigits: 4,
                           })
                         : "—"}
+                    </td>
+                    <td
+                      className={cellClass(transfer.id, "categoryId", true)}
+                      onDoubleClick={() => startEdit(transfer, "categoryId")}
+                    >
+                      {isEditing(transfer.id, "categoryId") ? (
+                        <select
+                          className="ledger-cell-input"
+                          value={draft}
+                          disabled={editBusy}
+                          autoFocus
+                          onChange={(e) => setDraft(e.target.value)}
+                          onKeyDown={(e) => onEditorKeyDown(e, transfer)}
+                          onBlur={onEditorBlur}
+                          aria-label="Edit category"
+                        >
+                          <option value="">No category</option>
+                          {transferCategories.map((cat) => (
+                            <option key={cat.id} value={cat.id}>
+                              {cat.name}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        categoryNameById(transferCategories, transfer.categoryId)
+                      )}
                     </td>
                     <td
                       className={cellClass(transfer.id, "description", true)}

@@ -1,6 +1,6 @@
 import { apiClient } from "./client";
 
-export type CategoryLedgerType = "INCOME" | "EXPENSE";
+export type CategoryLedgerType = "INCOME" | "EXPENSE" | "TRANSFER";
 
 export type Category = {
   id: number;

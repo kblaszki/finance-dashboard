@@ -11,6 +11,7 @@ export type CashTransfer = {
   fxRate: number | null;
   occurredAt: string;
   description: string | null;
+  categoryId: number | null;
   createdAt: string;
 };
 
@@ -21,6 +22,7 @@ export type CreateTransferInput = {
   amountTo?: number;
   occurredAt?: string;
   description?: string | null;
+  categoryId?: number | null;
 };
 
 export type UpdateTransferInput = Partial<CreateTransferInput>;

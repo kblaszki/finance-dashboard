@@ -271,6 +271,7 @@ describe('API modules', () => {
       amountFrom: 100,
       amountTo: 25,
       description: 'FX move',
+      categoryId: 10,
     })
     expect(apiClient.post).toHaveBeenCalledWith('/api/transfers', {
       fromAccountId: 1,
@@ -278,11 +279,13 @@ describe('API modules', () => {
       amountFrom: 100,
       amountTo: 25,
       description: 'FX move',
+      categoryId: 10,
     })
 
-    await updateTransfer(9, { amountFrom: 50 })
+    await updateTransfer(9, { amountFrom: 50, categoryId: null })
     expect(apiClient.patch).toHaveBeenCalledWith('/api/transfers/9', {
       amountFrom: 50,
+      categoryId: null,
     })
 
     await deleteTransfer(9)

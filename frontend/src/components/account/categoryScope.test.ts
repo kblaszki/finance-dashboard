@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { Category } from "../../api/categoriesApi";
-import { categoryIdsForLedgerType } from "./categoryScope";
+import {
+  categoriesForLedgerType,
+  categoryIdsForLedgerType,
+} from "./categoryScope";
 
 const categories: Category[] = [
   {
@@ -31,6 +34,13 @@ const categories: Category[] = [
     ledgerType: "EXPENSE",
     createdAt: "2026-01-01T00:00:00.000Z",
   },
+  {
+    id: 5,
+    name: "Internal transfer",
+    parentId: null,
+    ledgerType: "TRANSFER",
+    createdAt: "2026-01-01T00:00:00.000Z",
+  },
 ];
 
 describe("categoryIdsForLedgerType", () => {
@@ -46,7 +56,19 @@ describe("categoryIdsForLedgerType", () => {
     ]);
   });
 
+  it("keeps TRANSFER rows", () => {
+    expect([...categoryIdsForLedgerType(categories, "TRANSFER")]).toEqual([5]);
+  });
+
   it("returns an empty set when nothing matches", () => {
     expect(categoryIdsForLedgerType([], "INCOME").size).toBe(0);
+  });
+});
+
+describe("categoriesForLedgerType", () => {
+  it("returns sorted TRANSFER categories", () => {
+    expect(categoriesForLedgerType(categories, "TRANSFER").map((c) => c.name)).toEqual([
+      "Internal transfer",
+    ]);
   });
 });

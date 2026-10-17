@@ -32,6 +32,7 @@ type PendingCategoriesImport = {
 const SECTIONS: Array<{ ledgerType: CategoryLedgerType; title: string }> = [
   { ledgerType: "INCOME", title: "Income" },
   { ledgerType: "EXPENSE", title: "Expense" },
+  { ledgerType: "TRANSFER", title: "Transfers" },
 ];
 
 type TreeRow = Category & { depth: number };

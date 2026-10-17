@@ -8,6 +8,16 @@ vi.mock("../api/accountsApi", () => ({
   fetchAccounts: vi.fn(),
 }));
 
+vi.mock("../api/categoriesApi", async () => {
+  const actual = await vi.importActual<typeof import("../api/categoriesApi")>(
+    "../api/categoriesApi",
+  );
+  return {
+    ...actual,
+    fetchCategories: vi.fn(),
+  };
+});
+
 vi.mock("../api/transfersApi", async () => {
   const actual = await vi.importActual<typeof import("../api/transfersApi")>(
     "../api/transfersApi",
@@ -25,6 +35,7 @@ vi.mock("../api/transfersApi", async () => {
 });
 
 import { fetchAccounts } from "../api/accountsApi";
+import { fetchCategories } from "../api/categoriesApi";
 import {
   exportTransfersCsv,
   fetchTransfers,
@@ -79,6 +90,15 @@ describe("TransfersPage CSV import/export", () => {
   beforeEach(() => {
     cleanup();
     vi.mocked(fetchAccounts).mockResolvedValue(accounts);
+    vi.mocked(fetchCategories).mockResolvedValue([
+      {
+        id: 10,
+        name: "Internal transfer",
+        parentId: null,
+        ledgerType: "TRANSFER",
+        createdAt: "2026-01-01T00:00:00.000Z",
+      },
+    ]);
     vi.mocked(fetchTransfers).mockResolvedValue([]);
     vi.mocked(exportTransfersCsv).mockResolvedValue(new Blob(["csv"]));
     vi.mocked(previewTransfersImport).mockResolvedValue({

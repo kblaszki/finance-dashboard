@@ -29,8 +29,8 @@ Hub: [docs/README.md](../README.md).
 | `/home` | Protected | Redirect → `/dashboard` |
 | `/accounts` | Protected | `AccountsPage` (multi-type create/list/edit/delete; currency on edit is read-only once the ledger has rows) |
 | `/accounts/:id` | Protected | `AccountDetailPage` (balance history chart at top; cash ledger with inline create row + list/delete/CSV; CSV import opens `ImportCategoryMappingPanel` when the file uses categories). Transfer legs (`transferId` set) are read-only with `TRANSFER IN/OUT` badges and a link to `/transfers`. Ledger pieces live in `components/account/`: `AccountBalanceChart`, `AccountLedgerHeader`, `AccountSubtitle`, `ImportCategoryMappingPanel`, `LedgerTable`, `LedgerCreateRow`, `occurredAt.ts`, `categoryScope.ts` (`categoryIdsForLedgerType`) |
-| `/categories` | Protected | `CategoriesPage` (Income / Expense sections; CSV Download/Upload merge import — preview summary then Confirm; inline create row; double-click Name/Parent + Enter to PATCH, Escape or blur cancels; delete; section fixes `ledgerType`) |
-| `/transfers` | Protected | `TransfersPage` (inline create row; CSV Download/Upload with `TransferImportPanel` for account mapping + duplicate review; double-click Date/From/To/amounts/description + Enter to PATCH, Escape or blur cancels; amount-to editable only for cross-currency; delete with confirm; refreshes topbar balances) |
+| `/categories` | Protected | `CategoriesPage` (Income / Expense / Transfers sections; CSV Download/Upload merge import — preview summary then Confirm; inline create row; double-click Name/Parent + Enter to PATCH, Escape or blur cancels; delete; section fixes `ledgerType`) |
+| `/transfers` | Protected | `TransfersPage` (inline create row with optional TRANSFER category; CSV Download/Upload with `TransferImportPanel` for account mapping + duplicate review; double-click Date/From/To/amounts/category/description + Enter to PATCH, Escape or blur cancels; amount-to editable only for cross-currency; delete with confirm; refreshes topbar balances) |
 | `/statistics` | Protected | `StatisticsPage` (period KPIs, cashflow + savings-rate chart, category donuts rolled to tree roots) |
 | `/settings` | Protected | `SettingsPage` |
 
@@ -61,9 +61,9 @@ Production Docker serves `frontend/dist` from Express (`STATIC_DIR`); deep links
 | `frontend/src/api/client.ts` | `fetch` + Bearer token. Session `401` clears auth. Other errors use `body.error`. A failed `fetch` throws `Network request failed`. |
 | `frontend/src/api/authApi.ts` | config, register, login, me, profile, email, password |
 | `frontend/src/api/accountsApi.ts` | list/create/get/patch/delete accounts; `fetchAccountBalanceHistory`; `ACCOUNT_TYPES` / `AccountType` / `accountTypeLabel` |
-| `frontend/src/api/categoriesApi.ts` | list/create/patch/delete + CSV export/preview/import → `/api/categories` (`exportCategoriesCsv`, `previewCategoriesImport`, `importCategoriesCsv`); `flattenCategoryTree` |
+| `frontend/src/api/categoriesApi.ts` | list/create/patch/delete + CSV export/preview/import → `/api/categories` (`exportCategoriesCsv`, `previewCategoriesImport`, `importCategoriesCsv`); `CategoryLedgerType` includes `TRANSFER`; `flattenCategoryTree` |
 | `frontend/src/api/transactionsApi.ts` | list/create/delete/export/import cash txs under `/api/accounts/:id/transactions` (optional `categoryId`; `transferId` on rows; CSV export via `getBlob`; import preview `{ csv }` → categories + `skippedTransfers`; import `{ csv, categoryMappings }` → `{ created, createdCategories, skipped, skippedTransfers }`) |
-| `frontend/src/api/transfersApi.ts` | list/create/patch/delete + CSV export/preview/import → `/api/transfers` (`exportTransfersCsv`, `previewTransfersImport`, `importTransfersCsv`) |
+| `frontend/src/api/transfersApi.ts` | list/create/patch/delete + CSV export/preview/import → `/api/transfers` (`categoryId` on transfer DTOs; `exportTransfersCsv`, `previewTransfersImport`, `importTransfersCsv`) |
 | `frontend/src/api/statisticsApi.ts` | `fetchCategoryBreakdown`, `fetchPeriodSummary`, `fetchCashflowHistory`, `fetchNetWorth`, `fetchCashflowRolling12m` → `/api/statistics/*` |
 
 New domain clients follow `frontend/src/api/*Api.ts` and must be covered in `apiModules.test.ts` when added.
