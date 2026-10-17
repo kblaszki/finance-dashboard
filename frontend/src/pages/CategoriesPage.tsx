@@ -130,7 +130,7 @@ function CategoryCreateRow(props: {
           ))}
         </select>
       </td>
-      <td>
+      <td className="col-actions">
         <form className="form-actions-row" onSubmit={onFormSubmit}>
           <button
             type="submit"
@@ -218,7 +218,7 @@ function CategoryRow(props: {
           props.parentName
         )}
       </td>
-      <td>
+      <td className="col-actions">
         <div className="form-actions-row">
           <button
             type="button"
@@ -492,7 +492,7 @@ export function CategoriesPage() {
                     <tr>
                       <th>Name</th>
                       <th>Parent</th>
-                      <th>Actions</th>
+                      <th className="col-actions">Actions</th>
                     </tr>
                   </thead>
                   <tbody>

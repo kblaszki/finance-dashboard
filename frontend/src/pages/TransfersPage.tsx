@@ -303,8 +303,8 @@ function TransferCreateRow(props: {
           placeholder="Description"
         />
       </td>
-      <td>
-        <form onSubmit={onFormSubmit}>
+      <td className="col-actions">
+        <form className="form-actions-row" onSubmit={onFormSubmit}>
           <button type="submit" className="btn-primary" disabled={createBusy}>
             Add
           </button>
@@ -686,7 +686,7 @@ export function TransfersPage() {
                   <th className="num">FX rate</th>
                   <th>Category</th>
                   <th>Description</th>
-                  <th>Actions</th>
+                  <th className="col-actions">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -889,7 +889,7 @@ export function TransfersPage() {
                         (transfer.description ?? "—")
                       )}
                     </td>
-                    <td>
+                    <td className="col-actions">
                       <div className="form-actions-row">
                         <button
                           type="button"

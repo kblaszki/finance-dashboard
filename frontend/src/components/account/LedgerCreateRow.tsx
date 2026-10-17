@@ -186,7 +186,7 @@ export function LedgerCreateRow(props: {
       <td>
         <select
           multiple
-          className="ledger-cell-input"
+          className="ledger-cell-input ledger-tag-select"
           value={tagIds.map(String)}
           onChange={(e) => {
             const selected = Array.from(e.target.selectedOptions).map((o) =>
@@ -214,7 +214,7 @@ export function LedgerCreateRow(props: {
           placeholder="Description"
         />
       </td>
-      <td>
+      <td className="col-actions">
         <form className="form-actions-row" onSubmit={onFormSubmit}>
           <button
             type="submit"

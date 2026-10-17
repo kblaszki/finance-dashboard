@@ -238,7 +238,7 @@ export function LedgerTable(props: {
             <th>Category</th>
             <th>Tags</th>
             <th>Description</th>
-            <th>Actions</th>
+            <th className="col-actions">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -440,7 +440,7 @@ function LedgerRow(props: {
         {props.isEditing(tx.id, "tagIds") ? (
           <select
             multiple
-            className="ledger-cell-input"
+            className="ledger-cell-input ledger-tag-select"
             value={props.draft ? props.draft.split(",") : []}
             disabled={props.editBusy}
             autoFocus
@@ -461,7 +461,13 @@ function LedgerRow(props: {
             ))}
           </select>
         ) : tagLabels.length > 0 ? (
-          tagLabels.join(", ")
+          <span className="tag-list">
+            {tagLabels.map((label) => (
+              <span key={label} className="badge">
+                {label}
+              </span>
+            ))}
+          </span>
         ) : (
           "—"
         )}
@@ -487,7 +493,7 @@ function LedgerRow(props: {
           (tx.description ?? "—")
         )}
       </td>
-      <td>
+      <td className="col-actions">
         <div className="form-actions-row">
           {transferLeg ? (
             <Link to="/transfers" className="btn-secondary">

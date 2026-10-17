@@ -502,28 +502,28 @@
   width: 100%;
 }
 
-/* Account cash ledger: Date | Type | Amount | Category | Description | Actions */
+/* Account cash ledger: Date | Type | Amount | Category | Tags | Description | Actions */
 .ledger-table--account th:nth-child(1) {
-  width: 18%;
-}
-
-.ledger-table--account th:nth-child(2) {
-  width: 11%;
-}
-
-.ledger-table--account th:nth-child(3) {
-  width: 14%;
-}
-
-.ledger-table--account th:nth-child(4) {
   width: 16%;
 }
 
-.ledger-table--account th:nth-child(6) {
-  width: 5.5rem;
+.ledger-table--account th:nth-child(2) {
+  width: 9%;
 }
 
-/* Transfers: Date | From | To | Amount from | Amount to | FX | Description | Actions */
+.ledger-table--account th:nth-child(3) {
+  width: 12%;
+}
+
+.ledger-table--account th:nth-child(4) {
+  width: 12%;
+}
+
+.ledger-table--account th:nth-child(5) {
+  width: 16%;
+}
+
+/* Transfers: Date | From | To | Amount from | Amount to | FX | Category | Description | Actions */
 .ledger-table--transfers th:nth-child(1) {
   width: 10.75rem;
 }
@@ -540,10 +540,6 @@
 
 .ledger-table--transfers th:nth-child(6) {
   width: 6%;
-}
-
-.ledger-table--transfers th:nth-child(8) {
-  width: 6rem;
 }
 
 .ledger-table--transfers .ledger-cell-input[type="datetime-local"] {
@@ -620,6 +616,54 @@
   white-space: nowrap;
   display: flex;
   gap: var(--space-sm);
+}
+
+/* Shrink-wrap Add/Delete columns to button width, right-aligned */
+.data-table th.col-actions,
+.data-table td.col-actions {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+  vertical-align: middle;
+}
+
+.data-table td.col-actions .form-actions-row {
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  gap: var(--space-xs);
+}
+
+/* Tags page: Name fills, Actions shrinks */
+.data-table--tags {
+  table-layout: auto;
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.tag-list .badge {
+  max-width: 9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+select.ledger-cell-input[multiple],
+.ledger-tag-select {
+  height: auto;
+  min-height: 3.25rem;
+  max-height: 6.5rem;
+  padding: 0.15rem;
+  line-height: 1.35;
+}
+
+select.ledger-cell-input[multiple] option,
+.ledger-tag-select option {
+  padding: 0.15rem 0.35rem;
+  border-radius: 3px;
 }
 
 .muted {

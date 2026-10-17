@@ -80,7 +80,7 @@ function TagCreateRow(props: {
           placeholder="Name"
         />
       </td>
-      <td>
+      <td className="col-actions">
         <form className="form-actions-row" onSubmit={onFormSubmit}>
           <button
             type="submit"
@@ -129,7 +129,7 @@ function TagRow(props: {
           tag.name
         )}
       </td>
-      <td>
+      <td className="col-actions">
         <div className="form-actions-row">
           <button
             type="button"
@@ -243,11 +243,11 @@ export function TagsPage() {
       {!loading && !error && (
         <section className="card form-section-gap">
           <div className="table-wrap">
-            <table className="data-table">
+            <table className="data-table data-table--tags">
               <thead>
                 <tr>
                   <th>Name</th>
-                  <th>Actions</th>
+                  <th className="col-actions">Actions</th>
                 </tr>
               </thead>
               <tbody>

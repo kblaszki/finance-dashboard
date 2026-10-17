@@ -230,7 +230,7 @@ export function AccountsPage() {
                   <th>Name</th>
                   <th>Type</th>
                   <th className="num">Balance</th>
-                  <th>Actions</th>
+                  <th className="col-actions">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -317,7 +317,7 @@ export function AccountsPage() {
                     <td className="num">
                       {formatMoney(account.totalBalance, account.currency)}
                     </td>
-                    <td>
+                    <td className="col-actions">
                       {editingId !== account.id && (
                         <div className="form-actions-row">
                           <Link
