@@ -65,6 +65,16 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
+    to: "/tags",
+    label: "Tags",
+    icon: (
+      <Icon>
+        <path d="M20.6 13.4 12.4 5.2a2 2 0 0 0-1.4-.6H5a2 2 0 0 0-2 2v6a2 2 0 0 0 .6 1.4l8.2 8.2a2 2 0 0 0 2.8 0l6-6a2 2 0 0 0 0-2.8Z" />
+        <circle cx="7.5" cy="7.5" r="1.2" fill="currentColor" stroke="none" />
+      </Icon>
+    ),
+  },
+  {
     to: "/transfers",
     label: "Transfers",
     icon: (

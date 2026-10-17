@@ -12,6 +12,7 @@ export type CashTransaction = {
   occurredAt: string;
   description: string | null;
   categoryId: number | null;
+  tagIds: number[];
   transferId: number | null;
   createdAt: string;
 };
@@ -22,6 +23,7 @@ export type CreateCashTransactionInput = {
   occurredAt?: string;
   description?: string | null;
   categoryId?: number | null;
+  tagIds?: number[];
 };
 
 export async function fetchTransactions(

@@ -50,6 +50,12 @@ import {
   importCategoriesCsv,
 } from './categoriesApi'
 import {
+  fetchTags,
+  createTag,
+  updateTag,
+  deleteTag,
+} from './tagsApi'
+import {
   fetchCategoryBreakdown,
   fetchPeriodSummary,
   fetchCashflowHistory,
@@ -166,21 +172,24 @@ describe('API modules', () => {
       amount: 12.5,
       description: 'Pay',
       categoryId: 4,
+      tagIds: [1, 2],
     })
     expect(apiClient.post).toHaveBeenCalledWith('/api/accounts/3/transactions', {
       type: 'INCOME',
       amount: 12.5,
       description: 'Pay',
       categoryId: 4,
+      tagIds: [1, 2],
     })
 
     await deleteTransaction(3, 9)
     expect(apiClient.delete).toHaveBeenCalledWith('/api/accounts/3/transactions/9')
 
-    await updateTransaction(3, 9, { amount: 4, type: 'EXPENSE' })
+    await updateTransaction(3, 9, { amount: 4, type: 'EXPENSE', tagIds: [] })
     expect(apiClient.patch).toHaveBeenCalledWith('/api/accounts/3/transactions/9', {
       amount: 4,
       type: 'EXPENSE',
+      tagIds: [],
     })
 
     await exportTransactionsCsv(3)
@@ -232,6 +241,20 @@ describe('API modules', () => {
     expect(apiClient.post).toHaveBeenCalledWith('/api/categories/import', {
       csv: 'csv-body',
     })
+  })
+
+  it('tagsApi calls correct endpoints', async () => {
+    await fetchTags()
+    expect(apiClient.get).toHaveBeenCalledWith('/api/tags')
+
+    await createTag({ name: 'Work' })
+    expect(apiClient.post).toHaveBeenCalledWith('/api/tags', { name: 'Work' })
+
+    await updateTag(2, { name: 'Office' })
+    expect(apiClient.patch).toHaveBeenCalledWith('/api/tags/2', { name: 'Office' })
+
+    await deleteTag(2)
+    expect(apiClient.delete).toHaveBeenCalledWith('/api/tags/2')
   })
 
   it('statisticsApi calls correct endpoints', async () => {

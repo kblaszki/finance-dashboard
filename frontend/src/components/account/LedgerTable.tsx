@@ -1,6 +1,7 @@
 import { type KeyboardEvent, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import type { Category } from "../../api/categoriesApi";
+import type { Tag } from "../../api/tagsApi";
 import {
   CASH_TX_TYPES,
   type CashTransaction,
@@ -26,11 +27,25 @@ function transferBadgeLabel(type: string): string {
   return upper;
 }
 
+function encodeTagIds(ids: number[]): string {
+  return [...ids].sort((a, b) => a - b).join(",");
+}
+
+function parseTagIdsDraft(draft: string): number[] {
+  if (!draft.trim()) return [];
+  const ids = draft.split(",").map((part) => Number(part));
+  if (ids.some((id) => !Number.isInteger(id) || id < 1)) {
+    throw new Error("Invalid tags");
+  }
+  return [...new Set(ids)].sort((a, b) => a - b);
+}
+
 export type EditableField =
   | "occurredAt"
   | "type"
   | "amount"
   | "categoryId"
+  | "tagIds"
   | "description";
 
 type EditingState = { txId: number; field: EditableField };
@@ -47,6 +62,8 @@ function draftFromTx(tx: CashTransaction, field: EditableField): string {
       return String(tx.type).toUpperCase();
     case "categoryId":
       return tx.categoryId == null ? "" : String(tx.categoryId);
+    case "tagIds":
+      return encodeTagIds(tx.tagIds ?? []);
   }
 }
 
@@ -55,6 +72,7 @@ function buildPatch(
   field: EditableField,
   draft: string,
   categories: Category[],
+  tags: Tag[],
 ): Partial<CreateCashTransactionInput> {
   switch (field) {
     case "amount": {
@@ -105,6 +123,14 @@ function buildPatch(
       }
       return { categoryId: id };
     }
+    case "tagIds": {
+      const tagIds = parseTagIdsDraft(draft);
+      const owned = new Set(tags.map((t) => t.id));
+      if (tagIds.some((id) => !owned.has(id))) {
+        throw new Error("Invalid tags");
+      }
+      return { tagIds };
+    }
   }
 }
 
@@ -114,6 +140,8 @@ export function LedgerTable(props: {
   currency: string | null;
   categories: Category[];
   categoryNameById: Map<number, string>;
+  tags: Tag[];
+  tagNameById: Map<number, string>;
   onCreate: (input: CreateCashTransactionInput) => Promise<void>;
   onDelete: (tx: CashTransaction) => void;
   onSave: (
@@ -153,7 +181,13 @@ export function LedgerTable(props: {
     committingRef.current = true;
     setEditBusy(true);
     try {
-      const patch = buildPatch(tx, editing.field, draft, props.categories);
+      const patch = buildPatch(
+        tx,
+        editing.field,
+        draft,
+        props.categories,
+        props.tags,
+      );
       await props.onSave(tx, patch);
       cancelEdit();
     } catch (err) {
@@ -202,6 +236,7 @@ export function LedgerTable(props: {
             <th>Type</th>
             <th className="num">Amount</th>
             <th>Category</th>
+            <th>Tags</th>
             <th>Description</th>
             <th>Actions</th>
           </tr>
@@ -211,6 +246,7 @@ export function LedgerTable(props: {
             key={props.accountId}
             seedType={seedType}
             categories={props.categories}
+            tags={props.tags}
             onCreate={props.onCreate}
             onActionError={props.onActionError}
           />
@@ -221,6 +257,8 @@ export function LedgerTable(props: {
               currency={props.currency}
               categories={props.categories}
               categoryNameById={props.categoryNameById}
+              tags={props.tags}
+              tagNameById={props.tagNameById}
               draft={draft}
               editBusy={editBusy}
               isEditing={isEditing}
@@ -243,6 +281,8 @@ function LedgerRow(props: {
   currency: string | null;
   categories: Category[];
   categoryNameById: Map<number, string>;
+  tags: Tag[];
+  tagNameById: Map<number, string>;
   draft: string;
   editBusy: boolean;
   isEditing: (txId: number, field: EditableField) => boolean;
@@ -271,6 +311,11 @@ function LedgerRow(props: {
       .slice()
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [props.categories, txType]);
+
+  const tagIds = tx.tagIds ?? [];
+  const tagLabels = tagIds
+    .map((id) => props.tagNameById.get(id) ?? `#${id}`)
+    .sort((a, b) => a.localeCompare(b));
 
   function onCellDoubleClick(field: EditableField) {
     if (transferLeg) return;
@@ -384,6 +429,39 @@ function LedgerRow(props: {
           <span className="badge">
             {props.categoryNameById.get(tx.categoryId) ?? `#${tx.categoryId}`}
           </span>
+        ) : (
+          "—"
+        )}
+      </td>
+      <td
+        className={props.cellClass(tx.id, "tagIds", "", !transferLeg)}
+        onDoubleClick={() => onCellDoubleClick("tagIds")}
+      >
+        {props.isEditing(tx.id, "tagIds") ? (
+          <select
+            multiple
+            className="ledger-cell-input"
+            value={props.draft ? props.draft.split(",") : []}
+            disabled={props.editBusy}
+            autoFocus
+            onChange={(e) => {
+              const selected = Array.from(e.target.selectedOptions).map(
+                (o) => o.value,
+              );
+              props.onDraftChange(selected.sort().join(","));
+            }}
+            onKeyDown={(e) => props.onEditorKeyDown(e, tx)}
+            onBlur={props.onEditorBlur}
+            aria-label="Edit tags"
+          >
+            {props.tags.map((tag) => (
+              <option key={tag.id} value={tag.id}>
+                {tag.name}
+              </option>
+            ))}
+          </select>
+        ) : tagLabels.length > 0 ? (
+          tagLabels.join(", ")
         ) : (
           "—"
         )}

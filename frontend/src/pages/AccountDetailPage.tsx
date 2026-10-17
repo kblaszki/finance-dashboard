@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { fetchAccount, fetchAccountBalanceHistory } from "../api/accountsApi";
 import { fetchCategories } from "../api/categoriesApi";
+import { fetchTags } from "../api/tagsApi";
 import {
   createTransaction,
   deleteTransaction,
@@ -73,6 +74,7 @@ export function AccountDetailPage() {
   }, [accountId, historyMonths]);
 
   const loadCategories = useCallback(() => fetchCategories(), []);
+  const loadTags = useCallback(() => fetchTags(), []);
 
   const {
     data: account,
@@ -100,6 +102,8 @@ export function AccountDetailPage() {
     reload: reloadCategories,
   } = useAsyncData(loadCategories);
 
+  const { data: tags } = useAsyncData(loadTags);
+
   const categoryNameById = useMemo(() => {
     const map = new Map<number, string>();
     for (const cat of categories ?? []) {
@@ -107,6 +111,14 @@ export function AccountDetailPage() {
     }
     return map;
   }, [categories]);
+
+  const tagNameById = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const tag of tags ?? []) {
+      map.set(tag.id, tag.name);
+    }
+    return map;
+  }, [tags]);
 
   const [actionErr, setActionErr] = useState<string | null>(null);
   const [importMsg, setImportMsg] = useState<string | null>(null);
@@ -313,6 +325,8 @@ export function AccountDetailPage() {
             currency={account.currency}
             categories={categories ?? []}
             categoryNameById={categoryNameById}
+            tags={tags ?? []}
+            tagNameById={tagNameById}
             onCreate={handleCreate}
             onDelete={(tx) => void handleDelete(tx)}
             onSave={handleSaveTx}

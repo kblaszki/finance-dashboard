@@ -11,6 +11,7 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { AccountsPage } from "./pages/AccountsPage";
 import { AccountDetailPage } from "./pages/AccountDetailPage";
 import { CategoriesPage } from "./pages/CategoriesPage";
+import { TagsPage } from "./pages/TagsPage";
 import { TransfersPage } from "./pages/TransfersPage";
 import { StatisticsPage } from "./pages/StatisticsPage";
 import { useAuth } from "./state/auth";
@@ -32,6 +33,7 @@ function App() {
           <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/accounts/:id" element={<AccountDetailPage />} />
           <Route path="/categories" element={<CategoriesPage />} />
+          <Route path="/tags" element={<TagsPage />} />
           <Route path="/transfers" element={<TransfersPage />} />
           <Route path="/statistics" element={<StatisticsPage />} />
           <Route path="/settings" element={<SettingsPage />} />

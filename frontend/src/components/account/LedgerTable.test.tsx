@@ -13,6 +13,7 @@ const coffee: CashTransaction = {
   occurredAt: "2026-03-01T12:00:00.000Z",
   description: "Coffee",
   categoryId: null,
+  tagIds: [],
   transferId: null,
   createdAt: "2026-03-01T12:00:00.000Z",
 };
@@ -25,6 +26,7 @@ const transferOut: CashTransaction = {
   occurredAt: "2026-03-02T12:00:00.000Z",
   description: "To savings",
   categoryId: null,
+  tagIds: [],
   transferId: 3,
   createdAt: "2026-03-02T12:00:00.000Z",
 };
@@ -44,6 +46,11 @@ const categories = [
     ledgerType: "EXPENSE" as const,
     createdAt: "2026-01-01T00:00:00.000Z",
   },
+];
+
+const tags = [
+  { id: 10, name: "Work", createdAt: "2026-01-01T00:00:00.000Z" },
+  { id: 11, name: "Personal", createdAt: "2026-01-01T00:00:00.000Z" },
 ];
 
 function renderTable(
@@ -68,6 +75,8 @@ function renderTable(
         currency="USD"
         categories={categories}
         categoryNameById={new Map([[3, "Food"]])}
+        tags={tags}
+        tagNameById={new Map([[10, "Work"], [11, "Personal"]])}
         onCreate={onCreate}
         onDelete={onDelete}
         onSave={onSave}
@@ -166,6 +175,8 @@ describe("LedgerTable", () => {
         currency="USD"
         categories={categories}
         categoryNameById={new Map([[3, "Food"]])}
+        tags={tags}
+        tagNameById={new Map([[10, "Work"], [11, "Personal"]])}
         onCreate={onCreate}
         onDelete={vi.fn()}
         onSave={vi.fn()}

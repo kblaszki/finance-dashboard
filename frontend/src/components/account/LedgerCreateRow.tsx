@@ -7,6 +7,7 @@ import {
   useState,
 } from "react";
 import type { Category } from "../../api/categoriesApi";
+import type { Tag } from "../../api/tagsApi";
 import {
   CASH_TX_TYPES,
   type CashTxType,
@@ -25,6 +26,7 @@ export function normalizeCashTxType(value: unknown): CashTxType {
 export function LedgerCreateRow(props: {
   seedType: CashTxType;
   categories: Category[];
+  tags: Tag[];
   onCreate: (input: CreateCashTransactionInput) => Promise<void>;
   onActionError: (message: string | null) => void;
 }) {
@@ -38,6 +40,7 @@ export function LedgerCreateRow(props: {
   const [occurredAt, setOccurredAt] = useState(defaultOccurredAtValue);
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [tagIds, setTagIds] = useState<number[]>([]);
   const [createBusy, setCreateBusy] = useState(false);
   const [focusNonce, setFocusNonce] = useState(0);
   const firstInputRef = useRef<HTMLInputElement | null>(null);
@@ -94,11 +97,13 @@ export function LedgerCreateRow(props: {
         occurredAt: date.toISOString(),
         description: description.trim() ? description.trim() : null,
         categoryId: categoryId === "" ? null : Number(categoryId),
+        tagIds,
       });
       setLastEnteredType(type);
       setAmount("");
       setDescription("");
       setCategoryId("");
+      setTagIds([]);
       // Focus after React re-enables controls (was focusing while still disabled).
       setCreateBusy(false);
       setFocusNonce((n) => n + 1);
@@ -174,6 +179,26 @@ export function LedgerCreateRow(props: {
           {categoryOptions.map((cat) => (
             <option key={cat.id} value={cat.id}>
               {cat.name}
+            </option>
+          ))}
+        </select>
+      </td>
+      <td>
+        <select
+          multiple
+          className="ledger-cell-input"
+          value={tagIds.map(String)}
+          onChange={(e) => {
+            const selected = Array.from(e.target.selectedOptions).map((o) =>
+              Number(o.value),
+            );
+            setTagIds(selected);
+          }}
+          aria-label="New tags"
+        >
+          {props.tags.map((tag) => (
+            <option key={tag.id} value={tag.id}>
+              {tag.name}
             </option>
           ))}
         </select>

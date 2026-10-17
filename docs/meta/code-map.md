@@ -20,11 +20,13 @@ Auth + multi-type accounts + category tree + cash ledger + category statistics b
 | Auth HTTP routes | `backend/src/routes/authRoutes.ts` |
 | Accounts HTTP routes | `backend/src/routes/accountsRoutes.ts` |
 | Categories HTTP routes | `backend/src/routes/categoriesRoutes.ts` |
+| Tags HTTP routes | `backend/src/routes/tagsRoutes.ts` |
 | Cash transactions routes | `backend/src/routes/cashTransactionsRoutes.ts` |
 | Transfers routes | `backend/src/routes/transfersRoutes.ts` |
 | Statistics routes | `backend/src/routes/statisticsRoutes.ts` |
 | Account type allow-list | `backend/src/domain/accountTypes.ts` |
 | Categories domain | `backend/src/domain/categories.ts` |
+| Tags domain | `backend/src/domain/tags.ts` |
 | Cash ledger domain | `backend/src/domain/cashLedger.ts`, `money.ts`, `cashLedgerCsv.ts`, `cashLedgerCsvImport.ts` |
 | Cash transfers domain | `backend/src/domain/cashTransfers.ts` |
 | Category breakdown domain | `backend/src/domain/categoryBreakdown.ts` |
@@ -34,7 +36,7 @@ Auth + multi-type accounts + category tree + cash ledger + category statistics b
 | Router mount | `backend/src/routes/mountRouters.ts` |
 | HTTP helpers / errors | `backend/src/routes/httpSupport.ts`, `backend/src/lib/errors.ts` |
 | Route uid helper | `backend/src/routes/routeSupport.ts` |
-| Prisma schema | `backend/prisma/schema.prisma` (`User`, `Category`, `Account`, `CashTransfer`, `CashTransaction`) |
+| Prisma schema | `backend/prisma/schema.prisma` (`User`, `Category`, `Tag`, `CashTransactionTag`, `Account`, `CashTransfer`, `CashTransaction`) |
 | Migrations | `backend/prisma/migrations/` |
 | Demo user seed | `backend/prisma/seed.ts`, `backend/src/domain/seedDemoPortfolio.ts` |
 | Create user CLI | `backend/src/scripts/createUser.ts` |
@@ -48,11 +50,12 @@ Auth + multi-type accounts + category tree + cash ledger + category statistics b
 | Auth API client | `frontend/src/api/authApi.ts`, `frontend/src/api/client.ts` |
 | Accounts API client | `frontend/src/api/accountsApi.ts` |
 | Categories API client | `frontend/src/api/categoriesApi.ts` |
+| Tags API client | `frontend/src/api/tagsApi.ts` |
 | Transactions API client | `frontend/src/api/transactionsApi.ts` |
 | Statistics API client | `frontend/src/api/statisticsApi.ts` |
 | Shell / gates | `frontend/src/components/AppShell.tsx`, `AuthSwapShell.tsx`, `ProtectedRoute.tsx`, `ErrorBoundary.tsx` |
 | Shared UI | `frontend/src/components/ui/{PageHeader,KpiCard,ChartCard,StatusBlock,CurrencySelect}.tsx` |
-| Pages | `frontend/src/pages/{Landing,Login,Register,Dashboard,Accounts,AccountDetail,Categories,Transfers,Statistics,Settings}Page.tsx` |
+| Pages | `frontend/src/pages/{Landing,Login,Register,Dashboard,Accounts,AccountDetail,Categories,Tags,Transfers,Statistics,Settings}Page.tsx` |
 | Transfers API client | `frontend/src/api/transfersApi.ts` |
 | Account ledger UI | `frontend/src/components/account/` |
 | Theme | `frontend/src/state/theme.tsx`, `ThemeToggle.tsx` (light/dark) |

@@ -26,8 +26,16 @@ This page covers the shipped category tree and optional cash tagging. Monthly bu
 5. **CSV:** Download / Upload on `/categories` (`GET /api/categories/export`, `POST …/import/preview`, `POST …/import`). Format `path,ledgerType` (`INCOME`\|`EXPENSE`\|`TRANSFER`). Import **merges**: existing path+type skipped, missing paths created; never deletes. Prefer importing the category tree before a ledger or transfers CSV when moving between environments.
 6. Tag internal transfers on `/transfers` with a **Transfers** category (optional); both ledger legs show the same tag. Cashflow statistics still ignore transfer legs.
 
-## Tag a cash transaction
+## Tag a cash transaction (category)
 
 1. Open an account ledger at `/accounts/:id`.
 2. On create, optionally pick a category whose `ledgerType` matches the row type (omit for uncategorized).
 3. `POST /api/accounts/:accountId/transactions` accepts optional `categoryId` (same user, matching `ledgerType`). Multi-line splits are deferred (out of scope for now).
+
+## Free-form tags (many per cash row)
+
+Categories remain a single optional label. Tags are a separate flat list for multiple labels on `INCOME`/`EXPENSE` only (not transfer legs).
+
+1. Manage tags on `/tags` (create, rename, delete). Deleting a tag removes join rows; transactions stay.
+2. On the account ledger, use the **Tags** multi-select on create or double-click the Tags cell to edit (`tagIds`).
+3. API: `GET|POST /api/tags`, `PATCH|DELETE /api/tags/:id`; cash create/PATCH accept optional `tagIds: number[]`. Ledger/transfers CSV and statistics do not include tags yet.

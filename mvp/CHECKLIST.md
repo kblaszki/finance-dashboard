@@ -15,7 +15,7 @@ Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + c
 
 | done | stub | planned | in_progress | total |
 |------|------|---------|-------------|-------|
-| 19 | 0 | 46 | 0 | 65 |
+| 20 | 0 | 46 | 0 | 66 |
 
 ## Master table
 
@@ -57,6 +57,7 @@ Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + c
 | FR-015 | Category tree CRUD | done | [features/budgets-categories/category-tree.md](features/budgets-categories/category-tree.md) | /categories |
 | MVP-016 | Categories CSV export and merge import | done | [features/budgets-categories/categories-csv-export-import.md](features/budgets-categories/categories-csv-export-import.md) | /categories Download/Upload CSV |
 | MVP-017 | Transfer category group (TRANSFER ledgerType) | done | [features/budgets-categories/transfer-categories.md](features/budgets-categories/transfer-categories.md) | /categories Transfers + /transfers category |
+| MVP-018 | Cash transaction tags | done | [features/budgets-categories/cash-transaction-tags.md](features/budgets-categories/cash-transaction-tags.md) | /tags + ledger Tags |
 | FR-017 | Monthly budgets vs spend | planned | [features/budgets-categories/monthly-budgets.md](features/budgets-categories/monthly-budgets.md) | /budgets |
 | FR-034 | Auto-categorization rules | planned | [features/budgets-categories/categorization-rules.md](features/budgets-categories/categorization-rules.md) | /categories |
 | FR-024 | Income events CRUD | planned | [features/income-liabilities/income-events.md](features/income-liabilities/income-events.md) | /income-events |
@@ -151,6 +152,7 @@ Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + c
 - **done** [FR-015 Category tree CRUD](features/budgets-categories/category-tree.md)
 - **done** [MVP-016 Categories CSV export and merge import](features/budgets-categories/categories-csv-export-import.md)
 - **done** [MVP-017 Transfer category group (TRANSFER ledgerType)](features/budgets-categories/transfer-categories.md)
+- **done** [MVP-018 Cash transaction tags](features/budgets-categories/cash-transaction-tags.md)
 - **planned** [FR-017 Monthly budgets vs spend](features/budgets-categories/monthly-budgets.md)
 - **planned** [FR-034 Auto-categorization rules](features/budgets-categories/categorization-rules.md)
 

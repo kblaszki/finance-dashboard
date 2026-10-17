@@ -70,18 +70,31 @@ User-scoped nested tree (`parentId`). Flat list responses include `id`, `name`, 
 
 Unknown / other-user category or parent → `404`.
 
-## Cash transactions
+## Tags
 
-Nested under an owned account. Cross-user or unknown account → `404`. `amount` must be positive, with at most 2 decimal places (stored as integer cents; JSON stays a major-unit number). User create/update `type` is `INCOME` or `EXPENSE` (case-normalized). Transfer legs (`TRANSFER_IN` / `TRANSFER_OUT`) appear in list/export with `transferId` set; PATCH/DELETE on those rows → `400` (“edit or delete via /api/transfers”). Create, update, and delete of user cash rows adjust `Account.cashBalance` atomically. No `balanceAfter`. Optional `categoryId` must belong to the same user and match the expected category group for the row type (`INCOME`/`EXPENSE` equal type; `TRANSFER_IN`/`TRANSFER_OUT` → `TRANSFER`) (else `400`). `occurredAt` is an absolute instant; month statistics bucket it in UTC. CSV import skips `TRANSFER_*` rows (reported in `skippedTransfers`); restore transfers via `/api/transfers`.
+User-scoped flat labels (`Tag`). Responses include `id`, `name`, `createdAt`. Name uniqueness is case-insensitive via `nameKey`. Delete cascades `CashTransactionTag` joins; cash rows remain. Tags are not included in ledger/transfers CSV or statistics in this slice.
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
-| GET | `/api/accounts/:accountId/transactions` | Bearer | List for account (`occurredAt` desc, then `id` desc); includes `categoryId`, `transferId` |
+| GET | `/api/tags` | Bearer | List own tags, name ascending |
+| POST | `/api/tags` | Bearer | Body `{ name }`. 201 |
+| PATCH | `/api/tags/:id` | Bearer | Body `{ name }`. 200 |
+| DELETE | `/api/tags/:id` | Bearer | 204 (join cascade) |
+
+Unknown / other-user tag → `404`. Duplicate name → `400`.
+
+## Cash transactions
+
+Nested under an owned account. Cross-user or unknown account → `404`. `amount` must be positive, with at most 2 decimal places (stored as integer cents; JSON stays a major-unit number). User create/update `type` is `INCOME` or `EXPENSE` (case-normalized). Transfer legs (`TRANSFER_IN` / `TRANSFER_OUT`) appear in list/export with `transferId` set; PATCH/DELETE on those rows → `400` (“edit or delete via /api/transfers”). Create, update, and delete of user cash rows adjust `Account.cashBalance` atomically. No `balanceAfter`. Optional `categoryId` must belong to the same user and match the expected category group for the row type (`INCOME`/`EXPENSE` equal type; `TRANSFER_IN`/`TRANSFER_OUT` → `TRANSFER`) (else `400`). Optional `tagIds` (`number[]`, empty = none) must be owned tags; replace-on-write for create/PATCH when provided. Transfer legs always return `tagIds: []`. `occurredAt` is an absolute instant; month statistics bucket it in UTC. CSV import skips `TRANSFER_*` rows (reported in `skippedTransfers`); restore transfers via `/api/transfers`. CSV does not include tags.
+
+| Method | Path | Auth | Notes |
+|--------|------|------|-------|
+| GET | `/api/accounts/:accountId/transactions` | Bearer | List for account (`occurredAt` desc, then `id` desc); includes `categoryId`, `tagIds`, `transferId` |
 | GET | `/api/accounts/:accountId/transactions/export` | Bearer | CSV download (`text/csv; charset=utf-8`); header `id,type,amount,currency,occurredAt,description,categoryPath,createdAt`; `categoryPath` is the full tree path (`Food/Groceries`, `/` and `\` escaped in segment names); rows oldest→newest (includes `TRANSFER_*` legs, usually without path); empty ledger = header only; `Content-Disposition: attachment; filename="account-{id}-cash.csv"` |
 | POST | `/api/accounts/:accountId/transactions/import/preview` | Bearer | Body `{ csv: string }`. Validates CSV (current `categoryPath` header, or legacy `categoryId,categoryName` from older exports). Legacy rows: owned `categoryId` with matching `ledgerType` → full tree path; else `categoryName` as a single path segment. `200 { rowCount, categories: [{ path, ledgerType, rowCount, suggestedCategoryId }], skipped, skippedTransfers: [{ row, type, message }] }` — `rowCount` is importable INCOME/EXPENSE only; `TRANSFER_*` rows are listed in `skippedTransfers` (not `400`). Exact path+`ledgerType` suggestions only. |
 | POST | `/api/accounts/:accountId/transactions/import` | Bearer | Body `{ csv: string, categoryMappings: [{ path, ledgerType, action: "map", categoryId } \| { path, ledgerType, action: "create" } \| { path, ledgerType, action: "none" }] }`. Every used `(path, ledgerType)` needs exactly one mapping; `create` reuses matching path segments and creates missing ones; always creates new rows (`id`/`createdAt` ignored); currency must match account; INCOME/EXPENSE all-or-nothing; `TRANSFER_*` skipped; `201 { created, createdCategories, skipped, skippedTransfers }`; `400 { error, details: [{ row, message }] }` |
-| POST | `/api/accounts/:accountId/transactions` | Bearer | Body: `type`, `amount`; optional `occurredAt` (ISO instant, default now), `description`, `categoryId`. 201 |
-| PATCH | `/api/accounts/:accountId/transactions/:id` | Bearer | Body: optional `type`, `amount`, `occurredAt`, `description`, `categoryId`. At least one field. Adjusts `cashBalance` by the signed difference. Transfer legs → 400. 200 |
+| POST | `/api/accounts/:accountId/transactions` | Bearer | Body: `type`, `amount`; optional `occurredAt` (ISO instant, default now), `description`, `categoryId`, `tagIds`. 201 |
+| PATCH | `/api/accounts/:accountId/transactions/:id` | Bearer | Body: optional `type`, `amount`, `occurredAt`, `description`, `categoryId`, `tagIds`. At least one field. Adjusts `cashBalance` by the signed difference. Transfer legs → 400. 200 |
 | DELETE | `/api/accounts/:accountId/transactions/:id` | Bearer | Must match account; reverses balance. Transfer legs → 400. 204 |
 
 ## Transfers

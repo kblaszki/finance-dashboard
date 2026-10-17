@@ -17,6 +17,10 @@ vi.mock("../api/categoriesApi", async () => {
   return { ...actual, fetchCategories: vi.fn() };
 });
 
+vi.mock("../api/tagsApi", () => ({
+  fetchTags: vi.fn(),
+}));
+
 vi.mock("../api/transactionsApi", async () => {
   const actual = await vi.importActual<typeof import("../api/transactionsApi")>(
     "../api/transactionsApi",
@@ -39,6 +43,7 @@ import {
   fetchAccounts,
 } from "../api/accountsApi";
 import { fetchCategories } from "../api/categoriesApi";
+import { fetchTags } from "../api/tagsApi";
 import {
   createTransaction,
   deleteTransaction,
@@ -71,6 +76,7 @@ const coffee = {
   occurredAt: "2026-03-01T12:00:00.000Z",
   description: "Coffee",
   categoryId: null,
+  tagIds: [] as number[],
   transferId: null,
   createdAt: "2026-03-01T12:00:00.000Z",
 };
@@ -117,6 +123,9 @@ describe("AccountDetailPage", () => {
         createdAt: "2026-01-01T00:00:00.000Z",
       },
     ]);
+    vi.mocked(fetchTags).mockResolvedValue([
+      { id: 10, name: "Work", createdAt: "2026-01-01T00:00:00.000Z" },
+    ]);
     vi.mocked(fetchTransactions).mockResolvedValue([coffee]);
     vi.mocked(createTransaction).mockResolvedValue(coffee);
     vi.mocked(deleteTransaction).mockResolvedValue(undefined);
@@ -160,6 +169,7 @@ describe("AccountDetailPage", () => {
           amount: 12.5,
           description: null,
           categoryId: null,
+          tagIds: [],
         }),
       );
     });

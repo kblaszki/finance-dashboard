@@ -23,6 +23,7 @@ Hub: [docs/README.md](../README.md).
 | createdAt | DateTime | Default now |
 | accounts | Account[] | Owned accounts (`onDelete: Cascade`) |
 | categories | Category[] | Owned category tree (`onDelete: Cascade`) |
+| tags | Tag[] | Owned flat tags (`onDelete: Cascade`) |
 | cashTransfers | CashTransfer[] | Owned internal transfers (`onDelete: Cascade`) |
 
 ## Category
@@ -81,9 +82,27 @@ Source of truth for an internal cash transfer between two owned accounts. Create
 
 Indexes: `[userId, occurredAt]`, `[fromAccountId]`, `[toAccountId]`, `[categoryId]`. Same-currency transfers keep `amountTo = amountFrom`; cross-currency requires an explicit `amountTo` (manual FX; no NBP). Relation: `legs` → `CashTransaction[]` (`onDelete: Cascade`).
 
+## Tag
+
+User-scoped flat label for cash ledger rows (many tags per `INCOME`/`EXPENSE` transaction). Not a category substitute — categories stay a single optional `categoryId`. Unique name per user via `nameKey` (lowercase trim). Deleting a tag cascades join rows; transactions remain.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id | Int | PK, autoincrement |
+| userId | Int | FK → User (`onDelete: Cascade`) |
+| name | String | Display name (max 80) |
+| nameKey | String | Lowercase trim; unique with `userId` |
+| createdAt | DateTime | Default now |
+
+Indexes: `[userId]`, unique `[userId, nameKey]`. Domain: `backend/src/domain/tags.ts`. Join: `CashTransactionTag`.
+
+## CashTransactionTag
+
+M:N join between `CashTransaction` and `Tag`. Composite PK `[cashTransactionId, tagId]`. Both FKs `onDelete: Cascade`. Index on `[tagId]`.
+
 ## CashTransaction
 
-Single-account cash ledger row. Positive `amount`; type drives signed effect on `Account.cashBalance`. User-created types are `INCOME` / `EXPENSE`. Transfer legs use `TRANSFER_OUT` / `TRANSFER_IN` and are excluded from cashflow statistics. No `balanceAfter`. Optional category tag (`INCOME`/`EXPENSE` for cash rows; `TRANSFER` for transfer legs via the transfer header).
+Single-account cash ledger row. Positive `amount`; type drives signed effect on `Account.cashBalance`. User-created types are `INCOME` / `EXPENSE`. Transfer legs use `TRANSFER_OUT` / `TRANSFER_IN` and are excluded from cashflow statistics. No `balanceAfter`. Optional category (`INCOME`/`EXPENSE` for cash rows; `TRANSFER` for transfer legs via the transfer header). Optional many tags via `CashTransactionTag` on cash rows only (API `tagIds`).
 
 | Field | Type | Notes |
 |-------|------|-------|
@@ -97,4 +116,4 @@ Single-account cash ledger row. Positive `amount`; type drives signed effect on 
 | transferId | Int? | FK → CashTransfer (`onDelete: Cascade`); set on transfer legs |
 | createdAt | DateTime | Default now |
 
-Indexes: `[accountId, occurredAt]`, `[categoryId]`, `[transferId]`. Domain rules: `backend/src/domain/cashLedger.ts` (`CASH_TX_TYPES` vs `LEDGER_TX_TYPES`). Parsing and minor-unit conversion: `backend/src/domain/money.ts`. SQLite stores these integers so cent arithmetic does not pass through REAL.
+Indexes: `[accountId, occurredAt]`, `[categoryId]`, `[transferId]`. Domain rules: `backend/src/domain/cashLedger.ts` (`CASH_TX_TYPES` vs `LEDGER_TX_TYPES`). Parsing and minor-unit conversion: `backend/src/domain/money.ts`. SQLite stores these integers so cent arithmetic does not pass through REAL. Tags: `backend/src/domain/tags.ts` (`assertOwnedTagIds`, `setTransactionTags`).
