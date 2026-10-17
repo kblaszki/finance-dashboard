@@ -28,7 +28,7 @@ Hub: [docs/README.md](../README.md).
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
 | GET | `/api/auth/config` | No | `{ allowRegister }` |
-| POST | `/api/auth/register` | No | Body: email, username, password. Seeds default category tree. 403 if registration disabled. Duplicate email or username (any case) → `409` |
+| POST | `/api/auth/register` | No | Body: email, username, password. Creates an empty user (no default categories/tags). 403 if registration disabled. Duplicate email or username (any case) → `409` |
 | POST | `/api/auth/login` | No | Body: login (email or username) or email + password. Username match is case-insensitive |
 | GET | `/api/auth/me` | Bearer | Current user. Missing or revoked token → `401` |
 | PATCH | `/api/auth/profile` | Bearer | Body: username. Duplicate username → `409` |

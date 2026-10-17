@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import request from "supertest";
 import type { Express } from "express";
 import type { PrismaClient } from "@prisma/client";
-import { canonicalUsernameKey, hashPassword } from "../src/auth";
+import { canonicalUsernameKey, hashPassword, normalizeEmail } from "../src/auth";
+import { seedDefaultCategories } from "../src/domain/categories";
 import { createTestPrisma, disconnectTestPrisma, resetDatabase } from "./prismaTestClient";
 
 const JWT_SECRET = "test-jwt-secret-must-be-at-least-32-characters";
@@ -50,6 +51,10 @@ async function registerAndLogin(
 ): Promise<string> {
   const reg = await request(app).post("/api/auth/register").send({ email, username, password });
   assert.equal(reg.status, 201);
+  // Register no longer seeds categories; fixtures still need roots for ledger/stats tests.
+  const user = await prisma.user.findUnique({ where: { email: normalizeEmail(email) } });
+  assert.ok(user);
+  await seedDefaultCategories(prisma, user.id);
   return reg.body.token as string;
 }
 
@@ -88,7 +93,7 @@ test("POST /api/auth/register returns 403 when ALLOW_REGISTER=false", async () =
   }
 });
 
-test("POST /api/auth/register creates user", async () => {
+test("POST /api/auth/register creates user without default categories or tags", async () => {
   const res = await request(app).post("/api/auth/register").send({
     email: "newuser@test.local",
     username: "newuser",
@@ -102,23 +107,13 @@ test("POST /api/auth/register creates user", async () => {
     .get("/api/categories")
     .set("Authorization", `Bearer ${res.body.token}`);
   assert.equal(cats.status, 200);
-  assert.equal(cats.body.length, 7);
-  const rows = cats.body as Array<{
-    id: number;
-    name: string;
-    parentId: number | null;
-    ledgerType: string;
-  }>;
-  const byName = new Map(rows.map((c) => [c.name, c]));
-  assert.equal(byName.has("Income"), false);
-  assert.equal(byName.has("Expense"), false);
-  assert.equal(byName.get("Salary")?.parentId, null);
-  assert.equal(byName.get("Salary")?.ledgerType, "INCOME");
-  assert.equal(byName.get("Other income")?.ledgerType, "INCOME");
-  assert.equal(byName.get("Food")?.parentId, null);
-  assert.equal(byName.get("Food")?.ledgerType, "EXPENSE");
-  assert.equal(byName.get("Internal transfer")?.parentId, null);
-  assert.equal(byName.get("Internal transfer")?.ledgerType, "TRANSFER");
+  assert.equal(cats.body.length, 0);
+
+  const tags = await request(app)
+    .get("/api/tags")
+    .set("Authorization", `Bearer ${res.body.token}`);
+  assert.equal(tags.status, 200);
+  assert.equal(tags.body.length, 0);
 });
 
 test("POST /api/auth/register rejects short password", async () => {

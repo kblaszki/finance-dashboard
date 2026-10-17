@@ -3,7 +3,6 @@ import { Prisma as PrismaNS, type PrismaClient, type User } from "@prisma/client
 import type { AuthedRequest } from "../auth";
 import { canonicalUsernameKey } from "../auth";
 import { isRegisterAllowed } from "../authConfig";
-import { seedDefaultCategories } from "../domain/categories";
 import { conflict, handleRouteError, forbidden } from "./httpSupport";
 
 type AuthDeps = {
@@ -75,17 +74,13 @@ export function createAuthRouter(deps: AuthDeps): Router {
       const pwdErr = validatePassword(password);
       if (pwdErr) return res.status(400).json({ error: pwdErr });
       const passwordHash = await hashPassword(password);
-      const user = await prisma.$transaction(async (tx) => {
-        const created = await tx.user.create({
-          data: {
-            email,
-            username,
-            usernameKey: canonicalUsernameKey(username),
-            passwordHash,
-          },
-        });
-        await seedDefaultCategories(tx, created.id);
-        return created;
+      const user = await prisma.user.create({
+        data: {
+          email,
+          username,
+          usernameKey: canonicalUsernameKey(username),
+          passwordHash,
+        },
       });
       const token = signToken(user.id, user.tokenVersion);
       res.status(201).json({ token, user: userPayload(user) });

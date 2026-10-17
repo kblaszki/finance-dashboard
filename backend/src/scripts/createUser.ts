@@ -1,7 +1,6 @@
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import { hashPassword, normalizeEmail, validatePassword, validateUsername, canonicalUsernameKey } from "../auth";
-import { seedDefaultCategories } from "../domain/categories";
 
 dotenv.config();
 
@@ -31,12 +30,8 @@ async function main(): Promise<void> {
       throw new Error(`User already exists: ${email}`);
     }
     const passwordHash = await hashPassword(password);
-    const user = await prisma.$transaction(async (tx) => {
-      const created = await tx.user.create({
-        data: { email, username, usernameKey: canonicalUsernameKey(username), passwordHash },
-      });
-      await seedDefaultCategories(tx, created.id);
-      return created;
+    const user = await prisma.user.create({
+      data: { email, username, usernameKey: canonicalUsernameKey(username), passwordHash },
     });
     // eslint-disable-next-line no-console
     console.log(JSON.stringify({ id: user.id, email: user.email, username: user.username }));
