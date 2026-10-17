@@ -28,14 +28,14 @@ Label money movements (e.g. savings top-up) without mixing them into income/expe
 - [x] Seed includes Internal transfer (`TRANSFER`)
 - [x] Create/update transfer with TRANSFER category copies id to both legs
 - [x] INCOME/EXPENSE categories rejected on transfers
-- [x] Ledger shows category on transfer legs; stats still exclude `TRANSFER_*`
+- [x] Ledger shows category on transfer legs; cashflow income/expense/net still exclude `TRANSFER_*`
 - [x] Categories + transfers CSV support TRANSFER / categoryPath
+- [x] Statistics: transfer KPI + category-breakdown `transfer[]` from `CashTransfer` (separate from net)
 
 ## Implementation notes
 
-- Docs: [docs/reference/domain.md](../../../docs/reference/domain.md), [docs/how-to/internal-transfers.md](../../../docs/how-to/internal-transfers.md)
+- Docs: [docs/reference/domain.md](../../../docs/reference/domain.md), [docs/how-to/internal-transfers.md](../../../docs/how-to/internal-transfers.md), [docs/how-to/dashboard-and-statistics.md](../../../docs/how-to/dashboard-and-statistics.md)
 
 ## Out of scope / follow-ups
 
 - Separate from/to categories
-- Transfer spend breakdowns in statistics

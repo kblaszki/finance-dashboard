@@ -1734,8 +1734,11 @@ test("GET /api/statistics/category-breakdown aggregates by category and currency
     .set("Authorization", `Bearer ${token}`);
   assert.equal(res.status, 200);
   assert.equal(res.body.month, "2026-08");
+  assert.equal(res.body.period, "month");
+  assert.equal(res.body.label, "2026-08");
   assert.ok(Array.isArray(res.body.income));
   assert.ok(Array.isArray(res.body.expense));
+  assert.ok(Array.isArray(res.body.transfer));
 
   assert.equal(res.body.income.length, 1);
   assert.equal(res.body.income[0].categoryId, salary.id);
@@ -1777,6 +1780,7 @@ test("GET /api/statistics/category-breakdown aggregates by category and currency
   assert.equal(empty.status, 200);
   assert.deepEqual(empty.body.income, []);
   assert.deepEqual(empty.body.expense, []);
+  assert.deepEqual(empty.body.transfer, []);
 });
 
 test("GET /api/statistics/period-summary requires auth and valid params", async () => {
@@ -1847,10 +1851,13 @@ test("GET /api/statistics/period-summary aggregates one currency with tenancy", 
   assert.equal(res.status, 200);
   assert.deepEqual(res.body, {
     month: "2026-08",
+    period: "month",
+    label: "2026-08",
     currency: "PLN",
     income: 3000,
     expense: 400,
     net: 2600,
+    transfers: 0,
   });
 
   const unknownCcy = await request(app)
@@ -1859,11 +1866,136 @@ test("GET /api/statistics/period-summary aggregates one currency with tenancy", 
   assert.equal(unknownCcy.status, 200);
   assert.deepEqual(unknownCcy.body, {
     month: "2026-08",
+    period: "month",
+    label: "2026-08",
     currency: "USD",
     income: 0,
     expense: 0,
     net: 0,
+    transfers: 0,
   });
+});
+
+test("GET /api/statistics period=quarter expands bounds and rejects bad period", async () => {
+  const token = await registerAndLogin("sumqtr@test.local", "sumqtr", "password123");
+  const pln = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Qtr PLN", currency: "PLN", openingBalance: 0 });
+  const plnId = pln.body.id as number;
+
+  await request(app)
+    .post(`/api/accounts/${plnId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "INCOME", amount: 100, occurredAt: "2026-01-15T00:00:00.000Z" });
+  await request(app)
+    .post(`/api/accounts/${plnId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "INCOME", amount: 200, occurredAt: "2026-03-20T00:00:00.000Z" });
+  await request(app)
+    .post(`/api/accounts/${plnId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "INCOME", amount: 50, occurredAt: "2026-04-01T00:00:00.000Z" });
+
+  const badPeriod = await request(app)
+    .get("/api/statistics/period-summary?month=2026-02&currency=PLN&period=week")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(badPeriod.status, 400);
+
+  const q1 = await request(app)
+    .get("/api/statistics/period-summary?month=2026-02&currency=PLN&period=quarter")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(q1.status, 200);
+  assert.equal(q1.body.period, "quarter");
+  assert.equal(q1.body.label, "2026 Q1");
+  assert.equal(q1.body.income, 300);
+  assert.equal(q1.body.expense, 0);
+  assert.equal(q1.body.net, 300);
+});
+
+test("GET /api/statistics/tag-breakdown aggregates by tag with tenancy", async () => {
+  const token = await registerAndLogin("tagstat@test.local", "tagstat", "password123");
+  const otherToken = await registerAndLogin(
+    "tagstat2@test.local",
+    "tagstat2",
+    "password123",
+  );
+
+  const tag = await request(app)
+    .post("/api/tags")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Lidl" });
+  assert.equal(tag.status, 201);
+  const tagId = tag.body.id as number;
+
+  const pln = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Tag PLN", currency: "PLN", openingBalance: 0 });
+  const otherAccount = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${otherToken}`)
+    .send({ name: "Other Tag", currency: "PLN", openingBalance: 0 });
+  const plnId = pln.body.id as number;
+  const otherId = otherAccount.body.id as number;
+
+  await request(app)
+    .post(`/api/accounts/${plnId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      type: "EXPENSE",
+      amount: 80,
+      tagIds: [tagId],
+      occurredAt: "2026-08-05T00:00:00.000Z",
+    });
+  await request(app)
+    .post(`/api/accounts/${plnId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      type: "EXPENSE",
+      amount: 20,
+      occurredAt: "2026-08-06T00:00:00.000Z",
+    });
+  await request(app)
+    .post(`/api/accounts/${plnId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      type: "INCOME",
+      amount: 500,
+      tagIds: [tagId],
+      occurredAt: "2026-08-07T00:00:00.000Z",
+    });
+  await request(app)
+    .post(`/api/accounts/${otherId}/transactions`)
+    .set("Authorization", `Bearer ${otherToken}`)
+    .send({
+      type: "EXPENSE",
+      amount: 99,
+      occurredAt: "2026-08-05T00:00:00.000Z",
+    });
+
+  const noAuth = await request(app).get(
+    "/api/statistics/tag-breakdown?month=2026-08&currency=PLN",
+  );
+  assert.equal(noAuth.status, 401);
+
+  const missingCurrency = await request(app)
+    .get("/api/statistics/tag-breakdown?month=2026-08")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(missingCurrency.status, 400);
+
+  const res = await request(app)
+    .get("/api/statistics/tag-breakdown?month=2026-08&currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  assert.equal(res.body.period, "month");
+  assert.equal(res.body.currency, "PLN");
+  assert.equal(res.body.expense.length, 1);
+  assert.equal(res.body.expense[0].tagId, tagId);
+  assert.equal(res.body.expense[0].total, 80);
+  assert.equal(res.body.income[0].total, 500);
+  assert.equal(res.body.untagged.expense, 20);
+  assert.equal(res.body.untagged.expenseCount, 1);
 });
 
 test("GET /api/statistics/cashflow-history validates months and defaults to 12", async () => {
@@ -2386,6 +2518,7 @@ test("transfers are excluded from cashflow stats and included in balance-history
   assert.equal(summary.body.income, 100);
   assert.equal(summary.body.expense, 0);
   assert.equal(summary.body.net, 100);
+  assert.equal(summary.body.transfers, 200);
 
   const breakdown = await request(app)
     .get("/api/statistics/category-breakdown?month=2026-08")
@@ -2394,6 +2527,9 @@ test("transfers are excluded from cashflow stats and included in balance-history
   assert.equal(breakdown.body.income.length, 1);
   assert.equal(breakdown.body.income[0].total, 100);
   assert.equal(breakdown.body.expense.length, 0);
+  assert.equal(breakdown.body.transfer.length, 1);
+  assert.equal(breakdown.body.transfer[0].total, 200);
+  assert.equal(breakdown.body.transfer[0].categoryName, "Uncategorized");
 
   const history = await request(app)
     .get(`/api/accounts/${fromId}/balance-history?month=2026-08&months=6`)

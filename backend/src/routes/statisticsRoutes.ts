@@ -4,6 +4,7 @@ import type { AuthedRequest } from "../auth";
 import {
   aggregateCategoryBreakdown,
   parseMonthParam,
+  sumTransferAmountFrom,
 } from "../domain/categoryBreakdown";
 import {
   aggregateCashflowHistory,
@@ -16,6 +17,8 @@ import {
 } from "../domain/cashflowStats";
 import { minorToDecimal } from "../domain/money";
 import { aggregateNetWorth } from "../domain/netWorth";
+import { parseStatsPeriod } from "../domain/statsPeriod";
+import { aggregateTagBreakdown } from "../domain/tagBreakdown";
 import { handleRouteError } from "./httpSupport";
 
 type StatisticsDeps = {
@@ -33,21 +36,45 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
     requireAuth,
     async (req: AuthedRequest, res) => {
       try {
-        const { month, start, end } = parseMonthParam(req.query.month);
-        const rows = await prisma.cashTransaction.findMany({
-          where: {
-            occurredAt: { gte: start, lt: end },
-            account: { userId: uid(req) },
-          },
-          include: {
-            account: { select: { currency: true } },
-            category: { select: { id: true, name: true } },
-          },
-        });
+        const statsPeriod = parseStatsPeriod(req.query.month, req.query.period);
+        const { start, end, month, period, label } = statsPeriod;
+        const userId = uid(req);
+        const [rows, transfers] = await Promise.all([
+          prisma.cashTransaction.findMany({
+            where: {
+              occurredAt: { gte: start, lt: end },
+              account: { userId },
+            },
+            include: {
+              account: { select: { currency: true } },
+              category: { select: { id: true, name: true } },
+            },
+          }),
+          prisma.cashTransfer.findMany({
+            where: {
+              occurredAt: { gte: start, lt: end },
+              userId,
+            },
+            include: {
+              fromAccount: { select: { currency: true } },
+              category: { select: { id: true, name: true } },
+            },
+          }),
+        ]);
         res.json(
           aggregateCategoryBreakdown(
             month,
             rows.map((row) => ({ ...row, amount: minorToDecimal(row.amount) })),
+            {
+              period,
+              label,
+              transferRows: transfers.map((row) => ({
+                amountFrom: minorToDecimal(row.amountFrom),
+                categoryId: row.categoryId,
+                fromAccount: row.fromAccount,
+                category: row.category,
+              })),
+            },
           ),
         );
       } catch (e: unknown) {
@@ -61,22 +88,50 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
     requireAuth,
     async (req: AuthedRequest, res) => {
       try {
-        const { month, start, end } = parseMonthParam(req.query.month);
+        const statsPeriod = parseStatsPeriod(req.query.month, req.query.period);
+        const { start, end, month, period, label } = statsPeriod;
         const currency = parseCurrencyParam(req.query.currency);
-        const rows = await prisma.cashTransaction.findMany({
-          where: {
-            occurredAt: { gte: start, lt: end },
-            account: { userId: uid(req), currency },
-          },
-          include: {
-            account: { select: { currency: true } },
-          },
-        });
+        const userId = uid(req);
+        const [rows, transfers] = await Promise.all([
+          prisma.cashTransaction.findMany({
+            where: {
+              occurredAt: { gte: start, lt: end },
+              account: { userId, currency },
+            },
+            include: {
+              account: { select: { currency: true } },
+            },
+          }),
+          prisma.cashTransfer.findMany({
+            where: {
+              occurredAt: { gte: start, lt: end },
+              userId,
+              fromAccount: { currency },
+            },
+            include: {
+              fromAccount: { select: { currency: true } },
+              category: { select: { id: true, name: true } },
+            },
+          }),
+        ]);
         res.json(
           aggregatePeriodSummary(
             month,
             currency,
             rows.map((row) => ({ ...row, amount: minorToDecimal(row.amount) })),
+            {
+              period,
+              label,
+              transfers: sumTransferAmountFrom(
+                transfers.map((row) => ({
+                  amountFrom: minorToDecimal(row.amountFrom),
+                  categoryId: row.categoryId,
+                  fromAccount: row.fromAccount,
+                  category: row.category,
+                })),
+                currency,
+              ),
+            },
           ),
         );
       } catch (e: unknown) {
@@ -86,15 +141,55 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
   );
 
   router.get(
+    "/api/statistics/tag-breakdown",
+    requireAuth,
+    async (req: AuthedRequest, res) => {
+      try {
+        const statsPeriod = parseStatsPeriod(req.query.month, req.query.period);
+        const { start, end, month, period, label } = statsPeriod;
+        const currency = parseCurrencyParam(req.query.currency);
+        const rows = await prisma.cashTransaction.findMany({
+          where: {
+            occurredAt: { gte: start, lt: end },
+            account: { userId: uid(req), currency },
+          },
+          include: {
+            account: { select: { currency: true } },
+            cashTransactionTags: {
+              include: { tag: { select: { id: true, name: true } } },
+            },
+          },
+        });
+        res.json(
+          aggregateTagBreakdown(
+            month,
+            currency,
+            rows.map((row) => ({
+              type: row.type,
+              amount: minorToDecimal(row.amount),
+              account: row.account,
+              cashTransactionTags: row.cashTransactionTags,
+            })),
+            { period, label },
+          ),
+        );
+      } catch (e: unknown) {
+        handleRouteError(res, e, "Failed to load tag breakdown");
+      }
+    },
+  );
+
+  router.get(
     "/api/statistics/cashflow-history",
     requireAuth,
     async (req: AuthedRequest, res) => {
       try {
-        const { month, end } = parseMonthParam(req.query.month);
+        const statsPeriod = parseStatsPeriod(req.query.month, req.query.period);
         const currency = parseCurrencyParam(req.query.currency);
         const monthCount = parseMonthsParam(req.query.months);
-        const months = listMonthsEndingAt(month, monthCount);
+        const months = listMonthsEndingAt(statsPeriod.endMonth, monthCount);
         const { start } = parseMonthParam(months[0]!);
+        const { end } = parseMonthParam(statsPeriod.endMonth);
         const rows = await prisma.cashTransaction.findMany({
           where: {
             occurredAt: { gte: start, lt: end },

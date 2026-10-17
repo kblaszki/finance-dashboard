@@ -72,7 +72,7 @@ Unknown / other-user category or parent → `404`.
 
 ## Tags
 
-User-scoped flat labels (`Tag`). Responses include `id`, `name`, `createdAt`. Name uniqueness is case-insensitive via `nameKey`. Delete cascades `CashTransactionTag` joins; cash rows remain. Tags are not included in ledger/transfers CSV or statistics in this slice.
+User-scoped flat labels (`Tag`). Responses include `id`, `name`, `createdAt`. Name uniqueness is case-insensitive via `nameKey`. Delete cascades `CashTransactionTag` joins; cash rows remain. Tags are not included in ledger/transfers CSV; period tag totals use `GET /api/statistics/tag-breakdown`.
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
@@ -113,12 +113,13 @@ User-scoped internal cash transfers (`CashTransfer` header + two ledger legs). C
 
 ## Statistics
 
-Month bounds are **UTC** `[start, end)` on `CashTransaction.occurredAt`. Cashflow endpoints (`period-summary`, `category-breakdown`, `cashflow-history`, rolling averages) count only `INCOME` / `EXPENSE` — transfer legs are ignored. Account `balance-history` includes all ledger types (`TRANSFER_*` too). No FX conversion in stats. Missing/invalid `month` → `400`. Period summary and cashflow history require `currency` as a 3-letter code (`^[A-Z]{3}$`); a currency the user does not hold returns zeros. History `months` must be `6`, `12`, or `24` when present (default `12`). Series is oldest → newest and zero-filled.
+Period bounds are **UTC** `[start, end)` on `occurredAt`. Query `month=YYYY-MM` is the anchor; optional `period=month|quarter|year` (default `month`) expands to that calendar month, the quarter containing it, or the calendar year. Responses include `period` and a short `label` (`2026-03`, `2026 Q1`, `2026`). Cashflow income/expense/net still count only `INCOME` / `EXPENSE` ledger rows — transfer legs are ignored for those totals. Transfer volume and transfer-by-category use `CashTransfer.amountFrom` (from-account currency) and are separate from net. Tag breakdown attributes the full cash amount to each attached tag (multi-tag double-counts) plus an untagged bucket. Account `balance-history` includes all ledger types (`TRANSFER_*` too). No FX conversion in stats. Missing/invalid `month` or `period` → `400`. Period summary, tag breakdown, and cashflow history require `currency` as a 3-letter code (`^[A-Z]{3}$`); a currency the user does not hold returns zeros. History `months` must be `6`, `12`, or `24` when present (default `12`); the series ends at the last month of the selected period. Series is oldest → newest and zero-filled.
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
-| GET | `/api/statistics/category-breakdown` | Bearer | Query: `month=YYYY-MM`. Body: `{ month, income[], expense[] }` with rows `{ categoryId, categoryName, currency, total, count }` (per `(categoryId, currency)`; null category → `"Uncategorized"`) |
-| GET | `/api/statistics/period-summary` | Bearer | Query: `month=YYYY-MM`, `currency=XXX`. Body: `{ month, currency, income, expense, net }` |
-| GET | `/api/statistics/cashflow-history` | Bearer | Query: `month=YYYY-MM`, `currency=XXX`, optional `months` (6\|12\|24). Body: `{ currency, monthCount, series: [{ month, income, expense, net }] }` |
+| GET | `/api/statistics/category-breakdown` | Bearer | Query: `month=YYYY-MM`, optional `period`. Body: `{ month, period, label, income[], expense[], transfer[] }` with rows `{ categoryId, categoryName, currency, total, count }` (per `(categoryId, currency)`; null category → `"Uncategorized"`). `transfer[]` from `CashTransfer` |
+| GET | `/api/statistics/period-summary` | Bearer | Query: `month=YYYY-MM`, `currency=XXX`, optional `period`. Body: `{ month, period, label, currency, income, expense, net, transfers }` (`transfers` = sum of `amountFrom` in that currency; not part of `net`) |
+| GET | `/api/statistics/tag-breakdown` | Bearer | Query: `month=YYYY-MM`, `currency=XXX`, optional `period`. Body: `{ month, period, label, currency, income[], expense[], untagged: { income, expense, incomeCount, expenseCount } }` with tag rows `{ tagId, tagName, total, count }` |
+| GET | `/api/statistics/cashflow-history` | Bearer | Query: `month=YYYY-MM`, `currency=XXX`, optional `months` (6\|12\|24), optional `period`. Body: `{ currency, monthCount, series: [{ month, income, expense, net }] }` |
 | GET | `/api/statistics/net-worth` | Bearer | Query: `currency=XXX`. Body: `{ currency, byBucket: { cash, stock, crypto, metal, real_estate, other }, liabilities, netWorth }` — sums `Account.cashBalance` by account type (no FX). `CREDIT_CARD` debt (`cashBalance < 0`) adds to `liabilities` and is excluded from buckets; overpayment (`> 0`) goes to `cash`. `IKE`/`IKZE` → stock; `TREASURY_BONDS` → other. Mortgage-style FR-029 liabilities still separate. |
 | GET | `/api/statistics/cashflow-rolling-12m` | Bearer | Query: `currency=XXX`. Body: `{ currency, monthCount, fromMonth, toMonth, avgIncome, avgExpense, avgNet }` — averages over last 12 complete UTC months (excludes current month) |

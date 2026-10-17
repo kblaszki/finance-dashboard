@@ -18,9 +18,12 @@ import {
   fetchCashflowHistory,
   fetchCategoryBreakdown,
   fetchPeriodSummary,
-  type CategoryBreakdown,
+  fetchTagBreakdown,
   type CategoryBreakdownRow,
   type PeriodSummary,
+  type StatsPeriod,
+  type TagBreakdown,
+  type TagBreakdownRow,
 } from "../api/statisticsApi";
 import { ChartCard } from "../components/ui/ChartCard";
 import { StatusBlock } from "../components/ui/StatusBlock";
@@ -38,9 +41,39 @@ const CHART_COLORS = [
 ] as const;
 
 const HISTORY_MONTH_OPTIONS = [6, 12, 24] as const;
+const PERIOD_OPTIONS: { value: StatsPeriod; label: string }[] = [
+  { value: "month", label: "Month" },
+  { value: "quarter", label: "Quarter" },
+  { value: "year", label: "Year" },
+];
+
+type AnalysisView = "categories" | "tags";
+type CategoryFacet = "income" | "expense" | "transfer";
+type TagFacet = "income" | "expense";
 
 function currentUtcMonth(): string {
   return new Date().toISOString().slice(0, 7);
+}
+
+function yearOf(month: string): number {
+  return Number(month.slice(0, 4));
+}
+
+function monthIndexOf(month: string): number {
+  return Number(month.slice(5, 7)) - 1;
+}
+
+function quarterOf(month: string): number {
+  return Math.floor(monthIndexOf(month) / 3) + 1;
+}
+
+function anchorForQuarter(year: number, quarter: number): string {
+  const startMonth = (quarter - 1) * 3 + 1;
+  return `${year}-${String(startMonth).padStart(2, "0")}`;
+}
+
+function anchorForYear(year: number): string {
+  return `${year}-01`;
 }
 
 type RollupRow = {
@@ -104,17 +137,54 @@ function rollupByParent(
   return [...buckets.values()].sort((a, b) => b.total - a.total);
 }
 
+function tagRollupRows(rows: TagBreakdownRow[]): RollupRow[] {
+  return rows.map((row) => ({
+    key: `tag-${row.tagId}`,
+    name: row.tagName,
+    total: row.total,
+    count: row.count,
+  }));
+}
+
+function withUntagged(
+  rows: RollupRow[],
+  untaggedTotal: number,
+  untaggedCount: number,
+): RollupRow[] {
+  if (untaggedTotal <= 0 && untaggedCount <= 0) return rows;
+  return [
+    ...rows,
+    {
+      key: "untagged",
+      name: "Untagged",
+      total: untaggedTotal,
+      count: untaggedCount,
+    },
+  ].sort((a, b) => b.total - a.total);
+}
+
+const YEAR_OPTIONS = (() => {
+  const current = new Date().getUTCFullYear();
+  const years: number[] = [];
+  for (let y = current; y >= current - 10; y -= 1) years.push(y);
+  return years;
+})();
+
 export function StatisticsPage() {
   const { currencies, currency } = useCurrency();
   const [month, setMonth] = useState(currentUtcMonth);
+  const [period, setPeriod] = useState<StatsPeriod>("month");
   const [historyMonths, setHistoryMonths] = useState<number>(12);
+  const [analysisView, setAnalysisView] = useState<AnalysisView>("categories");
+  const [categoryFacet, setCategoryFacet] = useState<CategoryFacet>("expense");
+  const [tagFacet, setTagFacet] = useState<TagFacet>("expense");
 
   const loadCategories = useCallback(() => fetchCategories(), []);
   const { data: categories } = useAsyncData(loadCategories);
 
   const loadBreakdown = useCallback(
-    () => fetchCategoryBreakdown(month),
-    [month],
+    () => fetchCategoryBreakdown(month, period),
+    [month, period],
   );
   const {
     data: breakdown,
@@ -124,25 +194,37 @@ export function StatisticsPage() {
 
   const loadSummary = useCallback((): Promise<PeriodSummary | null> => {
     if (!currency) return Promise.resolve(null);
-    return fetchPeriodSummary(month, currency);
-  }, [month, currency]);
+    return fetchPeriodSummary(month, currency, period);
+  }, [month, currency, period]);
   const {
     data: summary,
     error: summaryError,
     loading: summaryLoading,
   } = useAsyncData(loadSummary);
 
+  const loadTags = useCallback((): Promise<TagBreakdown | null> => {
+    if (!currency) return Promise.resolve(null);
+    return fetchTagBreakdown(month, currency, period);
+  }, [month, currency, period]);
+  const {
+    data: tagBreakdown,
+    error: tagError,
+    loading: tagLoading,
+  } = useAsyncData(loadTags);
+
   const loadHistory = useCallback(() => {
     if (!currency) {
       return Promise.resolve({ currency: "", monthCount: 0, series: [] });
     }
-    return fetchCashflowHistory(month, currency, historyMonths);
-  }, [month, currency, historyMonths]);
+    return fetchCashflowHistory(month, currency, historyMonths, period);
+  }, [month, currency, historyMonths, period]);
   const {
     data: history,
     error: historyError,
     loading: historyLoading,
   } = useAsyncData(loadHistory);
+
+  const periodLabel = summary?.label ?? breakdown?.label ?? month;
 
   const chartSeries = useMemo(() => {
     if (!history) return [];
@@ -163,23 +245,147 @@ export function StatisticsPage() {
     return rollupByParent(breakdown.expense, currency, categories);
   }, [breakdown, categories, currency]);
 
+  const transferRollup = useMemo(() => {
+    if (!breakdown || !categories || !currency) return [];
+    return rollupByParent(breakdown.transfer, currency, categories);
+  }, [breakdown, categories, currency]);
+
+  const tagIncomeRollup = useMemo(() => {
+    if (!tagBreakdown) return [];
+    return withUntagged(
+      tagRollupRows(tagBreakdown.income),
+      tagBreakdown.untagged.income,
+      tagBreakdown.untagged.incomeCount,
+    );
+  }, [tagBreakdown]);
+
+  const tagExpenseRollup = useMemo(() => {
+    if (!tagBreakdown) return [];
+    return withUntagged(
+      tagRollupRows(tagBreakdown.expense),
+      tagBreakdown.untagged.expense,
+      tagBreakdown.untagged.expenseCount,
+    );
+  }, [tagBreakdown]);
+
   const loading =
-    !!currency && (summaryLoading || historyLoading || breakdownLoading);
-  const error = summaryError || historyError || breakdownError;
+    !!currency &&
+    (summaryLoading || historyLoading || breakdownLoading || tagLoading);
+  const error = summaryError || historyError || breakdownError || tagError;
+
+  const categoryFacetRows =
+    categoryFacet === "income"
+      ? incomeRollup
+      : categoryFacet === "expense"
+        ? expenseRollup
+        : transferRollup;
+
+  const categoryDetailRows = useMemo(() => {
+    if (!breakdown || !currency) return [];
+    const source =
+      categoryFacet === "income"
+        ? breakdown.income
+        : categoryFacet === "expense"
+          ? breakdown.expense
+          : breakdown.transfer;
+    return source.filter((r) => r.currency === currency);
+  }, [breakdown, currency, categoryFacet]);
+
+  const tagFacetRows =
+    tagFacet === "income" ? tagIncomeRollup : tagExpenseRollup;
 
   return (
     <>
       <section className="card form-section-gap period-filter">
+        <div
+          className="stats-segmented"
+          role="group"
+          aria-label="Analysis period"
+        >
+          {PERIOD_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              type="button"
+              className={
+                period === opt.value
+                  ? "stats-segmented__btn stats-segmented__btn--active"
+                  : "stats-segmented__btn"
+              }
+              aria-pressed={period === opt.value}
+              onClick={() => setPeriod(opt.value)}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
         <div className="period-filter-row">
-          <label>
-            Month
-            <input
-              type="month"
-              value={month}
-              onChange={(e) => setMonth(e.target.value)}
-              required
-            />
-          </label>
+          {period === "month" && (
+            <label>
+              Month
+              <input
+                type="month"
+                value={month}
+                onChange={(e) => setMonth(e.target.value)}
+                required
+              />
+            </label>
+          )}
+          {period === "quarter" && (
+            <>
+              <label>
+                Year
+                <select
+                  value={yearOf(month)}
+                  onChange={(e) =>
+                    setMonth(
+                      anchorForQuarter(Number(e.target.value), quarterOf(month)),
+                    )
+                  }
+                >
+                  {YEAR_OPTIONS.map((y) => (
+                    <option key={y} value={y}>
+                      {y}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Quarter
+                <select
+                  value={quarterOf(month)}
+                  onChange={(e) =>
+                    setMonth(
+                      anchorForQuarter(yearOf(month), Number(e.target.value)),
+                    )
+                  }
+                >
+                  {[1, 2, 3, 4].map((q) => (
+                    <option key={q} value={q}>
+                      Q{q}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </>
+          )}
+          {period === "year" && (
+            <label>
+              Year
+              <select
+                value={yearOf(month)}
+                onChange={(e) =>
+                  setMonth(anchorForYear(Number(e.target.value)))
+                }
+              >
+                {YEAR_OPTIONS.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           <label>
             History range
             <select
@@ -195,10 +401,10 @@ export function StatisticsPage() {
           </label>
         </div>
         <p className="muted period-filter-summary">
-          Currency is set in the top bar
-          {currency ? ` (${currency})` : ""}. Bounds are UTC. Category
-          breakdown is filtered to the selected currency; parent categories are
-          rolled up.
+          Showing <strong>{periodLabel}</strong>
+          {currency ? ` · ${currency}` : ""}. Currency is set in the top bar.
+          Transfers are listed separately and do not change income, expense, or
+          net. Tag totals count the full amount on each attached tag.
         </p>
       </section>
 
@@ -213,23 +419,29 @@ export function StatisticsPage() {
       {!loading && !error && currency && summary && (
         <ul className="stat-list card">
           <li className="stat-row">
-            <span className="stat-row-label">Income · {month}</span>
+            <span className="stat-row-label">Income · {periodLabel}</span>
             <span className="stat-row-value positive">
               {formatMoney(summary.income, currency)}
             </span>
           </li>
           <li className="stat-row">
-            <span className="stat-row-label">Expense · {month}</span>
+            <span className="stat-row-label">Expense · {periodLabel}</span>
             <span className="stat-row-value negative">
               {formatMoney(summary.expense, currency)}
             </span>
           </li>
           <li className="stat-row">
-            <span className="stat-row-label">Net · {month}</span>
+            <span className="stat-row-label">Net · {periodLabel}</span>
             <span
               className={`stat-row-value ${summary.net >= 0 ? "positive" : "negative"}`}
             >
               {formatMoney(summary.net, currency)}
+            </span>
+          </li>
+          <li className="stat-row">
+            <span className="stat-row-label">Transfers · {periodLabel}</span>
+            <span className="stat-row-value">
+              {formatMoney(summary.transfers, currency)}
             </span>
           </li>
         </ul>
@@ -238,7 +450,7 @@ export function StatisticsPage() {
       {!loading && !error && currency && history && (
         <ChartCard
           title={`Cashflow history (${currency})`}
-          subtitle={`${historyMonths} months ending ${month}, with savings rate on the right axis.`}
+          subtitle={`${historyMonths} months ending ${periodLabel}, with savings rate on the right axis.`}
         >
           <ResponsiveContainer width="100%" height={320}>
             <ComposedChart data={chartSeries}>
@@ -348,27 +560,159 @@ export function StatisticsPage() {
         </ChartCard>
       )}
 
-      {!loading && !error && currency && breakdown && (
-        <div className="dash-grid">
-          <BreakdownPanel
-            title="Income"
-            rows={incomeRollup}
-            currency={currency}
-            tone="positive"
-            emptyLabel="No income in this month for the selected currency."
-          />
-          <BreakdownPanel
-            title="Expense"
-            rows={expenseRollup}
-            currency={currency}
-            tone="negative"
-            emptyLabel="No expenses in this month for the selected currency."
-          />
-        </div>
-      )}
+      {!loading && !error && currency && (
+        <section className="card form-section-gap stats-analysis">
+          <div
+            className="stats-segmented"
+            role="tablist"
+            aria-label="Breakdown view"
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={analysisView === "categories"}
+              className={
+                analysisView === "categories"
+                  ? "stats-segmented__btn stats-segmented__btn--active"
+                  : "stats-segmented__btn"
+              }
+              onClick={() => setAnalysisView("categories")}
+            >
+              Categories
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={analysisView === "tags"}
+              className={
+                analysisView === "tags"
+                  ? "stats-segmented__btn stats-segmented__btn--active"
+                  : "stats-segmented__btn"
+              }
+              onClick={() => setAnalysisView("tags")}
+            >
+              Tags
+            </button>
+          </div>
 
-      {!loading && !error && currency && breakdown && (
-        <CategoryDetailTables breakdown={breakdown} currency={currency} />
+          {analysisView === "categories" && breakdown && (
+            <>
+              <div
+                className="stats-facet-tabs"
+                role="tablist"
+                aria-label="Category type"
+              >
+                {(
+                  [
+                    ["income", "Income"],
+                    ["expense", "Expense"],
+                    ["transfer", "Transfers"],
+                  ] as const
+                ).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    role="tab"
+                    aria-selected={categoryFacet === value}
+                    className={
+                      categoryFacet === value
+                        ? "stats-facet-tabs__btn stats-facet-tabs__btn--active"
+                        : "stats-facet-tabs__btn"
+                    }
+                    onClick={() => setCategoryFacet(value)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <BreakdownPanel
+                title={
+                  categoryFacet === "income"
+                    ? "Income"
+                    : categoryFacet === "expense"
+                      ? "Expense"
+                      : "Transfers"
+                }
+                rows={categoryFacetRows}
+                currency={currency}
+                tone={
+                  categoryFacet === "income"
+                    ? "positive"
+                    : categoryFacet === "expense"
+                      ? "negative"
+                      : "neutral"
+                }
+                emptyLabel={`No ${categoryFacet} in ${periodLabel} for the selected currency.`}
+                subtitle={`Root category rollup · ${periodLabel} · ${currency}`}
+              />
+              <DetailTable
+                title={`${categoryFacet === "transfer" ? "Transfer" : categoryFacet === "income" ? "Income" : "Expense"} detail`}
+                rows={categoryDetailRows}
+                currency={currency}
+              />
+            </>
+          )}
+
+          {analysisView === "tags" && tagBreakdown && (
+            <>
+              <div
+                className="stats-facet-tabs"
+                role="tablist"
+                aria-label="Tag type"
+              >
+                {(
+                  [
+                    ["income", "Income"],
+                    ["expense", "Expense"],
+                  ] as const
+                ).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    role="tab"
+                    aria-selected={tagFacet === value}
+                    className={
+                      tagFacet === value
+                        ? "stats-facet-tabs__btn stats-facet-tabs__btn--active"
+                        : "stats-facet-tabs__btn"
+                    }
+                    onClick={() => setTagFacet(value)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <BreakdownPanel
+                title={tagFacet === "income" ? "Income" : "Expense"}
+                rows={tagFacetRows}
+                currency={currency}
+                tone={tagFacet === "income" ? "positive" : "negative"}
+                emptyLabel={`No tagged ${tagFacet} in ${periodLabel} for the selected currency.`}
+                subtitle={`By tag · ${periodLabel} · ${currency}`}
+                byLabel="tag"
+              />
+              <TagDetailTable
+                title={`${tagFacet === "income" ? "Income" : "Expense"} by tag`}
+                rows={
+                  tagFacet === "income"
+                    ? tagBreakdown.income
+                    : tagBreakdown.expense
+                }
+                untaggedTotal={
+                  tagFacet === "income"
+                    ? tagBreakdown.untagged.income
+                    : tagBreakdown.untagged.expense
+                }
+                untaggedCount={
+                  tagFacet === "income"
+                    ? tagBreakdown.untagged.incomeCount
+                    : tagBreakdown.untagged.expenseCount
+                }
+                currency={currency}
+              />
+            </>
+          )}
+        </section>
       )}
     </>
   );
@@ -378,15 +722,23 @@ function BreakdownPanel(props: {
   title: string;
   rows: RollupRow[];
   currency: string;
-  tone: "positive" | "negative";
+  tone: "positive" | "negative" | "neutral";
   emptyLabel: string;
+  subtitle: string;
+  byLabel?: string;
 }) {
-  const { title, rows, currency, tone, emptyLabel } = props;
+  const {
+    title,
+    rows,
+    currency,
+    tone,
+    emptyLabel,
+    subtitle,
+    byLabel = "category",
+  } = props;
+  const toneClass = tone === "neutral" ? "" : `stat-row-value ${tone}`;
   return (
-    <ChartCard
-      title={`${title} by category`}
-      subtitle={`Root category rollup · ${currency}`}
-    >
+    <ChartCard title={`${title} by ${byLabel}`} subtitle={subtitle}>
       {rows.length === 0 ? (
         <p className="empty-state">{emptyLabel}</p>
       ) : (
@@ -435,7 +787,7 @@ function BreakdownPanel(props: {
                     · {row.count} {row.count === 1 ? "tx" : "txs"}
                   </span>
                 </span>
-                <span className={`legend-value stat-row-value ${tone}`}>
+                <span className={`legend-value ${toneClass}`.trim()}>
                   {formatMoney(row.total, currency)}
                 </span>
               </li>
@@ -447,36 +799,13 @@ function BreakdownPanel(props: {
   );
 }
 
-function CategoryDetailTables(props: {
-  breakdown: CategoryBreakdown;
-  currency: string;
-}) {
-  const income = props.breakdown.income.filter(
-    (r) => r.currency === props.currency,
-  );
-  const expense = props.breakdown.expense.filter(
-    (r) => r.currency === props.currency,
-  );
-
-  return (
-    <div className="dash-grid">
-      <DetailTable title="Income detail" rows={income} currency={props.currency} />
-      <DetailTable
-        title="Expense detail"
-        rows={expense}
-        currency={props.currency}
-      />
-    </div>
-  );
-}
-
 function DetailTable(props: {
   title: string;
   rows: CategoryBreakdownRow[];
   currency: string;
 }) {
   return (
-    <section className="card form-section-gap">
+    <section className="form-section-gap">
       <h2 className="section-title">{props.title}</h2>
       {props.rows.length === 0 ? (
         <p className="empty-state">No rows.</p>
@@ -502,6 +831,57 @@ function DetailTable(props: {
                   </td>
                 </tr>
               ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function TagDetailTable(props: {
+  title: string;
+  rows: TagBreakdownRow[];
+  untaggedTotal: number;
+  untaggedCount: number;
+  currency: string;
+}) {
+  const hasUntagged = props.untaggedTotal > 0 || props.untaggedCount > 0;
+  const empty = props.rows.length === 0 && !hasUntagged;
+  return (
+    <section className="form-section-gap">
+      <h2 className="section-title">{props.title}</h2>
+      {empty ? (
+        <p className="empty-state">No rows.</p>
+      ) : (
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Tag</th>
+                <th className="num">Count</th>
+                <th className="num">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {props.rows.map((row) => (
+                <tr key={row.tagId}>
+                  <td>{row.tagName}</td>
+                  <td className="num">{row.count}</td>
+                  <td className="num">
+                    {formatMoney(row.total, props.currency)}
+                  </td>
+                </tr>
+              ))}
+              {hasUntagged && (
+                <tr>
+                  <td>Untagged</td>
+                  <td className="num">{props.untaggedCount}</td>
+                  <td className="num">
+                    {formatMoney(props.untaggedTotal, props.currency)}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

@@ -33,7 +33,7 @@ Hub: [docs/README.md](../README.md).
 | `/categories` | Protected | `CategoriesPage` (Income / Expense / Transfers sections; CSV Download/Upload merge import — preview summary then Confirm; inline create row; double-click Name/Parent + Enter to PATCH, Escape or blur cancels; delete; section fixes `ledgerType`) |
 | `/tags` | Protected | `TagsPage` (flat Name + Actions table; inline create; double-click name + Enter to rename; delete with confirm) |
 | `/transfers` | Protected | `TransfersPage` (inline create row with optional TRANSFER category; CSV Download/Upload with `TransferImportPanel` for account mapping + duplicate review; double-click Date/From/To/amounts/category/description + Enter to PATCH, Escape or blur cancels; amount-to editable only for cross-currency; delete with confirm; refreshes topbar balances) |
-| `/statistics` | Protected | `StatisticsPage` (period KPIs, cashflow + savings-rate chart, category donuts rolled to tree roots) |
+| `/statistics` | Protected | `StatisticsPage` (month/quarter/year period, KPIs incl. transfers, cashflow chart, Categories/Tags breakdowns) |
 | `/settings` | Protected | `SettingsPage` |
 
 Shell: `AppShell` — fixed sidebar (brand, icon nav, user + logout, theme toggle) + topbar (one page `h1`, global `CurrencySelect`) + content. A skip link targets `#main-content`. The sidebar becomes an off-canvas drawer (`.shell--drawer-mode`) when the viewport cannot fit the sticky sidebar beside the widest table’s readable minimum (`shellDrawerMode.ts`); pages without tables fall back to ≤900px. Open from the topbar menu button (backdrop / Escape / route change close it). Gate: `ProtectedRoute`. `ErrorBoundary` wraps the shell outlet and the guest auth outlet. Page titles inside the shell are `h2`.
@@ -67,6 +67,6 @@ Production Docker serves `frontend/dist` from Express (`STATIC_DIR`); deep links
 | `frontend/src/api/tagsApi.ts` | list/create/patch/delete → `/api/tags` |
 | `frontend/src/api/transactionsApi.ts` | list/create/delete/export/import cash txs under `/api/accounts/:id/transactions` (optional `categoryId`, `tagIds`; `transferId` on rows; CSV export via `getBlob`; import preview `{ csv }` → categories + `skippedTransfers`; import `{ csv, categoryMappings }` → `{ created, createdCategories, skipped, skippedTransfers }`) |
 | `frontend/src/api/transfersApi.ts` | list/create/patch/delete + CSV export/preview/import → `/api/transfers` (`categoryId` on transfer DTOs; `exportTransfersCsv`, `previewTransfersImport`, `importTransfersCsv`) |
-| `frontend/src/api/statisticsApi.ts` | `fetchCategoryBreakdown`, `fetchPeriodSummary`, `fetchCashflowHistory`, `fetchNetWorth`, `fetchCashflowRolling12m` → `/api/statistics/*` |
+| `frontend/src/api/statisticsApi.ts` | `fetchCategoryBreakdown`, `fetchPeriodSummary`, `fetchTagBreakdown`, `fetchCashflowHistory`, `fetchNetWorth`, `fetchCashflowRolling12m` → `/api/statistics/*` (optional `period`) |
 
 New domain clients follow `frontend/src/api/*Api.ts` and must be covered in `apiModules.test.ts` when added.

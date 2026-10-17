@@ -8,6 +8,8 @@ related_docs:
 related_code:
   - backend/src/domain/categoryBreakdown.ts
   - backend/src/domain/cashflowStats.ts
+  - backend/src/domain/statsPeriod.ts
+  - backend/src/domain/tagBreakdown.ts
   - backend/src/domain/netWorth.ts
   - backend/src/routes/statisticsRoutes.ts
   - frontend/src/pages/DashboardPage.tsx
@@ -39,20 +41,23 @@ No FX conversion. Mapping: `BANK→cash`, `BROKERAGE|IKE|IKZE→stock`, `CRYPTO�
 ## Period KPIs and cashflow chart (FR-003 / FR-004)
 
 1. Open **Statistics** in the AppShell (or go to `/statistics`).
-2. Pick a calendar month (`YYYY-MM`) and a history range (6 / 12 / 24 months). Currency comes from the top bar.
-3. Review **Period summary**: income, expense, and net for that UTC month and currency only (no FX).
-4. Review **Cashflow history**: monthly income/expense bars, net line, and savings-rate line (`net / income` per month) on a second axis.
+2. Choose **Month**, **Quarter**, or **Year**, then pick the anchor (month input, quarter + year, or year). Currency comes from the top bar. Optionally set history range (6 / 12 / 24 months).
+3. Review **Period summary**: income, expense, net, and **transfers** (sum of outgoing transfer `amountFrom` in that currency). Transfers do **not** change income/expense/net.
+4. Review **Cashflow history**: monthly income/expense bars, net line, and savings-rate line (`net / income` per month) on a second axis. The series ends at the last month of the selected period.
 5. APIs:
-   - `GET /api/statistics/period-summary?month=YYYY-MM&currency=XXX`
-   - `GET /api/statistics/cashflow-history?month=YYYY-MM&currency=XXX&months=12` (`months` optional; default 12)
+   - `GET /api/statistics/period-summary?month=YYYY-MM&currency=XXX&period=month|quarter|year`
+   - `GET /api/statistics/cashflow-history?month=YYYY-MM&currency=XXX&months=12&period=…`
 
-Bounds are UTC (`[month start, next month start)` on `occurredAt`). History series is oldest → newest and zero-fills empty months.
+Bounds are UTC. `period` defaults to `month`. Quarter/year are calendar bounds containing the anchor month. History series is oldest → newest and zero-fills empty months.
 
-## Category breakdown (FR-016)
+## Category and tag breakdown (FR-016+)
 
-1. On `/statistics`, review **Income** and **Expense** donuts for the selected month, filtered to the top-bar currency.
-2. Totals are rolled up client-side to each **category tree root** (Salary, Food, … via `fetchCategories`); Uncategorized stays separate. Detail tables still list leaf tags with `count`.
-3. Totals use the category name currently stored (renames affect past months).
-4. API: `GET /api/statistics/category-breakdown?month=YYYY-MM` (+ `GET /api/categories` for the rollup join).
+1. On `/statistics`, open the **Categories** or **Tags** tab under the charts.
+2. **Categories:** switch Income / Expense / Transfers. Donuts roll up to each **category tree root**; detail tables list leaf rows with `count`. Transfer rows come from `CashTransfer` categories (not ledger `TRANSFER_*` legs).
+3. **Tags:** switch Income / Expense. Full amount is counted under each attached tag (a multi-tag transaction appears in each tag). **Untagged** is listed separately. Tags apply only to cash income/expense.
+4. Totals use the category/tag name currently stored (renames affect past periods).
+5. APIs:
+   - `GET /api/statistics/category-breakdown?month=YYYY-MM&period=…` (+ `GET /api/categories` for the rollup join)
+   - `GET /api/statistics/tag-breakdown?month=YYYY-MM&currency=XXX&period=…`
 
 **Tip:** Run `cd backend && npm run db:seed` for the demo user (deterministic ~24 months of ledger history). Open `/dashboard` (PLN in the top bar) for net worth + rolling averages, and `/statistics` for period KPIs/chart across seeded months.

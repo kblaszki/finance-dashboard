@@ -3,6 +3,7 @@ import { badRequest } from "../lib/errors";
 import { CASH_TX_TYPES, type CashTxType } from "./cashLedger";
 import { parseMonthParam } from "./categoryBreakdown";
 import { majorToDecimal, normalizeCurrencyCode } from "./money";
+import type { StatsPeriodKind } from "./statsPeriod";
 
 const ALLOWED_MONTHS = new Set([6, 12, 24]);
 
@@ -15,10 +16,14 @@ export type CashflowSourceRow = {
 
 export type PeriodSummaryResult = {
   month: string;
+  period: StatsPeriodKind;
+  label: string;
   currency: string;
   income: number;
   expense: number;
   net: number;
+  /** Sum of CashTransfer.amountFrom in this currency (not part of net). */
+  transfers: number;
 };
 
 export type CashflowHistoryPoint = {
@@ -97,6 +102,11 @@ export function aggregatePeriodSummary(
   month: string,
   currency: string,
   rows: CashflowSourceRow[],
+  options: {
+    period?: StatsPeriodKind;
+    label?: string;
+    transfers?: number;
+  } = {},
 ): PeriodSummaryResult {
   let income = new Prisma.Decimal(0);
   let expense = new Prisma.Decimal(0);
@@ -115,10 +125,13 @@ export function aggregatePeriodSummary(
   const expenseNumber = expense.toNumber();
   return {
     month,
+    period: options.period ?? "month",
+    label: options.label ?? month,
     currency,
     income: incomeNumber,
     expense: expenseNumber,
     net: income.sub(expense).toNumber(),
+    transfers: options.transfers ?? 0,
   };
 }
 

@@ -2,6 +2,7 @@ import { Prisma } from "@prisma/client";
 import { badRequest } from "../lib/errors";
 import { CASH_TX_TYPES, type CashTxType } from "./cashLedger";
 import { majorToDecimal } from "./money";
+import type { StatsPeriodKind } from "./statsPeriod";
 
 const MONTH_RE = /^\d{4}-(0[1-9]|1[0-2])$/;
 const UNCATEGORIZED = "Uncategorized";
@@ -16,8 +17,11 @@ export type CategoryBreakdownRow = {
 
 export type CategoryBreakdownResult = {
   month: string;
+  period: StatsPeriodKind;
+  label: string;
   income: CategoryBreakdownRow[];
   expense: CategoryBreakdownRow[];
+  transfer: CategoryBreakdownRow[];
 };
 
 export type BreakdownSourceRow = {
@@ -25,6 +29,13 @@ export type BreakdownSourceRow = {
   amount: Prisma.Decimal | number;
   categoryId: number | null;
   account: { currency: string };
+  category: { id: number; name: string } | null;
+};
+
+export type TransferBreakdownSourceRow = {
+  amountFrom: Prisma.Decimal | number;
+  categoryId: number | null;
+  fromAccount: { currency: string };
   category: { id: number; name: string } | null;
 };
 
@@ -56,9 +67,70 @@ function sortRows(rows: CategoryBreakdownRow[]): CategoryBreakdownRow[] {
   });
 }
 
+function addToBreakdownMap(
+  map: Map<string, CategoryBreakdownRow>,
+  categoryId: number | null,
+  categoryName: string,
+  currency: string,
+  amount: Prisma.Decimal,
+): void {
+  const key = rowKey(categoryId, currency);
+  const existing = map.get(key);
+  if (existing) {
+    existing.total = new Prisma.Decimal(existing.total).add(amount).toNumber();
+    existing.count += 1;
+  } else {
+    map.set(key, {
+      categoryId,
+      categoryName,
+      currency,
+      total: amount.toNumber(),
+      count: 1,
+    });
+  }
+}
+
+/** Aggregate CashTransfer rows by category using amountFrom (from-account currency). */
+export function aggregateTransferCategoryBreakdown(
+  rows: TransferBreakdownSourceRow[],
+): CategoryBreakdownRow[] {
+  const map = new Map<string, CategoryBreakdownRow>();
+  for (const row of rows) {
+    const amount = majorToDecimal(row.amountFrom);
+    if (!amount) continue;
+    addToBreakdownMap(
+      map,
+      row.categoryId,
+      row.category?.name ?? UNCATEGORIZED,
+      row.fromAccount.currency,
+      amount,
+    );
+  }
+  return sortRows([...map.values()]);
+}
+
+export function sumTransferAmountFrom(
+  rows: TransferBreakdownSourceRow[],
+  currency: string,
+): number {
+  let total = new Prisma.Decimal(0);
+  for (const row of rows) {
+    if (row.fromAccount.currency !== currency) continue;
+    const amount = majorToDecimal(row.amountFrom);
+    if (!amount) continue;
+    total = total.add(amount);
+  }
+  return total.toNumber();
+}
+
 export function aggregateCategoryBreakdown(
   month: string,
   rows: BreakdownSourceRow[],
+  options: {
+    period?: StatsPeriodKind;
+    label?: string;
+    transferRows?: TransferBreakdownSourceRow[];
+  } = {},
 ): CategoryBreakdownResult {
   const incomeMap = new Map<string, CategoryBreakdownRow>();
   const expenseMap = new Map<string, CategoryBreakdownRow>();
@@ -67,32 +139,24 @@ export function aggregateCategoryBreakdown(
     const type = String(row.type).trim().toUpperCase() as CashTxType;
     if (!(CASH_TX_TYPES as readonly string[]).includes(type)) continue;
 
-    const categoryId = row.categoryId;
-    const categoryName = row.category?.name ?? UNCATEGORIZED;
-    const currency = row.account.currency;
     const amount = majorToDecimal(row.amount);
     if (!amount) continue;
 
-    const map = type === "INCOME" ? incomeMap : expenseMap;
-    const key = rowKey(categoryId, currency);
-    const existing = map.get(key);
-    if (existing) {
-      existing.total = new Prisma.Decimal(existing.total).add(amount).toNumber();
-      existing.count += 1;
-    } else {
-      map.set(key, {
-        categoryId,
-        categoryName,
-        currency,
-        total: amount.toNumber(),
-        count: 1,
-      });
-    }
+    addToBreakdownMap(
+      type === "INCOME" ? incomeMap : expenseMap,
+      row.categoryId,
+      row.category?.name ?? UNCATEGORIZED,
+      row.account.currency,
+      amount,
+    );
   }
 
   return {
     month,
+    period: options.period ?? "month",
+    label: options.label ?? month,
     income: sortRows([...incomeMap.values()]),
     expense: sortRows([...expenseMap.values()]),
+    transfer: aggregateTransferCategoryBreakdown(options.transferRows ?? []),
   };
 }

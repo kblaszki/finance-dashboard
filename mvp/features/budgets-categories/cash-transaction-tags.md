@@ -30,13 +30,14 @@ Label transactions with multiple free-form tags (e.g. Lidl + wakacje-2026) for p
 - [x] Delete tag cascades joins; transactions remain
 - [x] Transfer legs ignore tags (`tagIds: []`)
 - [x] Demo seed creates purpose tags (Lidl, wakacje-2026, …) and assigns them on matching expenses
-- [x] Stats / budgets / CSV unchanged (no tags in this slice)
+- [x] Budgets / CSV unchanged (no tags in CSV)
+- [x] Statistics: `GET /api/statistics/tag-breakdown` + Tags tab on `/statistics`
 
 ## Implementation notes
 
-- Docs: [docs/reference/domain.md](../../../docs/reference/domain.md), [docs/reference/api.md](../../../docs/reference/api.md), [docs/how-to/budgets-and-categories.md](../../../docs/how-to/budgets-and-categories.md)
+- Docs: [docs/reference/domain.md](../../../docs/reference/domain.md), [docs/reference/api.md](../../../docs/reference/api.md), [docs/how-to/budgets-and-categories.md](../../../docs/how-to/budgets-and-categories.md), [docs/how-to/dashboard-and-statistics.md](../../../docs/how-to/dashboard-and-statistics.md)
 
 ## Out of scope / follow-ups
 
 - Tag colors / ledger filters
-- Tags on transfers or in CSV/statistics
+- Tags on transfers or in CSV

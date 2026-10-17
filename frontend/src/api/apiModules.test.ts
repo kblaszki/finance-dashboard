@@ -58,6 +58,7 @@ import {
 import {
   fetchCategoryBreakdown,
   fetchPeriodSummary,
+  fetchTagBreakdown,
   fetchCashflowHistory,
   fetchNetWorth,
   fetchCashflowRolling12m,
@@ -263,9 +264,19 @@ describe('API modules', () => {
       '/api/statistics/category-breakdown?month=2026-08',
     )
 
+    await fetchCategoryBreakdown('2026-02', 'quarter')
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/statistics/category-breakdown?month=2026-02&period=quarter',
+    )
+
     await fetchPeriodSummary('2026-08', 'PLN')
     expect(apiClient.get).toHaveBeenCalledWith(
       '/api/statistics/period-summary?month=2026-08&currency=PLN',
+    )
+
+    await fetchTagBreakdown('2026-08', 'PLN', 'year')
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/statistics/tag-breakdown?month=2026-08&currency=PLN&period=year',
     )
 
     await fetchCashflowHistory('2026-01', 'EUR', 6)

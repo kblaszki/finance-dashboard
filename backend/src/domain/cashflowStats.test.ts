@@ -72,10 +72,13 @@ test("aggregatePeriodSummary sums one currency and ignores others", () => {
   ]);
   assert.deepEqual(result, {
     month: "2026-08",
+    period: "month",
+    label: "2026-08",
     currency: "PLN",
     income: 5000,
     expense: 200,
     net: 4800,
+    transfers: 0,
   });
 });
 
