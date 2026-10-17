@@ -477,7 +477,31 @@
 .data-table td {
   padding: var(--space-sm) 0.75rem;
   border-bottom: 1px solid var(--color-border);
+  text-align: center;
+  vertical-align: middle;
+}
+
+/* Position-based alignment: first left, last right, middle centered */
+.data-table th:first-child,
+.data-table td:first-child,
+.data-table th:only-child,
+.data-table td:only-child {
   text-align: left;
+}
+
+.data-table th:last-child:not(:only-child),
+.data-table td:last-child:not(:only-child) {
+  text-align: right;
+}
+
+/* Numeric columns stay tabular; middle cols center, last col stays right */
+.data-table .num {
+  text-align: center;
+}
+
+.data-table th:last-child.num,
+.data-table td:last-child.num {
+  text-align: right;
 }
 
 .data-table th {
@@ -496,107 +520,93 @@
   background: color-mix(in srgb, var(--color-accent) 5%, transparent);
 }
 
-/* Fixed layout so inline editors cannot widen columns (datetime-local/select mins). */
+/* Auto layout: columns size to content; wrap long text; scroll when needed */
 .ledger-table {
-  table-layout: fixed;
+  table-layout: auto;
   width: 100%;
 }
 
 .ledger-table th,
 .ledger-table td {
-  overflow: hidden;
-  min-width: 0;
   box-sizing: border-box;
 }
 
-/*
- * Account cash ledger columns (rem so they do not collapse into each other).
- * table-wrap scrolls horizontally below ~62rem.
- * Date | Type | Amount | Category | Tags | Description | Actions
- */
-.ledger-table--account {
-  min-width: 62rem;
+/* Account: Date | Type | Amount | Category | Tags | Description | Actions */
+.ledger-table--account th:nth-child(1),
+.ledger-table--account td:nth-child(1),
+.ledger-table--account th:nth-child(2),
+.ledger-table--account td:nth-child(2),
+.ledger-table--account th:nth-child(3),
+.ledger-table--account td:nth-child(3),
+.ledger-table--account th:nth-child(7),
+.ledger-table--account td:nth-child(7) {
+  white-space: nowrap;
+  width: 1%;
 }
 
-.ledger-table--account col.col-date {
-  width: 11.5rem;
+.ledger-table--account th:nth-child(4),
+.ledger-table--account td:nth-child(4),
+.ledger-table--account th:nth-child(5),
+.ledger-table--account td:nth-child(5) {
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+  min-width: 7rem;
 }
 
-.ledger-table--account col.col-type {
-  width: 6.75rem;
-}
-
-.ledger-table--account col.col-amount {
-  width: 7rem;
-}
-
-.ledger-table--account col.col-category {
-  width: 8.5rem;
-}
-
-.ledger-table--account col.col-tags {
-  width: 10rem;
-}
-
-.ledger-table--account col.col-description {
-  width: auto;
-}
-
-.ledger-table--account col.col-actions {
-  width: 5.75rem;
-}
-
-.ledger-table--account .ledger-cell-input[type="datetime-local"] {
-  font-size: 0.78rem;
-  padding-inline: 0.15rem;
+.ledger-table--account th:nth-child(6),
+.ledger-table--account td:nth-child(6) {
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+  min-width: 10rem;
 }
 
 /* Transfers: Date | From | To | Amount from | Amount to | FX | Category | Description | Actions */
-.ledger-table--transfers {
-  min-width: 58rem;
-}
-
-.ledger-table--transfers th:nth-child(1) {
-  width: 10.75rem;
+.ledger-table--transfers th:nth-child(1),
+.ledger-table--transfers td:nth-child(1),
+.ledger-table--transfers th:nth-child(4),
+.ledger-table--transfers td:nth-child(4),
+.ledger-table--transfers th:nth-child(5),
+.ledger-table--transfers td:nth-child(5),
+.ledger-table--transfers th:nth-child(6),
+.ledger-table--transfers td:nth-child(6),
+.ledger-table--transfers th:nth-child(9),
+.ledger-table--transfers td:nth-child(9) {
+  white-space: nowrap;
+  width: 1%;
 }
 
 .ledger-table--transfers th:nth-child(2),
-.ledger-table--transfers th:nth-child(3) {
-  width: 12%;
+.ledger-table--transfers td:nth-child(2),
+.ledger-table--transfers th:nth-child(3),
+.ledger-table--transfers td:nth-child(3) {
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+  min-width: 8rem;
 }
 
-.ledger-table--transfers th:nth-child(4),
-.ledger-table--transfers th:nth-child(5) {
-  width: 9%;
+.ledger-table--transfers th:nth-child(7),
+.ledger-table--transfers td:nth-child(7) {
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+  min-width: 7rem;
 }
 
-.ledger-table--transfers th:nth-child(6) {
-  width: 6%;
+.ledger-table--transfers th:nth-child(8),
+.ledger-table--transfers td:nth-child(8) {
+  white-space: normal;
+  overflow-wrap: break-word;
+  word-break: normal;
+  min-width: 10rem;
 }
 
-.ledger-table--transfers th.col-actions,
-.ledger-table--transfers col.col-actions {
-  width: 5.75rem;
-}
-
+.ledger-table--account .ledger-cell-input[type="datetime-local"],
 .ledger-table--transfers .ledger-cell-input[type="datetime-local"] {
   font-size: 0.8rem;
   padding-inline: 0.2rem;
-  min-width: 0;
-}
-
-.ledger-table--transfers tbody tr:not(.ledger-create-row) td:nth-child(2),
-.ledger-table--transfers tbody tr:not(.ledger-create-row) td:nth-child(3) {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.ledger-table--transfers td:nth-child(2).ledger-cell--editing,
-.ledger-table--transfers td:nth-child(3).ledger-cell--editing {
-  overflow: hidden;
-  white-space: normal;
-  text-overflow: clip;
 }
 
 .ledger-table td {
@@ -621,7 +631,17 @@
 }
 
 .ledger-cell--editing {
-  overflow: hidden;
+  overflow: visible;
+}
+
+/* Keep editors usable while auto columns resize */
+.ledger-table td:nth-child(1).ledger-cell--editing .ledger-cell-input[type="datetime-local"] {
+  min-width: 11rem;
+}
+
+.ledger-table td.ledger-cell--editing select.ledger-cell-input,
+.ledger-table td.ledger-cell--editing .ledger-tags-field .ledger-cell-input {
+  min-width: 8rem;
 }
 
 .ledger-cell-input {
@@ -641,15 +661,20 @@
   color: var(--color-text);
 }
 
-.ledger-create-row td {
-  background: color-mix(in srgb, var(--color-accent) 4%, transparent);
+/* Center text inside editors in middle columns */
+.data-table td:not(:first-child):not(:last-child) .ledger-cell-input {
+  text-align: center;
+  text-align-last: center;
 }
 
-/* Create-row tags: keep chips on one clipped line so the select matches category */
-.ledger-create-row .ledger-tags-field .tag-list {
-  flex-wrap: nowrap;
-  overflow: hidden;
-  max-height: 1.35rem;
+.data-table td:first-child .ledger-cell-input,
+.data-table td:last-child .ledger-cell-input {
+  text-align: left;
+  text-align-last: auto;
+}
+
+.ledger-create-row td {
+  background: color-mix(in srgb, var(--color-accent) 4%, transparent);
 }
 
 .table-wrap {
@@ -672,16 +697,11 @@
 /* Add/Delete columns: content-sized, right-aligned, with breathing room */
 .data-table th.col-actions,
 .data-table td.col-actions {
+  width: 1%;
   white-space: nowrap;
   text-align: right;
   vertical-align: middle;
   padding-inline: 0.85rem 1rem;
-  overflow: visible;
-}
-
-.data-table:not(.ledger-table) th.col-actions,
-.data-table:not(.ledger-table) td.col-actions {
-  width: 1%;
 }
 
 .data-table td.col-actions .form-actions-row {
@@ -705,6 +725,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  align-items: center;
   min-width: 0;
   max-width: 100%;
 }
@@ -719,23 +740,24 @@
   flex-wrap: wrap;
   gap: 0.2rem;
   align-items: center;
+  justify-content: center;
   max-width: 100%;
 }
 
 .tag-list .badge {
   max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
-/* Read-only tags in ledger: single-line ellipsis instead of wrapping into neighbors */
-.ledger-table--account td:nth-child(5) .tag-list {
-  flex-wrap: nowrap;
-  overflow: hidden;
+/* Middle-column text badges (category/tags) may wrap; type badges stay one line */
+.data-table td:not(:first-child):not(:last-child) .badge {
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
-.ledger-table--account td:nth-child(5):not(.ledger-cell--editing) .tag-list .badge {
-  flex: 0 1 auto;
+.ledger-table--account td:nth-child(2) .badge {
+  white-space: nowrap;
 }
 
 button.badge.badge--removable {
@@ -1771,6 +1793,11 @@ a.btn-secondary {
 @media (max-width: 640px) {
   .landing-split {
     grid-template-columns: 1fr;
+  }
+
+  .ledger-table th,
+  .ledger-table td {
+    padding: var(--space-xs) 0.5rem;
   }
 }
 

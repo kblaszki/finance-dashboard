@@ -231,15 +231,6 @@ export function LedgerTable(props: {
   return (
     <div className="table-wrap">
       <table className="data-table ledger-table ledger-table--account">
-        <colgroup>
-          <col className="col-date" />
-          <col className="col-type" />
-          <col className="col-amount" />
-          <col className="col-category" />
-          <col className="col-tags" />
-          <col className="col-description" />
-          <col className="col-actions" />
-        </colgroup>
         <thead>
           <tr>
             <th>Date</th>
