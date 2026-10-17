@@ -28,8 +28,10 @@ import {
   type UpdateTransferInput,
 } from "../api/transfersApi";
 import {
+  dateInputToIso,
   defaultOccurredAtValue,
-  toDateTimeLocalValue,
+  formatOccurredAt,
+  toDateLocalValue,
 } from "../components/account/occurredAt";
 import { categoriesForLedgerType } from "../components/account/categoryScope";
 import { AccountLedgerHeader } from "../components/account/AccountLedgerHeader";
@@ -39,18 +41,6 @@ import { StatusBlock } from "../components/ui/StatusBlock";
 import { useAsyncData } from "../hooks/useAsyncData";
 import { useCurrency } from "../state/currency";
 import { formatMoney } from "../utils/format";
-
-function formatTransferDate(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleString(undefined, {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 type PendingTransferImport = {
   csv: string;
@@ -139,8 +129,10 @@ function TransferCreateRow(props: {
       props.onActionError("Amount from must be a positive number");
       return;
     }
-    const date = new Date(occurredAt);
-    if (Number.isNaN(date.getTime())) {
+    let occurredAtIso: string;
+    try {
+      occurredAtIso = dateInputToIso(occurredAt);
+    } catch {
       props.onActionError("Invalid date");
       return;
     }
@@ -149,7 +141,7 @@ function TransferCreateRow(props: {
       fromAccountId: fromId,
       toAccountId: toId,
       amountFrom: amountFromNumber,
-      occurredAt: date.toISOString(),
+      occurredAt: occurredAtIso,
       description: description.trim() ? description.trim() : null,
       categoryId: categoryId === "" ? null : Number(categoryId),
     };
@@ -200,7 +192,7 @@ function TransferCreateRow(props: {
       <td className="col-date">
         <input
           ref={dateRef}
-          type="datetime-local"
+          type="date"
           className="ledger-cell-input"
           value={occurredAt}
           disabled={createBusy}
@@ -317,7 +309,7 @@ function TransferCreateRow(props: {
 function draftFromTransfer(transfer: CashTransfer, field: EditableField): string {
   switch (field) {
     case "occurredAt":
-      return toDateTimeLocalValue(transfer.occurredAt);
+      return toDateLocalValue(transfer.occurredAt);
     case "fromAccountId":
       return String(transfer.fromAccountId);
     case "toAccountId":
@@ -339,9 +331,7 @@ function buildPatch(
 ): UpdateTransferInput {
   switch (field) {
     case "occurredAt": {
-      const date = new Date(draft);
-      if (Number.isNaN(date.getTime())) throw new Error("Invalid date");
-      return { occurredAt: date.toISOString() };
+      return { occurredAt: dateInputToIso(draft) };
     }
     case "fromAccountId": {
       const id = Number(draft);
@@ -708,7 +698,7 @@ export function TransfersPage() {
                     >
                       {isEditing(transfer.id, "occurredAt") ? (
                         <input
-                          type="datetime-local"
+                          type="date"
                           className="ledger-cell-input"
                           value={draft}
                           disabled={editBusy}
@@ -719,7 +709,7 @@ export function TransfersPage() {
                           aria-label="Edit date"
                         />
                       ) : (
-                        formatTransferDate(transfer.occurredAt)
+                        formatOccurredAt(transfer.occurredAt)
                       )}
                     </td>
                     <td

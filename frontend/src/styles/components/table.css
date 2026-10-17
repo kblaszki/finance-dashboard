@@ -82,7 +82,7 @@
   --col-text-min: 8rem;
 }
 
-.ledger-table .col-date .ledger-cell-input[type="datetime-local"] {
+.ledger-table .col-date .ledger-cell-input[type="date"] {
   font-size: var(--text-xs);
   padding-inline: 0.2rem;
 }
@@ -112,8 +112,8 @@
   overflow: visible;
 }
 
-.ledger-table td.col-date.ledger-cell--editing .ledger-cell-input[type="datetime-local"] {
-  min-width: 11rem;
+.ledger-table td.col-date.ledger-cell--editing .ledger-cell-input[type="date"] {
+  min-width: 9rem;
 }
 
 .ledger-table td.col-text.ledger-cell--editing select.ledger-cell-input,
@@ -159,15 +159,6 @@
   overscroll-behavior-x: contain;
   margin-top: var(--space-md);
   max-width: 100%;
-  background:
-    linear-gradient(var(--color-surface) 30%, transparent),
-    linear-gradient(transparent, var(--color-surface) 70%) 0 100%,
-    radial-gradient(farthest-side at 0 50%, rgba(0, 0, 0, 0.14), transparent),
-    radial-gradient(farthest-side at 100% 50%, rgba(0, 0, 0, 0.14), transparent) 100% 0;
-  background-repeat: no-repeat;
-  background-color: var(--color-surface);
-  background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
-  background-attachment: local, local, scroll, scroll;
 }
 
 .table-wrap .data-table {

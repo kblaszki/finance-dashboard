@@ -15,7 +15,7 @@ import {
 } from "../../api/transactionsApi";
 import { categoryIdsForLedgerType } from "./categoryScope";
 import { LedgerTagField } from "./LedgerTagField";
-import { defaultOccurredAtValue } from "./occurredAt";
+import { dateInputToIso, defaultOccurredAtValue } from "./occurredAt";
 
 export function normalizeCashTxType(value: unknown): CashTxType {
   const raw = String(value ?? "").trim().toUpperCase();
@@ -85,8 +85,10 @@ export function LedgerCreateRow(props: {
       props.onActionError("Amount must be a positive number");
       return;
     }
-    const date = new Date(occurredAt);
-    if (Number.isNaN(date.getTime())) {
+    let occurredAtIso: string;
+    try {
+      occurredAtIso = dateInputToIso(occurredAt);
+    } catch {
       props.onActionError("Invalid date");
       return;
     }
@@ -95,7 +97,7 @@ export function LedgerCreateRow(props: {
       await props.onCreate({
         type,
         amount: amountNumber,
-        occurredAt: date.toISOString(),
+        occurredAt: occurredAtIso,
         description: description.trim() ? description.trim() : null,
         categoryId: categoryId === "" ? null : Number(categoryId),
         tagIds,
@@ -130,7 +132,7 @@ export function LedgerCreateRow(props: {
       <td className="col-date">
         <input
           ref={firstInputRef}
-          type="datetime-local"
+          type="date"
           className="ledger-cell-input"
           value={occurredAt}
           onChange={(e) => setOccurredAt(e.target.value)}

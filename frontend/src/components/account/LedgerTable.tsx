@@ -15,7 +15,7 @@ import {
   normalizeCashTxType,
 } from "./LedgerCreateRow";
 import { LedgerTagField } from "./LedgerTagField";
-import { formatOccurredAt, toDateTimeLocalValue } from "./occurredAt";
+import { dateInputToIso, formatOccurredAt, toDateLocalValue } from "./occurredAt";
 
 function isTransferLeg(tx: CashTransaction): boolean {
   return tx.transferId != null;
@@ -58,7 +58,7 @@ function draftFromTx(tx: CashTransaction, field: EditableField): string {
     case "description":
       return tx.description ?? "";
     case "occurredAt":
-      return toDateTimeLocalValue(tx.occurredAt);
+      return toDateLocalValue(tx.occurredAt);
     case "type":
       return String(tx.type).toUpperCase();
     case "categoryId":
@@ -88,11 +88,7 @@ function buildPatch(
       return { description: trimmed ? trimmed : null };
     }
     case "occurredAt": {
-      const date = new Date(draft);
-      if (Number.isNaN(date.getTime())) {
-        throw new Error("Invalid date");
-      }
-      return { occurredAt: date.toISOString() };
+      return { occurredAt: dateInputToIso(draft) };
     }
     case "type": {
       const type = draft.trim().toUpperCase() as CashTxType;
@@ -337,7 +333,7 @@ function LedgerRow(props: {
       >
         {props.isEditing(tx.id, "occurredAt") ? (
           <input
-            type="datetime-local"
+            type="date"
             className="ledger-cell-input"
             value={props.draft}
             disabled={props.editBusy}
