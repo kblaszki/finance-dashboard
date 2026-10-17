@@ -1,0 +1,5 @@
+@layer components {
+  .form-section-gap {
+    margin-bottom: var(--space-md);
+  }
+}

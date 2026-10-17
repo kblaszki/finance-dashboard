@@ -1,0 +1,127 @@
+@layer pages {
+.auth-page {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-lg);
+  background: var(--color-bg);
+}
+
+.appearance-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+}
+
+.appearance-option {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  cursor: pointer;
+  background: var(--color-bg-elevated);
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.appearance-option:has(input:checked) {
+  border-color: var(--color-accent);
+  background: var(--color-accent-subtle);
+  color: var(--color-accent);
+  font-weight: var(--weight-semibold);
+}
+
+.appearance-option input {
+  accent-color: var(--color-accent);
+}
+
+.auth-error {
+  color: var(--color-negative);
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.field-warning {
+  color: var(--color-warning);
+  margin-left: 0.35rem;
+  cursor: help;
+}
+
+/* Stack forms (Settings / Accounts) */
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  max-width: 28rem;
+}
+
+.auth-form label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.auth-form input,
+.auth-form select,
+.auth-form textarea {
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  padding: 0.7rem 0.85rem;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: var(--text-base);
+}
+
+.auth-form input:focus-visible,
+.auth-form select:focus-visible,
+.auth-form textarea:focus-visible,
+.auth-swap-fields input:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: var(--focus-ring);
+}
+
+.auth-form .btn-primary,
+.auth-form .btn-secondary,
+.auth-form .btn-danger {
+  align-self: flex-start;
+}
+
+.auth-form .success-banner,
+.auth-form .auth-error,
+.auth-form .error-banner {
+  margin-bottom: 0;
+}
+
+.auth-form--compact {
+  max-width: none;
+  gap: var(--space-sm);
+  min-width: 12rem;
+}
+
+.auth-form--compact input,
+.auth-form--compact select,
+.auth-form--compact textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--space-xs) var(--space-sm);
+  font-size: var(--text-sm);
+}
+
+.auth-form--compact label {
+  font-size: var(--text-xs);
+}
+
+.auth-form--compact .form-actions-row {
+  margin-top: var(--space-xs);
+}
+}

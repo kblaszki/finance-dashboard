@@ -1,0 +1,228 @@
+@layer components {
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: var(--space-md);
+  font-size: var(--text-sm);
+}
+
+.data-table th,
+.data-table td {
+  padding: var(--space-sm) 0.75rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+  text-align: left;
+  vertical-align: middle;
+}
+
+/* Type-based alignment: numbers right, text/date/status left, icons center */
+.data-table :is(.col-num, .num) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.data-table .col-date {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.data-table .col-status {
+  text-align: left;
+  white-space: nowrap;
+  width: 1%;
+}
+
+.data-table .col-icon {
+  text-align: center;
+  width: 1%;
+}
+
+.data-table .col-text {
+  min-width: var(--col-text-min, 8rem);
+  overflow-wrap: anywhere;
+  white-space: normal;
+  word-break: normal;
+}
+
+.data-table th {
+  color: var(--color-text-muted);
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-xs);
+  letter-spacing: 0.02em;
+}
+
+.data-table tbody tr {
+  transition: background 120ms ease;
+}
+
+.data-table tbody tr:hover {
+  background: color-mix(in srgb, var(--color-accent) 5%, transparent);
+}
+
+.data-table tbody tr:hover :is(td, th):first-child {
+  background: color-mix(in srgb, var(--color-accent) 5%, var(--color-surface));
+}
+
+/* Auto layout: columns size to content; wrap long text; scroll when needed */
+.ledger-table {
+  table-layout: auto;
+  width: 100%;
+}
+
+.ledger-table th,
+.ledger-table td {
+  box-sizing: border-box;
+}
+
+.ledger-table :is(.col-date, .col-status, .num, .col-actions) {
+  width: 1%;
+}
+
+.ledger-table .col-text {
+  --col-text-min: 8rem;
+}
+
+.ledger-table .col-date .ledger-cell-input[type="datetime-local"] {
+  font-size: var(--text-xs);
+  padding-inline: 0.2rem;
+}
+
+.ledger-table td {
+  vertical-align: middle;
+  height: var(--tap-target);
+}
+
+.ledger-table .ledger-create-row td,
+.ledger-table td.ledger-cell--editing {
+  height: auto;
+  min-height: var(--tap-target);
+  padding-block: 0.4rem;
+}
+
+.ledger-cell--editable {
+  cursor: default;
+}
+
+.ledger-cell--editable:not(.ledger-cell--editing):hover {
+  cursor: pointer;
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+}
+
+.ledger-cell--editing {
+  overflow: visible;
+}
+
+.ledger-table td.col-date.ledger-cell--editing .ledger-cell-input[type="datetime-local"] {
+  min-width: 11rem;
+}
+
+.ledger-table td.col-text.ledger-cell--editing select.ledger-cell-input,
+.ledger-table td.col-text.ledger-cell--editing .ledger-tags-field .ledger-cell-input,
+.ledger-table td.col-status.ledger-cell--editing select.ledger-cell-input {
+  min-width: 8rem;
+}
+
+.ledger-cell-input {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: 1.75rem;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: var(--text-sm);
+  line-height: 1.25;
+  padding: 0 0.4rem;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-surface, var(--color-bg));
+  color: var(--color-text);
+}
+
+.data-table :is(.col-num, .num) .ledger-cell-input {
+  text-align: right;
+  text-align-last: right;
+}
+
+.data-table :is(.col-text, .col-date, .col-status) .ledger-cell-input {
+  text-align: left;
+  text-align-last: auto;
+}
+
+.ledger-create-row td {
+  background: color-mix(in srgb, var(--color-accent) 4%, transparent);
+}
+
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  margin-top: var(--space-md);
+  max-width: 100%;
+  background:
+    linear-gradient(var(--color-surface) 30%, transparent),
+    linear-gradient(transparent, var(--color-surface) 70%) 0 100%,
+    radial-gradient(farthest-side at 0 50%, rgba(0, 0, 0, 0.14), transparent),
+    radial-gradient(farthest-side at 100% 50%, rgba(0, 0, 0, 0.14), transparent) 100% 0;
+  background-repeat: no-repeat;
+  background-color: var(--color-surface);
+  background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+  background-attachment: local, local, scroll, scroll;
+}
+
+.table-wrap .data-table {
+  margin-top: 0;
+}
+
+.data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--color-surface);
+  box-shadow: 0 1px 0 var(--color-border-subtle);
+}
+
+.data-table :is(th, td):first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--color-surface);
+  box-shadow: 1px 0 0 var(--color-border-subtle);
+}
+
+.data-table thead th:first-child {
+  z-index: 3;
+}
+
+.table-actions {
+  white-space: nowrap;
+  display: flex;
+  gap: var(--space-sm);
+}
+
+/* Add/Delete columns: content-sized, right-aligned, with breathing room */
+.data-table th.col-actions,
+.data-table td.col-actions {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+  vertical-align: middle;
+  padding-inline: 0.85rem 1rem;
+}
+
+.data-table td.col-actions .form-actions-row {
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  gap: var(--space-xs);
+}
+
+/* Tags page: Name fills, Actions shrinks */
+.data-table--tags {
+  table-layout: auto;
+  width: 100%;
+}
+
+.data-table--tags .col-text {
+  width: auto;
+}
+}

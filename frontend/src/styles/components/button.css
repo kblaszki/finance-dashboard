@@ -1,0 +1,184 @@
+@layer components {
+.stat-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* .stat-list { padding: 0 } would cancel .card padding when both classes share an element */
+.stat-list.card {
+  padding: var(--space-md) var(--space-lg);
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-md);
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--text-base);
+}
+
+.stat-row:first-child {
+  padding-top: 0.15rem;
+}
+
+.stat-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0.15rem;
+}
+
+.stat-row-label {
+  color: var(--color-text-muted);
+  font-weight: var(--weight-medium);
+  min-width: 0;
+}
+
+.stat-row-value {
+  font-weight: var(--weight-semibold);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.stat-row-value.positive {
+  color: var(--color-positive);
+}
+
+.stat-row-value.negative {
+  color: var(--color-negative);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+.btn-link {
+  background: transparent;
+  border: none;
+  color: var(--color-accent);
+  padding: var(--space-xs) var(--space-sm);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+}
+
+.btn-link:hover {
+  text-decoration: underline;
+}
+
+.btn-link.danger {
+  color: var(--color-negative);
+}
+
+
+.currency-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.currency-select-label {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.currency-select select {
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  padding: 0.35rem 0.6rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.currency-select select:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: var(--focus-ring);
+}
+
+.theme-toggle {
+  width: 100%;
+  background: transparent;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
+.theme-toggle:hover:not(:disabled) {
+  background: var(--color-accent-subtle);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.theme-toggle:disabled {
+  opacity: 0.6;
+}
+
+.btn-primary {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm) 1.25rem;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 150ms ease;
+}
+
+a.btn-primary,
+a.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary:focus-visible,
+.btn-secondary:focus-visible,
+.btn-danger:focus-visible,
+.theme-toggle:focus-visible,
+.shell-logout:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.empty-state,
+.loading-state {
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.empty-state {
+  padding: var(--space-md) 0;
+}
+}

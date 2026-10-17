@@ -38,7 +38,7 @@ export default {
   },
   overrides: [
     {
-      files: ["**/index.css", "**/styles/tokens.css"],
+      files: ["**/styles/tokens.css"],
       rules: {
         "color-no-hex": null,
       },

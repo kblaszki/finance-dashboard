@@ -1,0 +1,29 @@
+@layer base {
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  width: 100%;
+}
+
+#root {
+  min-height: 100vh;
+  width: 100%;
+}
+
+a {
+  color: var(--color-accent);
+}
+
+img,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+}
