@@ -249,11 +249,11 @@ function monthPlansForAccount(
         },
         rng() < 0.55
           ? {
-              type: "EXPENSE",
+              type: "EXPENSE" as const,
               amountMin: 40,
               amountMax: 120,
               description: "Misc uncategorized",
-              tags: rng() < 0.35 ? (["urodziny"] as DemoTagName[]) : undefined,
+              ...(rng() < 0.35 ? { tags: ["urodziny"] as DemoTagName[] } : {}),
             }
           : {
               type: "EXPENSE",
@@ -418,12 +418,12 @@ function monthPlansForAccount(
           tags: ["Amazon"],
         },
         {
-          type: "EXPENSE",
+          type: "EXPENSE" as const,
           amountMin: 60,
           amountMax: 150,
           description: "Restaurant",
           category: "Food",
-          tags: rng() < 0.3 ? ["urodziny"] : undefined,
+          ...(rng() < 0.3 ? { tags: ["urodziny"] as DemoTagName[] } : {}),
         },
         {
           type: "EXPENSE",
@@ -443,11 +443,11 @@ function monthPlansForAccount(
         },
         rng() < 0.45
           ? {
-              type: "EXPENSE",
+              type: "EXPENSE" as const,
               amountMin: 40,
               amountMax: 120,
               description: "Card misc",
-              tags: rng() < 0.5 ? (["Amazon"] as DemoTagName[]) : undefined,
+              ...(rng() < 0.5 ? { tags: ["Amazon"] as DemoTagName[] } : {}),
             }
           : {
               type: "EXPENSE",
