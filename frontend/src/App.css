@@ -502,28 +502,60 @@
   width: 100%;
 }
 
-/* Account cash ledger: Date | Type | Amount | Category | Tags | Description | Actions */
-.ledger-table--account th:nth-child(1) {
-  width: 16%;
+.ledger-table th,
+.ledger-table td {
+  overflow: hidden;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
-.ledger-table--account th:nth-child(2) {
-  width: 9%;
+/*
+ * Account cash ledger columns (rem so they do not collapse into each other).
+ * table-wrap scrolls horizontally below ~62rem.
+ * Date | Type | Amount | Category | Tags | Description | Actions
+ */
+.ledger-table--account {
+  min-width: 62rem;
 }
 
-.ledger-table--account th:nth-child(3) {
-  width: 12%;
+.ledger-table--account col.col-date {
+  width: 11.5rem;
 }
 
-.ledger-table--account th:nth-child(4) {
-  width: 12%;
+.ledger-table--account col.col-type {
+  width: 6.75rem;
 }
 
-.ledger-table--account th:nth-child(5) {
-  width: 16%;
+.ledger-table--account col.col-amount {
+  width: 7rem;
+}
+
+.ledger-table--account col.col-category {
+  width: 8.5rem;
+}
+
+.ledger-table--account col.col-tags {
+  width: 10rem;
+}
+
+.ledger-table--account col.col-description {
+  width: auto;
+}
+
+.ledger-table--account col.col-actions {
+  width: 5.75rem;
+}
+
+.ledger-table--account .ledger-cell-input[type="datetime-local"] {
+  font-size: 0.78rem;
+  padding-inline: 0.15rem;
 }
 
 /* Transfers: Date | From | To | Amount from | Amount to | FX | Category | Description | Actions */
+.ledger-table--transfers {
+  min-width: 58rem;
+}
+
 .ledger-table--transfers th:nth-child(1) {
   width: 10.75rem;
 }
@@ -540,6 +572,11 @@
 
 .ledger-table--transfers th:nth-child(6) {
   width: 6%;
+}
+
+.ledger-table--transfers th.col-actions,
+.ledger-table--transfers col.col-actions {
+  width: 5.75rem;
 }
 
 .ledger-table--transfers .ledger-cell-input[type="datetime-local"] {
@@ -564,12 +601,13 @@
 
 .ledger-table td {
   vertical-align: middle;
-  min-height: 2.75rem;
   height: 2.75rem;
 }
 
+.ledger-table .ledger-create-row td,
 .ledger-table td.ledger-cell--editing {
   height: auto;
+  min-height: 2.75rem;
   padding-block: 0.4rem;
 }
 
@@ -607,6 +645,13 @@
   background: color-mix(in srgb, var(--color-accent) 4%, transparent);
 }
 
+/* Create-row tags: keep chips on one clipped line so the select matches category */
+.ledger-create-row .ledger-tags-field .tag-list {
+  flex-wrap: nowrap;
+  overflow: hidden;
+  max-height: 1.35rem;
+}
+
 .table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -624,14 +669,19 @@
   gap: var(--space-sm);
 }
 
-/* Shrink-wrap Add/Delete columns to button width, right-aligned */
+/* Add/Delete columns: content-sized, right-aligned, with breathing room */
 .data-table th.col-actions,
 .data-table td.col-actions {
-  width: 1%;
   white-space: nowrap;
   text-align: right;
   vertical-align: middle;
-  padding-inline: 1rem 1.25rem;
+  padding-inline: 0.85rem 1rem;
+  overflow: visible;
+}
+
+.data-table:not(.ledger-table) th.col-actions,
+.data-table:not(.ledger-table) td.col-actions {
+  width: 1%;
 }
 
 .data-table td.col-actions .form-actions-row {
@@ -643,30 +693,49 @@
 /* Tags page: Name fills, Actions shrinks */
 .data-table--tags {
   table-layout: auto;
+  width: 100%;
+}
+
+.data-table--tags th:first-child,
+.data-table--tags td:first-child {
+  width: auto;
 }
 
 .ledger-tags-field {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.25rem;
   min-width: 0;
+  max-width: 100%;
 }
 
 .ledger-tags-field .ledger-cell-input {
   width: 100%;
+  max-width: 100%;
 }
 
 .tag-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem;
+  gap: 0.2rem;
   align-items: center;
+  max-width: 100%;
 }
 
 .tag-list .badge {
-  max-width: 9rem;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Read-only tags in ledger: single-line ellipsis instead of wrapping into neighbors */
+.ledger-table--account td:nth-child(5) .tag-list {
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+.ledger-table--account td:nth-child(5):not(.ledger-cell--editing) .tag-list .badge {
+  flex: 0 1 auto;
 }
 
 button.badge.badge--removable {
