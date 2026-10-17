@@ -102,10 +102,14 @@ export function parseCategoriesCsv(csv: string): ParseCategoriesResult {
     const pathRaw = cells[0]!.trim();
     const ledgerRaw = cells[1]!.trim().toUpperCase();
 
-    if (ledgerRaw !== "INCOME" && ledgerRaw !== "EXPENSE") {
+    if (
+      ledgerRaw !== "INCOME" &&
+      ledgerRaw !== "EXPENSE" &&
+      ledgerRaw !== "TRANSFER"
+    ) {
       errors.push({
         row: dataRow,
-        message: "ledgerType must be INCOME or EXPENSE",
+        message: "ledgerType must be INCOME, EXPENSE, or TRANSFER",
       });
       continue;
     }

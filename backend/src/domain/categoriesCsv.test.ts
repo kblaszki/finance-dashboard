@@ -69,4 +69,17 @@ describe("parseCategoriesCsv", () => {
     if (!result.ok) return;
     assert.equal(result.drafts.length, 0);
   });
+
+  it("accepts TRANSFER ledgerType", () => {
+    const csv = buildCategoriesCsv([
+      { path: "Internal transfer", ledgerType: "TRANSFER" },
+      { path: "Internal transfer/Savings", ledgerType: "TRANSFER" },
+    ]);
+    const result = parseCategoriesCsv(csv);
+    assert.equal(result.ok, true);
+    if (!result.ok) return;
+    assert.equal(result.drafts.length, 2);
+    assert.equal(result.drafts[0]!.ledgerType, "TRANSFER");
+    assert.equal(result.drafts[1]!.path, "Internal transfer/Savings");
+  });
 });

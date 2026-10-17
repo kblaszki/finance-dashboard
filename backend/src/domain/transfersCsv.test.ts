@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   buildTransfersCsv,
+  LEGACY_TRANSFERS_CSV_HEADER,
   parseTransfersCsv,
   TRANSFERS_CSV_HEADER,
   transfersExportFilename,
@@ -24,6 +25,7 @@ describe("buildTransfersCsv", () => {
         amountFrom: 100.5,
         amountTo: 100.5,
         description: "Move, cash",
+        categoryPath: "Internal transfer",
         createdAt: "2024-06-15T12:01:00.000Z",
       },
       {
@@ -36,6 +38,7 @@ describe("buildTransfersCsv", () => {
         amountFrom: 400,
         amountTo: 90,
         description: "=1+1",
+        categoryPath: null,
         createdAt: "2024-07-01T00:00:01.000Z",
       },
     ]);
@@ -43,7 +46,7 @@ describe("buildTransfersCsv", () => {
     assert.equal(lines[0], TRANSFERS_CSV_HEADER);
     assert.equal(
       lines[1],
-      '1,2024-06-15T12:00:00.000Z,Checking,PLN,Brokerage,PLN,100.50,100.50,"Move, cash",2024-06-15T12:01:00.000Z',
+      '1,2024-06-15T12:00:00.000Z,Checking,PLN,Brokerage,PLN,100.50,100.50,"Move, cash",Internal transfer,2024-06-15T12:01:00.000Z',
     );
     assert.match(lines[2]!, /,'=1\+1,/);
     assert.match(lines[2]!, /,400\.00,90\.00,/);
@@ -63,6 +66,7 @@ describe("parseTransfersCsv", () => {
         amountFrom: 400,
         amountTo: 90.25,
         description: "\t=1+1",
+        categoryPath: "Internal transfer/Savings",
         createdAt: "2024-06-15T12:01:00.000Z",
       },
     ]);
@@ -78,18 +82,32 @@ describe("parseTransfersCsv", () => {
     assert.equal(Number(d.amountFrom), 400);
     assert.equal(Number(d.amountTo), 90.25);
     assert.equal(d.description, "\t=1+1");
+    assert.equal(d.categoryPath, "Internal transfer/Savings");
     assert.equal(d.occurredAt.toISOString(), "2024-06-15T12:00:00.000Z");
   });
 
   it("defaults amountTo when currencies match and amountTo is empty", () => {
     const csv = [
       TRANSFERS_CSV_HEADER,
-      ",2024-01-01T00:00:00.000Z,A,PLN,B,PLN,50.00,,note,",
+      ",2024-01-01T00:00:00.000Z,A,PLN,B,PLN,50.00,,note,,",
     ].join("\n");
     const result = parseTransfersCsv(csv);
     assert.equal(result.ok, true);
     if (!result.ok) return;
     assert.equal(Number(result.drafts[0]!.amountTo), 50);
+    assert.equal(result.drafts[0]!.categoryPath, null);
+  });
+
+  it("accepts legacy header without categoryPath", () => {
+    const csv = [
+      LEGACY_TRANSFERS_CSV_HEADER,
+      ",2024-01-01T00:00:00.000Z,A,PLN,B,PLN,50.00,50.00,note,",
+    ].join("\n");
+    const result = parseTransfersCsv(csv);
+    assert.equal(result.ok, true);
+    if (!result.ok) return;
+    assert.equal(result.drafts[0]!.categoryPath, null);
+    assert.equal(result.drafts[0]!.description, "note");
   });
 
   it("rejects wrong header", () => {
@@ -100,9 +118,9 @@ describe("parseTransfersCsv", () => {
   it("rejects bad currency, non-positive amount, and bad date", () => {
     const csv = [
       TRANSFERS_CSV_HEADER,
-      ",2024-01-01T00:00:00.000Z,A,PL,B,PLN,1.00,1.00,,",
-      ",2024-01-01T00:00:00.000Z,A,PLN,B,PLN,0,,,",
-      ",not-a-date,A,PLN,B,PLN,1.00,,,",
+      ",2024-01-01T00:00:00.000Z,A,PL,B,PLN,1.00,1.00,,,",
+      ",2024-01-01T00:00:00.000Z,A,PLN,B,PLN,0,,,,",
+      ",not-a-date,A,PLN,B,PLN,1.00,,,,",
     ].join("\n");
     const result = parseTransfersCsv(csv);
     assert.equal(result.ok, false);
@@ -116,7 +134,7 @@ describe("parseTransfersCsv", () => {
   it("rejects cross-currency without amountTo and same-currency mismatch", () => {
     const cross = [
       TRANSFERS_CSV_HEADER,
-      ",2024-01-01T00:00:00.000Z,A,PLN,B,EUR,100.00,,,",
+      ",2024-01-01T00:00:00.000Z,A,PLN,B,EUR,100.00,,,,",
     ].join("\n");
     const crossResult = parseTransfersCsv(cross);
     assert.equal(crossResult.ok, false);
@@ -126,7 +144,7 @@ describe("parseTransfersCsv", () => {
 
     const mismatch = [
       TRANSFERS_CSV_HEADER,
-      ",2024-01-01T00:00:00.000Z,A,PLN,B,PLN,100.00,90.00,,",
+      ",2024-01-01T00:00:00.000Z,A,PLN,B,PLN,100.00,90.00,,,",
     ].join("\n");
     const mismatchResult = parseTransfersCsv(mismatch);
     assert.equal(mismatchResult.ok, false);

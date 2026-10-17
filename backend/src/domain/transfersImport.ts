@@ -2,6 +2,35 @@ import { decimalToMinor } from "./money";
 import type { TransferInput } from "./cashTransfers";
 import type { TransferCsvDraft } from "./transfersCsv";
 import type { ImportRowError } from "./cashLedgerCsvImport";
+import {
+  buildCategoryPathMap,
+  categoryPathKey,
+  parseCategoryPath,
+} from "./cashLedgerCsv";
+
+export type OwnedTransferCategory = {
+  id: number;
+  name: string;
+  parentId: number | null;
+  ledgerType: string;
+};
+
+/** Build path → id map for owned TRANSFER categories (case-insensitive path key). */
+export function buildTransferCategoryPathIndex(
+  owned: OwnedTransferCategory[],
+): Map<string, number> {
+  const transferOnly = owned.filter((c) => c.ledgerType === "TRANSFER");
+  const pathById = buildCategoryPathMap(transferOnly);
+  const index = new Map<string, number>();
+  for (const cat of transferOnly) {
+    const pathStr = pathById.get(cat.id);
+    if (!pathStr) continue;
+    const parsed = parseCategoryPath(pathStr);
+    if (!parsed.ok) continue;
+    index.set(categoryPathKey(parsed.segments), cat.id);
+  }
+  return index;
+}
 
 export type UsedTransferAccount = {
   name: string;
@@ -192,10 +221,14 @@ export type ResolveDraftsResult =
   | { ok: true; rows: Array<{ row: number; input: TransferInput }> }
   | { ok: false; errors: ImportRowError[] };
 
-/** Resolve CSV drafts to TransferInput using validated account mappings. */
+/**
+ * Resolve CSV drafts to TransferInput using validated account mappings
+ * and an optional TRANSFER category path index.
+ */
 export function resolveTransferDrafts(
   drafts: TransferCsvDraft[],
   byKey: Map<string, number>,
+  categoryPathIndex: Map<string, number> = new Map(),
 ): ResolveDraftsResult {
   const errors: ImportRowError[] = [];
   const rows: Array<{ row: number; input: TransferInput }> = [];
@@ -217,6 +250,28 @@ export function resolveTransferDrafts(
       });
       continue;
     }
+
+    let categoryId: number | null = null;
+    if (draft.categoryPath) {
+      const parsed = parseCategoryPath(draft.categoryPath);
+      if (!parsed.ok || parsed.segments.length === 0) {
+        errors.push({
+          row: draft.row,
+          message: `unknown transfer category path "${draft.categoryPath}"`,
+        });
+        continue;
+      }
+      const id = categoryPathIndex.get(categoryPathKey(parsed.segments));
+      if (id == null) {
+        errors.push({
+          row: draft.row,
+          message: `unknown transfer category path "${draft.categoryPath}"`,
+        });
+        continue;
+      }
+      categoryId = id;
+    }
+
     rows.push({
       row: draft.row,
       input: {
@@ -226,6 +281,7 @@ export function resolveTransferDrafts(
         amountTo: draft.amountTo,
         occurredAt: draft.occurredAt,
         description: draft.description,
+        categoryId,
       },
     });
   }

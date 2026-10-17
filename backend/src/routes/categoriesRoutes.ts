@@ -66,16 +66,28 @@ export function createCategoriesRouter(deps: CategoriesDeps): Router {
           .map((row) => {
             const path = pathById.get(row.id);
             if (!path) return null;
-            if (row.ledgerType !== "INCOME" && row.ledgerType !== "EXPENSE") {
+            if (
+              row.ledgerType !== "INCOME" &&
+              row.ledgerType !== "EXPENSE" &&
+              row.ledgerType !== "TRANSFER"
+            ) {
               return null;
             }
             return {
               path,
-              ledgerType: row.ledgerType as "INCOME" | "EXPENSE",
+              ledgerType: row.ledgerType as
+                | "INCOME"
+                | "EXPENSE"
+                | "TRANSFER",
             };
           })
-          .filter((r): r is { path: string; ledgerType: "INCOME" | "EXPENSE" } =>
-            r != null,
+          .filter(
+            (
+              r,
+            ): r is {
+              path: string;
+              ledgerType: "INCOME" | "EXPENSE" | "TRANSFER";
+            } => r != null,
           );
         const csv = buildCategoriesCsv(csvRows);
         res.setHeader("Content-Type", "text/csv; charset=utf-8");

@@ -1,6 +1,8 @@
 import { Prisma } from "@prisma/client";
 import {
   escapeCsvCell,
+  formatCategoryPath,
+  parseCategoryPath,
 } from "./cashLedgerCsv";
 import {
   formatImportErrors,
@@ -11,9 +13,14 @@ import {
 import { parseMoneyDecimal } from "./money";
 
 export const TRANSFERS_CSV_HEADER =
+  "id,occurredAt,fromAccount,fromCurrency,toAccount,toCurrency,amountFrom,amountTo,description,categoryPath,createdAt" as const;
+
+/** Pre-categoryPath exports (category always null on import). */
+export const LEGACY_TRANSFERS_CSV_HEADER =
   "id,occurredAt,fromAccount,fromCurrency,toAccount,toCurrency,amountFrom,amountTo,description,createdAt" as const;
 
 const HEADER_COLUMNS = TRANSFERS_CSV_HEADER.split(",");
+const LEGACY_HEADER_COLUMNS = LEGACY_TRANSFERS_CSV_HEADER.split(",");
 const CURRENCY_RE = /^[A-Z]{3}$/;
 const FORMULA_PREFIX = /^[=+\-@\t\r]/;
 
@@ -27,6 +34,7 @@ export type TransfersCsvRow = {
   amountFrom: number;
   amountTo: number;
   description: string | null;
+  categoryPath: string | null;
   createdAt: Date | string;
 };
 
@@ -41,6 +49,8 @@ export type TransferCsvDraft = {
   amountFrom: Prisma.Decimal;
   amountTo: Prisma.Decimal;
   description: string | null;
+  /** Normalized path or null when empty / legacy CSV. */
+  categoryPath: string | null;
 };
 
 export type ParseTransfersResult =
@@ -83,6 +93,7 @@ export function buildTransfersCsv(rows: TransfersCsvRow[]): string {
       formatAmount(Number(row.amountFrom)),
       formatAmount(Number(row.amountTo)),
       escapeCsvCell(row.description ?? ""),
+      escapeCsvCell(row.categoryPath ?? ""),
       escapeCsvCell(formatIso(row.createdAt)),
     ];
     lines.push(cells.join(","));
@@ -96,16 +107,27 @@ export function transfersExportFilename(): string {
 
 /**
  * Parse transfers CSV. Ignores id and createdAt.
+ * Accepts current header (with categoryPath) or legacy header without it.
  */
 export function parseTransfersCsv(csv: string): ParseTransfersResult {
-  const text = stripBom(String(csv ?? "")).replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  const text = stripBom(String(csv ?? ""))
+    .replace(/\r\n/g, "\n")
+    .replace(/\r/g, "\n");
   const lines = splitCsvRecords(text);
   if (lines.length === 0) {
     return { ok: false, errors: [{ row: 0, message: "CSV header required" }] };
   }
 
   const headerJoined = lines[0]!.join(",");
-  if (headerJoined !== TRANSFERS_CSV_HEADER) {
+  let hasCategoryPath: boolean;
+  let expectedCols: number;
+  if (headerJoined === TRANSFERS_CSV_HEADER) {
+    hasCategoryPath = true;
+    expectedCols = HEADER_COLUMNS.length;
+  } else if (headerJoined === LEGACY_TRANSFERS_CSV_HEADER) {
+    hasCategoryPath = false;
+    expectedCols = LEGACY_HEADER_COLUMNS.length;
+  } else {
     return {
       ok: false,
       errors: [
@@ -124,10 +146,10 @@ export function parseTransfersCsv(csv: string): ParseTransfersResult {
     const cells = lines[i]!;
     const dataRow = i;
     if (cells.length === 1 && cells[0] === "") continue;
-    if (cells.length !== HEADER_COLUMNS.length) {
+    if (cells.length !== expectedCols) {
       errors.push({
         row: dataRow,
-        message: `expected ${HEADER_COLUMNS.length} columns, got ${cells.length}`,
+        message: `expected ${expectedCols} columns, got ${cells.length}`,
       });
       continue;
     }
@@ -140,6 +162,7 @@ export function parseTransfersCsv(csv: string): ParseTransfersResult {
     const amountFromRaw = cells[6]!.trim();
     const amountToRaw = cells[7]!.trim();
     const descriptionRaw = cells[8]!;
+    const categoryPathRaw = hasCategoryPath ? cells[9]!.trim() : "";
 
     if (!occurredAtRaw) {
       errors.push({ row: dataRow, message: "occurredAt is required" });
@@ -181,7 +204,9 @@ export function parseTransfersCsv(csv: string): ParseTransfersResult {
       errors.push({
         row: dataRow,
         message:
-          error instanceof Error ? error.message : "amountFrom must be a positive number",
+          error instanceof Error
+            ? error.message
+            : "amountFrom must be a positive number",
       });
       continue;
     }
@@ -235,6 +260,20 @@ export function parseTransfersCsv(csv: string): ParseTransfersResult {
     const descriptionTrimmed = unescapeImportedFormula(descriptionRaw.trim());
     const description = descriptionTrimmed.length ? descriptionTrimmed : null;
 
+    let categoryPath: string | null = null;
+    if (categoryPathRaw !== "") {
+      const pathResult = parseCategoryPath(categoryPathRaw);
+      if (!pathResult.ok) {
+        errors.push({ row: dataRow, message: pathResult.message });
+        continue;
+      }
+      if (pathResult.segments.length === 0) {
+        categoryPath = null;
+      } else {
+        categoryPath = formatCategoryPath(pathResult.segments);
+      }
+    }
+
     drafts.push({
       row: dataRow,
       occurredAt,
@@ -245,6 +284,7 @@ export function parseTransfersCsv(csv: string): ParseTransfersResult {
       amountFrom,
       amountTo,
       description,
+      categoryPath,
     });
   }
 

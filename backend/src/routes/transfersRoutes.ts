@@ -10,7 +10,12 @@ import {
   transferPayload,
   updateTransfer,
   type OwnedAccountRef,
+  type TransferInput,
 } from "../domain/cashTransfers";
+import { expectedCategoryLedgerType } from "../domain/categories";
+import {
+  buildCategoryPathMap,
+} from "../domain/cashLedgerCsv";
 import { minorToMajor } from "../domain/money";
 import {
   buildTransfersCsv,
@@ -19,6 +24,7 @@ import {
   transfersExportFilename,
 } from "../domain/transfersCsv";
 import {
+  buildTransferCategoryPathIndex,
   collectUsedAccounts,
   findDuplicateRows,
   parseAccountMappings,
@@ -26,7 +32,40 @@ import {
   resolveTransferDrafts,
   suggestAccountMatches,
 } from "../domain/transfersImport";
-import { badRequest, handleRouteError, parseIdParam } from "./httpSupport";
+import { badRequest, handleRouteError, notFound, parseIdParam } from "./httpSupport";
+
+async function assertOwnedTransferCategory(
+  prisma: PrismaClient,
+  userId: number,
+  categoryId: number | null,
+): Promise<number | null> {
+  if (categoryId === null) return null;
+  const category = await prisma.category.findFirst({
+    where: { id: categoryId, userId },
+    select: { id: true, ledgerType: true },
+  });
+  if (!category) throw notFound("Category not found");
+  if (category.ledgerType !== expectedCategoryLedgerType("TRANSFER")) {
+    throw badRequest("category ledgerType must be TRANSFER");
+  }
+  return category.id;
+}
+
+async function parseAndValidateTransferInput(
+  prisma: PrismaClient,
+  userId: number,
+  body: Record<string, unknown>,
+  accounts: Map<number, OwnedAccountRef>,
+  existing?: TransferInput,
+): Promise<TransferInput> {
+  const input = parseTransferInput(body, accounts, existing);
+  const categoryId = await assertOwnedTransferCategory(
+    prisma,
+    userId,
+    input.categoryId,
+  );
+  return { ...input, categoryId };
+}
 
 type TransfersDeps = {
   prisma: PrismaClient;
@@ -77,14 +116,22 @@ export function createTransfersRouter(deps: TransfersDeps): Router {
     requireAuth,
     async (req: AuthedRequest, res) => {
       try {
-        const rows = await prisma.cashTransfer.findMany({
-          where: { userId: uid(req) },
-          include: {
-            fromAccount: { select: { name: true, currency: true } },
-            toAccount: { select: { name: true, currency: true } },
-          },
-          orderBy: [{ occurredAt: "asc" }, { id: "asc" }],
-        });
+        const userId = uid(req);
+        const [rows, categories] = await Promise.all([
+          prisma.cashTransfer.findMany({
+            where: { userId },
+            include: {
+              fromAccount: { select: { name: true, currency: true } },
+              toAccount: { select: { name: true, currency: true } },
+            },
+            orderBy: [{ occurredAt: "asc" }, { id: "asc" }],
+          }),
+          prisma.category.findMany({
+            where: { userId, ledgerType: "TRANSFER" },
+            select: { id: true, name: true, parentId: true },
+          }),
+        ]);
+        const pathById = buildCategoryPathMap(categories);
         const csv = buildTransfersCsv(
           rows.map((row) => ({
             id: row.id,
@@ -96,6 +143,10 @@ export function createTransfersRouter(deps: TransfersDeps): Router {
             amountFrom: minorToMajor(row.amountFrom),
             amountTo: minorToMajor(row.amountTo),
             description: row.description,
+            categoryPath:
+              row.categoryId == null
+                ? null
+                : (pathById.get(row.categoryId) ?? null),
             createdAt: row.createdAt,
           })),
         );
@@ -163,7 +214,20 @@ export function createTransfersRouter(deps: TransfersDeps): Router {
             });
             return;
           }
-          const resolved = resolveTransferDrafts(parsed.drafts, mappings.byKey);
+          const transferCategories = await prisma.category.findMany({
+            where: { userId, ledgerType: "TRANSFER" },
+            select: {
+              id: true,
+              name: true,
+              parentId: true,
+              ledgerType: true,
+            },
+          });
+          const resolved = resolveTransferDrafts(
+            parsed.drafts,
+            mappings.byKey,
+            buildTransferCategoryPathIndex(transferCategories),
+          );
           if (!resolved.ok) {
             res.status(400).json({
               error: formatImportErrors(resolved.errors),
@@ -235,7 +299,17 @@ export function createTransfersRouter(deps: TransfersDeps): Router {
           return;
         }
 
-        const resolved = resolveTransferDrafts(parsed.drafts, mappings.byKey);
+        const transferCategories = await prisma.category.findMany({
+          where: { userId, ledgerType: "TRANSFER" },
+          select: { id: true, name: true, parentId: true, ledgerType: true },
+        });
+        const categoryPathIndex =
+          buildTransferCategoryPathIndex(transferCategories);
+        const resolved = resolveTransferDrafts(
+          parsed.drafts,
+          mappings.byKey,
+          categoryPathIndex,
+        );
         if (!resolved.ok) {
           res.status(400).json({
             error: formatImportErrors(resolved.errors),
@@ -279,7 +353,7 @@ export function createTransfersRouter(deps: TransfersDeps): Router {
       const userId = uid(req);
       const body = req.body ?? {};
       const accounts = await loadOwnedAccountsMap(prisma, userId);
-      const input = parseTransferInput(body, accounts);
+      const input = await parseAndValidateTransferInput(prisma, userId, body, accounts);
       const created = await prisma.$transaction((tx) => createTransfer(tx, userId, input));
       res.status(201).json(transferPayload(created));
     } catch (e: unknown) {
@@ -299,12 +373,19 @@ export function createTransfersRouter(deps: TransfersDeps): Router {
         "amountTo",
         "occurredAt",
         "description",
+        "categoryId",
       ].some((key) => body[key] !== undefined);
       if (!hasField) throw badRequest("No updatable fields provided");
 
       const existing = await findOwnedTransfer(prisma, userId, id);
       const accounts = await loadOwnedAccountsMap(prisma, userId);
-      const input = parseTransferInput(body, accounts, transferInputFromExisting(existing));
+      const input = await parseAndValidateTransferInput(
+        prisma,
+        userId,
+        body,
+        accounts,
+        transferInputFromExisting(existing),
+      );
       const updated = await prisma.$transaction((tx) =>
         updateTransfer(tx, userId, existing, input),
       );

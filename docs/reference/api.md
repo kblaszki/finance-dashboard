@@ -64,7 +64,7 @@ User-scoped nested tree (`parentId`). Flat list responses include `id`, `name`, 
 | GET | `/api/categories/export` | Bearer | CSV download; header `path,ledgerType`; full tree paths (`Food/Groceries`); parents before children; empty tree = header only |
 | POST | `/api/categories/import/preview` | Bearer | Body `{ csv }`. `200 { rowCount, existing, toCreate, rows: [{ path, ledgerType, status: "exists"\|"create" }] }`. Same path with different owned `ledgerType` → `400` |
 | POST | `/api/categories/import` | Bearer | Body `{ csv }`. Merge only: skip exact path+ledgerType matches, create missing (parents first); `201 { created, skipped }`; no deletes |
-| POST | `/api/categories` | Bearer | Body: `name`; optional `parentId`; `ledgerType` required when `parentId` is null/omitted. 201 |
+| POST | `/api/categories` | Bearer | Body: `name`; optional `parentId`; `ledgerType` (`INCOME`\|`EXPENSE`\|`TRANSFER`) required when `parentId` is null/omitted. 201 |
 | PATCH | `/api/categories/:id` | Bearer | Body: optional `name`, `parentId` (`null` = root). Cycle / cross-type reparent → 400 |
 | DELETE | `/api/categories/:id` | Bearer | 409 if children; else 204 (`CashTransaction.categoryId` → null) |
 
@@ -72,7 +72,7 @@ Unknown / other-user category or parent → `404`.
 
 ## Cash transactions
 
-Nested under an owned account. Cross-user or unknown account → `404`. `amount` must be positive, with at most 2 decimal places (stored as integer cents; JSON stays a major-unit number). User create/update `type` is `INCOME` or `EXPENSE` (case-normalized). Transfer legs (`TRANSFER_IN` / `TRANSFER_OUT`) appear in list/export with `transferId` set; PATCH/DELETE on those rows → `400` (“edit or delete via /api/transfers”). Create, update, and delete of user cash rows adjust `Account.cashBalance` atomically. No `balanceAfter`. Optional `categoryId` must belong to the same user and have `ledgerType` equal to the transaction `type` (else `400`). `occurredAt` is an absolute instant; month statistics bucket it in UTC. CSV import skips `TRANSFER_*` rows (reported in `skippedTransfers`); restore transfers via `/api/transfers`.
+Nested under an owned account. Cross-user or unknown account → `404`. `amount` must be positive, with at most 2 decimal places (stored as integer cents; JSON stays a major-unit number). User create/update `type` is `INCOME` or `EXPENSE` (case-normalized). Transfer legs (`TRANSFER_IN` / `TRANSFER_OUT`) appear in list/export with `transferId` set; PATCH/DELETE on those rows → `400` (“edit or delete via /api/transfers”). Create, update, and delete of user cash rows adjust `Account.cashBalance` atomically. No `balanceAfter`. Optional `categoryId` must belong to the same user and match the expected category group for the row type (`INCOME`/`EXPENSE` equal type; `TRANSFER_IN`/`TRANSFER_OUT` → `TRANSFER`) (else `400`). `occurredAt` is an absolute instant; month statistics bucket it in UTC. CSV import skips `TRANSFER_*` rows (reported in `skippedTransfers`); restore transfers via `/api/transfers`.
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
@@ -90,12 +90,12 @@ User-scoped internal cash transfers (`CashTransfer` header + two ledger legs). C
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
-| GET | `/api/transfers` | Bearer | List own transfers (`occurredAt` desc, then `id` desc) |
-| GET | `/api/transfers/export` | Bearer | CSV download; header `id,occurredAt,fromAccount,fromCurrency,toAccount,toCurrency,amountFrom,amountTo,description,createdAt`; accounts by name (no DB ids); oldest→newest; empty = header only |
+| GET | `/api/transfers` | Bearer | List own transfers (`occurredAt` desc, then `id` desc); includes optional `categoryId` |
+| GET | `/api/transfers/export` | Bearer | CSV download; header `id,occurredAt,fromAccount,fromCurrency,toAccount,toCurrency,amountFrom,amountTo,description,categoryPath,createdAt`; accounts by name (no DB ids); `categoryPath` is TRANSFER-tree path or empty; oldest→newest; empty = header only. Legacy header without `categoryPath` still accepted on import |
 | POST | `/api/transfers/import/preview` | Bearer | Body `{ csv, accountMappings? }`. Always `{ rowCount, accounts: [{ name, currency, rowCount, suggestedAccountId }] }` (exact name+currency suggestions). With complete `accountMappings`: also `rows: [{ row, occurredAt, fromAccountId, toAccountId, amountFrom, amountTo, description, duplicate }]` |
-| POST | `/api/transfers/import` | Bearer | Body `{ csv, accountMappings: [{ name, currency, accountId }], skipRows?: number[] }`. Map-only (no account create); every used `(name, currency)` required; currency must match mapped account; all-or-nothing via `createTransfer`. `201 { created, skipped }`. `400 { error, details }` |
-| POST | `/api/transfers` | Bearer | Body: `fromAccountId`, `toAccountId`, `amountFrom`; optional `amountTo`, `occurredAt`, `description`. Same account → 400. 201 |
-| PATCH | `/api/transfers/:id` | Bearer | Body: any subset of create fields; validated on merged state. 200 |
+| POST | `/api/transfers/import` | Bearer | Body `{ csv, accountMappings: [{ name, currency, accountId }], skipRows?: number[] }`. Map-only (no account create); every used `(name, currency)` required; currency must match mapped account; optional `categoryPath` must resolve to an owned TRANSFER category (else `400`); all-or-nothing via `createTransfer`. `201 { created, skipped }`. `400 { error, details }` |
+| POST | `/api/transfers` | Bearer | Body: `fromAccountId`, `toAccountId`, `amountFrom`; optional `amountTo`, `occurredAt`, `description`, `categoryId` (owned `TRANSFER` category). Same account → 400. 201; both legs get the same `categoryId` |
+| PATCH | `/api/transfers/:id` | Bearer | Body: any subset of create fields (incl. `categoryId`); validated on merged state. 200 |
 | DELETE | `/api/transfers/:id` | Bearer | Reverses both legs and deletes header. 204 |
 
 ## Statistics

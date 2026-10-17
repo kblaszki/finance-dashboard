@@ -28,7 +28,7 @@ model Category {
   name      String
   /// Sibling key: `{parentId or 0}:{lowercase name}`.
   nameKey   String
-  /// INCOME or EXPENSE; inherited from parent; fixed for the subtree.
+  /// INCOME | EXPENSE | TRANSFER; inherited from parent; fixed for the subtree.
   ledgerType String
   parentId  Int?
   createdAt DateTime  @default(now())
@@ -36,6 +36,7 @@ model Category {
   parent    Category? @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
   children  Category[] @relation("CategoryTree")
   cashTransactions CashTransaction[]
+  cashTransfers CashTransfer[]
 
   @@unique([userId, nameKey])
   @@index([userId])
@@ -76,16 +77,20 @@ model CashTransfer {
   amountTo      Int
   occurredAt    DateTime  @default(now())
   description   String?
+  /// Optional TRANSFER-group category; copied onto both ledger legs.
+  categoryId    Int?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   fromAccount   Account   @relation("TransferFrom", fields: [fromAccountId], references: [id], onDelete: Restrict)
   toAccount     Account   @relation("TransferTo", fields: [toAccountId], references: [id], onDelete: Restrict)
+  category      Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   legs          CashTransaction[]
 
   @@index([userId, occurredAt])
   @@index([fromAccountId])
   @@index([toAccountId])
+  @@index([categoryId])
 }
 
 model CashTransaction {

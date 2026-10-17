@@ -27,7 +27,7 @@ Hub: [docs/README.md](../README.md).
 
 ## Category
 
-User-scoped nested label (`parentId` self-relation). Each row has a fixed `ledgerType` (`INCOME` | `EXPENSE`) inherited from its parent (roots set it on create). Reparent across types is rejected. Default seed creates flat roots (Salary, Food, …) with `ledgerType` — no Income/Expense wrapper categories.
+User-scoped nested label (`parentId` self-relation). Each row has a fixed `ledgerType` (`INCOME` | `EXPENSE` | `TRANSFER`) inherited from its parent (roots set it on create). Reparent across types is rejected. Default seed creates flat roots (Salary, Food, …, Internal transfer) with `ledgerType` — no Income/Expense wrapper categories. `TRANSFER` categories tag internal cash transfers (shared by both ledger legs).
 
 | Field | Type | Notes |
 |-------|------|-------|
@@ -35,7 +35,7 @@ User-scoped nested label (`parentId` self-relation). Each row has a fixed `ledge
 | userId | Int | FK → User |
 | name | String | Display name (roots may be renamed) |
 | nameKey | String | Unique per user with the parent: `{parentId or 0}:{lowercase name}` |
-| ledgerType | String | `INCOME` or `EXPENSE`; immutable after create |
+| ledgerType | String | `INCOME`, `EXPENSE`, or `TRANSFER`; immutable after create |
 | parentId | Int? | FK → Category (`onDelete: Restrict`); null = root |
 | createdAt | DateTime | Default now |
 
@@ -75,14 +75,15 @@ Source of truth for an internal cash transfer between two owned accounts. Create
 | amountTo | Int | Positive minor units on the destination account |
 | occurredAt | DateTime | Transfer time (default now) |
 | description | String? | Optional note |
+| categoryId | Int? | FK → Category (`onDelete: SetNull`); must be `ledgerType: TRANSFER`; copied onto both legs |
 | createdAt | DateTime | Default now |
 | updatedAt | DateTime | `@updatedAt` |
 
-Indexes: `[userId, occurredAt]`, `[fromAccountId]`, `[toAccountId]`. Same-currency transfers keep `amountTo = amountFrom`; cross-currency requires an explicit `amountTo` (manual FX; no NBP). Relation: `legs` → `CashTransaction[]` (`onDelete: Cascade`).
+Indexes: `[userId, occurredAt]`, `[fromAccountId]`, `[toAccountId]`, `[categoryId]`. Same-currency transfers keep `amountTo = amountFrom`; cross-currency requires an explicit `amountTo` (manual FX; no NBP). Relation: `legs` → `CashTransaction[]` (`onDelete: Cascade`).
 
 ## CashTransaction
 
-Single-account cash ledger row. Positive `amount`; type drives signed effect on `Account.cashBalance`. User-created types are `INCOME` / `EXPENSE`. Transfer legs use `TRANSFER_OUT` / `TRANSFER_IN` and are excluded from cashflow statistics. No `balanceAfter`. Optional category tag (user cash types only).
+Single-account cash ledger row. Positive `amount`; type drives signed effect on `Account.cashBalance`. User-created types are `INCOME` / `EXPENSE`. Transfer legs use `TRANSFER_OUT` / `TRANSFER_IN` and are excluded from cashflow statistics. No `balanceAfter`. Optional category tag (`INCOME`/`EXPENSE` for cash rows; `TRANSFER` for transfer legs via the transfer header).
 
 | Field | Type | Notes |
 |-------|------|-------|

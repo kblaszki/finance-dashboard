@@ -3,7 +3,13 @@ import { badRequest, conflict, notFound } from "../lib/errors";
 
 type Db = PrismaClient | Prisma.TransactionClient;
 
-export type CategoryLedgerType = "INCOME" | "EXPENSE";
+export type CategoryLedgerType = "INCOME" | "EXPENSE" | "TRANSFER";
+
+export const CATEGORY_LEDGER_TYPES = [
+  "INCOME",
+  "EXPENSE",
+  "TRANSFER",
+] as const;
 
 /** Flat roots by ledgerType — no Income/Expense wrapper categories. */
 const DEFAULT_ROOTS: Array<{ name: string; ledgerType: CategoryLedgerType }> = [
@@ -13,6 +19,7 @@ const DEFAULT_ROOTS: Array<{ name: string; ledgerType: CategoryLedgerType }> = [
   { name: "Housing", ledgerType: "EXPENSE" },
   { name: "Transport", ledgerType: "EXPENSE" },
   { name: "Other", ledgerType: "EXPENSE" },
+  { name: "Internal transfer", ledgerType: "TRANSFER" },
 ];
 
 export function categoryNameKey(parentId: number | null, name: string): string {
@@ -26,10 +33,30 @@ export function parseCategoryName(value: unknown): string {
   return text;
 }
 
+export function isCategoryLedgerType(value: string): value is CategoryLedgerType {
+  return (CATEGORY_LEDGER_TYPES as readonly string[]).includes(value);
+}
+
 export function parseLedgerType(value: unknown): CategoryLedgerType {
   const raw = String(value ?? "").trim().toUpperCase();
-  if (raw === "INCOME" || raw === "EXPENSE") return raw;
-  throw badRequest("ledgerType must be INCOME or EXPENSE");
+  if (isCategoryLedgerType(raw)) return raw;
+  throw badRequest("ledgerType must be INCOME, EXPENSE, or TRANSFER");
+}
+
+/**
+ * Map a ledger transaction type to the category tree it may use.
+ * TRANSFER_IN / TRANSFER_OUT share the TRANSFER category group.
+ */
+export function expectedCategoryLedgerType(txType: string): CategoryLedgerType {
+  const raw = String(txType ?? "").trim().toUpperCase();
+  if (raw === "INCOME") return "INCOME";
+  if (raw === "EXPENSE") return "EXPENSE";
+  if (raw === "TRANSFER_IN" || raw === "TRANSFER_OUT" || raw === "TRANSFER") {
+    return "TRANSFER";
+  }
+  throw badRequest(
+    "transaction type must be INCOME, EXPENSE, TRANSFER_IN, or TRANSFER_OUT",
+  );
 }
 
 /** Parse optional parentId: undefined = omit, null = root, number = parent. */

@@ -23,6 +23,7 @@ function draft(
     amountFrom: new Prisma.Decimal("100"),
     amountTo: new Prisma.Decimal("100"),
     description: null,
+    categoryPath: null,
     ...partial,
   };
 }

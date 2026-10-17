@@ -21,7 +21,18 @@ export type TransferInput = {
   amountTo: Prisma.Decimal;
   occurredAt: Date;
   description: string | null;
+  /** Optional owned TRANSFER-group category; applied to both legs. */
+  categoryId: number | null;
 };
+
+export function parseOptionalTransferCategoryId(value: unknown): number | null {
+  if (value === undefined || value === null || value === "") return null;
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 1) {
+    throw badRequest("categoryId must be a valid id");
+  }
+  return n;
+}
 
 export type TransferWithAccounts = CashTransfer & {
   fromAccount: { id: number; currency: string; name: string };
@@ -118,6 +129,10 @@ export function parseTransferInput(
     body.description !== undefined
       ? parseOptionalDescription(body.description)
       : (existing?.description ?? null);
+  const categoryId =
+    body.categoryId !== undefined
+      ? parseOptionalTransferCategoryId(body.categoryId)
+      : (existing?.categoryId ?? null);
 
   return {
     fromAccountId,
@@ -126,6 +141,7 @@ export function parseTransferInput(
     amountTo,
     occurredAt,
     description,
+    categoryId,
   };
 }
 
@@ -143,6 +159,7 @@ export async function createTransfer(
       amountTo: decimalToMinor(input.amountTo, "amountTo"),
       occurredAt: input.occurredAt,
       description: input.description,
+      categoryId: input.categoryId,
     },
   });
 
@@ -152,7 +169,7 @@ export async function createTransfer(
     amount: input.amountFrom,
     occurredAt: input.occurredAt,
     description: input.description,
-    categoryId: null,
+    categoryId: input.categoryId,
     transferId: header.id,
   });
   await postCashTransaction(db, {
@@ -161,7 +178,7 @@ export async function createTransfer(
     amount: input.amountTo,
     occurredAt: input.occurredAt,
     description: input.description,
-    categoryId: null,
+    categoryId: input.categoryId,
     transferId: header.id,
   });
 
@@ -191,6 +208,7 @@ export async function updateTransfer(
       amountTo: decimalToMinor(input.amountTo, "amountTo"),
       occurredAt: input.occurredAt,
       description: input.description,
+      categoryId: input.categoryId,
     },
   });
 
@@ -200,7 +218,7 @@ export async function updateTransfer(
     amount: input.amountFrom,
     occurredAt: input.occurredAt,
     description: input.description,
-    categoryId: null,
+    categoryId: input.categoryId,
     transferId: existing.id,
   });
   await postCashTransaction(db, {
@@ -209,7 +227,7 @@ export async function updateTransfer(
     amount: input.amountTo,
     occurredAt: input.occurredAt,
     description: input.description,
-    categoryId: null,
+    categoryId: input.categoryId,
     transferId: existing.id,
   });
 
@@ -257,6 +275,7 @@ export function transferPayload(transfer: TransferWithAccounts) {
     fxRate: amountFrom === 0 ? null : amountTo / amountFrom,
     occurredAt: transfer.occurredAt.toISOString(),
     description: transfer.description,
+    categoryId: transfer.categoryId ?? null,
     createdAt: transfer.createdAt.toISOString(),
   };
 }
@@ -269,5 +288,6 @@ export function transferInputFromExisting(existing: TransferWithAccounts): Trans
     amountTo: minorToDecimal(existing.amountTo),
     occurredAt: existing.occurredAt,
     description: existing.description,
+    categoryId: existing.categoryId ?? null,
   };
 }

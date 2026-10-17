@@ -102,7 +102,7 @@ test("POST /api/auth/register creates user", async () => {
     .get("/api/categories")
     .set("Authorization", `Bearer ${res.body.token}`);
   assert.equal(cats.status, 200);
-  assert.equal(cats.body.length, 6);
+  assert.equal(cats.body.length, 7);
   const rows = cats.body as Array<{
     id: number;
     name: string;
@@ -117,6 +117,8 @@ test("POST /api/auth/register creates user", async () => {
   assert.equal(byName.get("Other income")?.ledgerType, "INCOME");
   assert.equal(byName.get("Food")?.parentId, null);
   assert.equal(byName.get("Food")?.ledgerType, "EXPENSE");
+  assert.equal(byName.get("Internal transfer")?.parentId, null);
+  assert.equal(byName.get("Internal transfer")?.ledgerType, "TRANSFER");
 });
 
 test("POST /api/auth/register rejects short password", async () => {
@@ -2029,6 +2031,79 @@ test("POST /api/transfers same currency updates both balances", async () => {
   assert.equal(toTx.body[0].transferId, created.body.id);
 });
 
+test("POST/PATCH /api/transfers optional TRANSFER category on both legs", async () => {
+  const token = await registerAndLogin(
+    "xfercat@test.local",
+    "xfercat",
+    "password123",
+  );
+  const cats = await request(app)
+    .get("/api/categories")
+    .set("Authorization", `Bearer ${token}`);
+  const transferCat = (
+    cats.body as Array<{ id: number; name: string; ledgerType: string }>
+  ).find((c) => c.name === "Internal transfer");
+  const food = (
+    cats.body as Array<{ id: number; name: string; ledgerType: string }>
+  ).find((c) => c.name === "Food");
+  assert.ok(transferCat);
+  assert.equal(transferCat!.ledgerType, "TRANSFER");
+  assert.ok(food);
+
+  const from = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "From Cat", currency: "PLN", openingBalance: 500 });
+  const to = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "To Cat", currency: "PLN", openingBalance: 0 });
+
+  const wrongType = await request(app)
+    .post("/api/transfers")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      fromAccountId: from.body.id,
+      toAccountId: to.body.id,
+      amountFrom: 50,
+      categoryId: food!.id,
+    });
+  assert.equal(wrongType.status, 400);
+
+  const created = await request(app)
+    .post("/api/transfers")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      fromAccountId: from.body.id,
+      toAccountId: to.body.id,
+      amountFrom: 50,
+      categoryId: transferCat!.id,
+    });
+  assert.equal(created.status, 201);
+  assert.equal(created.body.categoryId, transferCat!.id);
+
+  const fromTx = await request(app)
+    .get(`/api/accounts/${from.body.id}/transactions`)
+    .set("Authorization", `Bearer ${token}`);
+  const toTx = await request(app)
+    .get(`/api/accounts/${to.body.id}/transactions`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(fromTx.body[0].categoryId, transferCat!.id);
+  assert.equal(toTx.body[0].categoryId, transferCat!.id);
+
+  const cleared = await request(app)
+    .patch(`/api/transfers/${created.body.id}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ categoryId: null });
+  assert.equal(cleared.status, 200);
+  assert.equal(cleared.body.categoryId, null);
+
+  const fromTx2 = await request(app)
+    .get(`/api/accounts/${from.body.id}/transactions`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(fromTx2.body[0].categoryId, null);
+});
+
 test("POST /api/transfers cross currency requires amountTo and returns fxRate", async () => {
   const token = await registerAndLogin("xferfx@test.local", "xferfx", "password123");
   const from = await request(app)
@@ -2314,7 +2389,7 @@ test("GET/POST /api/transfers export import preview with account mapping", async
   const lines = exported.text.trimEnd().split("\n");
   assert.equal(
     lines[0],
-    "id,occurredAt,fromAccount,fromCurrency,toAccount,toCurrency,amountFrom,amountTo,description,createdAt",
+    "id,occurredAt,fromAccount,fromCurrency,toAccount,toCurrency,amountFrom,amountTo,description,categoryPath,createdAt",
   );
   assert.equal(lines.length, 3);
   assert.match(lines[1]!, /Alpha Checking,PLN,Alpha Brokerage,PLN,200\.00,200\.00/);
@@ -2326,7 +2401,7 @@ test("GET/POST /api/transfers export import preview with account mapping", async
   assert.equal(otherExport.status, 200);
   assert.equal(
     otherExport.text,
-    "id,occurredAt,fromAccount,fromCurrency,toAccount,toCurrency,amountFrom,amountTo,description,createdAt\n",
+    "id,occurredAt,fromAccount,fromCurrency,toAccount,toCurrency,amountFrom,amountTo,description,categoryPath,createdAt\n",
   );
 
   const previewBare = await request(app)

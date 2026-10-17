@@ -27,6 +27,7 @@ import {
   resolveDraftsWithMappings,
   suggestCategoryMatches,
 } from "../domain/cashLedgerImportCategories";
+import { expectedCategoryLedgerType } from "../domain/categories";
 import {
   badRequest,
   handleRouteError,
@@ -93,7 +94,8 @@ async function assertOwnedCategoryForTx(
     select: { id: true, ledgerType: true },
   });
   if (!category) throw notFound("Category not found");
-  if (category.ledgerType !== txType) {
+  const expected = expectedCategoryLedgerType(txType);
+  if (category.ledgerType !== expected) {
     throw badRequest("category ledgerType must match transaction type");
   }
   return category.id;

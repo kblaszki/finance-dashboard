@@ -21,7 +21,7 @@ Move cash between two of your accounts. The transfer header (`CashTransfer`) is 
 
 ## Create or edit a transfer
 
-1. Open `/transfers` (AppShell nav).
+1. Open `/transfers` (AppShell nav). Optionally pick a **Transfers**-group category (seeded root: Internal transfer); both account ledger legs inherit the same `categoryId`.
 2. Use the top create row: date, from account, to account, amount from, optional amount to (required when currencies differ), description. Enter or **Add** submits; focus returns to the date field.
 3. Same currency: leave amount to blank (it mirrors amount from). Different currencies: enter both amounts; the UI shows a computed FX rate (`amountTo / amountFrom`) — no NBP lookup.
 4. Edit an existing row with double-click on Date / From / To / Amount from / Amount to (cross-currency only) / Description. Enter saves; Escape or blur cancels.
@@ -39,7 +39,7 @@ Delete an account that still appears in any transfer → `409` (“delete transf
 
 ## Export / import CSV
 
-1. On `/transfers`, use **Download CSV** for a portable snapshot (accounts by name + currency, no DB ids).
+1. On `/transfers`, use **Download CSV** for a portable snapshot (accounts by name + currency, optional `categoryPath`, no DB ids).
 2. **Upload CSV** opens a two-step flow:
    - Map each file account `(name, currency)` to one of your existing accounts with the same currency (suggestions when names match).
    - Review rows: exact duplicates of existing transfers are unchecked; enable them only if you want a second copy.

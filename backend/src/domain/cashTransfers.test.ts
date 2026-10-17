@@ -80,6 +80,7 @@ test("parseTransferInput patch keeps cross-currency amountTo when unchanged", ()
     amountTo: new Prisma.Decimal("100"),
     occurredAt: new Date("2026-08-01T00:00:00.000Z"),
     description: "old",
+    categoryId: 7,
   };
   const input = parseTransferInput(
     { description: "new" },
@@ -89,4 +90,19 @@ test("parseTransferInput patch keeps cross-currency amountTo when unchanged", ()
   assert.equal(input.amountFrom.toNumber(), 400);
   assert.equal(input.amountTo.toNumber(), 100);
   assert.equal(input.description, "new");
+  assert.equal(input.categoryId, 7);
+});
+
+test("parseTransferInput accepts optional categoryId", () => {
+  const input = parseTransferInput(
+    { fromAccountId: 1, toAccountId: 2, amountFrom: 10, categoryId: 3 },
+    accounts({ id: 1, currency: "PLN" }, { id: 2, currency: "PLN" }),
+  );
+  assert.equal(input.categoryId, 3);
+  const cleared = parseTransferInput(
+    { categoryId: null },
+    accounts({ id: 1, currency: "PLN" }, { id: 2, currency: "PLN" }),
+    input,
+  );
+  assert.equal(cleared.categoryId, null);
 });
