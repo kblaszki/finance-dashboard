@@ -245,8 +245,8 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 2.75rem;
-  height: 2.75rem;
+  width: var(--tap-target);
+  height: var(--tap-target);
   padding: 0;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -666,13 +666,13 @@
 
 .ledger-table td {
   vertical-align: middle;
-  height: 2.75rem;
+  height: var(--tap-target);
 }
 
 .ledger-table .ledger-create-row td,
 .ledger-table td.ledger-cell--editing {
   height: auto;
-  min-height: 2.75rem;
+  min-height: var(--tap-target);
   padding-block: 0.4rem;
 }
 
@@ -2005,7 +2005,7 @@ a.btn-secondary {
 }
 
 .shell--drawer-mode .shell-nav a {
-  min-height: 44px;
+  min-height: var(--tap-target);
 }
 
 .shell--drawer-mode .shell-sidebar-footer {
