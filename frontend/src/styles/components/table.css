@@ -216,4 +216,38 @@
 .data-table--tags .col-text {
   width: auto;
 }
+
+@media (max-width: 40rem) {
+  .ledger-cell-input {
+    min-height: var(--tap-target);
+    height: auto;
+    padding-block: 0.45rem;
+    font-size: var(--text-base);
+  }
+
+  .ledger-table td.ledger-cell--editing,
+  .ledger-table .ledger-create-row td {
+    padding-block: 0.5rem;
+  }
+
+  .ledger-table td.col-date.ledger-cell--editing .ledger-cell-input[type="date"],
+  .ledger-table td.col-text.ledger-cell--editing select.ledger-cell-input,
+  .ledger-table td.col-text.ledger-cell--editing .ledger-tags-field .ledger-cell-input,
+  .ledger-table td.col-status.ledger-cell--editing select.ledger-cell-input {
+    min-width: min(100%, 10rem);
+  }
+
+  .data-table td.col-actions .btn-link,
+  .data-table td.col-actions a {
+    min-height: var(--tap-target);
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Keep sticky first column readable while editing */
+  .data-table td:first-child.ledger-cell--editing {
+    z-index: 2;
+    background: var(--color-surface);
+  }
+}
 }
