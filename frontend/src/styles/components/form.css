@@ -25,4 +25,15 @@
   .category-create-inline {
     flex-wrap: wrap;
   }
+
+  .month-pager {
+    margin-bottom: var(--space-md);
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .month-pager input[type="month"] {
+    min-width: 9rem;
+  }
 }

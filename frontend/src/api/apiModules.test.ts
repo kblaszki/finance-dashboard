@@ -165,8 +165,10 @@ describe('API modules', () => {
   })
 
   it('transactionsApi calls correct endpoints', async () => {
-    await fetchTransactions(3)
-    expect(apiClient.get).toHaveBeenCalledWith('/api/accounts/3/transactions')
+    await fetchTransactions(3, { month: '2026-03' })
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/accounts/3/transactions?month=2026-03',
+    )
 
     await createTransaction(3, {
       type: 'INCOME',
@@ -296,8 +298,8 @@ describe('API modules', () => {
   })
 
   it('transfersApi calls correct endpoints', async () => {
-    await fetchTransfers()
-    expect(apiClient.get).toHaveBeenCalledWith('/api/transfers')
+    await fetchTransfers({ limit: 50 })
+    expect(apiClient.get).toHaveBeenCalledWith('/api/transfers?limit=50')
 
     await createTransfer({
       fromAccountId: 1,

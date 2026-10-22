@@ -38,6 +38,12 @@ import { CategorySelectWithCreate } from "../components/account/CategorySelectWi
 import { categoriesForLedgerType } from "../components/account/categoryScope";
 import { AccountLedgerHeader } from "../components/account/AccountLedgerHeader";
 import { TransferImportPanel } from "../components/transfers/TransferImportPanel";
+import {
+  MonthPager,
+  currentUtcMonth,
+  utcMonthFromIso,
+  type ListViewMode,
+} from "../components/ui/MonthPager";
 import { PageHeader } from "../components/ui/PageHeader";
 import { StatusBlock } from "../components/ui/StatusBlock";
 import { useAsyncData } from "../hooks/useAsyncData";
@@ -381,14 +387,30 @@ export function TransfersPage() {
   const [pendingImport, setPendingImport] =
     useState<PendingTransferImport | null>(null);
   const committingRef = useRef(false);
+  const [listMode, setListMode] = useState<ListViewMode>("month");
+  const [month, setMonth] = useState(currentUtcMonth);
+  const [transfers, setTransfers] = useState<CashTransfer[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadMoreBusy, setLoadMoreBusy] = useState(false);
 
-  const loadTransfers = useCallback(() => fetchTransfers(), []);
+  const loadTransfers = useCallback(() => {
+    if (listMode === "month") {
+      return fetchTransfers({ month });
+    }
+    return fetchTransfers({ limit: 100 });
+  }, [listMode, month]);
   const {
-    data: transfers,
+    data: transfersPage,
     error: transfersError,
     loading: transfersLoading,
     reload: reloadTransfers,
   } = useAsyncData(loadTransfers);
+
+  useEffect(() => {
+    if (!transfersPage) return;
+    setTransfers(transfersPage.items);
+    setNextCursor(listMode === "all" ? transfersPage.nextCursor : null);
+  }, [transfersPage, listMode]);
 
   const loadAccounts = useCallback(() => fetchAccounts(), []);
   const {
@@ -497,8 +519,30 @@ export function TransfersPage() {
     return parts.join(" ");
   }
 
+  async function handleLoadMore() {
+    if (!nextCursor || loadMoreBusy) return;
+    setLoadMoreBusy(true);
+    setActionError(null);
+    try {
+      const page = await fetchTransfers({
+        limit: 100,
+        cursor: nextCursor,
+      });
+      setTransfers((prev) => [...prev, ...page.items]);
+      setNextCursor(page.nextCursor);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Load more failed");
+    } finally {
+      setLoadMoreBusy(false);
+    }
+  }
+
   async function handleCreate(input: CreateTransferInput) {
-    await createTransfer(input);
+    const created = await createTransfer(input);
+    if (created.occurredAt) {
+      setListMode("month");
+      setMonth(utcMonthFromIso(created.occurredAt));
+    }
     reloadTransfers();
     refreshAccounts();
   }
@@ -671,6 +715,15 @@ export function TransfersPage() {
       )}
       {!loading && !error && (accounts?.length ?? 0) > 0 && (
         <section className="card form-section-gap">
+          <MonthPager
+            mode={listMode}
+            month={month}
+            onModeChange={setListMode}
+            onMonthChange={setMonth}
+            hasMore={nextCursor != null}
+            loadMoreBusy={loadMoreBusy}
+            onLoadMore={() => void handleLoadMore()}
+          />
           <div className="table-wrap">
             <table className="data-table ledger-table ledger-table--transfers">
               <thead>
@@ -696,7 +749,7 @@ export function TransfersPage() {
                   }}
                   onActionError={setActionError}
                 />
-                {(transfers ?? []).map((transfer) => {
+                {transfers.map((transfer) => {
                 const cross = transfer.fromCurrency !== transfer.toCurrency;
                 const fromAccount = accountById.get(transfer.fromAccountId);
                 const toAccount = accountById.get(transfer.toAccountId);

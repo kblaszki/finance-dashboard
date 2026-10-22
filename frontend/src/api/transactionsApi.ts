@@ -26,11 +26,32 @@ export type CreateCashTransactionInput = {
   tagIds?: number[];
 };
 
+export type TransactionListPage = {
+  items: CashTransaction[];
+  nextCursor: string | null;
+};
+
+export type FetchTransactionsOptions = {
+  month?: string;
+  limit?: number;
+  cursor?: string | null;
+};
+
+function transactionsQuery(options?: FetchTransactionsOptions): string {
+  const params = new URLSearchParams();
+  if (options?.month) params.set("month", options.month);
+  if (options?.limit != null) params.set("limit", String(options.limit));
+  if (options?.cursor) params.set("cursor", options.cursor);
+  const q = params.toString();
+  return q ? `?${q}` : "";
+}
+
 export async function fetchTransactions(
   accountId: number,
-): Promise<CashTransaction[]> {
-  return apiClient.get<CashTransaction[]>(
-    `/api/accounts/${accountId}/transactions`,
+  options?: FetchTransactionsOptions,
+): Promise<TransactionListPage> {
+  return apiClient.get<TransactionListPage>(
+    `/api/accounts/${accountId}/transactions${transactionsQuery(options)}`,
   );
 }
 

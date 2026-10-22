@@ -96,10 +96,10 @@ export function AccountsPage() {
     setEditDescription(account.description ?? "");
     setEditErr(null);
     setActionErr(null);
-    void fetchTransactions(account.id)
-      .then((rows) => {
+    void fetchTransactions(account.id, { limit: 1 })
+      .then((page) => {
         if (editRequest.current !== request) return;
-        setCurrencyLocked(rows.length > 0);
+        setCurrencyLocked(page.items.length > 0);
       })
       .catch(() => {
         if (editRequest.current !== request) return;

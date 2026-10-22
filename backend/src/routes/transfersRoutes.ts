@@ -32,6 +32,11 @@ import {
   resolveTransferDrafts,
   suggestAccountMatches,
 } from "../domain/transfersImport";
+import {
+  cursorWhere,
+  pageResultFromRows,
+  parseListPageQuery,
+} from "../domain/listPageQuery";
 import { badRequest, handleRouteError, notFound, parseIdParam } from "./httpSupport";
 
 async function assertOwnedTransferCategory(
@@ -97,15 +102,36 @@ export function createTransfersRouter(deps: TransfersDeps): Router {
 
   router.get("/api/transfers", requireAuth, async (req: AuthedRequest, res) => {
     try {
+      const userId = uid(req);
+      const page = parseListPageQuery(req.query);
+      const where =
+        page.mode === "month"
+          ? {
+              userId,
+              occurredAt: { gte: page.start, lt: page.end },
+            }
+          : {
+              userId,
+              ...cursorWhere(page.beforeOccurredAt, page.beforeId),
+            };
+      const take = page.mode === "month" ? undefined : page.limit + 1;
       const rows = await prisma.cashTransfer.findMany({
-        where: { userId: uid(req) },
+        where,
         include: {
           fromAccount: { select: { id: true, currency: true, name: true } },
           toAccount: { select: { id: true, currency: true, name: true } },
         },
         orderBy: [{ occurredAt: "desc" }, { id: "desc" }],
+        ...(take !== undefined ? { take } : {}),
       });
-      res.json(rows.map(transferPayload));
+      const sliced =
+        page.mode === "month"
+          ? { items: rows, nextCursor: null as string | null }
+          : pageResultFromRows(rows, page.limit);
+      res.json({
+        items: sliced.items.map(transferPayload),
+        nextCursor: sliced.nextCursor,
+      });
     } catch (e: unknown) {
       handleRouteError(res, e, "Failed to list transfers");
     }

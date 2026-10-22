@@ -126,7 +126,10 @@ describe("AccountDetailPage", () => {
     vi.mocked(fetchTags).mockResolvedValue([
       { id: 10, name: "Work", createdAt: "2026-01-01T00:00:00.000Z" },
     ]);
-    vi.mocked(fetchTransactions).mockResolvedValue([coffee]);
+    vi.mocked(fetchTransactions).mockResolvedValue({
+      items: [coffee],
+      nextCursor: null,
+    });
     vi.mocked(createTransaction).mockResolvedValue(coffee);
     vi.mocked(deleteTransaction).mockResolvedValue(undefined);
     vi.mocked(exportTransactionsCsv).mockResolvedValue(new Blob(["id\n"]));
@@ -151,7 +154,10 @@ describe("AccountDetailPage", () => {
     renderLedger();
     expect(await screen.findByText("Coffee")).toBeTruthy();
     expect(screen.getByText("Checking")).toBeTruthy();
-    expect(fetchTransactions).toHaveBeenCalledWith(1);
+    expect(fetchTransactions).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({ month: expect.any(String) }),
+    );
   });
 
   it("creates a cash transaction from the ledger create row", async () => {

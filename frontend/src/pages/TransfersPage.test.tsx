@@ -99,7 +99,10 @@ describe("TransfersPage CSV import/export", () => {
         createdAt: "2026-01-01T00:00:00.000Z",
       },
     ]);
-    vi.mocked(fetchTransfers).mockResolvedValue([]);
+    vi.mocked(fetchTransfers).mockResolvedValue({
+      items: [],
+      nextCursor: null,
+    });
     vi.mocked(exportTransfersCsv).mockResolvedValue(new Blob(["csv"]));
     vi.mocked(previewTransfersImport).mockResolvedValue({
       rowCount: 1,

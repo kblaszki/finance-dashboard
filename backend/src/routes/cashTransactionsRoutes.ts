@@ -29,6 +29,11 @@ import {
 } from "../domain/cashLedgerImportCategories";
 import { expectedCategoryLedgerType } from "../domain/categories";
 import {
+  cursorWhere,
+  pageResultFromRows,
+  parseListPageQuery,
+} from "../domain/listPageQuery";
+import {
   assertOwnedTagIds,
   loadTagIdsForTransactions,
   parseOptionalTagIds,
@@ -330,19 +335,37 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
       try {
         const accountId = parseIdParam(req.params.accountId, "accountId");
         await findOwnedAccountId(prisma, uid(req), accountId);
+        const page = parseListPageQuery(req.query);
+        const where =
+          page.mode === "month"
+            ? {
+                accountId,
+                occurredAt: { gte: page.start, lt: page.end },
+              }
+            : {
+                accountId,
+                ...cursorWhere(page.beforeOccurredAt, page.beforeId),
+              };
+        const take = page.mode === "month" ? undefined : page.limit + 1;
         const rows = await prisma.cashTransaction.findMany({
-          where: { accountId },
+          where,
           orderBy: [{ occurredAt: "desc" }, { id: "desc" }],
+          ...(take !== undefined ? { take } : {}),
         });
+        const sliced =
+          page.mode === "month"
+            ? { items: rows, nextCursor: null as string | null }
+            : pageResultFromRows(rows, page.limit);
         const tagMap = await loadTagIdsForTransactions(
           prisma,
-          rows.map((r) => r.id),
+          sliced.items.map((r) => r.id),
         );
-        res.json(
-          rows.map((row) =>
+        res.json({
+          items: sliced.items.map((row) =>
             cashTransactionPayload(row, tagMap.get(row.id) ?? []),
           ),
-        );
+          nextCursor: sliced.nextCursor,
+        });
       } catch (e: unknown) {
         handleRouteError(res, e, "Failed to list transactions");
       }

@@ -62,8 +62,32 @@ export type ImportTransfersResult = {
   skipped: number;
 };
 
-export async function fetchTransfers(): Promise<CashTransfer[]> {
-  return apiClient.get<CashTransfer[]>("/api/transfers");
+export type TransferListPage = {
+  items: CashTransfer[];
+  nextCursor: string | null;
+};
+
+export type FetchTransfersOptions = {
+  month?: string;
+  limit?: number;
+  cursor?: string | null;
+};
+
+function transfersQuery(options?: FetchTransfersOptions): string {
+  const params = new URLSearchParams();
+  if (options?.month) params.set("month", options.month);
+  if (options?.limit != null) params.set("limit", String(options.limit));
+  if (options?.cursor) params.set("cursor", options.cursor);
+  const q = params.toString();
+  return q ? `?${q}` : "";
+}
+
+export async function fetchTransfers(
+  options?: FetchTransfersOptions,
+): Promise<TransferListPage> {
+  return apiClient.get<TransferListPage>(
+    `/api/transfers${transfersQuery(options)}`,
+  );
 }
 
 export async function createTransfer(

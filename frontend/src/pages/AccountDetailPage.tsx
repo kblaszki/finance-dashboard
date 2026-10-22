@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { fetchAccount, fetchAccountBalanceHistory } from "../api/accountsApi";
 import { fetchCategories } from "../api/categoriesApi";
@@ -21,6 +21,12 @@ import { AccountLedgerHeader } from "../components/account/AccountLedgerHeader";
 import { AccountSubtitle } from "../components/account/AccountSubtitle";
 import { ImportCategoryMappingPanel } from "../components/account/ImportCategoryMappingPanel";
 import { LedgerTable } from "../components/account/LedgerTable";
+import {
+  MonthPager,
+  currentUtcMonth,
+  utcMonthFromIso,
+  type ListViewMode,
+} from "../components/ui/MonthPager";
 import { PageHeader } from "../components/ui/PageHeader";
 import { StatusBlock } from "../components/ui/StatusBlock";
 import { useAsyncData } from "../hooks/useAsyncData";
@@ -51,6 +57,11 @@ export function AccountDetailPage() {
   const accountId = Number(id);
   const { refreshAccounts } = useCurrency();
   const [historyMonths, setHistoryMonths] = useState(12);
+  const [listMode, setListMode] = useState<ListViewMode>("month");
+  const [month, setMonth] = useState(currentUtcMonth);
+  const [transactions, setTransactions] = useState<CashTransaction[]>([]);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [loadMoreBusy, setLoadMoreBusy] = useState(false);
 
   const loadAccount = useCallback(() => {
     if (!Number.isFinite(accountId) || accountId < 1) {
@@ -63,8 +74,11 @@ export function AccountDetailPage() {
     if (!Number.isFinite(accountId) || accountId < 1) {
       return Promise.reject(new Error("Invalid account"));
     }
-    return fetchTransactions(accountId);
-  }, [accountId]);
+    if (listMode === "month") {
+      return fetchTransactions(accountId, { month });
+    }
+    return fetchTransactions(accountId, { limit: 100 });
+  }, [accountId, listMode, month]);
 
   const loadHistory = useCallback(() => {
     if (!Number.isFinite(accountId) || accountId < 1) {
@@ -84,11 +98,17 @@ export function AccountDetailPage() {
   } = useAsyncData(loadAccount);
 
   const {
-    data: transactions,
+    data: txPage,
     error: txError,
     loading: txLoading,
     reload: reloadTx,
   } = useAsyncData(loadTx);
+
+  useEffect(() => {
+    if (!txPage) return;
+    setTransactions(txPage.items);
+    setNextCursor(listMode === "all" ? txPage.nextCursor : null);
+  }, [txPage, listMode]);
 
   const {
     data: history,
@@ -211,8 +231,30 @@ export function AccountDetailPage() {
     }
   }
 
+  async function handleLoadMore() {
+    if (!nextCursor || loadMoreBusy) return;
+    setLoadMoreBusy(true);
+    setActionErr(null);
+    try {
+      const page = await fetchTransactions(accountId, {
+        limit: 100,
+        cursor: nextCursor,
+      });
+      setTransactions((prev) => [...prev, ...page.items]);
+      setNextCursor(page.nextCursor);
+    } catch (err) {
+      setActionErr(err instanceof Error ? err.message : "Load more failed");
+    } finally {
+      setLoadMoreBusy(false);
+    }
+  }
+
   async function handleCreate(input: CreateCashTransactionInput) {
-    await createTransaction(accountId, input);
+    const created = await createTransaction(accountId, input);
+    if (created.occurredAt) {
+      setListMode("month");
+      setMonth(utcMonthFromIso(created.occurredAt));
+    }
     await refresh();
   }
 
@@ -313,15 +355,24 @@ export function AccountDetailPage() {
 
       <section className="card form-section-gap">
         <h2 className="section-title">Ledger</h2>
+        <MonthPager
+          mode={listMode}
+          month={month}
+          onModeChange={setListMode}
+          onMonthChange={setMonth}
+          hasMore={nextCursor != null}
+          loadMoreBusy={loadMoreBusy}
+          onLoadMore={() => void handleLoadMore()}
+        />
         <StatusBlock
-          loading={txLoading && !transactions}
+          loading={txLoading && transactions.length === 0}
           error={txError}
           loadingMessage="Loading ledger…"
         />
-        {account && (!txLoading || transactions) && (
+        {account && (!txLoading || transactions.length > 0 || !txError) && (
           <LedgerTable
             accountId={accountId}
-            transactions={transactions ?? []}
+            transactions={transactions}
             currency={account.currency}
             categories={categories ?? []}
             categoryNameById={categoryNameById}
@@ -336,14 +387,12 @@ export function AccountDetailPage() {
             onActionError={setActionErr}
           />
         )}
-        {!txLoading &&
-          !txError &&
-          transactions &&
-          transactions.length === 0 && (
-            <p className="muted empty-state">
-              No transactions yet — use the row above to add one.
-            </p>
-          )}
+        {!txLoading && !txError && transactions.length === 0 && (
+          <p className="muted empty-state">
+            No transactions in this view — use the row above to add one, or
+            switch month / All time.
+          </p>
+        )}
       </section>
     </>
   );

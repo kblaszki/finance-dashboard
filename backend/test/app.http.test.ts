@@ -665,14 +665,38 @@ test("GET /api/accounts/:id/transactions lists newest first and scopes ownership
     .get(`/api/accounts/${accountId}/transactions`)
     .set("Authorization", `Bearer ${token}`);
   assert.equal(list.status, 200);
-  assert.equal(list.body.length, 2);
-  assert.equal(list.body[0].type, "EXPENSE");
-  assert.equal(list.body[1].type, "INCOME");
+  assert.equal(list.body.items.length, 2);
+  assert.equal(list.body.items[0].type, "EXPENSE");
+  assert.equal(list.body.items[1].type, "INCOME");
 
   const forbidden = await request(app)
     .get(`/api/accounts/${accountId}/transactions`)
     .set("Authorization", `Bearer ${otherToken}`);
   assert.equal(forbidden.status, 404);
+
+  const june = await request(app)
+    .get(`/api/accounts/${accountId}/transactions?month=2024-06`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(june.status, 200);
+  assert.equal(june.body.items.length, 1);
+  assert.equal(june.body.items[0].type, "EXPENSE");
+  assert.equal(june.body.nextCursor, null);
+
+  const page = await request(app)
+    .get(`/api/accounts/${accountId}/transactions?limit=1`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(page.status, 200);
+  assert.equal(page.body.items.length, 1);
+  assert.ok(page.body.nextCursor);
+  const page2 = await request(app)
+    .get(
+      `/api/accounts/${accountId}/transactions?limit=1&cursor=${encodeURIComponent(page.body.nextCursor)}`,
+    )
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(page2.status, 200);
+  assert.equal(page2.body.items.length, 1);
+  assert.equal(page2.body.items[0].type, "INCOME");
+  assert.equal(page2.body.nextCursor, null);
 });
 
 test("GET /api/accounts/:id/transactions/export returns CSV with auth and ownership", async () => {
@@ -881,9 +905,9 @@ test("POST /api/accounts/:id/transactions/import preview and mapped import", asy
     .get(`/api/accounts/${accountId}/transactions`)
     .set("Authorization", `Bearer ${token}`);
   assert.equal(listed.status, 200);
-  assert.equal(listed.body.length, 3);
+  assert.equal(listed.body.items.length, 3);
   const lunch = (
-    listed.body as Array<{ description: string | null; categoryId: number | null }>
+    listed.body.items as Array<{ description: string | null; categoryId: number | null }>
   ).find((t) => t.description === "Lunch");
   assert.equal(lunch!.categoryId, food!.id);
 
@@ -1107,7 +1131,7 @@ test("DELETE /api/accounts/:id/transactions/:txId reverses cashBalance", async (
   const list = await request(app)
     .get(`/api/accounts/${accountId}/transactions`)
     .set("Authorization", `Bearer ${token}`);
-  assert.equal(list.body.length, 0);
+  assert.equal(list.body.items.length, 0);
 });
 
 test("PATCH /api/accounts/:id/transactions/:txId adjusts cashBalance", async () => {
@@ -1498,7 +1522,7 @@ test("cash transactions accept optional categoryId and null on category delete",
     .get(`/api/accounts/${accountId}/transactions`)
     .set("Authorization", `Bearer ${token}`);
   assert.equal(list.status, 200);
-  const tagged = (list.body as Array<{ id: number; categoryId: number | null }>).find(
+  const tagged = (list.body.items as Array<{ id: number; categoryId: number | null }>).find(
     (t) => t.id === withCat.body.id,
   );
   assert.equal(tagged?.categoryId, null);
@@ -1598,7 +1622,7 @@ test("tags CRUD and cash transaction tagIds", async () => {
   const list = await request(app)
     .get(`/api/accounts/${accountId}/transactions`)
     .set("Authorization", `Bearer ${token}`);
-  const row = (list.body as Array<{ id: number; tagIds: number[] }>).find(
+  const row = (list.body.items as Array<{ id: number; tagIds: number[] }>).find(
     (t) => t.id === withTags.body.id,
   );
   assert.deepEqual(row?.tagIds, []);
@@ -2251,11 +2275,11 @@ test("POST /api/transfers same currency updates both balances", async () => {
   const toTx = await request(app)
     .get(`/api/accounts/${toId}/transactions`)
     .set("Authorization", `Bearer ${token}`);
-  assert.equal(fromTx.body.length, 1);
-  assert.equal(fromTx.body[0].type, "TRANSFER_OUT");
-  assert.equal(fromTx.body[0].transferId, created.body.id);
-  assert.equal(toTx.body[0].type, "TRANSFER_IN");
-  assert.equal(toTx.body[0].transferId, created.body.id);
+  assert.equal(fromTx.body.items.length, 1);
+  assert.equal(fromTx.body.items[0].type, "TRANSFER_OUT");
+  assert.equal(fromTx.body.items[0].transferId, created.body.id);
+  assert.equal(toTx.body.items[0].type, "TRANSFER_IN");
+  assert.equal(toTx.body.items[0].transferId, created.body.id);
 });
 
 test("POST/PATCH /api/transfers optional TRANSFER category on both legs", async () => {
@@ -2315,8 +2339,8 @@ test("POST/PATCH /api/transfers optional TRANSFER category on both legs", async 
   const toTx = await request(app)
     .get(`/api/accounts/${to.body.id}/transactions`)
     .set("Authorization", `Bearer ${token}`);
-  assert.equal(fromTx.body[0].categoryId, transferCat!.id);
-  assert.equal(toTx.body[0].categoryId, transferCat!.id);
+  assert.equal(fromTx.body.items[0].categoryId, transferCat!.id);
+  assert.equal(toTx.body.items[0].categoryId, transferCat!.id);
 
   const cleared = await request(app)
     .patch(`/api/transfers/${created.body.id}`)
@@ -2328,7 +2352,7 @@ test("POST/PATCH /api/transfers optional TRANSFER category on both legs", async 
   const fromTx2 = await request(app)
     .get(`/api/accounts/${from.body.id}/transactions`)
     .set("Authorization", `Bearer ${token}`);
-  assert.equal(fromTx2.body[0].categoryId, null);
+  assert.equal(fromTx2.body.items[0].categoryId, null);
 });
 
 test("POST /api/transfers cross currency requires amountTo and returns fxRate", async () => {
@@ -2429,7 +2453,7 @@ test("PATCH/DELETE /api/transfers adjust balances; leg endpoints reject edits", 
   const legsA = await request(app)
     .get(`/api/accounts/${aId}/transactions`)
     .set("Authorization", `Bearer ${token}`);
-  const legId = legsA.body[0].id as number;
+  const legId = legsA.body.items[0].id as number;
 
   const patchLeg = await request(app)
     .patch(`/api/accounts/${aId}/transactions/${legId}`)
@@ -2740,7 +2764,9 @@ test("GET/POST /api/transfers export import preview with account mapping", async
     .get(`/api/accounts/${bFrom.body.id}/transactions`)
     .set("Authorization", `Bearer ${tokenB}`);
   assert.ok(
-    (legs.body as Array<{ type: string }>).some((t) => t.type === "TRANSFER_OUT"),
+    (legs.body.items as Array<{ type: string }>).some(
+      (t) => t.type === "TRANSFER_OUT",
+    ),
   );
 
   const rePreview = await request(app)
