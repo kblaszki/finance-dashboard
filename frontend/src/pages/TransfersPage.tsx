@@ -46,6 +46,7 @@ import {
   type ListViewMode,
 } from "../components/ui/MonthPager";
 import { PageHeader } from "../components/ui/PageHeader";
+import { SortableTh } from "../components/ui/SortableTh";
 import { StatusBlock } from "../components/ui/StatusBlock";
 import { useAsyncData } from "../hooks/useAsyncData";
 import { useCurrency } from "../state/currency";
@@ -56,6 +57,13 @@ import {
   isTransferFilterActive,
   type TransferFilterState,
 } from "../utils/listFilters";
+import {
+  sortBy,
+  toggleSort,
+  type SortState,
+} from "../utils/tableSort";
+
+type TransferSortKey = "occurredAt" | "amountFrom" | "amountTo" | "description";
 
 type PendingTransferImport = {
   csv: string;
@@ -116,17 +124,22 @@ function TransferCreateRow(props: {
   const [createBusy, setCreateBusy] = useState(false);
   const [focusNonce, setFocusNonce] = useState(0);
   const dateRef = useRef<HTMLInputElement | null>(null);
+  const {
+    accounts,
+    seedFromAccountId,
+    onSeedConsumed,
+  } = props;
 
   useEffect(() => {
-    if (props.seedFromAccountId == null) return;
-    if (props.accounts.length === 0) return;
-    const match = props.accounts.some((a) => a.id === props.seedFromAccountId);
+    if (seedFromAccountId == null) return;
+    if (accounts.length === 0) return;
+    const match = accounts.some((a) => a.id === seedFromAccountId);
     if (match) {
-      setFromAccountId(String(props.seedFromAccountId));
+      setFromAccountId(String(seedFromAccountId));
       setFocusNonce((n) => n + 1);
     }
-    props.onSeedConsumed();
-  }, [props.seedFromAccountId, props.accounts, props.onSeedConsumed]);
+    onSeedConsumed();
+  }, [seedFromAccountId, accounts, onSeedConsumed]);
 
   const fromCurrency = currencyForAccount(props.accounts, fromAccountId);
   const toCurrency = currencyForAccount(props.accounts, toAccountId);
@@ -454,9 +467,20 @@ export function TransfersPage() {
     setNextCursor(listMode === "all" ? transfersPage.nextCursor : null);
   }, [transfersPage, listMode]);
 
+  const [sort, setSort] = useState<SortState<TransferSortKey> | null>(null);
   const filteredTransfers = useMemo(
     () => filterTransferRows(transfers, filters),
     [transfers, filters],
+  );
+  const sortedTransfers = useMemo(
+    () =>
+      sortBy(filteredTransfers, sort, {
+        occurredAt: (t) => t.occurredAt,
+        amountFrom: (t) => t.amountFrom,
+        amountTo: (t) => t.amountTo,
+        description: (t) => t.description ?? "",
+      }),
+    [filteredTransfers, sort],
   );
   const filtersActive = isTransferFilterActive(filters);
 
@@ -796,14 +820,38 @@ export function TransfersPage() {
             <table className="data-table ledger-table ledger-table--transfers">
               <thead>
                 <tr>
-                  <th className="col-date">Date</th>
+                  <SortableTh
+                    label="Date"
+                    sortKey="occurredAt"
+                    sort={sort}
+                    onToggle={(key) => setSort((prev) => toggleSort(prev, key))}
+                    className="col-date"
+                  />
                   <th className="col-text">From</th>
                   <th className="col-text">To</th>
-                  <th className="num">Amount from</th>
-                  <th className="num">Amount to</th>
+                  <SortableTh
+                    label="Amount from"
+                    sortKey="amountFrom"
+                    sort={sort}
+                    onToggle={(key) => setSort((prev) => toggleSort(prev, key))}
+                    className="num"
+                  />
+                  <SortableTh
+                    label="Amount to"
+                    sortKey="amountTo"
+                    sort={sort}
+                    onToggle={(key) => setSort((prev) => toggleSort(prev, key))}
+                    className="num"
+                  />
                   <th className="num">FX rate</th>
                   <th className="col-text">Category</th>
-                  <th className="col-text">Description</th>
+                  <SortableTh
+                    label="Description"
+                    sortKey="description"
+                    sort={sort}
+                    onToggle={(key) => setSort((prev) => toggleSort(prev, key))}
+                    className="col-text"
+                  />
                   <th className="col-actions">Actions</th>
                 </tr>
               </thead>
@@ -819,7 +867,7 @@ export function TransfersPage() {
                   }}
                   onActionError={setActionError}
                 />
-                {filteredTransfers.map((transfer) => {
+                {sortedTransfers.map((transfer) => {
                 const cross = transfer.fromCurrency !== transfer.toCurrency;
                 const fromAccount = accountById.get(transfer.fromAccountId);
                 const toAccount = accountById.get(transfer.toAccountId);

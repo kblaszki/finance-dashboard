@@ -8,7 +8,13 @@ import {
   type CashTxType,
   type CreateCashTransactionInput,
 } from "../../api/transactionsApi";
+import { SortableTh } from "../ui/SortableTh";
 import { formatMoney } from "../../utils/format";
+import {
+  sortBy,
+  toggleSort,
+  type SortState,
+} from "../../utils/tableSort";
 import { CategorySelectWithCreate } from "./CategorySelectWithCreate";
 import { categoryIdsForLedgerType } from "./categoryScope";
 import {
@@ -17,6 +23,8 @@ import {
 } from "./LedgerCreateRow";
 import { LedgerTagField } from "./LedgerTagField";
 import { dateInputToIso, formatOccurredAt, toDateLocalValue } from "./occurredAt";
+
+type LedgerSortKey = "occurredAt" | "amount" | "description";
 
 function isTransferLeg(tx: CashTransaction): boolean {
   return tx.transferId != null;
@@ -150,10 +158,21 @@ export function LedgerTable(props: {
   onActionError: (message: string | null) => void;
 }) {
   const seedType = normalizeCashTxType(props.transactions[0]?.type);
+  const [sort, setSort] = useState<SortState<LedgerSortKey> | null>(null);
   const [editing, setEditing] = useState<EditingState | null>(null);
   const [draft, setDraft] = useState("");
   const [editBusy, setEditBusy] = useState(false);
   const committingRef = useRef(false);
+
+  const sortedTransactions = useMemo(
+    () =>
+      sortBy(props.transactions, sort, {
+        occurredAt: (tx) => tx.occurredAt,
+        amount: (tx) => tx.amount,
+        description: (tx) => tx.description ?? "",
+      }),
+    [props.transactions, sort],
+  );
 
   function startEdit(tx: CashTransaction, field: EditableField) {
     if (editBusy || isTransferLeg(tx)) return;
@@ -231,12 +250,30 @@ export function LedgerTable(props: {
       <table className="data-table ledger-table ledger-table--account">
         <thead>
           <tr>
-            <th className="col-date">Date</th>
+            <SortableTh
+              label="Date"
+              sortKey="occurredAt"
+              sort={sort}
+              onToggle={(key) => setSort((prev) => toggleSort(prev, key))}
+              className="col-date"
+            />
             <th className="col-status">Type</th>
-            <th className="num">Amount</th>
+            <SortableTh
+              label="Amount"
+              sortKey="amount"
+              sort={sort}
+              onToggle={(key) => setSort((prev) => toggleSort(prev, key))}
+              className="num"
+            />
             <th className="col-text">Category</th>
             <th className="col-text">Tags</th>
-            <th className="col-text">Description</th>
+            <SortableTh
+              label="Description"
+              sortKey="description"
+              sort={sort}
+              onToggle={(key) => setSort((prev) => toggleSort(prev, key))}
+              className="col-text"
+            />
             <th className="col-actions">Actions</th>
           </tr>
         </thead>
@@ -250,7 +287,7 @@ export function LedgerTable(props: {
             onCategoryCreated={props.onCategoryCreated}
             onActionError={props.onActionError}
           />
-          {props.transactions.map((tx) => (
+          {sortedTransactions.map((tx) => (
             <LedgerRow
               key={tx.id}
               tx={tx}

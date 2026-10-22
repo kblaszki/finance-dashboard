@@ -11,9 +11,17 @@ import {
 } from "../api/accountsApi";
 import { fetchTransactions } from "../api/transactionsApi";
 import { PageHeader } from "../components/ui/PageHeader";
+import { SortableTh } from "../components/ui/SortableTh";
 import { StatusBlock } from "../components/ui/StatusBlock";
 import { useCurrency } from "../state/currency";
 import { formatMoney } from "../utils/format";
+import {
+  sortBy,
+  toggleSort,
+  type SortState,
+} from "../utils/tableSort";
+
+type AccountSortKey = "name" | "balance";
 
 export type AccountTypeFilter = "ALL" | AccountType;
 
@@ -144,9 +152,18 @@ export function AccountsPage() {
     }
   }
 
+  const [sort, setSort] = useState<SortState<AccountSortKey> | null>(null);
   const filteredAccounts = useMemo(
     () => filterAccountsByType(accounts ?? [], typeFilter),
     [accounts, typeFilter],
+  );
+  const sortedAccounts = useMemo(
+    () =>
+      sortBy(filteredAccounts, sort, {
+        name: (a) => a.name,
+        balance: (a) => a.cashBalance,
+      }),
+    [filteredAccounts, sort],
   );
 
   return (
@@ -275,14 +292,25 @@ export function AccountsPage() {
             <table className="data-table">
               <thead>
                 <tr>
-                  <th>Name</th>
+                  <SortableTh
+                    label="Name"
+                    sortKey="name"
+                    sort={sort}
+                    onToggle={(key) => setSort((prev) => toggleSort(prev, key))}
+                  />
                   <th>Type</th>
-                  <th className="num">Balance</th>
+                  <SortableTh
+                    label="Balance"
+                    sortKey="balance"
+                    sort={sort}
+                    onToggle={(key) => setSort((prev) => toggleSort(prev, key))}
+                    className="num"
+                  />
                   <th className="col-actions">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredAccounts.map((account) => (
+                {sortedAccounts.map((account) => (
                   <tr key={account.id}>
                     <td>
                       {editingId === account.id ? (

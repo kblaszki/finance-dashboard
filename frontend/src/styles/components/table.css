@@ -14,6 +14,36 @@
   vertical-align: middle;
 }
 
+.th-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  cursor: pointer;
+  text-align: inherit;
+}
+
+.th-sort:hover {
+  color: var(--color-accent);
+}
+
+.th-sort:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm);
+}
+
+.data-table :is(.col-num, .num) .th-sort {
+  width: 100%;
+  justify-content: flex-end;
+}
+
 /* Type-based alignment: numbers right, text/date/status left, icons center */
 .data-table :is(.col-num, .num) {
   text-align: right;

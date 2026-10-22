@@ -3,6 +3,7 @@ import {
   type KeyboardEvent,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -14,8 +15,14 @@ import {
   type Tag,
 } from "../api/tagsApi";
 import { PageHeader } from "../components/ui/PageHeader";
+import { SortableTh } from "../components/ui/SortableTh";
 import { StatusBlock } from "../components/ui/StatusBlock";
 import { useAsyncData } from "../hooks/useAsyncData";
+import {
+  sortBy,
+  toggleSort,
+  type SortState,
+} from "../utils/tableSort";
 
 type EditingState = { tagId: number };
 
@@ -223,7 +230,17 @@ export function TagsPage() {
     }
   }
 
-  const rows = [...(tags ?? [])].sort((a, b) => a.name.localeCompare(b.name));
+  const [sort, setSort] = useState<SortState<"name"> | null>({
+    key: "name",
+    dir: "asc",
+  });
+  const rows = useMemo(
+    () =>
+      sortBy(tags ?? [], sort, {
+        name: (t: Tag) => t.name,
+      }),
+    [tags, sort],
+  );
 
   return (
     <>
@@ -253,7 +270,13 @@ export function TagsPage() {
             <table className="data-table data-table--tags">
               <thead>
                 <tr>
-                  <th className="col-text">Name</th>
+                  <SortableTh
+                    label="Name"
+                    sortKey="name"
+                    sort={sort}
+                    onToggle={(key) => setSort((prev) => toggleSort(prev, key))}
+                    className="col-text"
+                  />
                   <th className="col-actions">Actions</th>
                 </tr>
               </thead>

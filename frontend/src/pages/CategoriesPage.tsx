@@ -22,8 +22,14 @@ import {
 } from "../api/categoriesApi";
 import { AccountLedgerHeader } from "../components/account/AccountLedgerHeader";
 import { PageHeader } from "../components/ui/PageHeader";
+import { SortableTh } from "../components/ui/SortableTh";
 import { StatusBlock } from "../components/ui/StatusBlock";
 import { useAsyncData } from "../hooks/useAsyncData";
+import {
+  sortBy,
+  toggleSort,
+  type SortState,
+} from "../utils/tableSort";
 
 function parseLedgerTypeParam(value: string | null): CategoryLedgerType | null {
   const raw = String(value ?? "").trim().toUpperCase();
@@ -268,12 +274,16 @@ export function CategoriesPage() {
   const [pendingImport, setPendingImport] =
     useState<PendingCategoriesImport | null>(null);
   const committingRef = useRef(false);
+  const [sort, setSort] = useState<SortState<"name"> | null>(null);
 
   const nameById = new Map((categories ?? []).map((c) => [c.id, c.name]));
 
   function treeForType(ledgerType: CategoryLedgerType) {
     if (!categories) return [];
-    return flattenCategoryTree(categories.filter((c) => c.ledgerType === ledgerType));
+    const flat = flattenCategoryTree(
+      categories.filter((c) => c.ledgerType === ledgerType),
+    );
+    return sortBy(flat, sort, { name: (c) => c.name });
   }
 
   async function handleCreate(input: {
@@ -527,7 +537,14 @@ export function CategoriesPage() {
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th>Name</th>
+                      <SortableTh
+                        label="Name"
+                        sortKey="name"
+                        sort={sort}
+                        onToggle={(key) =>
+                          setSort((prev) => toggleSort(prev, key))
+                        }
+                      />
                       <th>Parent</th>
                       <th className="col-actions">Actions</th>
                     </tr>
