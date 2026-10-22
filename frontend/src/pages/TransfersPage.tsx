@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { Link } from "react-router-dom";
 import { fetchAccounts, type Account } from "../api/accountsApi";
 import {
   fetchCategories,
@@ -662,7 +663,14 @@ export function TransfersPage() {
         empty={false}
         loadingMessage="Loading transfers…"
       />
-      {!loading && !error && (
+      {!loading && !error && (accounts?.length ?? 0) === 0 && (
+        <p className="empty-state" role="status">
+          No accounts yet.{" "}
+          <Link to="/accounts">Create an account</Link> before recording
+          transfers.
+        </p>
+      )}
+      {!loading && !error && (accounts?.length ?? 0) > 0 && (
         <section className="card form-section-gap">
           <div className="table-wrap">
             <table className="data-table ledger-table ledger-table--transfers">

@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 /**
  * Shared loading / error / empty rendering. Renders nothing when all clear,
  * so pages can do: `<StatusBlock … /> || <Content />` style branching.
@@ -7,7 +9,7 @@ export function StatusBlock(props: {
   error?: string | null;
   empty?: boolean;
   loadingMessage?: string;
-  emptyMessage?: string;
+  emptyMessage?: ReactNode;
 }) {
   if (props.loading) {
     return (

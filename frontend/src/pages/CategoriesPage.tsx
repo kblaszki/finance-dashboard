@@ -481,6 +481,15 @@ export function CategoriesPage() {
 
       {!loading &&
         !error &&
+        (categories?.length ?? 0) === 0 && (
+          <p className="empty-state" role="status">
+            No categories yet — use the create rows below (Income / Expense /
+            Transfers sections).
+          </p>
+        )}
+
+      {!loading &&
+        !error &&
         SECTIONS.map(({ ledgerType, title }) => {
           const rows = treeForType(ledgerType);
           return (

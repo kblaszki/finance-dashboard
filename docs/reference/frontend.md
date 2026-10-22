@@ -27,7 +27,7 @@ Hub: [docs/README.md](../README.md).
 | `/` | Guest → Landing; authed → redirect `/dashboard` | `LandingPage` / navigate |
 | `/login` | Guest only | `LoginPage` (in `AuthSwapShell`) |
 | `/register` | Guest only (when `allowRegister`) | `RegisterPage` (in `AuthSwapShell`) |
-| `/dashboard` | Protected | `DashboardPage` (KPIs including liabilities when > 0, net-worth donut, 12m cashflow, account mix) |
+| `/dashboard` | Protected | `DashboardPage` (setup checklist when workspace incomplete; KPIs including liabilities when > 0, net-worth donut, 12m cashflow, account mix) |
 | `/home` | Protected | Redirect → `/dashboard` |
 | `/accounts` | Protected | `AccountsPage` (multi-type create/list/edit/delete; type filter All + allow-listed types; currency on edit is read-only once the ledger has rows) |
 | `/accounts/:id` | Protected | `AccountDetailPage` (balance history chart at top; cash ledger with inline create row + list/delete/CSV; CSV import opens `ImportCategoryMappingPanel` when the file uses categories). Transfer legs (`transferId` set) are read-only with `TRANSFER IN/OUT` badges and a link to `/transfers`. Ledger Tags column uses multi-select for `tagIds` (cash rows only). Ledger pieces live in `components/account/`: `AccountBalanceChart`, `AccountLedgerHeader`, `AccountSubtitle`, `ImportCategoryMappingPanel`, `LedgerTable`, `LedgerCreateRow`, `occurredAt.ts`, `categoryScope.ts` (`categoryIdsForLedgerType`) |
@@ -39,7 +39,7 @@ Hub: [docs/README.md](../README.md).
 
 Shell: `AppShell` — fixed sidebar (brand, icon nav, user + logout, theme toggle) + topbar (one page `h1`, global `CurrencySelect`) + content. A skip link targets `#main-content`. The sidebar becomes an off-canvas drawer (`.shell--drawer-mode`) when the viewport cannot fit the sticky sidebar beside the widest table’s readable minimum (`shellDrawerMode.ts`); pages without tables fall back to ≤900px. Open from the topbar menu button (backdrop / Escape / route change close it). Gate: `ProtectedRoute`. `ErrorBoundary` wraps the shell outlet and the guest auth outlet. Page titles inside the shell are `h2`.
 
-Shared UI: `components/ui/{PageHeader,KpiCard,ChartCard,StatusBlock,CurrencySelect}.tsx`. `StatusBlock` uses `role="alert"` for errors and `role="status"` for loading and empty states.
+Shared UI: `components/ui/{PageHeader,KpiCard,ChartCard,StatusBlock,CurrencySelect,SetupChecklist}.tsx`. `StatusBlock` uses `role="alert"` for errors and `role="status"` for loading and empty states. `SetupChecklist` guides empty workspaces (account → categories → first transaction).
 
 Global currency: `state/currency.tsx` (`CurrencyProvider`) fetches accounts once, exposes `{ accounts, currencies, currency, setCurrency, refreshAccounts }`, persists selection under `localStorage` key `finance-dashboard:currency`.
 

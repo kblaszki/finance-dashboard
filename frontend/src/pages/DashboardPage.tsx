@@ -13,6 +13,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { fetchCategories } from "../api/categoriesApi";
 import {
   fetchCashflowHistory,
   fetchCashflowRolling12m,
@@ -24,6 +25,11 @@ import {
 } from "../api/statisticsApi";
 import { ChartCard } from "../components/ui/ChartCard";
 import { KpiCard } from "../components/ui/KpiCard";
+import {
+  SetupChecklist,
+  hasCashActivityFromAccounts,
+  isSetupComplete,
+} from "../components/ui/SetupChecklist";
 import { StatusBlock } from "../components/ui/StatusBlock";
 import { useAsyncData } from "../hooks/useAsyncData";
 import { useCurrency } from "../state/currency";
@@ -85,10 +91,23 @@ export function DashboardPage() {
     loading: historyLoading,
   } = useAsyncData(loadHistory);
 
+  const loadCategories = useCallback(() => fetchCategories(), []);
+  const {
+    data: categories,
+    error: categoriesError,
+    loading: categoriesLoading,
+  } = useAsyncData(loadCategories);
+
   const loading =
     accountsLoading ||
+    categoriesLoading ||
     (!!currency && (netWorthLoading || rollingLoading || historyLoading));
-  const error = accountsError || netWorthError || rollingError || historyError;
+  const error =
+    accountsError ||
+    categoriesError ||
+    netWorthError ||
+    rollingError ||
+    historyError;
 
   const mixAccounts = useMemo(() => {
     if (!accounts || !currency) return [];
@@ -97,15 +116,43 @@ export function DashboardPage() {
       .sort((a, b) => b.totalBalance - a.totalBalance);
   }, [accounts, currency]);
 
-  if (loading || error || currencies.length === 0) {
+  const hasAccounts = (accounts?.length ?? 0) > 0;
+  const hasCategories = (categories ?? []).some(
+    (c) => c.ledgerType === "INCOME" || c.ledgerType === "EXPENSE",
+  );
+  const hasCashActivity = hasCashActivityFromAccounts(accounts ?? []);
+  const setupDone = isSetupComplete({
+    hasAccounts,
+    hasCategories,
+    hasCashActivity,
+  });
+  const firstAccountId = accounts?.[0]?.id ?? null;
+
+  if (loading || error) {
     return (
       <StatusBlock
         loading={loading}
         error={error}
-        empty={currencies.length === 0}
         loadingMessage="Loading dashboard…"
-        emptyMessage="Add an account to see net worth, cashflow, and account mix."
       />
+    );
+  }
+
+  if (currencies.length === 0 || !setupDone) {
+    return (
+      <>
+        <SetupChecklist
+          hasAccounts={hasAccounts}
+          hasCategories={hasCategories}
+          hasCashActivity={hasCashActivity}
+          firstAccountId={firstAccountId}
+        />
+        {currencies.length === 0 ? (
+          <p className="empty-state muted" role="status">
+            Add an account to see net worth, cashflow, and account mix.
+          </p>
+        ) : null}
+      </>
     );
   }
 

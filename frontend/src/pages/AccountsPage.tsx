@@ -236,7 +236,18 @@ export function AccountsPage() {
           error={accountsError}
           empty={!accountsLoading && !accountsError && (accounts?.length ?? 0) === 0}
           loadingMessage="Loading accounts…"
-          emptyMessage="No accounts yet."
+          emptyMessage={
+            <>
+              No accounts yet.{" "}
+              <button
+                type="button"
+                className="link-button"
+                onClick={() => setShowCreate(true)}
+              >
+                Create your first account
+              </button>
+            </>
+          }
         />
         {!accountsLoading && accounts && accounts.length > 0 && (
           <>

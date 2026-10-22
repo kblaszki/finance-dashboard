@@ -240,6 +240,13 @@ export function TagsPage() {
         loadingMessage="Loading tags…"
       />
 
+      {!loading && !error && rows.length === 0 && (
+        <p className="empty-state" role="status">
+          No tags yet — add one in the row below (optional labels for ledger
+          rows).
+        </p>
+      )}
+
       {!loading && !error && (
         <section className="card form-section-gap">
           <div className="table-wrap">
