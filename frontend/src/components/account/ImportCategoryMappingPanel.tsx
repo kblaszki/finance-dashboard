@@ -175,6 +175,7 @@ export function ImportCategoryMappingPanel(props: Props) {
                   <td className="num">{cat.rowCount}</td>
                   <td>
                     <select
+                      className="field-control"
                       aria-label={`Mapping for ${cat.path}`}
                       value={decisionSelectValue(decision)}
                       onChange={(e) => setDecision(cat, e.target.value)}
@@ -205,7 +206,12 @@ export function ImportCategoryMappingPanel(props: Props) {
         >
           {busy ? "Importing…" : "Import"}
         </button>{" "}
-        <button type="button" disabled={busy} onClick={onCancel}>
+        <button
+          type="button"
+          className="btn-secondary"
+          disabled={busy}
+          onClick={onCancel}
+        >
           Cancel
         </button>
       </p>

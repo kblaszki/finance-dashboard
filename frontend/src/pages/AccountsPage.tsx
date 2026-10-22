@@ -271,6 +271,7 @@ export function AccountsPage() {
             <label className="accounts-type-filter">
               Type
               <select
+                className="field-control"
                 aria-label="Filter by type"
                 value={typeFilter}
                 onChange={(e) =>

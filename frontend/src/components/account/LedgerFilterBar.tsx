@@ -30,6 +30,7 @@ export function LedgerFilterBar(props: {
         From
         <input
           type="date"
+          className="field-control"
           value={props.filters.fromDate}
           onChange={(e) => patch({ fromDate: e.target.value })}
         />
@@ -38,6 +39,7 @@ export function LedgerFilterBar(props: {
         To
         <input
           type="date"
+          className="field-control"
           value={props.filters.toDate}
           onChange={(e) => patch({ toDate: e.target.value })}
         />
@@ -45,6 +47,7 @@ export function LedgerFilterBar(props: {
       <label>
         Type
         <select
+          className="field-control"
           value={props.filters.type}
           onChange={(e) => patch({ type: e.target.value })}
         >
@@ -58,6 +61,7 @@ export function LedgerFilterBar(props: {
       <label>
         Category
         <select
+          className="field-control"
           value={props.filters.categoryId}
           onChange={(e) => patch({ categoryId: e.target.value })}
         >
@@ -73,6 +77,7 @@ export function LedgerFilterBar(props: {
       <label>
         Tag
         <select
+          className="field-control"
           value={props.filters.tagId}
           onChange={(e) => patch({ tagId: e.target.value })}
         >
@@ -88,6 +93,7 @@ export function LedgerFilterBar(props: {
         Description
         <input
           type="search"
+          className="field-control"
           value={props.filters.description}
           onChange={(e) => patch({ description: e.target.value })}
           placeholder="Search…"

@@ -132,6 +132,7 @@ export function TransferImportPanel(props: Props) {
                     <td className="num">{account.rowCount}</td>
                     <td>
                       <select
+                        className="field-control"
                         aria-label={`Mapping for ${account.name} ${account.currency}`}
                         value={selections[key] === "" ? "" : String(selections[key])}
                         disabled={busy}
@@ -181,6 +182,7 @@ export function TransferImportPanel(props: Props) {
                     <td>
                       <input
                         type="checkbox"
+                        className="field-control"
                         aria-label={`Include row ${row.row}`}
                         checked={isIncluded(row)}
                         disabled={busy}
@@ -240,7 +242,12 @@ export function TransferImportPanel(props: Props) {
               : `Import ${importCount} transfer${importCount === 1 ? "" : "s"}`}
           </button>
         )}{" "}
-        <button type="button" disabled={busy} onClick={onCancel}>
+        <button
+          type="button"
+          className="btn-secondary"
+          disabled={busy}
+          onClick={onCancel}
+        >
           Cancel
         </button>
       </p>

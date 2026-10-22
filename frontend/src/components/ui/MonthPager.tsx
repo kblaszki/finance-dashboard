@@ -64,7 +64,7 @@ export function MonthPager(props: {
           </button>
           <input
             type="month"
-            className="ledger-cell-input"
+            className="field-control field-control--compact"
             value={props.month}
             onChange={(e) => props.onMonthChange(e.target.value)}
             aria-label="Month"

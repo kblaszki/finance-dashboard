@@ -24,6 +24,7 @@ export function TransferFilterBar(props: {
         From date
         <input
           type="date"
+          className="field-control"
           value={props.filters.fromDate}
           onChange={(e) => patch({ fromDate: e.target.value })}
         />
@@ -32,6 +33,7 @@ export function TransferFilterBar(props: {
         To date
         <input
           type="date"
+          className="field-control"
           value={props.filters.toDate}
           onChange={(e) => patch({ toDate: e.target.value })}
         />
@@ -39,6 +41,7 @@ export function TransferFilterBar(props: {
       <label>
         From account
         <select
+          className="field-control"
           value={props.filters.fromAccountId}
           onChange={(e) => patch({ fromAccountId: e.target.value })}
         >
@@ -53,6 +56,7 @@ export function TransferFilterBar(props: {
       <label>
         To account
         <select
+          className="field-control"
           value={props.filters.toAccountId}
           onChange={(e) => patch({ toAccountId: e.target.value })}
         >
@@ -67,6 +71,7 @@ export function TransferFilterBar(props: {
       <label>
         Category
         <select
+          className="field-control"
           value={props.filters.categoryId}
           onChange={(e) => patch({ categoryId: e.target.value })}
         >
@@ -83,6 +88,7 @@ export function TransferFilterBar(props: {
         Description
         <input
           type="search"
+          className="field-control"
           value={props.filters.description}
           onChange={(e) => patch({ description: e.target.value })}
           placeholder="Search…"

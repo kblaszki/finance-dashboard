@@ -33,6 +33,7 @@ export function AccountBalanceChart(props: {
         <label>
           Range{" "}
           <select
+            className="field-control field-control--compact"
             value={months}
             onChange={(e) => onMonthsChange(Number(e.target.value))}
             aria-label="Balance history range"
