@@ -31,10 +31,11 @@ export function CategorySelectWithCreate(props: {
   const [busy, setBusy] = useState(false);
   const [createdLocal, setCreatedLocal] = useState<Category | null>(null);
   const nameRef = useRef<HTMLInputElement | null>(null);
+  const suppressBlurRef = useRef(false);
 
   useEffect(() => {
     if (!creating) return;
-    nameRef.current?.focus();
+    nameRef.current?.focus({ preventScroll: true });
   }, [creating]);
 
   const options = useMemo(() => {
@@ -49,12 +50,21 @@ export function CategorySelectWithCreate(props: {
 
   function onSelectChange(next: string) {
     if (next === NEW_CATEGORY_VALUE) {
+      suppressBlurRef.current = true;
       props.onError(null);
       setCreating(true);
       setName("");
       return;
     }
     props.onChange(next);
+  }
+
+  function handleSelectBlur() {
+    if (suppressBlurRef.current) {
+      suppressBlurRef.current = false;
+      return;
+    }
+    props.onBlur?.();
   }
 
   function cancelCreate() {
@@ -140,7 +150,7 @@ export function CategorySelectWithCreate(props: {
       autoFocus={props.autoFocus}
       onChange={(e) => onSelectChange(e.target.value)}
       onKeyDown={props.onKeyDown}
-      onBlur={props.onBlur}
+      onBlur={handleSelectBlur}
       aria-label={props["aria-label"] ?? "Category"}
     >
       <option value="">—</option>

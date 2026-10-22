@@ -61,4 +61,31 @@ describe("CategorySelectWithCreate", () => {
       expect(onChange).toHaveBeenCalledWith("42");
     });
   });
+
+  it("does not forward blur when opening + New category…", () => {
+    const onBlur = vi.fn();
+    const onChange = vi.fn();
+    const onCategoryCreated = vi.fn();
+    const onError = vi.fn();
+
+    render(
+      <CategorySelectWithCreate
+        value=""
+        options={[]}
+        ledgerType="EXPENSE"
+        onChange={onChange}
+        onCategoryCreated={onCategoryCreated}
+        onError={onError}
+        onBlur={onBlur}
+        aria-label="Edit category"
+      />,
+    );
+
+    const select = screen.getByLabelText("Edit category");
+    fireEvent.change(select, { target: { value: "__new__" } });
+    fireEvent.blur(select);
+
+    expect(screen.getByLabelText("New category name")).toBeTruthy();
+    expect(onBlur).not.toHaveBeenCalled();
+  });
 });
