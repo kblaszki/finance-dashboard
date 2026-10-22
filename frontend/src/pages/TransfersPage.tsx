@@ -686,7 +686,7 @@ export function TransfersPage() {
     <>
       <PageHeader
         title="Transfers"
-        subtitle="Move cash between your accounts. Ledger legs stay read-only."
+        subtitle="Move cash between your accounts. Ledger legs stay read-only. Double-click a cell to edit."
         actions={
           <AccountLedgerHeader
             exportBusy={exportBusy}
@@ -793,6 +793,7 @@ export function TransfersPage() {
                   <tr key={transfer.id}>
                     <td
                       className={cellClass(transfer.id, "occurredAt", true, "col-date")}
+                      title="Double-click to edit"
                       onDoubleClick={() => startEdit(transfer, "occurredAt")}
                     >
                       {isEditing(transfer.id, "occurredAt") ? (
@@ -873,6 +874,7 @@ export function TransfersPage() {
                     </td>
                     <td
                       className={cellClass(transfer.id, "amountFrom", true, "num")}
+                      title="Double-click to edit"
                       onDoubleClick={() => startEdit(transfer, "amountFrom")}
                     >
                       {isEditing(transfer.id, "amountFrom") ? (
@@ -902,6 +904,7 @@ export function TransfersPage() {
                         cross,
                         "num",
                       )}
+                      title={cross ? "Double-click to edit" : undefined}
                       onDoubleClick={() => startEdit(transfer, "amountTo")}
                     >
                       {isEditing(transfer.id, "amountTo") ? (
@@ -933,6 +936,7 @@ export function TransfersPage() {
                     </td>
                     <td
                       className={cellClass(transfer.id, "categoryId", true, "col-text")}
+                      title="Double-click to edit"
                       onDoubleClick={() => startEdit(transfer, "categoryId")}
                     >
                       {isEditing(transfer.id, "categoryId") ? (
@@ -957,6 +961,7 @@ export function TransfersPage() {
                     </td>
                     <td
                       className={cellClass(transfer.id, "description", true, "col-text")}
+                      title="Double-click to edit"
                       onDoubleClick={() => startEdit(transfer, "description")}
                     >
                       {isEditing(transfer.id, "description") ? (

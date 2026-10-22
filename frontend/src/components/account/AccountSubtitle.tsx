@@ -16,6 +16,7 @@ export function AccountSubtitle(props: { account: Account }) {
         </>
       )}
       {account.description ? ` · ${account.description}` : null}
+      {" · Double-click a cell to edit."}
     </>
   );
 }

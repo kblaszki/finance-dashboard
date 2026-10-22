@@ -328,6 +328,8 @@ function LedgerRow(props: {
     props.onStartEdit(tx, field);
   }
 
+  const editHint = transferLeg ? undefined : "Double-click to edit";
+
   const typeBadgeClass =
     String(tx.type).toUpperCase() === "INCOME" ||
     String(tx.type).toUpperCase() === "TRANSFER_IN"
@@ -338,6 +340,7 @@ function LedgerRow(props: {
     <tr>
       <td
         className={props.cellClass(tx.id, "occurredAt", "col-date", !transferLeg)}
+        title={editHint}
         onDoubleClick={() => onCellDoubleClick("occurredAt")}
       >
         {props.isEditing(tx.id, "occurredAt") ? (
@@ -358,6 +361,7 @@ function LedgerRow(props: {
       </td>
       <td
         className={props.cellClass(tx.id, "type", "col-status", !transferLeg)}
+        title={editHint}
         onDoubleClick={() => onCellDoubleClick("type")}
       >
         {props.isEditing(tx.id, "type") ? (
@@ -385,6 +389,7 @@ function LedgerRow(props: {
       </td>
       <td
         className={props.cellClass(tx.id, "amount", "num", !transferLeg)}
+        title={editHint}
         onDoubleClick={() => onCellDoubleClick("amount")}
       >
         {props.isEditing(tx.id, "amount") ? (
@@ -411,6 +416,7 @@ function LedgerRow(props: {
       </td>
       <td
         className={props.cellClass(tx.id, "categoryId", "col-text", !transferLeg)}
+        title={editHint}
         onDoubleClick={() => onCellDoubleClick("categoryId")}
       >
         {props.isEditing(tx.id, "categoryId") ? (
@@ -437,6 +443,7 @@ function LedgerRow(props: {
       </td>
       <td
         className={props.cellClass(tx.id, "tagIds", "col-text", !transferLeg)}
+        title={editHint}
         onDoubleClick={() => onCellDoubleClick("tagIds")}
       >
         {props.isEditing(tx.id, "tagIds") ? (
@@ -471,6 +478,7 @@ function LedgerRow(props: {
       </td>
       <td
         className={props.cellClass(tx.id, "description", "col-text", !transferLeg)}
+        title={editHint}
         onDoubleClick={() => onCellDoubleClick("description")}
       >
         {props.isEditing(tx.id, "description") ? (
