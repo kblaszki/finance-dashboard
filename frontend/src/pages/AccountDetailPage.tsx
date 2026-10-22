@@ -20,6 +20,7 @@ import { AccountBalanceChart } from "../components/account/AccountBalanceChart";
 import { AccountLedgerHeader } from "../components/account/AccountLedgerHeader";
 import { AccountSubtitle } from "../components/account/AccountSubtitle";
 import { ImportCategoryMappingPanel } from "../components/account/ImportCategoryMappingPanel";
+import { LedgerFilterBar } from "../components/account/LedgerFilterBar";
 import { LedgerTable } from "../components/account/LedgerTable";
 import {
   MonthPager,
@@ -31,6 +32,12 @@ import { PageHeader } from "../components/ui/PageHeader";
 import { StatusBlock } from "../components/ui/StatusBlock";
 import { useAsyncData } from "../hooks/useAsyncData";
 import { useCurrency } from "../state/currency";
+import {
+  EMPTY_LEDGER_FILTERS,
+  filterLedgerRows,
+  isLedgerFilterActive,
+  type LedgerFilterState,
+} from "../utils/listFilters";
 
 type PendingImport = {
   csv: string;
@@ -62,6 +69,9 @@ export function AccountDetailPage() {
   const [transactions, setTransactions] = useState<CashTransaction[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loadMoreBusy, setLoadMoreBusy] = useState(false);
+  const [filters, setFilters] = useState<LedgerFilterState>({
+    ...EMPTY_LEDGER_FILTERS,
+  });
 
   const loadAccount = useCallback(() => {
     if (!Number.isFinite(accountId) || accountId < 1) {
@@ -109,6 +119,12 @@ export function AccountDetailPage() {
     setTransactions(txPage.items);
     setNextCursor(listMode === "all" ? txPage.nextCursor : null);
   }, [txPage, listMode]);
+
+  const filteredTransactions = useMemo(
+    () => filterLedgerRows(transactions, filters),
+    [transactions, filters],
+  );
+  const filtersActive = isLedgerFilterActive(filters);
 
   const {
     data: history,
@@ -364,6 +380,12 @@ export function AccountDetailPage() {
           loadMoreBusy={loadMoreBusy}
           onLoadMore={() => void handleLoadMore()}
         />
+        <LedgerFilterBar
+          filters={filters}
+          onChange={setFilters}
+          categories={categories ?? []}
+          tags={tags ?? []}
+        />
         <StatusBlock
           loading={txLoading && transactions.length === 0}
           error={txError}
@@ -372,7 +394,7 @@ export function AccountDetailPage() {
         {account && (!txLoading || transactions.length > 0 || !txError) && (
           <LedgerTable
             accountId={accountId}
-            transactions={transactions}
+            transactions={filteredTransactions}
             currency={account.currency}
             categories={categories ?? []}
             categoryNameById={categoryNameById}
@@ -387,12 +409,31 @@ export function AccountDetailPage() {
             onActionError={setActionErr}
           />
         )}
-        {!txLoading && !txError && transactions.length === 0 && (
-          <p className="muted empty-state">
-            No transactions in this view — use the row above to add one, or
-            switch month / All time.
-          </p>
-        )}
+        {!txLoading &&
+          !txError &&
+          transactions.length === 0 &&
+          !filtersActive && (
+            <p className="muted empty-state">
+              No transactions in this view — use the row above to add one, or
+              switch month / All time.
+            </p>
+          )}
+        {!txLoading &&
+          !txError &&
+          transactions.length > 0 &&
+          filteredTransactions.length === 0 &&
+          filtersActive && (
+            <p className="empty-state" role="status">
+              No rows match filters.{" "}
+              <button
+                type="button"
+                className="link-button"
+                onClick={() => setFilters({ ...EMPTY_LEDGER_FILTERS })}
+              >
+                Clear
+              </button>
+            </p>
+          )}
       </section>
     </>
   );

@@ -36,4 +36,29 @@
   .month-pager input[type="month"] {
     min-width: 9rem;
   }
+
+  .list-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm) var(--space-md);
+    align-items: end;
+    margin-bottom: var(--space-md);
+    font-size: var(--text-sm);
+  }
+
+  .list-filter-bar label {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    color: var(--color-text-muted);
+  }
+
+  .list-filter-bar input,
+  .list-filter-bar select {
+    min-width: 7.5rem;
+  }
+
+  .list-filter-bar input[type="search"] {
+    min-width: 10rem;
+  }
 }

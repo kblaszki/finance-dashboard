@@ -37,6 +37,7 @@ import {
 import { CategorySelectWithCreate } from "../components/account/CategorySelectWithCreate";
 import { categoriesForLedgerType } from "../components/account/categoryScope";
 import { AccountLedgerHeader } from "../components/account/AccountLedgerHeader";
+import { TransferFilterBar } from "../components/transfers/TransferFilterBar";
 import { TransferImportPanel } from "../components/transfers/TransferImportPanel";
 import {
   MonthPager,
@@ -49,6 +50,12 @@ import { StatusBlock } from "../components/ui/StatusBlock";
 import { useAsyncData } from "../hooks/useAsyncData";
 import { useCurrency } from "../state/currency";
 import { formatMoney } from "../utils/format";
+import {
+  EMPTY_TRANSFER_FILTERS,
+  filterTransferRows,
+  isTransferFilterActive,
+  type TransferFilterState,
+} from "../utils/listFilters";
 
 type PendingTransferImport = {
   csv: string;
@@ -392,6 +399,9 @@ export function TransfersPage() {
   const [transfers, setTransfers] = useState<CashTransfer[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loadMoreBusy, setLoadMoreBusy] = useState(false);
+  const [filters, setFilters] = useState<TransferFilterState>({
+    ...EMPTY_TRANSFER_FILTERS,
+  });
 
   const loadTransfers = useCallback(() => {
     if (listMode === "month") {
@@ -411,6 +421,12 @@ export function TransfersPage() {
     setTransfers(transfersPage.items);
     setNextCursor(listMode === "all" ? transfersPage.nextCursor : null);
   }, [transfersPage, listMode]);
+
+  const filteredTransfers = useMemo(
+    () => filterTransferRows(transfers, filters),
+    [transfers, filters],
+  );
+  const filtersActive = isTransferFilterActive(filters);
 
   const loadAccounts = useCallback(() => fetchAccounts(), []);
   const {
@@ -724,6 +740,26 @@ export function TransfersPage() {
             loadMoreBusy={loadMoreBusy}
             onLoadMore={() => void handleLoadMore()}
           />
+          <TransferFilterBar
+            filters={filters}
+            onChange={setFilters}
+            accounts={sortedAccounts}
+            categories={transferCategories}
+          />
+          {filtersActive &&
+            transfers.length > 0 &&
+            filteredTransfers.length === 0 && (
+              <p className="empty-state" role="status">
+                No rows match filters.{" "}
+                <button
+                  type="button"
+                  className="link-button"
+                  onClick={() => setFilters({ ...EMPTY_TRANSFER_FILTERS })}
+                >
+                  Clear
+                </button>
+              </p>
+            )}
           <div className="table-wrap">
             <table className="data-table ledger-table ledger-table--transfers">
               <thead>
@@ -749,7 +785,7 @@ export function TransfersPage() {
                   }}
                   onActionError={setActionError}
                 />
-                {transfers.map((transfer) => {
+                {filteredTransfers.map((transfer) => {
                 const cross = transfer.fromCurrency !== transfer.toCurrency;
                 const fromAccount = accountById.get(transfer.fromAccountId);
                 const toAccount = accountById.get(transfer.toAccountId);
