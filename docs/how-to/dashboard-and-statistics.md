@@ -42,7 +42,7 @@ No FX conversion. Mapping: `BANK→cash`, `BROKERAGE|IKE|IKZE→stock`, `CRYPTO�
 
 1. Open **Statistics** in the AppShell (or go to `/statistics`).
 2. Choose **Month**, **Quarter**, or **Year**, then pick the anchor (month input, quarter + year, or year). Currency comes from the top bar. Optionally set history range (6 / 12 / 24 months).
-3. Review **Period summary**: income, expense, net, and **transfers** (sum of outgoing transfer `amountFrom` in that currency). Transfers do **not** change income/expense/net.
+3. Review **Period summary**: income, expense, net, and **transfers** (sum of outgoing transfer `amountFrom` in that currency). Each KPI shows **% vs previous** period (prior month / quarter / year); when the previous total is zero the subtitle is `— vs prev`. Transfers do **not** change income/expense/net.
 4. Review **Cashflow history**: monthly income/expense bars, net line, and savings-rate line (`net / income` per month) on a second axis. The series ends at the last month of the selected period.
 5. APIs:
    - `GET /api/statistics/period-summary?month=YYYY-MM&currency=XXX&period=month|quarter|year`

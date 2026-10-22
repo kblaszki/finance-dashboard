@@ -31,6 +31,10 @@ import { StatusBlock } from "../components/ui/StatusBlock";
 import { useAsyncData } from "../hooks/useAsyncData";
 import { useCurrency } from "../state/currency";
 import { formatMoney, formatPercent } from "../utils/format";
+import {
+  formatPeriodDelta,
+  previousPeriodAnchor,
+} from "../utils/periodCompare";
 
 const CHART_COLORS = [
   "var(--chart-1)",
@@ -202,6 +206,16 @@ export function StatisticsPage() {
     error: summaryError,
     loading: summaryLoading,
   } = useAsyncData(loadSummary);
+
+  const prevMonth = useMemo(
+    () => previousPeriodAnchor(month, period),
+    [month, period],
+  );
+  const loadPrevSummary = useCallback((): Promise<PeriodSummary | null> => {
+    if (!currency) return Promise.resolve(null);
+    return fetchPeriodSummary(prevMonth, currency, period);
+  }, [prevMonth, currency, period]);
+  const { data: prevSummary } = useAsyncData(loadPrevSummary);
 
   const loadTags = useCallback((): Promise<TagBreakdown | null> => {
     if (!currency) return Promise.resolve(null);
@@ -423,20 +437,40 @@ export function StatisticsPage() {
             label={`Income · ${periodLabel}`}
             value={formatMoney(summary.income, currency)}
             tone="positive"
+            sub={
+              prevSummary
+                ? formatPeriodDelta(summary.income, prevSummary.income)
+                : undefined
+            }
           />
           <KpiCard
             label={`Expense · ${periodLabel}`}
             value={formatMoney(summary.expense, currency)}
             tone="negative"
+            sub={
+              prevSummary
+                ? formatPeriodDelta(summary.expense, prevSummary.expense)
+                : undefined
+            }
           />
           <KpiCard
             label={`Net · ${periodLabel}`}
             value={formatMoney(summary.net, currency)}
             tone={summary.net >= 0 ? "positive" : "negative"}
+            sub={
+              prevSummary
+                ? formatPeriodDelta(summary.net, prevSummary.net)
+                : undefined
+            }
           />
           <KpiCard
             label={`Transfers · ${periodLabel}`}
             value={formatMoney(summary.transfers, currency)}
+            sub={
+              prevSummary
+                ? formatPeriodDelta(summary.transfers, prevSummary.transfers)
+                : undefined
+            }
           />
         </div>
       )}
