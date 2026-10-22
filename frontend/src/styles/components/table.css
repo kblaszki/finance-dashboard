@@ -89,7 +89,7 @@
   background: color-mix(in srgb, var(--color-accent) 5%, transparent);
 }
 
-.data-table tbody tr:hover :is(td, th):first-child {
+.data-table tbody tr:hover :is(td, th):first-child:not(.ledger-cell--editing) {
   background: color-mix(in srgb, var(--color-accent) 5%, var(--color-surface));
 }
 
@@ -123,7 +123,8 @@
 }
 
 .ledger-table .ledger-create-row td,
-.ledger-table td.ledger-cell--editing {
+.ledger-table td.ledger-cell--editing,
+td.ledger-cell--editing {
   height: auto;
   min-height: var(--tap-target);
   padding-block: 0.4rem;
@@ -203,7 +204,7 @@
 
 .data-table thead th {
   position: sticky;
-  top: 0;
+  top: var(--shell-topbar-offset);
   z-index: 2;
   background: var(--color-surface);
   box-shadow: 0 1px 0 var(--color-border-subtle);
@@ -269,15 +270,19 @@
   }
 
   .ledger-table td.ledger-cell--editing,
-  .ledger-table .ledger-create-row td {
+  .ledger-table .ledger-create-row td,
+  td.ledger-cell--editing {
     padding-block: 0.5rem;
   }
 
-  .ledger-table td.col-date.ledger-cell--editing .ledger-cell-input[type="date"],
-  .ledger-table td.col-text.ledger-cell--editing select.ledger-cell-input,
-  .ledger-table td.col-text.ledger-cell--editing .ledger-tags-field .ledger-cell-input,
-  .ledger-table td.col-status.ledger-cell--editing select.ledger-cell-input {
+  td.ledger-cell--editing .ledger-cell-input[type="date"],
+  td.ledger-cell--editing select.ledger-cell-input,
+  td.ledger-cell--editing .ledger-tags-field .ledger-cell-input {
     min-width: min(100%, 10rem);
+  }
+
+  .data-table td.col-actions .form-actions-row {
+    flex-wrap: wrap;
   }
 
   .data-table td.col-actions .btn-link,

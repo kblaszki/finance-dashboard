@@ -178,7 +178,8 @@ function CategoryRow(props: {
   return (
     <tr>
       <td
-        className={props.cellClass(category.id, "name")}
+        className={props.cellClass(category.id, "name", "col-text")}
+        title="Double-click to edit"
         onDoubleClick={() => props.onStartEdit(category, "name")}
       >
         {props.isEditing(category.id, "name") ? (
@@ -203,7 +204,8 @@ function CategoryRow(props: {
         )}
       </td>
       <td
-        className={props.cellClass(category.id, "parentId")}
+        className={props.cellClass(category.id, "parentId", "col-text")}
+        title="Double-click to edit"
         onDoubleClick={() => props.onStartEdit(category, "parentId")}
       >
         {props.isEditing(category.id, "parentId") ? (
@@ -258,7 +260,10 @@ export function CategoriesPage() {
     const input = el?.querySelector<HTMLInputElement>(
       'input[aria-label="New category name"]',
     );
-    window.setTimeout(() => input?.focus(), 0);
+    const id = window.setTimeout(() => {
+      input?.focus({ preventScroll: true });
+    }, 0);
+    return () => window.clearTimeout(id);
   }, [focusLedgerType]);
 
   const loadCategories = useCallback(() => fetchCategories(), []);
@@ -534,7 +539,7 @@ export function CategoriesPage() {
             >
               <h2 className="section-title">{title}</h2>
               <div className="table-wrap">
-                <table className="data-table">
+                <table className="data-table ledger-table">
                   <thead>
                     <tr>
                       <SortableTh
@@ -544,8 +549,9 @@ export function CategoriesPage() {
                         onToggle={(key) =>
                           setSort((prev) => toggleSort(prev, key))
                         }
+                        className="col-text"
                       />
-                      <th>Parent</th>
+                      <th className="col-text">Parent</th>
                       <th className="col-actions">Actions</th>
                     </tr>
                   </thead>

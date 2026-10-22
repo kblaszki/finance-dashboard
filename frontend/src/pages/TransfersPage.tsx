@@ -335,7 +335,12 @@ function TransferCreateRow(props: {
       </td>
       <td className="col-actions">
         <form className="form-actions-row" onSubmit={onFormSubmit}>
-          <button type="submit" className="btn-primary" disabled={createBusy}>
+          <button
+            type="submit"
+            className="btn-primary"
+            disabled={createBusy}
+            aria-label="Add transfer"
+          >
             Add
           </button>
         </form>
@@ -1068,6 +1073,7 @@ export function TransfersPage() {
                         <button
                           type="button"
                           className="btn-danger"
+                          aria-label={`Delete transfer ${transfer.id}`}
                           onClick={() => void handleDelete(transfer)}
                         >
                           Delete

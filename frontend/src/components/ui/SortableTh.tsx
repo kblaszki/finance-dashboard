@@ -20,6 +20,7 @@ export function SortableTh<K extends string>(props: {
       <button
         type="button"
         className="th-sort"
+        aria-label={`Sort by ${props.label}`}
         onClick={() => props.onToggle(props.sortKey)}
       >
         {props.label}

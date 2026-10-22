@@ -119,7 +119,11 @@ function TagRow(props: {
 
   return (
     <tr>
-      <td className={props.cellClass} onDoubleClick={() => props.onStartEdit(tag)}>
+      <td
+        className={props.cellClass}
+        title="Double-click to edit"
+        onDoubleClick={() => props.onStartEdit(tag)}
+      >
         {props.isEditing ? (
           <input
             type="text"
@@ -267,7 +271,7 @@ export function TagsPage() {
       {!loading && !error && (
         <section className="card form-section-gap">
           <div className="table-wrap">
-            <table className="data-table data-table--tags">
+            <table className="data-table data-table--tags ledger-table">
               <thead>
                 <tr>
                   <SortableTh
