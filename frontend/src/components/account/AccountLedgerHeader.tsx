@@ -1,10 +1,12 @@
 import { useRef } from "react";
+import { Link } from "react-router-dom";
 
 export function AccountLedgerHeader(props: {
   exportBusy: boolean;
   importBusy: boolean;
   onExport: () => void;
   onImportFile: (file: File) => Promise<void>;
+  transferOutTo?: string;
 }) {
   const importFileRef = useRef<HTMLInputElement | null>(null);
 
@@ -25,6 +27,11 @@ export function AccountLedgerHeader(props: {
           });
         }}
       />
+      {props.transferOutTo ? (
+        <Link to={props.transferOutTo} className="btn-secondary">
+          Transfer out
+        </Link>
+      ) : null}
       <button
         type="button"
         className="btn-secondary"

@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { fetchAccounts, type Account } from "../api/accountsApi";
 import {
   fetchCategories,
@@ -100,6 +100,8 @@ function currencyForAccount(
 function TransferCreateRow(props: {
   accounts: Account[];
   transferCategories: Category[];
+  seedFromAccountId: number | null;
+  onSeedConsumed: () => void;
   onCreate: (input: CreateTransferInput) => Promise<void>;
   onCategoryCreated: (category: Category) => void;
   onActionError: (message: string | null) => void;
@@ -114,6 +116,17 @@ function TransferCreateRow(props: {
   const [createBusy, setCreateBusy] = useState(false);
   const [focusNonce, setFocusNonce] = useState(0);
   const dateRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (props.seedFromAccountId == null) return;
+    if (props.accounts.length === 0) return;
+    const match = props.accounts.some((a) => a.id === props.seedFromAccountId);
+    if (match) {
+      setFromAccountId(String(props.seedFromAccountId));
+      setFocusNonce((n) => n + 1);
+    }
+    props.onSeedConsumed();
+  }, [props.seedFromAccountId, props.accounts, props.onSeedConsumed]);
 
   const fromCurrency = currencyForAccount(props.accounts, fromAccountId);
   const toCurrency = currencyForAccount(props.accounts, toAccountId);
@@ -382,8 +395,18 @@ function buildPatch(
   }
 }
 
+function parseFromAccountIdParam(raw: string | null): number | null {
+  if (raw == null || raw === "") return null;
+  const id = Number(raw);
+  return Number.isInteger(id) && id > 0 ? id : null;
+}
+
 export function TransfersPage() {
   const { refreshAccounts } = useCurrency();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [seedFromAccountId, setSeedFromAccountId] = useState<number | null>(
+    () => parseFromAccountIdParam(searchParams.get("fromAccountId")),
+  );
   const [actionError, setActionError] = useState<string | null>(null);
   const [importMsg, setImportMsg] = useState<string | null>(null);
   const [editing, setEditing] = useState<EditingState | null>(null);
@@ -402,6 +425,15 @@ export function TransfersPage() {
   const [filters, setFilters] = useState<TransferFilterState>({
     ...EMPTY_TRANSFER_FILTERS,
   });
+
+  useEffect(() => {
+    if (!searchParams.has("fromAccountId")) return;
+    setSearchParams({}, { replace: true });
+  }, [searchParams, setSearchParams]);
+
+  const clearSeedFromAccountId = useCallback(() => {
+    setSeedFromAccountId(null);
+  }, []);
 
   const loadTransfers = useCallback(() => {
     if (listMode === "month") {
@@ -779,6 +811,8 @@ export function TransfersPage() {
                 <TransferCreateRow
                   accounts={sortedAccounts}
                   transferCategories={transferCategories}
+                  seedFromAccountId={seedFromAccountId}
+                  onSeedConsumed={clearSeedFromAccountId}
                   onCreate={handleCreate}
                   onCategoryCreated={() => {
                     void reloadCategories();

@@ -326,6 +326,7 @@ export function AccountDetailPage() {
               importBusy={importBusy}
               onExport={() => void handleExportCsv()}
               onImportFile={handleImportCsvFile}
+              transferOutTo={`/transfers?fromAccountId=${accountId}`}
             />
           }
         />
