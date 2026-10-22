@@ -1,6 +1,6 @@
 ---
 id: FR-012
-status: planned
+status: done
 domain: accounts
 title: Accounts list with type filter
 ---
@@ -9,7 +9,7 @@ title: Accounts list with type filter
 
 ## Summary
 
-List accounts with totalBalance, filter/sort, open detail.
+List accounts with totalBalance, filter by account type, open detail.
 
 ## User value
 
@@ -23,14 +23,16 @@ Capability tracked in the product map for agents and humans; see linked docs for
 
 ## Acceptance
 
-- [ ] GET /api/accounts includes totalBalance
+- [x] GET /api/accounts includes totalBalance
+- [x] `/accounts` UI filters the list by `accountType` (All + each allow-listed type)
 
 ## Implementation notes
 
-- Docs: docs/how-to/accounts-and-holdings.md
-- Traceability: [docs/reference/requirements.md](../../../docs/reference/requirements.md) (when FR/NFR)
+- UI: `frontend/src/pages/AccountsPage.tsx` (`filterAccountsByType`)
+- Docs: docs/how-to/accounts-and-holdings.md (if present)
+- Traceability: [docs/reference/requirements.md](../../../docs/reference/requirements.md)
 - Code map: [docs/meta/code-map.md](../../../docs/meta/code-map.md)
 
 ## Out of scope / follow-ups
 
-- See related planned/stub rows in [CHECKLIST.md](../../CHECKLIST.md)
+- Server-side type query (not needed for household scale)

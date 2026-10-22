@@ -2,4 +2,18 @@
   .form-section-gap {
     margin-bottom: var(--space-md);
   }
+
+  .accounts-type-filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+  }
+
+  .accounts-type-filter select {
+    min-width: 10rem;
+  }
 }

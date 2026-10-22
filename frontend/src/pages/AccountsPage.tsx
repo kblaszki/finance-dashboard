@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useRef, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ACCOUNT_TYPES,
@@ -15,6 +15,16 @@ import { StatusBlock } from "../components/ui/StatusBlock";
 import { useCurrency } from "../state/currency";
 import { formatMoney } from "../utils/format";
 
+export type AccountTypeFilter = "ALL" | AccountType;
+
+export function filterAccountsByType(
+  accounts: Account[],
+  typeFilter: AccountTypeFilter,
+): Account[] {
+  if (typeFilter === "ALL") return accounts;
+  return accounts.filter((a) => a.accountType === typeFilter);
+}
+
 export function AccountsPage() {
   const {
     accounts,
@@ -23,6 +33,7 @@ export function AccountsPage() {
     refreshAccounts,
   } = useCurrency();
 
+  const [typeFilter, setTypeFilter] = useState<AccountTypeFilter>("ALL");
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState("");
   const [accountType, setAccountType] = useState<AccountType>("BANK");
@@ -133,6 +144,11 @@ export function AccountsPage() {
     }
   }
 
+  const filteredAccounts = useMemo(
+    () => filterAccountsByType(accounts ?? [], typeFilter),
+    [accounts, typeFilter],
+  );
+
   return (
     <>
       <PageHeader
@@ -223,6 +239,27 @@ export function AccountsPage() {
           emptyMessage="No accounts yet."
         />
         {!accountsLoading && accounts && accounts.length > 0 && (
+          <>
+            <label className="accounts-type-filter">
+              Type
+              <select
+                aria-label="Filter by type"
+                value={typeFilter}
+                onChange={(e) =>
+                  setTypeFilter(e.target.value as AccountTypeFilter)
+                }
+              >
+                <option value="ALL">All</option>
+                {ACCOUNT_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {accountTypeLabel(type)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {filteredAccounts.length === 0 ? (
+              <p className="empty-state">No accounts of this type.</p>
+            ) : (
           <div className="table-wrap">
             <table className="data-table">
               <thead>
@@ -234,7 +271,7 @@ export function AccountsPage() {
                 </tr>
               </thead>
               <tbody>
-                {accounts.map((account) => (
+                {filteredAccounts.map((account) => (
                   <tr key={account.id}>
                     <td>
                       {editingId === account.id ? (
@@ -350,6 +387,8 @@ export function AccountsPage() {
               </tbody>
             </table>
           </div>
+            )}
+          </>
         )}
       </section>
     </>

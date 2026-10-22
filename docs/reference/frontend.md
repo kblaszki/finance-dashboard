@@ -29,7 +29,7 @@ Hub: [docs/README.md](../README.md).
 | `/register` | Guest only (when `allowRegister`) | `RegisterPage` (in `AuthSwapShell`) |
 | `/dashboard` | Protected | `DashboardPage` (KPIs including liabilities when > 0, net-worth donut, 12m cashflow, account mix) |
 | `/home` | Protected | Redirect → `/dashboard` |
-| `/accounts` | Protected | `AccountsPage` (multi-type create/list/edit/delete; currency on edit is read-only once the ledger has rows) |
+| `/accounts` | Protected | `AccountsPage` (multi-type create/list/edit/delete; type filter All + allow-listed types; currency on edit is read-only once the ledger has rows) |
 | `/accounts/:id` | Protected | `AccountDetailPage` (balance history chart at top; cash ledger with inline create row + list/delete/CSV; CSV import opens `ImportCategoryMappingPanel` when the file uses categories). Transfer legs (`transferId` set) are read-only with `TRANSFER IN/OUT` badges and a link to `/transfers`. Ledger Tags column uses multi-select for `tagIds` (cash rows only). Ledger pieces live in `components/account/`: `AccountBalanceChart`, `AccountLedgerHeader`, `AccountSubtitle`, `ImportCategoryMappingPanel`, `LedgerTable`, `LedgerCreateRow`, `occurredAt.ts`, `categoryScope.ts` (`categoryIdsForLedgerType`) |
 | `/categories` | Protected | `CategoriesPage` (Income / Expense / Transfers sections; CSV Download/Upload merge import — preview summary then Confirm; inline create row; double-click Name/Parent + Enter to PATCH, Escape or blur cancels; delete; section fixes `ledgerType`) |
 | `/tags` | Protected | `TagsPage` (flat Name + Actions table; inline create; double-click name + Enter to rename; delete with confirm) |

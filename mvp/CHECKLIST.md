@@ -15,7 +15,7 @@ Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + c
 
 | done | stub | planned | in_progress | total |
 |------|------|---------|-------------|-------|
-| 20 | 0 | 46 | 0 | 66 |
+| 21 | 0 | 45 | 0 | 66 |
 
 ## Master table
 
@@ -35,7 +35,7 @@ Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + c
 | FR-037 | Budget threshold alerts on dashboard | planned | [features/dashboard-stats/budget-alerts-banner.md](features/dashboard-stats/budget-alerts-banner.md) | BudgetAlertsBanner |
 | FR-038 | Dashboard PLN net-worth rollup | planned | [features/dashboard-stats/pln-net-worth-rollup.md](features/dashboard-stats/pln-net-worth-rollup.md) | NetWorthSection |
 | FR-006 | Extended account types | done | [features/accounts/extended-account-types.md](features/accounts/extended-account-types.md) | /accounts create |
-| FR-012 | Accounts list with type filter | planned | [features/accounts/accounts-list-filter.md](features/accounts/accounts-list-filter.md) | /accounts |
+| FR-012 | Accounts list with type filter | done | [features/accounts/accounts-list-filter.md](features/accounts/accounts-list-filter.md) | /accounts |
 | FR-032 | Precious metal grams on account | planned | [features/accounts/precious-metal-grams.md](features/accounts/precious-metal-grams.md) | PRECIOUS_METAL account detail |
 | MVP-010 | Manual revalue and account detail | planned | [features/accounts/account-detail-revalue.md](features/accounts/account-detail-revalue.md) | /accounts/:id |
 | FR-011 | Internal cash transfers with FX suggestion | done | [features/cash-transfers/internal-cash-transfers.md](features/cash-transfers/internal-cash-transfers.md) | /transfers |

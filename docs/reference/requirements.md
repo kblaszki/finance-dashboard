@@ -11,7 +11,7 @@ related_docs:
 
 Hub: [docs/README.md](../README.md).
 
-**Shipped in code** = auth + multi-type accounts + category tree + cash ledger (optional `categoryId`, CSV export/import) + internal cash transfers + statistics (category breakdown, period KPIs, cashflow history, cash net worth, rolling 12m averages) below. Remaining backlog: [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) and `mvp/features/*`. Checklist: 17 done / 0 in_progress / 46 planned (as of 2026-10-10).
+**Shipped in code** = auth + multi-type accounts + category tree + cash ledger (optional `categoryId`, CSV export/import) + internal cash transfers + statistics (category breakdown, period KPIs, cashflow history, cash net worth, rolling 12m averages) below. Remaining backlog: [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) and `mvp/features/*`. Checklist: 21 done / 0 in_progress / 45 planned (as of 2026-10-22).
 
 ## Shipped
 
@@ -34,6 +34,7 @@ Hub: [docs/README.md](../README.md).
 | FR-002 | Net worth (cash buckets) | `GET /api/statistics/net-worth`; `/dashboard` byBucket from `cashBalance`; `CREDIT_CARD` debt → `liabilities` (no holdings/FX) |
 | FR-005 | Rolling 12-month cashflow averages | `GET /api/statistics/cashflow-rolling-12m`; `/dashboard` avg income/expense/net |
 | FR-011 | Internal cash transfers | `CashTransfer` + `TRANSFER_*` legs; `/api/transfers`; `/transfers`; [internal-transfers.md](../how-to/internal-transfers.md) |
+| FR-012 | Accounts list type filter | `/accounts` UI filter by `accountType` (`filterAccountsByType`) |
 
 ## Planned / not in this codebase
 
