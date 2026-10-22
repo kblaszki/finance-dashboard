@@ -96,4 +96,13 @@
   .list-filter-bar input[type="search"].field-control {
     min-width: 10rem;
   }
+
+  .account-edit-row td {
+    background: color-mix(in srgb, var(--color-accent) 4%, transparent);
+    vertical-align: top;
+  }
+
+  .account-edit-row .auth-form--compact {
+    max-width: 28rem;
+  }
 }

@@ -149,7 +149,7 @@ function TransferCreateRow(props: {
   useEffect(() => {
     if (focusNonce === 0) return;
     const id = window.setTimeout(() => {
-      dateRef.current?.focus();
+      dateRef.current?.focus({ preventScroll: true });
     }, 0);
     return () => window.clearTimeout(id);
   }, [focusNonce]);

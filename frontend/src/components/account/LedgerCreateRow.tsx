@@ -57,7 +57,7 @@ export function LedgerCreateRow(props: {
     if (focusNonce === 0) return;
     // Defer past disabled→enabled commit and parent soft-reload re-render.
     const id = window.setTimeout(() => {
-      firstInputRef.current?.focus();
+      firstInputRef.current?.focus({ preventScroll: true });
     }, 0);
     return () => window.clearTimeout(id);
   }, [focusNonce]);

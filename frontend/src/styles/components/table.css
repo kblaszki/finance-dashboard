@@ -211,6 +211,13 @@
   box-shadow: 1px 0 0 var(--color-border-subtle);
 }
 
+/* Full-width edit panels must not stick as first-column chrome */
+.data-table tr.account-edit-row td:first-child {
+  position: static;
+  box-shadow: none;
+  z-index: auto;
+}
+
 .data-table thead th:first-child {
   z-index: 3;
 }

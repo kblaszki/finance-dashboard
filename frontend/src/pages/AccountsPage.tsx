@@ -1,4 +1,11 @@
-import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import {
+  type FormEvent,
+  Fragment,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Link } from "react-router-dom";
 import {
   ACCOUNT_TYPES,
@@ -64,7 +71,7 @@ export function AccountsPage() {
 
   useEffect(() => {
     if (editingId == null) return;
-    editNameRef.current?.focus();
+    editNameRef.current?.focus({ preventScroll: true });
   }, [editingId]);
 
   async function handleCreate(e: FormEvent) {
@@ -312,117 +319,129 @@ export function AccountsPage() {
               </thead>
               <tbody>
                 {sortedAccounts.map((account) => (
-                  <tr key={account.id}>
-                    <td>
-                      {editingId === account.id ? (
-                        <form
-                          className="auth-form auth-form--compact"
-                          onSubmit={handleSaveEdit}
-                        >
-                          <label>
-                            Name
-                            <input
-                              ref={editNameRef}
-                              type="text"
-                              required
-                              value={editName}
-                              aria-invalid={editErr ? true : undefined}
-                              onChange={(e) => setEditName(e.target.value)}
-                            />
-                          </label>
-                          <label>
-                            Currency
-                            <input
-                              type="text"
-                              required
-                              minLength={3}
-                              maxLength={3}
-                              value={editCurrency}
-                              readOnly={currencyLocked}
-                              aria-invalid={editErr ? true : undefined}
-                              onChange={(e) => setEditCurrency(e.target.value.toUpperCase())}
-                            />
-                          </label>
-                          {currencyLocked && (
-                            <p className="muted">Currency is locked because this account has transactions.</p>
-                          )}
-                          <label>
-                            Description
-                            <input
-                              type="text"
-                              value={editDescription}
-                              onChange={(e) => setEditDescription(e.target.value)}
-                            />
-                          </label>
-                          {editErr && <p className="auth-error">{editErr}</p>}
+                  <Fragment key={account.id}>
+                    <tr>
+                      <td>
+                        <div>
+                          <Link to={`/accounts/${account.id}`}>
+                            {account.name}
+                          </Link>
+                        </div>
+                        {account.description && (
+                          <div className="muted">{account.description}</div>
+                        )}
+                      </td>
+                      <td>
+                        <span className="badge">
+                          {accountTypeLabel(account.accountType)}
+                        </span>
+                      </td>
+                      <td className="num">
+                        {formatMoney(account.totalBalance, account.currency)}
+                      </td>
+                      <td className="col-actions">
+                        {editingId !== account.id ? (
                           <div className="form-actions-row">
-                            <button
-                              type="submit"
-                              className="btn-primary"
-                              disabled={editBusy}
+                            <Link
+                              to={`/accounts/${account.id}`}
+                              className="btn-secondary"
                             >
-                              {editBusy ? "Saving…" : "Save"}
-                            </button>
+                              Ledger
+                            </Link>
                             <button
                               type="button"
                               className="btn-secondary"
-                              onClick={cancelEdit}
-                              disabled={editBusy}
+                              aria-label={`Edit ${account.name}`}
+                              onClick={() => startEdit(account)}
                             >
-                              Cancel
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-danger"
+                              aria-label={`Delete ${account.name}`}
+                              onClick={() => void handleDelete(account)}
+                            >
+                              Delete
                             </button>
                           </div>
-                        </form>
-                      ) : (
-                        <>
-                          <div>
-                            <Link to={`/accounts/${account.id}`}>
-                              {account.name}
-                            </Link>
-                          </div>
-                          {account.description && (
-                            <div className="muted">{account.description}</div>
-                          )}
-                        </>
-                      )}
-                    </td>
-                    <td>
-                      <span className="badge">
-                        {accountTypeLabel(account.accountType)}
-                      </span>
-                    </td>
-                    <td className="num">
-                      {formatMoney(account.totalBalance, account.currency)}
-                    </td>
-                    <td className="col-actions">
-                      {editingId !== account.id && (
-                        <div className="form-actions-row">
-                          <Link
-                            to={`/accounts/${account.id}`}
-                            className="btn-secondary"
+                        ) : (
+                          <span className="muted">Editing…</span>
+                        )}
+                      </td>
+                    </tr>
+                    {editingId === account.id && (
+                      <tr className="account-edit-row">
+                        <td colSpan={4}>
+                          <form
+                            className="auth-form auth-form--compact"
+                            onSubmit={handleSaveEdit}
                           >
-                            Ledger
-                          </Link>
-                          <button
-                            type="button"
-                            className="btn-secondary"
-                            aria-label={`Edit ${account.name}`}
-                            onClick={() => startEdit(account)}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            className="btn-danger"
-                            aria-label={`Delete ${account.name}`}
-                            onClick={() => void handleDelete(account)}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
+                            <label>
+                              Name
+                              <input
+                                ref={editNameRef}
+                                type="text"
+                                required
+                                value={editName}
+                                aria-invalid={editErr ? true : undefined}
+                                onChange={(e) => setEditName(e.target.value)}
+                              />
+                            </label>
+                            <label>
+                              Currency
+                              <input
+                                type="text"
+                                required
+                                minLength={3}
+                                maxLength={3}
+                                value={editCurrency}
+                                readOnly={currencyLocked}
+                                aria-invalid={editErr ? true : undefined}
+                                onChange={(e) =>
+                                  setEditCurrency(e.target.value.toUpperCase())
+                                }
+                              />
+                            </label>
+                            {currencyLocked && (
+                              <p className="muted">
+                                Currency is locked because this account has
+                                transactions.
+                              </p>
+                            )}
+                            <label>
+                              Description
+                              <input
+                                type="text"
+                                value={editDescription}
+                                onChange={(e) =>
+                                  setEditDescription(e.target.value)
+                                }
+                              />
+                            </label>
+                            {editErr && <p className="auth-error">{editErr}</p>}
+                            <div className="form-actions-row">
+                              <button
+                                type="submit"
+                                className="btn-primary"
+                                disabled={editBusy}
+                              >
+                                {editBusy ? "Saving…" : "Save"}
+                              </button>
+                              <button
+                                type="button"
+                                className="btn-secondary"
+                                onClick={cancelEdit}
+                                disabled={editBusy}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </form>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 ))}
               </tbody>
             </table>
