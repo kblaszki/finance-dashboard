@@ -204,7 +204,8 @@ td.ledger-cell--editing {
 
 .data-table thead th {
   position: sticky;
-  top: var(--shell-topbar-offset);
+  /* Stick to the table-wrap scrollport (overflow-x), not the shell topbar */
+  top: 0;
   z-index: 2;
   background: var(--color-surface);
   box-shadow: 0 1px 0 var(--color-border-subtle);
