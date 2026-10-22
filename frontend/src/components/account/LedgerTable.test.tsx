@@ -179,6 +179,7 @@ describe("LedgerTable", () => {
         tags={tags}
         tagNameById={new Map([[10, "Work"], [11, "Personal"]])}
         onCreate={onCreate}
+        onCategoryCreated={vi.fn()}
         onDelete={vi.fn()}
         onSave={vi.fn()}
         onActionError={vi.fn()}

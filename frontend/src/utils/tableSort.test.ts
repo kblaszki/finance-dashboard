@@ -24,31 +24,28 @@ describe("ariaSortValue", () => {
 });
 
 describe("sortBy", () => {
-  const rows = [
+  type Row = { name: string; amount: number };
+  const rows: Row[] = [
     { name: "Beta", amount: 10 },
     { name: "Alpha", amount: 30 },
     { name: "Gamma", amount: 20 },
   ];
+  const getters = {
+    name: (r: Row) => r.name,
+    amount: (r: Row) => r.amount,
+  };
 
   it("sorts strings and numbers", () => {
     expect(
-      sortBy(rows, { key: "name", dir: "asc" }, {
-        name: (r) => r.name,
-        amount: (r) => r.amount,
-      }).map((r) => r.name),
+      sortBy(rows, { key: "name", dir: "asc" }, getters).map((r) => r.name),
     ).toEqual(["Alpha", "Beta", "Gamma"]);
 
     expect(
-      sortBy(rows, { key: "amount", dir: "desc" }, {
-        name: (r) => r.name,
-        amount: (r) => r.amount,
-      }).map((r) => r.amount),
+      sortBy(rows, { key: "amount", dir: "desc" }, getters).map((r) => r.amount),
     ).toEqual([30, 20, 10]);
   });
 
   it("returns original order when sort is null", () => {
-    expect(sortBy(rows, null, { name: (r) => r.name, amount: (r) => r.amount })).toBe(
-      rows,
-    );
+    expect(sortBy(rows, null, getters)).toBe(rows);
   });
 });
