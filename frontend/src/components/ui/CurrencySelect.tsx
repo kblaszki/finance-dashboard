@@ -1,7 +1,19 @@
+import { Link } from "react-router-dom";
 import { useCurrency } from "../../state/currency";
 
 export function CurrencySelect() {
   const { currencies, currency, setCurrency } = useCurrency();
+
+  if (currencies.length === 0) {
+    return (
+      <div className="currency-select">
+        <span className="currency-select-label">Currency</span>
+        <Link to="/accounts" className="link-button">
+          Create an account
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <label className="currency-select">
@@ -9,17 +21,12 @@ export function CurrencySelect() {
       <select
         value={currency}
         onChange={(e) => setCurrency(e.target.value)}
-        disabled={currencies.length === 0}
       >
-        {currencies.length === 0 ? (
-          <option value="">—</option>
-        ) : (
-          currencies.map((code) => (
-            <option key={code} value={code}>
-              {code}
-            </option>
-          ))
-        )}
+        {currencies.map((code) => (
+          <option key={code} value={code}>
+            {code}
+          </option>
+        ))}
       </select>
     </label>
   );
