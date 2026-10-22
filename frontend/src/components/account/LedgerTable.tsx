@@ -9,6 +9,7 @@ import {
   type CreateCashTransactionInput,
 } from "../../api/transactionsApi";
 import { formatMoney } from "../../utils/format";
+import { CategorySelectWithCreate } from "./CategorySelectWithCreate";
 import { categoryIdsForLedgerType } from "./categoryScope";
 import {
   LedgerCreateRow,
@@ -140,6 +141,7 @@ export function LedgerTable(props: {
   tags: Tag[];
   tagNameById: Map<number, string>;
   onCreate: (input: CreateCashTransactionInput) => Promise<void>;
+  onCategoryCreated: (category: Category) => void;
   onDelete: (tx: CashTransaction) => void;
   onSave: (
     tx: CashTransaction,
@@ -245,6 +247,7 @@ export function LedgerTable(props: {
             categories={props.categories}
             tags={props.tags}
             onCreate={props.onCreate}
+            onCategoryCreated={props.onCategoryCreated}
             onActionError={props.onActionError}
           />
           {props.transactions.map((tx) => (
@@ -264,6 +267,8 @@ export function LedgerTable(props: {
               onDraftChange={setDraft}
               onEditorKeyDown={onEditorKeyDown}
               onEditorBlur={onEditorBlur}
+              onCategoryCreated={props.onCategoryCreated}
+              onActionError={props.onActionError}
               onDelete={props.onDelete}
             />
           ))}
@@ -293,21 +298,25 @@ function LedgerRow(props: {
   onDraftChange: (value: string) => void;
   onEditorKeyDown: (e: KeyboardEvent, tx: CashTransaction) => void;
   onEditorBlur: () => void;
+  onCategoryCreated: (category: Category) => void;
+  onActionError: (message: string | null) => void;
   onDelete: (tx: CashTransaction) => void;
 }) {
   const { tx } = props;
   const transferLeg = isTransferLeg(tx);
   const txType = String(tx.type).toUpperCase() as CashTxType;
+  const categoryLedgerType =
+    (CASH_TX_TYPES as readonly string[]).includes(txType) ? txType : "EXPENSE";
   const categoryOptions = useMemo(() => {
-    const typeOk = (CASH_TX_TYPES as readonly string[]).includes(txType)
-      ? txType
-      : "EXPENSE";
-    const allowed = categoryIdsForLedgerType(props.categories, typeOk);
+    const allowed = categoryIdsForLedgerType(
+      props.categories,
+      categoryLedgerType,
+    );
     return props.categories
       .filter((cat) => allowed.has(cat.id))
       .slice()
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [props.categories, txType]);
+  }, [props.categories, categoryLedgerType]);
 
   const tagIds = tx.tagIds ?? [];
   const tagLabels = tagIds
@@ -405,23 +414,19 @@ function LedgerRow(props: {
         onDoubleClick={() => onCellDoubleClick("categoryId")}
       >
         {props.isEditing(tx.id, "categoryId") ? (
-          <select
-            className="ledger-cell-input"
+          <CategorySelectWithCreate
             value={props.draft}
+            options={categoryOptions}
+            ledgerType={categoryLedgerType}
             disabled={props.editBusy}
             autoFocus
-            onChange={(e) => props.onDraftChange(e.target.value)}
+            onChange={props.onDraftChange}
+            onCategoryCreated={props.onCategoryCreated}
+            onError={props.onActionError}
             onKeyDown={(e) => props.onEditorKeyDown(e, tx)}
             onBlur={props.onEditorBlur}
             aria-label="Edit category"
-          >
-            <option value="">—</option>
-            {categoryOptions.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
+          />
         ) : tx.categoryId != null ? (
           <span className="badge">
             {props.categoryNameById.get(tx.categoryId) ?? `#${tx.categoryId}`}

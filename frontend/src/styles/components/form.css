@@ -16,4 +16,13 @@
   .accounts-type-filter select {
     min-width: 10rem;
   }
+
+  .category-section--focus {
+    outline: 2px solid color-mix(in srgb, var(--color-accent) 45%, transparent);
+    outline-offset: 2px;
+  }
+
+  .category-create-inline {
+    flex-wrap: wrap;
+  }
 }

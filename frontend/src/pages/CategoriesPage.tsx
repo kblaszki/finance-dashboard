@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   createCategory,
   deleteCategory,
@@ -23,6 +24,12 @@ import { AccountLedgerHeader } from "../components/account/AccountLedgerHeader";
 import { PageHeader } from "../components/ui/PageHeader";
 import { StatusBlock } from "../components/ui/StatusBlock";
 import { useAsyncData } from "../hooks/useAsyncData";
+
+function parseLedgerTypeParam(value: string | null): CategoryLedgerType | null {
+  const raw = String(value ?? "").trim().toUpperCase();
+  if (raw === "INCOME" || raw === "EXPENSE" || raw === "TRANSFER") return raw;
+  return null;
+}
 
 type PendingCategoriesImport = {
   csv: string;
@@ -235,6 +242,19 @@ function CategoryRow(props: {
 }
 
 export function CategoriesPage() {
+  const [searchParams] = useSearchParams();
+  const focusLedgerType = parseLedgerTypeParam(searchParams.get("ledgerType"));
+
+  useEffect(() => {
+    if (!focusLedgerType) return;
+    const el = document.getElementById(`category-section-${focusLedgerType}`);
+    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const input = el?.querySelector<HTMLInputElement>(
+      'input[aria-label="New category name"]',
+    );
+    window.setTimeout(() => input?.focus(), 0);
+  }, [focusLedgerType]);
+
   const loadCategories = useCallback(() => fetchCategories(), []);
   const { data: categories, error, loading, reload } = useAsyncData(loadCategories);
 
@@ -493,7 +513,15 @@ export function CategoriesPage() {
         SECTIONS.map(({ ledgerType, title }) => {
           const rows = treeForType(ledgerType);
           return (
-            <section key={ledgerType} className="card form-section-gap">
+            <section
+              key={ledgerType}
+              id={`category-section-${ledgerType}`}
+              className={
+                focusLedgerType === ledgerType
+                  ? "card form-section-gap category-section--focus"
+                  : "card form-section-gap"
+              }
+            >
               <h2 className="section-title">{title}</h2>
               <div className="table-wrap">
                 <table className="data-table">

@@ -13,6 +13,7 @@ import {
   type CashTxType,
   type CreateCashTransactionInput,
 } from "../../api/transactionsApi";
+import { CategorySelectWithCreate } from "./CategorySelectWithCreate";
 import { categoryIdsForLedgerType } from "./categoryScope";
 import { LedgerTagField } from "./LedgerTagField";
 import { dateInputToIso, defaultOccurredAtValue } from "./occurredAt";
@@ -29,6 +30,7 @@ export function LedgerCreateRow(props: {
   categories: Category[];
   tags: Tag[];
   onCreate: (input: CreateCashTransactionInput) => Promise<void>;
+  onCategoryCreated: (category: Category) => void;
   onActionError: (message: string | null) => void;
 }) {
   const [lastEnteredType, setLastEnteredType] = useState<CashTxType | null>(
@@ -171,20 +173,16 @@ export function LedgerCreateRow(props: {
         />
       </td>
       <td className="col-text">
-        <select
-          className="ledger-cell-input"
+        <CategorySelectWithCreate
           value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
+          options={categoryOptions}
+          ledgerType={type}
+          onChange={setCategoryId}
+          onCategoryCreated={props.onCategoryCreated}
+          onError={props.onActionError}
           onKeyDown={onFieldKeyDown}
           aria-label="New category"
-        >
-          <option value="">—</option>
-          {categoryOptions.map((cat) => (
-            <option key={cat.id} value={cat.id}>
-              {cat.name}
-            </option>
-          ))}
-        </select>
+        />
       </td>
       <td className="col-text">
         <LedgerTagField

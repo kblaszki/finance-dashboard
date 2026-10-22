@@ -78,6 +78,7 @@ function renderTable(
         tags={tags}
         tagNameById={new Map([[10, "Work"], [11, "Personal"]])}
         onCreate={onCreate}
+        onCategoryCreated={vi.fn()}
         onDelete={onDelete}
         onSave={onSave}
         onActionError={onActionError}

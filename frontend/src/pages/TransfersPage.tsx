@@ -34,6 +34,7 @@ import {
   formatOccurredAt,
   toDateLocalValue,
 } from "../components/account/occurredAt";
+import { CategorySelectWithCreate } from "../components/account/CategorySelectWithCreate";
 import { categoriesForLedgerType } from "../components/account/categoryScope";
 import { AccountLedgerHeader } from "../components/account/AccountLedgerHeader";
 import { TransferImportPanel } from "../components/transfers/TransferImportPanel";
@@ -87,6 +88,7 @@ function TransferCreateRow(props: {
   accounts: Account[];
   transferCategories: Category[];
   onCreate: (input: CreateTransferInput) => Promise<void>;
+  onCategoryCreated: (category: Category) => void;
   onActionError: (message: string | null) => void;
 }) {
   const [occurredAt, setOccurredAt] = useState(defaultOccurredAtValue);
@@ -268,21 +270,17 @@ function TransferCreateRow(props: {
       </td>
       <td className="num">—</td>
       <td className="col-text">
-        <select
-          className="ledger-cell-input"
+        <CategorySelectWithCreate
           value={categoryId}
+          options={props.transferCategories}
+          ledgerType="TRANSFER"
           disabled={createBusy}
-          onChange={(e) => setCategoryId(e.target.value)}
+          onChange={setCategoryId}
+          onCategoryCreated={props.onCategoryCreated}
+          onError={props.onActionError}
           onKeyDown={onFieldKeyDown}
           aria-label="New category"
-        >
-          <option value="">No category</option>
-          {props.transferCategories.map((cat) => (
-            <option key={cat.id} value={cat.id}>
-              {cat.name}
-            </option>
-          ))}
-        </select>
+        />
       </td>
       <td className="col-text">
         <input
@@ -405,6 +403,7 @@ export function TransfersPage() {
     data: categories,
     error: categoriesError,
     loading: categoriesLoading,
+    reload: reloadCategories,
   } = useAsyncData(loadCategories);
 
   const accountById = useMemo(() => {
@@ -692,6 +691,9 @@ export function TransfersPage() {
                   accounts={sortedAccounts}
                   transferCategories={transferCategories}
                   onCreate={handleCreate}
+                  onCategoryCreated={() => {
+                    void reloadCategories();
+                  }}
                   onActionError={setActionError}
                 />
                 {(transfers ?? []).map((transfer) => {
@@ -845,23 +847,21 @@ export function TransfersPage() {
                       onDoubleClick={() => startEdit(transfer, "categoryId")}
                     >
                       {isEditing(transfer.id, "categoryId") ? (
-                        <select
-                          className="ledger-cell-input"
+                        <CategorySelectWithCreate
                           value={draft}
+                          options={transferCategories}
+                          ledgerType="TRANSFER"
                           disabled={editBusy}
                           autoFocus
-                          onChange={(e) => setDraft(e.target.value)}
+                          onChange={setDraft}
+                          onCategoryCreated={() => {
+                            void reloadCategories();
+                          }}
+                          onError={setActionError}
                           onKeyDown={(e) => onEditorKeyDown(e, transfer)}
                           onBlur={onEditorBlur}
                           aria-label="Edit category"
-                        >
-                          <option value="">No category</option>
-                          {transferCategories.map((cat) => (
-                            <option key={cat.id} value={cat.id}>
-                              {cat.name}
-                            </option>
-                          ))}
-                        </select>
+                        />
                       ) : (
                         categoryNameById(transferCategories, transfer.categoryId)
                       )}

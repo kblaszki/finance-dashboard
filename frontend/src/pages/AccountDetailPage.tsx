@@ -328,6 +328,9 @@ export function AccountDetailPage() {
             tags={tags ?? []}
             tagNameById={tagNameById}
             onCreate={handleCreate}
+            onCategoryCreated={() => {
+              void reloadCategories();
+            }}
             onDelete={(tx) => void handleDelete(tx)}
             onSave={handleSaveTx}
             onActionError={setActionErr}
