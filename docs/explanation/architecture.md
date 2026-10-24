@@ -47,10 +47,11 @@ sequenceDiagram
 | Cash tx routes | `backend/src/routes/cashTransactionsRoutes.ts` | Nested INCOME/EXPENSE ledger (optional category) |
 | Statistics routes | `backend/src/routes/statisticsRoutes.ts` | Category breakdown, period summary, cashflow history, net worth, rolling 12m |
 | Errors | `routes/httpSupport.ts`, `lib/errors.ts` | Typed HTTP errors (incl. 409 conflict) |
-| Scripts | `backend/src/scripts/` | `createUser` (empty user), `backupDb` |
+| Scripts | `backend/src/scripts/` | `createUser` (empty user), `backupDb`, `syncFxRates` (NBP EUR/USD) |
 | Seed | `backend/prisma/seed.ts`, `domain/seedDemoPortfolio.ts` | Demo user + wipe/rebuild sample portfolio |
+| FX | `domain/fx.ts`, `fxRates.ts`, `nbpClient.ts` | NBP mids in `FxRateDaily`; `convertMajor` via PLN pivot |
 
-Money and conversion rules belong in dedicated backend modules when FX/valuations land — not duplicated in route handlers or the UI. See [fullstack-practices.md](fullstack-practices.md).
+Money and FX conversion live in `domain/fx*.ts` / `nbpClient.ts` — not in route handlers or the UI. Net-worth still sums per selected currency without FX (FR-038 planned). See [fullstack-practices.md](fullstack-practices.md).
 
 ## Auth
 
@@ -70,4 +71,4 @@ Money and conversion rules belong in dedicated backend modules when FX/valuation
 
 - [code-map.md](../meta/code-map.md) — path index
 - [api.md](../reference/api.md) — route catalog
-- [domain.md](../reference/domain.md) — `User`, `Category`, `Account`, `CashTransaction` models
+- [domain.md](../reference/domain.md) — `User`, `Category`, `Account`, `CashTransaction`, `FxRateDaily` models

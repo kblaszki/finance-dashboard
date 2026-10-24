@@ -35,10 +35,12 @@ Auth + multi-type accounts + category tree + cash ledger + category statistics b
 | Cashflow stats domain | `backend/src/domain/cashflowStats.ts` |
 | Account balance history domain | `backend/src/domain/accountBalanceHistory.ts` |
 | Net worth domain | `backend/src/domain/netWorth.ts` |
+| FX / NBP rates | `backend/src/domain/fx.ts`, `fxRates.ts`, `nbpClient.ts` |
+| FX sync CLI | `backend/src/scripts/syncFxRates.ts` |
 | Router mount | `backend/src/routes/mountRouters.ts` |
 | HTTP helpers / errors | `backend/src/routes/httpSupport.ts`, `backend/src/lib/errors.ts` |
 | Route uid helper | `backend/src/routes/routeSupport.ts` |
-| Prisma schema | `backend/prisma/schema.prisma` (`User`, `Category`, `Tag`, `CashTransactionTag`, `Account`, `CashTransfer`, `CashTransaction`) |
+| Prisma schema | `backend/prisma/schema.prisma` (`User`, `Category`, `Tag`, `CashTransactionTag`, `Account`, `CashTransfer`, `CashTransaction`, `FxRateDaily`) |
 | Migrations | `backend/prisma/migrations/` |
 | Demo user seed | `backend/prisma/seed.ts`, `backend/src/domain/seedDemoPortfolio.ts` |
 | Create user CLI | `backend/src/scripts/createUser.ts` |

@@ -139,3 +139,18 @@ model CashTransactionTag {
   @@id([cashTransactionId, tagId])
   @@index([tagId])
 }
+
+/// Global NBP mid rate for one foreign currency on one calendar day (never PLN).
+model FxRateDaily {
+  id       Int      @id @default(autoincrement())
+  /// UTC midnight of the NBP effective date.
+  rateDate DateTime
+  /// EUR | USD (extend whitelist later).
+  currency String
+  /// NBP mid: major PLN per 1 foreign unit.
+  mid      Decimal
+  createdAt DateTime @default(now())
+
+  @@unique([rateDate, currency])
+  @@index([currency, rateDate])
+}

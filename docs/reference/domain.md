@@ -117,3 +117,17 @@ Single-account cash ledger row. Positive `amount`; type drives signed effect on 
 | createdAt | DateTime | Default now |
 
 Indexes: `[accountId, occurredAt]`, `[categoryId]`, `[transferId]`. Domain rules: `backend/src/domain/cashLedger.ts` (`CASH_TX_TYPES` vs `LEDGER_TX_TYPES`). Parsing and minor-unit conversion: `backend/src/domain/money.ts`. SQLite stores these integers so cent arithmetic does not pass through REAL. Tags: `backend/src/domain/tags.ts` (`assertOwnedTagIds`, `setTransactionTags`).
+
+## FxRateDaily
+
+Global (not user-scoped) NBP table A mid for one foreign currency on one calendar day. **PLN is never stored** (pivot mid = 1). MVP whitelist: **EUR**, **USD**.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id | Int | PK, autoincrement |
+| rateDate | DateTime | UTC midnight of NBP `effectiveDate` |
+| currency | String | `EUR` or `USD` |
+| mid | Decimal | Major PLN per 1 foreign unit |
+| createdAt | DateTime | Default now |
+
+Unique `[rateDate, currency]`; index `[currency, rateDate]`. Domain: `backend/src/domain/fx.ts`, `fxRates.ts`, `nbpClient.ts`. Sync CLI: `npm run fx:sync`.

@@ -11,7 +11,7 @@ related_docs:
 
 Hub: [docs/README.md](../README.md).
 
-**Shipped in code** = auth + multi-type accounts + category tree + cash ledger (optional `categoryId`, CSV export/import) + internal cash transfers + statistics (category breakdown, period KPIs, cashflow history, cash net worth, rolling 12m averages) below. Remaining backlog: [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) and `mvp/features/*`. Checklist: 21 done / 0 in_progress / 45 planned (as of 2026-10-22).
+**Shipped in code** = auth + multi-type accounts + category tree + cash ledger (optional `categoryId`, CSV export/import) + internal cash transfers + statistics (category breakdown, period KPIs, cashflow history, cash net worth, rolling 12m averages) + NBP FX rate store/CLI below. Remaining backlog: [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) and `mvp/features/*`. Checklist: 22 done / 0 in_progress / 44 planned (as of 2026-10-24).
 
 ## Shipped
 
@@ -35,6 +35,7 @@ Hub: [docs/README.md](../README.md).
 | FR-005 | Rolling 12-month cashflow averages | `GET /api/statistics/cashflow-rolling-12m`; `/dashboard` avg income/expense/net |
 | FR-011 | Internal cash transfers | `CashTransfer` + `TRANSFER_*` legs; `/api/transfers`; `/transfers`; [internal-transfers.md](../how-to/internal-transfers.md) |
 | FR-012 | Accounts list type filter | `/accounts` UI filter by `accountType` (`filterAccountsByType`) |
+| FR-010 | Historical NBP FX rates | `FxRateDaily`; `domain/fx.ts` + `fxRates.ts` + `nbpClient.ts`; `npm run fx:sync` (EUR/USD via PLN pivot). Net-worth FX rollup still FR-038 |
 
 ## Planned / not in this codebase
 
@@ -42,6 +43,6 @@ Hub: [docs/README.md](../README.md).
 |------|----------------|
 | Password reset (MVP-003) | [mvp/features/auth/password-reset-api.md](../../mvp/features/auth/password-reset-api.md) |
 | JWT HttpOnly cookie (MVP-004) | [mvp/features/auth/jwt-httponly-cookie.md](../../mvp/features/auth/jwt-httponly-cookie.md) |
-| Holdings, tax, import, NBP FX, budgets, … | [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) |
+| Holdings, tax, import, PLN net-worth FX rollup (FR-038), budgets, … | [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) |
 
 Do not invent “implemented” rows for domain FRs until the feature ships and docs-sync updates this page.

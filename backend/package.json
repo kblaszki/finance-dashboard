@@ -9,6 +9,7 @@
     "start": "node dist/app.js",
     "db:seed": "prisma db seed",
     "db:backup": "node dist/scripts/backupDb.js",
+    "fx:sync": "node dist/scripts/syncFxRates.js",
     "create-user": "node dist/scripts/createUser.js",
     "test": "tsx --import ./test/setupTestEnv.ts --test --test-concurrency=1 \"src/**/*.test.ts\" \"test/**/*.test.ts\"",
     "test:coverage": "c8 tsx --import ./test/setupTestEnv.ts --test --test-concurrency=1 \"src/**/*.test.ts\" \"test/**/*.test.ts\""

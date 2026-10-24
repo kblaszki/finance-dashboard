@@ -15,7 +15,7 @@ Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + c
 
 | done | stub | planned | in_progress | total |
 |------|------|---------|-------------|-------|
-| 21 | 0 | 45 | 0 | 66 |
+| 22 | 0 | 44 | 0 | 66 |
 
 ## Master table
 
@@ -51,7 +51,7 @@ Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + c
 | FR-019 | Bank and broker CSV import | planned | [features/import/csv-import-bank-broker.md](features/import/csv-import-bank-broker.md) | /import |
 | FR-047 | Import presets catalog | planned | [features/import/import-presets.md](features/import/import-presets.md) | /import/presets |
 | MVP-020 | Import preset column mapping UI wired to import | planned | [features/import/preset-column-mapping-ui.md](features/import/preset-column-mapping-ui.md) | /import/presets + /import |
-| FR-010 | Historical NBP FX rates | planned | [features/market-fx/nbp-fx-history.md](features/market-fx/nbp-fx-history.md) | Display currency / valuations |
+| FR-010 | Historical NBP FX rates | done | [features/market-fx/nbp-fx-history.md](features/market-fx/nbp-fx-history.md) | FxRateDaily + `npm run fx:sync` + `domain/fx.ts` |
 | FR-031 | Crypto EOD sync on CRYPTO accounts | planned | [features/market-fx/crypto-eod-sync.md](features/market-fx/crypto-eod-sync.md) | MarketPricesStatus |
 | MVP-021 | STOCK/ETF market data sync | planned | [features/market-fx/stock-etf-market-sync.md](features/market-fx/stock-etf-market-sync.md) | Market sync + CLI |
 | FR-015 | Category tree CRUD | done | [features/budgets-categories/category-tree.md](features/budgets-categories/category-tree.md) | /categories |
@@ -131,7 +131,7 @@ Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + c
 
 ### market-fx
 
-- **planned** [FR-010 Historical NBP FX rates](features/market-fx/nbp-fx-history.md)
+- **done** [FR-010 Historical NBP FX rates](features/market-fx/nbp-fx-history.md)
 - **planned** [FR-031 Crypto EOD sync on CRYPTO accounts](features/market-fx/crypto-eod-sync.md)
 - **planned** [MVP-021 STOCK/ETF market data sync](features/market-fx/stock-etf-market-sync.md)
 
