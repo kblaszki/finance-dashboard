@@ -165,6 +165,15 @@ export function TagsPage() {
   const [editBusy, setEditBusy] = useState(false);
   const [actionErr, setActionErr] = useState<string | null>(null);
   const committingRef = useRef(false);
+  const blurTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (blurTimeoutRef.current != null) {
+        window.clearTimeout(blurTimeoutRef.current);
+      }
+    };
+  }, []);
 
   async function handleCreate(name: string) {
     await createTag({ name });
@@ -184,7 +193,11 @@ export function TagsPage() {
   }
 
   function onEditorBlur() {
-    window.setTimeout(() => {
+    if (blurTimeoutRef.current != null) {
+      window.clearTimeout(blurTimeoutRef.current);
+    }
+    blurTimeoutRef.current = window.setTimeout(() => {
+      blurTimeoutRef.current = null;
       if (!committingRef.current) cancelEdit();
     }, 0);
   }
