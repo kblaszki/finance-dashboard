@@ -35,12 +35,12 @@ npm run db:seed
 | Surface | Sample content |
 |---------|----------------|
 | `/accounts` | Everyday Checking (BANK/PLN), Euro Travel (BANK/EUR), Brokerage Cash (BROKERAGE/PLN), Crypto Spot (CRYPTO/USD), Everyday Credit Card (CREDIT_CARD/PLN, debt), IKE Brokerage (IKE/PLN cash sleeve) |
-| `/categories` | Default flat roots by ledgerType (Salary, Food, …, Internal transfer) plus demo TRANSFER children (Investment, Credit card payment, Retirement savings, Travel FX) |
+| `/categories` | Default roots by ledgerType plus a **demo-only** nest to depth 3 (e.g. Food → Groceries → Supermarket; Salary → Primary job → Base salary; Internal transfer → Investment → Brokerage cash). Empty users still get flat roots only. |
 | `/tags` | Purpose/context tags (Lidl, Biedronka, wakacje-2026, Netflix, home, …) assigned on matching cash expenses — categories stay the spend type |
 | `/accounts/:id` | ~24 months of INCOME/EXPENSE rows (≥5 per month per account, including card purchases and light IKE fees/interest); categories + purpose tags on many expenses; read-only `TRANSFER IN/OUT` legs from seeded transfers (with TRANSFER categories) |
 | `/transfers` | Same-/cross-currency showcase rows, plus monthly Checking → Credit Card payments (450 PLN) and Checking → IKE contributions (500 PLN) for each ledger month — each transfer tagged with a TRANSFER category |
 | `/dashboard` | Cash net-worth buckets (credit-card debt in liabilities), rolling 12m averages, cashflow chart, account mix (pick PLN in top bar) |
-| `/statistics` | Period KPIs, cashflow chart, and category breakdown across the seeded history (transfer legs excluded) |
+| `/statistics` | Period KPIs, cashflow chart, and category breakdown across the seeded history (transfer legs excluded). Donut rolls amounts up to **tree roots**; detail tables list **leaf** names (Supermarket, Rent, Base salary, …) |
 
 ## Notes
 

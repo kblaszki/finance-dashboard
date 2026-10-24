@@ -37,6 +37,90 @@ const DEMO_TRANSFER_CHILDREN = [
   "Travel FX",
 ] as const;
 
+/** Nested demo taxonomy under flat roots (depth 2–3). Leaf names are unique per ledgerType. */
+type DemoCategoryNest = {
+  name: string;
+  children?: DemoCategoryNest[];
+};
+
+const DEMO_NESTED_UNDER_ROOT: Record<
+  string,
+  { ledgerType: "INCOME" | "EXPENSE"; children: DemoCategoryNest[] }
+> = {
+  Salary: {
+    ledgerType: "INCOME",
+    children: [
+      {
+        name: "Primary job",
+        children: [{ name: "Base salary" }],
+      },
+      { name: "Bonus" },
+    ],
+  },
+  "Other income": {
+    ledgerType: "INCOME",
+    children: [
+      {
+        name: "Dividends",
+        children: [{ name: "Equity dividends" }],
+      },
+      {
+        name: "Yield",
+        children: [{ name: "Interest credit" }],
+      },
+    ],
+  },
+  Food: {
+    ledgerType: "EXPENSE",
+    children: [
+      {
+        name: "Groceries",
+        children: [{ name: "Supermarket" }, { name: "Markets" }],
+      },
+      {
+        name: "Dining",
+        children: [{ name: "Restaurants" }, { name: "Coffee" }],
+      },
+    ],
+  },
+  Housing: {
+    ledgerType: "EXPENSE",
+    children: [
+      { name: "Rent" },
+      {
+        name: "Utilities",
+        children: [{ name: "Electricity" }, { name: "Internet" }],
+      },
+    ],
+  },
+  Transport: {
+    ledgerType: "EXPENSE",
+    children: [
+      { name: "Fuel" },
+      {
+        name: "Public transit",
+        children: [{ name: "Monthly pass" }],
+      },
+    ],
+  },
+  Other: {
+    ledgerType: "EXPENSE",
+    children: [
+      {
+        name: "Household",
+        children: [{ name: "Subscriptions" }],
+      },
+      {
+        name: "Shopping",
+        children: [{ name: "Online shopping" }],
+      },
+    ],
+  },
+};
+
+/** Depth-3 leaves under TRANSFER child "Investment". */
+const DEMO_INVESTMENT_LEAVES = ["Brokerage cash", "ETF contribution"] as const;
+
 type Db = PrismaClient | Prisma.TransactionClient;
 
 export const DEMO_ACCOUNT_NAMES = {
@@ -221,14 +305,14 @@ function monthPlansForAccount(
           amountMin: 5100,
           amountMax: 5400,
           description: "Monthly salary",
-          category: "Salary",
+          category: "Base salary",
         },
         {
           type: "EXPENSE",
           amountMin: 1700,
           amountMax: 1900,
           description: "Rent",
-          category: "Housing",
+          category: "Rent",
           tags: ["home"],
         },
         {
@@ -236,7 +320,7 @@ function monthPlansForAccount(
           amountMin: 320,
           amountMax: 480,
           description: "Groceries",
-          category: "Food",
+          category: "Supermarket",
           tags: [groceryStoreTag(rng)],
         },
         {
@@ -244,7 +328,7 @@ function monthPlansForAccount(
           amountMin: 180,
           amountMax: 320,
           description: "Transit",
-          category: "Transport",
+          category: "Monthly pass",
           tags: ["dojazd"],
         },
         rng() < 0.55
@@ -260,7 +344,7 @@ function monthPlansForAccount(
               amountMin: 60,
               amountMax: 150,
               description: "Household",
-              category: "Other",
+              category: "Subscriptions",
               tags: ["home"],
             },
       ];
@@ -271,14 +355,14 @@ function monthPlansForAccount(
           amountMin: 90,
           amountMax: 140,
           description: "EUR top-up",
-          category: "Other income",
+          category: "Interest credit",
         },
         {
           type: "EXPENSE",
           amountMin: 18,
           amountMax: 45,
           description: "Café",
-          category: "Food",
+          category: "Coffee",
           tags: ["wakacje-2026"],
         },
         {
@@ -286,7 +370,7 @@ function monthPlansForAccount(
           amountMin: 22,
           amountMax: 55,
           description: "Train",
-          category: "Transport",
+          category: "Monthly pass",
           tags:
             rng() < 0.4
               ? ["wakacje-2026", "wyjazd-sluzbowy"]
@@ -297,7 +381,7 @@ function monthPlansForAccount(
           amountMin: 15,
           amountMax: 40,
           description: "Lunch",
-          category: "Food",
+          category: "Restaurants",
           tags: ["wakacje-2026"],
         },
         rng() < 0.4
@@ -313,7 +397,7 @@ function monthPlansForAccount(
               amountMin: 10,
               amountMax: 30,
               description: "Souvenirs",
-              category: "Other",
+              category: "Online shopping",
               tags: ["wakacje-2026", "urodziny"],
             },
       ];
@@ -324,28 +408,28 @@ function monthPlansForAccount(
           amountMin: 220,
           amountMax: 420,
           description: "Dividend cash",
-          category: "Other income",
+          category: "Equity dividends",
         },
         {
           type: "EXPENSE",
           amountMin: 25,
           amountMax: 55,
           description: "Account fee",
-          category: "Other",
+          category: "Subscriptions",
         },
         {
           type: "INCOME",
           amountMin: 40,
           amountMax: 120,
           description: "Interest credit",
-          category: "Other income",
+          category: "Interest credit",
         },
         {
           type: "EXPENSE",
           amountMin: 15,
           amountMax: 45,
           description: "Wire fee",
-          category: "Other",
+          category: "Subscriptions",
         },
         rng() < 0.35
           ? {
@@ -359,7 +443,7 @@ function monthPlansForAccount(
               amountMin: 12,
               amountMax: 40,
               description: "Platform fee",
-              category: "Other",
+              category: "Subscriptions",
             },
       ];
     case "crypto":
@@ -369,28 +453,28 @@ function monthPlansForAccount(
           amountMin: 120,
           amountMax: 260,
           description: "Stablecoin yield",
-          category: "Other income",
+          category: "Interest credit",
         },
         {
           type: "EXPENSE",
           amountMin: 12,
           amountMax: 40,
           description: "Network fee",
-          category: "Other",
+          category: "Subscriptions",
         },
         {
           type: "INCOME",
           amountMin: 30,
           amountMax: 90,
           description: "Airdrop cash-out",
-          category: "Other income",
+          category: "Equity dividends",
         },
         {
           type: "EXPENSE",
           amountMin: 8,
           amountMax: 28,
           description: "Withdrawal fee",
-          category: "Other",
+          category: "Subscriptions",
         },
         rng() < 0.4
           ? {
@@ -404,7 +488,7 @@ function monthPlansForAccount(
               amountMin: 6,
               amountMax: 24,
               description: "Exchange fee",
-              category: "Other",
+              category: "Subscriptions",
             },
       ];
     case "creditCard":
@@ -414,7 +498,7 @@ function monthPlansForAccount(
           amountMin: 100,
           amountMax: 220,
           description: "Online shopping",
-          category: "Other",
+          category: "Online shopping",
           tags: ["Amazon"],
         },
         {
@@ -422,7 +506,7 @@ function monthPlansForAccount(
           amountMin: 60,
           amountMax: 150,
           description: "Restaurant",
-          category: "Food",
+          category: "Restaurants",
           ...(rng() < 0.3 ? { tags: ["urodziny"] as DemoTagName[] } : {}),
         },
         {
@@ -430,7 +514,7 @@ function monthPlansForAccount(
           amountMin: 80,
           amountMax: 180,
           description: "Card groceries",
-          category: "Food",
+          category: "Supermarket",
           tags: [groceryStoreTag(rng)],
         },
         {
@@ -438,7 +522,7 @@ function monthPlansForAccount(
           amountMin: 35,
           amountMax: 70,
           description: "Subscriptions",
-          category: "Other",
+          category: "Subscriptions",
           tags: ["Netflix"],
         },
         rng() < 0.45
@@ -454,7 +538,7 @@ function monthPlansForAccount(
               amountMin: 50,
               amountMax: 110,
               description: "Fuel",
-              category: "Transport",
+              category: "Fuel",
               tags: ["Orlen", "dojazd"],
             },
       ];
@@ -465,28 +549,28 @@ function monthPlansForAccount(
           amountMin: 8,
           amountMax: 28,
           description: "IKE interest credit",
-          category: "Other income",
+          category: "Interest credit",
         },
         {
           type: "EXPENSE",
           amountMin: 2,
           amountMax: 8,
           description: "IKE account fee",
-          category: "Other",
+          category: "Subscriptions",
         },
         {
           type: "INCOME",
           amountMin: 12,
           amountMax: 40,
           description: "IKE dividend cash",
-          category: "Other income",
+          category: "Equity dividends",
         },
         {
           type: "EXPENSE",
           amountMin: 1,
           amountMax: 5,
           description: "IKE custody fee",
-          category: "Other",
+          category: "Subscriptions",
         },
         rng() < 0.35
           ? {
@@ -500,7 +584,7 @@ function monthPlansForAccount(
               amountMin: 2,
               amountMax: 7,
               description: "IKE platform fee",
-              category: "Other",
+              category: "Subscriptions",
             },
       ];
     default: {
@@ -559,7 +643,7 @@ export function buildDemoTransfers(now = new Date()): DemoPlannedTransfer[] {
       amountFrom: 2500,
       occurredAt: utcMidMonth(older, 8),
       description: `Monthly invest transfer (${older})`,
-      category: "Investment",
+      category: "Brokerage cash",
     },
     {
       fromKey: "checking",
@@ -577,7 +661,7 @@ export function buildDemoTransfers(now = new Date()): DemoPlannedTransfer[] {
       amountTo: 200,
       occurredAt: utcMidMonth(recent, 5),
       description: `USD crypto float (${recent})`,
-      category: "Investment",
+      category: "ETF contribution",
     },
     {
       fromKey: "brokerage",
@@ -623,21 +707,51 @@ async function wipeDemoPortfolio(db: Db, userId: number): Promise<void> {
   await db.category.deleteMany({ where: { userId } });
 }
 
+/** Resolve by unique name within user + ledgerType (demo leaf names are unique). */
 async function categoryIdByNameType(
   db: Db,
   userId: number,
   name: string,
   ledgerType: "INCOME" | "EXPENSE" | "TRANSFER",
-  parentId: number | null = null,
 ): Promise<number> {
   const row = await db.category.findFirst({
-    where: { userId, name, ledgerType, parentId },
+    where: { userId, name, ledgerType },
     select: { id: true },
   });
   if (!row) {
     throw new Error(`Demo seed missing category: ${ledgerType}/${name}`);
   }
   return row.id;
+}
+
+async function createDemoCategoryChildren(
+  db: Db,
+  userId: number,
+  parentId: number,
+  ledgerType: "INCOME" | "EXPENSE" | "TRANSFER",
+  nodes: DemoCategoryNest[],
+): Promise<void> {
+  for (const node of nodes) {
+    const created = await db.category.create({
+      data: {
+        userId,
+        name: node.name,
+        parentId,
+        ledgerType,
+        nameKey: categoryNameKey(parentId, node.name),
+      },
+      select: { id: true },
+    });
+    if (node.children && node.children.length > 0) {
+      await createDemoCategoryChildren(
+        db,
+        userId,
+        created.id,
+        ledgerType,
+        node.children,
+      );
+    }
+  }
 }
 
 /** Children under Internal transfer for varied demo transfer tags. */
@@ -660,6 +774,52 @@ async function seedDemoTransferCategories(
 }
 
 /**
+ * Demo-only nesting under flat default roots (and Investment leaves) so
+ * Statistics can exercise root rollup vs leaf detail (depth up to 3).
+ */
+async function seedDemoNestedCategories(
+  db: Db,
+  userId: number,
+): Promise<void> {
+  for (const [rootName, spec] of Object.entries(DEMO_NESTED_UNDER_ROOT)) {
+    const root = await db.category.findFirst({
+      where: {
+        userId,
+        name: rootName,
+        ledgerType: spec.ledgerType,
+        parentId: null,
+      },
+      select: { id: true },
+    });
+    if (!root) {
+      throw new Error(`Demo seed missing root category "${rootName}"`);
+    }
+    await createDemoCategoryChildren(
+      db,
+      userId,
+      root.id,
+      spec.ledgerType,
+      spec.children,
+    );
+  }
+
+  const investment = await db.category.findFirst({
+    where: { userId, name: "Investment", ledgerType: "TRANSFER" },
+    select: { id: true },
+  });
+  if (!investment) {
+    throw new Error('Demo seed missing category "Investment"');
+  }
+  await createDemoCategoryChildren(
+    db,
+    userId,
+    investment.id,
+    "TRANSFER",
+    DEMO_INVESTMENT_LEAVES.map((name) => ({ name })),
+  );
+}
+
+/**
  * Wipe and rebuild demo portfolio for userId (categories, accounts, cash txs,
  * internal transfers). Must be called with a demo (or test) user — scopes all
  * deletes by userId.
@@ -679,47 +839,90 @@ export async function seedDemoPortfolio(
     "TRANSFER",
   );
   await seedDemoTransferCategories(db, userId, internalTransferId);
+  await seedDemoNestedCategories(db, userId);
 
   const categoryMap: Record<string, number> = {
-    Salary: await categoryIdByNameType(db, userId, "Salary", "INCOME"),
-    "Other income": await categoryIdByNameType(
+    "Base salary": await categoryIdByNameType(
       db,
       userId,
-      "Other income",
+      "Base salary",
       "INCOME",
     ),
-    Food: await categoryIdByNameType(db, userId, "Food", "EXPENSE"),
-    Housing: await categoryIdByNameType(db, userId, "Housing", "EXPENSE"),
-    Transport: await categoryIdByNameType(db, userId, "Transport", "EXPENSE"),
-    Other: await categoryIdByNameType(db, userId, "Other", "EXPENSE"),
-    "Internal transfer": internalTransferId,
-    Investment: await categoryIdByNameType(
+    "Equity dividends": await categoryIdByNameType(
       db,
       userId,
-      "Investment",
+      "Equity dividends",
+      "INCOME",
+    ),
+    "Interest credit": await categoryIdByNameType(
+      db,
+      userId,
+      "Interest credit",
+      "INCOME",
+    ),
+    Supermarket: await categoryIdByNameType(
+      db,
+      userId,
+      "Supermarket",
+      "EXPENSE",
+    ),
+    Restaurants: await categoryIdByNameType(
+      db,
+      userId,
+      "Restaurants",
+      "EXPENSE",
+    ),
+    Coffee: await categoryIdByNameType(db, userId, "Coffee", "EXPENSE"),
+    Rent: await categoryIdByNameType(db, userId, "Rent", "EXPENSE"),
+    "Monthly pass": await categoryIdByNameType(
+      db,
+      userId,
+      "Monthly pass",
+      "EXPENSE",
+    ),
+    Fuel: await categoryIdByNameType(db, userId, "Fuel", "EXPENSE"),
+    Subscriptions: await categoryIdByNameType(
+      db,
+      userId,
+      "Subscriptions",
+      "EXPENSE",
+    ),
+    "Online shopping": await categoryIdByNameType(
+      db,
+      userId,
+      "Online shopping",
+      "EXPENSE",
+    ),
+    "Internal transfer": internalTransferId,
+    "Brokerage cash": await categoryIdByNameType(
+      db,
+      userId,
+      "Brokerage cash",
       "TRANSFER",
-      internalTransferId,
+    ),
+    "ETF contribution": await categoryIdByNameType(
+      db,
+      userId,
+      "ETF contribution",
+      "TRANSFER",
     ),
     "Credit card payment": await categoryIdByNameType(
       db,
       userId,
       "Credit card payment",
       "TRANSFER",
-      internalTransferId,
     ),
     "Retirement savings": await categoryIdByNameType(
       db,
       userId,
       "Retirement savings",
       "TRANSFER",
-      internalTransferId,
     ),
     "Travel FX": await categoryIdByNameType(
       db,
       userId,
       "Travel FX",
       "TRANSFER",
-      internalTransferId,
     ),
   };
 

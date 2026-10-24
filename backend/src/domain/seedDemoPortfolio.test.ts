@@ -262,11 +262,49 @@ test("seedDemoPortfolio matches ledger balances and scopes wipe to one user", as
     });
     assert.equal(transferLegs, plannedTransfers.length * 2);
 
-    const categoryCount = await prisma.category.count({
+    const categories = await prisma.category.findMany({
       where: { userId: demo.id },
+      select: { id: true, parentId: true, name: true },
     });
-    // 7 default roots + 4 demo TRANSFER children under Internal transfer
-    assert.equal(categoryCount, 11);
+    // 7 roots + 4 TRANSFER children + nested demo taxonomy (depth ≤ 3)
+    assert.equal(categories.length, 37);
+
+    const byId = new Map(categories.map((c) => [c.id, c]));
+    let maxDepth = 1;
+    for (const cat of categories) {
+      let depth = 1;
+      let parentId = cat.parentId;
+      while (parentId != null) {
+        depth += 1;
+        parentId = byId.get(parentId)?.parentId ?? null;
+      }
+      if (depth > maxDepth) maxDepth = depth;
+    }
+    assert.equal(maxDepth, 3);
+
+    const depth3Ids = new Set<number>();
+    for (const cat of categories) {
+      let depth = 1;
+      let parentId = cat.parentId;
+      while (parentId != null) {
+        depth += 1;
+        parentId = byId.get(parentId)?.parentId ?? null;
+      }
+      if (depth === 3) depth3Ids.add(cat.id);
+    }
+    assert.ok(depth3Ids.size >= 1);
+
+    const leafTxCount = await prisma.cashTransaction.count({
+      where: {
+        account: { userId: demo.id },
+        categoryId: { in: [...depth3Ids] },
+        transferId: null,
+      },
+    });
+    assert.ok(
+      leafTxCount >= 1,
+      `expected ≥1 cash tx on depth-3 category, got ${leafTxCount}`,
+    );
 
     const tags = await prisma.tag.findMany({
       where: { userId: demo.id },
