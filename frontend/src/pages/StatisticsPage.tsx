@@ -30,6 +30,10 @@ import { KpiCard } from "../components/ui/KpiCard";
 import { StatusBlock } from "../components/ui/StatusBlock";
 import { useAsyncData } from "../hooks/useAsyncData";
 import { useCurrency } from "../state/currency";
+import {
+  buildCategoryTreeRows,
+  type CategoryTreeStatRow,
+} from "../utils/categoryTreeStats";
 import { formatMoney, formatPercent } from "../utils/format";
 import {
   formatPeriodDelta,
@@ -295,16 +299,16 @@ export function StatisticsPage() {
         ? expenseRollup
         : transferRollup;
 
-  const categoryDetailRows = useMemo(() => {
-    if (!breakdown || !currency) return [];
+  const categoryDetailRows = useMemo((): CategoryTreeStatRow[] => {
+    if (!breakdown || !categories || !currency) return [];
     const source =
       categoryFacet === "income"
         ? breakdown.income
         : categoryFacet === "expense"
           ? breakdown.expense
           : breakdown.transfer;
-    return source.filter((r) => r.currency === currency);
-  }, [breakdown, currency, categoryFacet]);
+    return buildCategoryTreeRows(source, categories, currency);
+  }, [breakdown, categories, currency, categoryFacet]);
 
   const tagFacetRows =
     tagFacet === "income" ? tagIncomeRollup : tagExpenseRollup;
@@ -678,6 +682,11 @@ export function StatisticsPage() {
                 rows={categoryDetailRows}
                 currency={currency}
               />
+              {categoryDetailRows.length > 0 && (
+                <p className="muted stats-detail-hint">
+                  Totals include nested subcategories.
+                </p>
+              )}
             </>
           )}
 
@@ -829,7 +838,7 @@ function BreakdownPanel(props: {
 
 function DetailTable(props: {
   title: string;
-  rows: CategoryBreakdownRow[];
+  rows: CategoryTreeStatRow[];
   currency: string;
 }) {
   return (
@@ -839,7 +848,7 @@ function DetailTable(props: {
         <p className="empty-state">No rows.</p>
       ) : (
         <div className="table-wrap">
-          <table className="data-table">
+          <table className="data-table stats-category-tree">
             <thead>
               <tr>
                 <th>Category</th>
@@ -850,12 +859,22 @@ function DetailTable(props: {
             <tbody>
               {props.rows.map((row) => (
                 <tr
-                  key={`${row.categoryId ?? "null"}-${row.categoryName}-${row.currency}`}
+                  key={row.key}
+                  className={
+                    row.isRoot ? "stats-category-tree__root" : undefined
+                  }
                 >
-                  <td>{row.categoryName}</td>
-                  <td className="num">{row.count}</td>
+                  <td
+                    className={row.isRoot ? "category-root" : undefined}
+                    style={{
+                      paddingInlineStart: `${0.75 + row.depth * 1.25}rem`,
+                    }}
+                  >
+                    {row.name}
+                  </td>
+                  <td className="num">{row.rolledCount}</td>
                   <td className="num">
-                    {formatMoney(row.total, props.currency)}
+                    {formatMoney(row.rolledTotal, props.currency)}
                   </td>
                 </tr>
               ))}
