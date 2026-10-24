@@ -318,22 +318,22 @@ test("seedDemoPortfolio matches ledger balances and scopes wipe to one user", as
     const taggedCash = await prisma.cashTransactionTag.count({
       where: { cashTransaction: { account: { userId: demo.id } } },
     });
-    // Purpose tags on groceries, rent, travel, card spend, etc.
+    // Trip/project tags on rent, euro travel, card spend, etc.
     assert.ok(taggedCash > 100, `expected many tagged joins, got ${taggedCash}`);
-    const vacationLinks = await prisma.cashTransactionTag.count({
+    const tripLinks = await prisma.cashTransactionTag.count({
       where: {
-        tag: { userId: demo.id, name: "wakacje-2026" },
+        tag: { userId: demo.id, name: "Italy trip 2026" },
         cashTransaction: { account: { userId: demo.id } },
       },
     });
-    assert.ok(vacationLinks > 0);
-    const lidlLinks = await prisma.cashTransactionTag.count({
+    assert.ok(tripLinks > 0);
+    const renovationLinks = await prisma.cashTransactionTag.count({
       where: {
-        tag: { userId: demo.id, name: "Lidl" },
+        tag: { userId: demo.id, name: "Home renovation" },
         cashTransaction: { account: { userId: demo.id } },
       },
     });
-    assert.ok(lidlLinks > 0);
+    assert.ok(renovationLinks > 0);
 
     const taggedTransfers = await prisma.cashTransfer.count({
       where: { userId: demo.id, categoryId: { not: null } },

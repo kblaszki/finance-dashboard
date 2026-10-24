@@ -11,20 +11,16 @@ import { quantizeMajorToMinor } from "./money";
 import { tagNameKey } from "./tags";
 
 /**
- * Purpose/context tags (merchant, trip, project) — categories stay the spend type.
- * Demo examples: Lidl vs Food, wakacje-2026 vs Transport.
+ * Cross-cutting trip/project/event tags — categories stay the spend type.
+ * Demo example: "Italy trip 2026" groups Food + Transport + Shopping on one trip.
  */
 export const DEMO_TAG_NAMES = [
-  "Lidl",
-  "Biedronka",
-  "wakacje-2026",
-  "wyjazd-sluzbowy",
-  "Netflix",
-  "home",
-  "urodziny",
-  "Amazon",
-  "Orlen",
-  "dojazd",
+  "Italy trip 2026",
+  "Client offsite",
+  "Home renovation",
+  "Kids birthday",
+  "Ski weekend",
+  "Moving day",
 ] as const;
 
 export type DemoTagName = (typeof DEMO_TAG_NAMES)[number];
@@ -289,10 +285,6 @@ type MonthPlan = {
   tags?: DemoTagName[];
 };
 
-function groceryStoreTag(rng: () => number): DemoTagName {
-  return rng() < 0.55 ? "Lidl" : "Biedronka";
-}
-
 function monthPlansForAccount(
   accountKey: DemoAccountKey,
   rng: () => number,
@@ -313,7 +305,7 @@ function monthPlansForAccount(
           amountMax: 1900,
           description: "Rent",
           category: "Rent",
-          tags: ["home"],
+          tags: ["Home renovation"],
         },
         {
           type: "EXPENSE",
@@ -321,7 +313,6 @@ function monthPlansForAccount(
           amountMax: 480,
           description: "Groceries",
           category: "Supermarket",
-          tags: [groceryStoreTag(rng)],
         },
         {
           type: "EXPENSE",
@@ -329,7 +320,6 @@ function monthPlansForAccount(
           amountMax: 320,
           description: "Transit",
           category: "Monthly pass",
-          tags: ["dojazd"],
         },
         rng() < 0.55
           ? {
@@ -337,7 +327,9 @@ function monthPlansForAccount(
               amountMin: 40,
               amountMax: 120,
               description: "Misc uncategorized",
-              ...(rng() < 0.35 ? { tags: ["urodziny"] as DemoTagName[] } : {}),
+              ...(rng() < 0.35
+                ? { tags: ["Kids birthday"] as DemoTagName[] }
+                : {}),
             }
           : {
               type: "EXPENSE",
@@ -345,7 +337,7 @@ function monthPlansForAccount(
               amountMax: 150,
               description: "Household",
               category: "Subscriptions",
-              tags: ["home"],
+              tags: ["Home renovation"],
             },
       ];
     case "euro":
@@ -363,7 +355,7 @@ function monthPlansForAccount(
           amountMax: 45,
           description: "Café",
           category: "Coffee",
-          tags: ["wakacje-2026"],
+          tags: ["Italy trip 2026"],
         },
         {
           type: "EXPENSE",
@@ -373,8 +365,8 @@ function monthPlansForAccount(
           category: "Monthly pass",
           tags:
             rng() < 0.4
-              ? ["wakacje-2026", "wyjazd-sluzbowy"]
-              : ["wakacje-2026"],
+              ? ["Italy trip 2026", "Client offsite"]
+              : ["Italy trip 2026"],
         },
         {
           type: "EXPENSE",
@@ -382,7 +374,7 @@ function monthPlansForAccount(
           amountMax: 40,
           description: "Lunch",
           category: "Restaurants",
-          tags: ["wakacje-2026"],
+          tags: ["Italy trip 2026"],
         },
         rng() < 0.4
           ? {
@@ -390,7 +382,7 @@ function monthPlansForAccount(
               amountMin: 8,
               amountMax: 25,
               description: "Travel misc",
-              tags: ["wakacje-2026"],
+              tags: ["Italy trip 2026"],
             }
           : {
               type: "EXPENSE",
@@ -398,7 +390,7 @@ function monthPlansForAccount(
               amountMax: 30,
               description: "Souvenirs",
               category: "Online shopping",
-              tags: ["wakacje-2026", "urodziny"],
+              tags: ["Italy trip 2026", "Kids birthday"],
             },
       ];
     case "brokerage":
@@ -499,7 +491,7 @@ function monthPlansForAccount(
           amountMax: 220,
           description: "Online shopping",
           category: "Online shopping",
-          tags: ["Amazon"],
+          tags: ["Moving day"],
         },
         {
           type: "EXPENSE" as const,
@@ -507,7 +499,9 @@ function monthPlansForAccount(
           amountMax: 150,
           description: "Restaurant",
           category: "Restaurants",
-          ...(rng() < 0.3 ? { tags: ["urodziny"] as DemoTagName[] } : {}),
+          ...(rng() < 0.3
+            ? { tags: ["Kids birthday"] as DemoTagName[] }
+            : {}),
         },
         {
           type: "EXPENSE",
@@ -515,7 +509,6 @@ function monthPlansForAccount(
           amountMax: 180,
           description: "Card groceries",
           category: "Supermarket",
-          tags: [groceryStoreTag(rng)],
         },
         {
           type: "EXPENSE",
@@ -523,7 +516,6 @@ function monthPlansForAccount(
           amountMax: 70,
           description: "Subscriptions",
           category: "Subscriptions",
-          tags: ["Netflix"],
         },
         rng() < 0.45
           ? {
@@ -531,7 +523,9 @@ function monthPlansForAccount(
               amountMin: 40,
               amountMax: 120,
               description: "Card misc",
-              ...(rng() < 0.5 ? { tags: ["Amazon"] as DemoTagName[] } : {}),
+              ...(rng() < 0.5
+                ? { tags: ["Moving day"] as DemoTagName[] }
+                : {}),
             }
           : {
               type: "EXPENSE",
@@ -539,7 +533,7 @@ function monthPlansForAccount(
               amountMax: 110,
               description: "Fuel",
               category: "Fuel",
-              tags: ["Orlen", "dojazd"],
+              tags: ["Ski weekend"],
             },
       ];
     case "ike":
