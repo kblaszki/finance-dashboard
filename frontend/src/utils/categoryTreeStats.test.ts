@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { Category } from "../api/categoriesApi";
 import type { CategoryBreakdownRow } from "../api/statisticsApi";
-import { buildCategoryTreeRows } from "./categoryTreeStats";
+import {
+  buildCategoryTreeRows,
+  visibleCategoryTreeRows,
+} from "./categoryTreeStats";
 
 function cat(
   id: number,
@@ -104,5 +107,34 @@ describe("buildCategoryTreeRows", () => {
       "Groceries",
       "Supermarket",
     ]);
+    expect(tree.find((r) => r.key === "cat-1")!.hasChildren).toBe(true);
+    expect(tree.find((r) => r.key === "cat-3")!.hasChildren).toBe(false);
+  });
+
+  it("visibleCategoryTreeRows collapses descendants until parents expand", () => {
+    const tree = buildCategoryTreeRows(
+      [
+        row(3, "Supermarket", 300, 3),
+        row(4, "Markets", 100, 1),
+        row(6, "Restaurants", 50, 2),
+      ],
+      categories,
+      "PLN",
+    );
+
+    expect(visibleCategoryTreeRows(tree, new Set()).map((r) => r.name)).toEqual(
+      ["Food"],
+    );
+
+    expect(
+      visibleCategoryTreeRows(tree, new Set(["cat-1"])).map((r) => r.name),
+    ).toEqual(["Food", "Groceries", "Dining"]);
+
+    expect(
+      visibleCategoryTreeRows(
+        tree,
+        new Set(["cat-1", "cat-2"]),
+      ).map((r) => r.name),
+    ).toEqual(["Food", "Groceries", "Supermarket", "Markets", "Dining"]);
   });
 });

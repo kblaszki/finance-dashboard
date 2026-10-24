@@ -53,7 +53,7 @@ Bounds are UTC. `period` defaults to `month`. Quarter/year are calendar bounds c
 ## Category and tag breakdown (FR-016+)
 
 1. On `/statistics`, open the **Categories** or **Tags** tab under the charts.
-2. **Categories:** switch Income / Expense / Transfers. Donuts roll up to each **category tree root**; the detail table is a **nested tree** (indent by depth) where each parent total is own amount plus all descendants (so Food ≥ Groceries ≥ Supermarket). Transfer rows come from `CashTransfer` categories (not ledger `TRANSFER_*` legs).
+2. **Categories:** switch Income / Expense / Transfers. Donuts roll up to each **category tree root**; the detail table starts at **roots** (rolled-up totals) and expands with ▸ to show nested children (Food ≥ Groceries ≥ Supermarket). Transfer rows come from `CashTransfer` categories (not ledger `TRANSFER_*` legs).
 3. **Tags:** switch Income / Expense. Full amount is counted under each attached tag (a multi-tag transaction appears in each tag). **Untagged** is listed separately. Tags apply only to cash income/expense.
 4. Totals use the category/tag name currently stored (renames affect past periods).
 5. APIs:

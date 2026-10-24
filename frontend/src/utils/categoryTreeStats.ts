@@ -8,6 +8,8 @@ export type CategoryTreeStatRow = {
   rolledTotal: number;
   rolledCount: number;
   isRoot: boolean;
+  /** True when this node has at least one active child in the tree. */
+  hasChildren: boolean;
 };
 
 type Amount = { total: number; count: number };
@@ -80,6 +82,9 @@ export function buildCategoryTreeRows(
   function walk(cat: Category, depth: number): void {
     const rolled = rollup(cat.id);
     if (!hasActivity(rolled)) return;
+    const children = [...(byParent.get(cat.id) ?? [])]
+      .filter((child) => hasActivity(rollup(child.id)))
+      .sort((a, b) => rollup(b.id).total - rollup(a.id).total);
     out.push({
       key: `cat-${cat.id}`,
       name: cat.name,
@@ -87,10 +92,8 @@ export function buildCategoryTreeRows(
       rolledTotal: rolled.total,
       rolledCount: rolled.count,
       isRoot: depth === 0,
+      hasChildren: children.length > 0,
     });
-    const children = [...(byParent.get(cat.id) ?? [])].sort(
-      (a, b) => rollup(b.id).total - rollup(a.id).total,
-    );
     for (const child of children) {
       walk(child, depth + 1);
     }
@@ -112,6 +115,7 @@ export function buildCategoryTreeRows(
       rolledTotal: amount.total,
       rolledCount: amount.count,
       isRoot: true,
+      hasChildren: false,
     });
   }
 
@@ -123,8 +127,35 @@ export function buildCategoryTreeRows(
       rolledTotal: uncategorized.total,
       rolledCount: uncategorized.count,
       isRoot: true,
+      hasChildren: false,
     });
   }
 
+  return out;
+}
+
+/**
+ * Keep roots always; show deeper rows only when every ancestor key is in
+ * `expandedKeys` (DFS order from {@link buildCategoryTreeRows}).
+ */
+export function visibleCategoryTreeRows(
+  rows: CategoryTreeStatRow[],
+  expandedKeys: ReadonlySet<string>,
+): CategoryTreeStatRow[] {
+  const out: CategoryTreeStatRow[] = [];
+  const ancestorExpanded: boolean[] = [];
+  for (const row of rows) {
+    ancestorExpanded.length = row.depth;
+    const isVisible =
+      row.depth === 0 ||
+      (ancestorExpanded.length === row.depth &&
+        ancestorExpanded.every(Boolean));
+    if (isVisible) {
+      out.push(row);
+      ancestorExpanded.push(expandedKeys.has(row.key));
+    } else {
+      ancestorExpanded.push(false);
+    }
+  }
   return out;
 }

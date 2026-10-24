@@ -206,4 +206,39 @@
 .stats-category-tree tbody tr.stats-category-tree__root:first-child td {
   border-top: none;
 }
+
+.stats-category-tree__name {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.stats-category-tree__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm, 4px);
+  background: transparent;
+  color: var(--color-text-muted);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.stats-category-tree__toggle:hover {
+  color: var(--color-text);
+  background: var(--color-surface-muted, transparent);
+}
+
+.stats-category-tree__toggle-spacer {
+  display: inline-block;
+  flex: 0 0 1.25rem;
+  width: 1.25rem;
+}
 }
