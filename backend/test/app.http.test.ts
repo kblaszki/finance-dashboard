@@ -1366,6 +1366,101 @@ test("CSV import presets CRUD and columns preview matchingPresetId", async () =>
   assert.equal(previewNoMatch.body.matchingPresetId, null);
 });
 
+test("import presets and description rules return 404 for another user", async () => {
+  const token = await registerAndLogin(
+    "idorpresets@test.local",
+    "idorpresets",
+    "password123",
+  );
+  const otherToken = await registerAndLogin(
+    "idorpresets2@test.local",
+    "idorpresets2",
+    "password123",
+  );
+
+  const account = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      name: "IDOR Preset Bank",
+      accountType: "BANK",
+      currency: "PLN",
+      openingBalance: 0,
+    });
+  assert.equal(account.status, 201);
+  const accountId = account.body.id as number;
+
+  const preset = await request(app)
+    .post(`/api/accounts/${accountId}/import-presets`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      name: "Secret preset",
+      headers: ["Date", "Amount"],
+      columnMapping: {
+        occurredAt: 0,
+        amount: 1,
+        amountSignMode: "negativeIsExpense",
+      },
+    });
+  assert.equal(preset.status, 201);
+  const presetId = preset.body.id as number;
+
+  const listForeign = await request(app)
+    .get(`/api/accounts/${accountId}/import-presets`)
+    .set("Authorization", `Bearer ${otherToken}`);
+  assert.equal(listForeign.status, 404);
+
+  const patchForeign = await request(app)
+    .patch(`/api/accounts/${accountId}/import-presets/${presetId}`)
+    .set("Authorization", `Bearer ${otherToken}`)
+    .send({ name: "Hijack" });
+  assert.equal(patchForeign.status, 404);
+
+  const deleteForeign = await request(app)
+    .delete(`/api/accounts/${accountId}/import-presets/${presetId}`)
+    .set("Authorization", `Bearer ${otherToken}`);
+  assert.equal(deleteForeign.status, 404);
+
+  const cats = await request(app)
+    .get("/api/categories")
+    .set("Authorization", `Bearer ${token}`);
+  const food = (cats.body as Array<{ id: number; name: string }>).find(
+    (c) => c.name === "Food",
+  );
+  assert.ok(food);
+
+  const rule = await request(app)
+    .post("/api/category-description-rules")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      pattern: "secret merchant",
+      ledgerType: "EXPENSE",
+      categoryId: food!.id,
+    });
+  assert.equal(rule.status, 201);
+  const ruleId = rule.body.id as number;
+
+  const patchRule = await request(app)
+    .patch(`/api/category-description-rules/${ruleId}`)
+    .set("Authorization", `Bearer ${otherToken}`)
+    .send({ pattern: "hijack" });
+  assert.equal(patchRule.status, 404);
+
+  const deleteRule = await request(app)
+    .delete(`/api/category-description-rules/${ruleId}`)
+    .set("Authorization", `Bearer ${otherToken}`);
+  assert.equal(deleteRule.status, 404);
+
+  const otherList = await request(app)
+    .get("/api/category-description-rules")
+    .set("Authorization", `Bearer ${otherToken}`);
+  assert.equal(otherList.status, 200);
+  assert.equal(
+    (otherList.body as Array<{ id: number }>).some((r) => r.id === ruleId),
+    false,
+  );
+});
+
 test("cash ledger CSV import skips duplicates and records ImportBatch", async () => {
   const token = await registerAndLogin(
     "csvdedup@test.local",
