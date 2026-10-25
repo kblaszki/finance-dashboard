@@ -65,6 +65,7 @@ Auth + multi-type accounts + category tree + cash ledger + category statistics b
 | Shell / gates | `frontend/src/components/AppShell.tsx`, `AuthSwapShell.tsx`, `ProtectedRoute.tsx`, `ErrorBoundary.tsx` |
 | Shared UI | `frontend/src/components/ui/{PageHeader,KpiCard,ChartCard,StatusBlock,CurrencySelect}.tsx` |
 | Pages | `frontend/src/pages/{Landing,Login,Register,Dashboard,Accounts,AccountDetail,Categories,Tags,Transfers,Statistics,Settings}Page.tsx` |
+| Statistics UI | `frontend/src/components/statistics/`, `frontend/src/utils/statisticsPeriod.ts`, `statisticsRollup.ts` |
 | Cash ledger import hook | `frontend/src/hooks/useCashLedgerImport.ts` (AccountDetail CSV flow) |
 | Transfers API client | `frontend/src/api/transfersApi.ts` |
 | Account ledger UI | `frontend/src/components/account/` |

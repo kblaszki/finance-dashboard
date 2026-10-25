@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Bar,
   CartesianGrid,
@@ -6,49 +6,49 @@ import {
   ComposedChart,
   Legend,
   Line,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
-import { fetchCategories, type Category } from "../api/categoriesApi";
+import { fetchCategories } from "../api/categoriesApi";
 import {
   fetchCashflowHistory,
   fetchCategoryBreakdown,
   fetchPeriodSummary,
   fetchTagBreakdown,
-  type CategoryBreakdownRow,
   type PeriodSummary,
   type StatsPeriod,
   type TagBreakdown,
-  type TagBreakdownRow,
 } from "../api/statisticsApi";
+import { BreakdownPanel } from "../components/statistics/BreakdownPanel";
+import { CHART_COLORS } from "../components/statistics/chartColors";
+import { DetailTable } from "../components/statistics/DetailTable";
+import { TagDetailTable } from "../components/statistics/TagDetailTable";
 import { ChartCard } from "../components/ui/ChartCard";
 import { KpiCard } from "../components/ui/KpiCard";
 import { StatusBlock } from "../components/ui/StatusBlock";
 import { useAsyncData } from "../hooks/useAsyncData";
 import { useCurrency } from "../state/currency";
-import {
-  buildCategoryTreeRows,
-  visibleCategoryTreeRows,
-  type CategoryTreeStatRow,
-} from "../utils/categoryTreeStats";
+import { buildCategoryTreeRows } from "../utils/categoryTreeStats";
 import { formatMoney, formatPercent } from "../utils/format";
 import {
   formatPeriodDelta,
   previousPeriodAnchor,
 } from "../utils/periodCompare";
-
-const CHART_COLORS = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-5)",
-  "var(--chart-6)",
-] as const;
+import {
+  anchorForQuarter,
+  anchorForYear,
+  currentUtcMonth,
+  quarterOf,
+  YEAR_OPTIONS,
+  yearOf,
+} from "../utils/statisticsPeriod";
+import {
+  rollupByParent,
+  tagRollupRows,
+  withUntagged,
+} from "../utils/statisticsRollup";
 
 const HISTORY_MONTH_OPTIONS = [6, 12, 24] as const;
 const PERIOD_OPTIONS: { value: StatsPeriod; label: string }[] = [
@@ -60,125 +60,6 @@ const PERIOD_OPTIONS: { value: StatsPeriod; label: string }[] = [
 type AnalysisView = "categories" | "tags";
 type CategoryFacet = "income" | "expense" | "transfer";
 type TagFacet = "income" | "expense";
-
-function currentUtcMonth(): string {
-  return new Date().toISOString().slice(0, 7);
-}
-
-function yearOf(month: string): number {
-  return Number(month.slice(0, 4));
-}
-
-function monthIndexOf(month: string): number {
-  return Number(month.slice(5, 7)) - 1;
-}
-
-function quarterOf(month: string): number {
-  return Math.floor(monthIndexOf(month) / 3) + 1;
-}
-
-function anchorForQuarter(year: number, quarter: number): string {
-  const startMonth = (quarter - 1) * 3 + 1;
-  return `${year}-${String(startMonth).padStart(2, "0")}`;
-}
-
-function anchorForYear(year: number): string {
-  return `${year}-01`;
-}
-
-type RollupRow = {
-  key: string;
-  name: string;
-  total: number;
-  count: number;
-};
-
-function parentIdMap(categories: Category[]): Map<number, number | null> {
-  const map = new Map<number, number | null>();
-  for (const cat of categories) {
-    map.set(cat.id, cat.parentId);
-  }
-  return map;
-}
-
-function nameById(categories: Category[]): Map<number, string> {
-  const map = new Map<number, string>();
-  for (const cat of categories) {
-    map.set(cat.id, cat.name);
-  }
-  return map;
-}
-
-/**
- * Roll totals to each category tree root (Salary, Food, …). Deeper tags roll up to the root.
- */
-function rollupByParent(
-  rows: CategoryBreakdownRow[],
-  currency: string,
-  categories: Category[],
-): RollupRow[] {
-  const parents = parentIdMap(categories);
-  const names = nameById(categories);
-  const buckets = new Map<string, RollupRow>();
-
-  for (const row of rows) {
-    if (row.currency !== currency) continue;
-    let label = "Uncategorized";
-    let key = "uncategorized";
-    if (row.categoryId != null) {
-      let id: number | null = row.categoryId;
-      let rootId = id;
-      while (id != null) {
-        rootId = id;
-        id = parents.get(id) ?? null;
-      }
-      label = names.get(rootId) ?? row.categoryName;
-      key = `cat-${rootId}`;
-    }
-    const existing = buckets.get(key);
-    if (existing) {
-      existing.total += row.total;
-      existing.count += row.count;
-    } else {
-      buckets.set(key, { key, name: label, total: row.total, count: row.count });
-    }
-  }
-
-  return [...buckets.values()].sort((a, b) => b.total - a.total);
-}
-
-function tagRollupRows(rows: TagBreakdownRow[]): RollupRow[] {
-  return rows.map((row) => ({
-    key: `tag-${row.tagId}`,
-    name: row.tagName,
-    total: row.total,
-    count: row.count,
-  }));
-}
-
-function withUntagged(
-  rows: RollupRow[],
-  untaggedTotal: number,
-  untaggedCount: number,
-): RollupRow[] {
-  if (untaggedTotal <= 0 && untaggedCount <= 0) return rows;
-  return [
-    ...rows,
-    {
-      key: "untagged",
-      name: "Untagged",
-      total: untaggedTotal,
-      count: untaggedCount,
-    },
-  ].sort((a, b) => b.total - a.total);
-}
-
-const YEAR_OPTIONS = (() => {
-  const current = new Date().getUTCFullYear();
-  const years: number[] = [];
-  for (let y = current; y >= current - 10; y -= 1) years.push(y);
-  return years;
-})();
 
 export function StatisticsPage() {
   const { currencies, currency } = useCurrency();
@@ -753,235 +634,5 @@ export function StatisticsPage() {
         </section>
       )}
     </>
-  );
-}
-
-function BreakdownPanel(props: {
-  title: string;
-  rows: RollupRow[];
-  currency: string;
-  tone: "positive" | "negative" | "neutral";
-  emptyLabel: string;
-  subtitle: string;
-  byLabel?: string;
-}) {
-  const {
-    title,
-    rows,
-    currency,
-    tone,
-    emptyLabel,
-    subtitle,
-    byLabel = "category",
-  } = props;
-  const toneClass = tone === "neutral" ? "" : `stat-row-value ${tone}`;
-  return (
-    <ChartCard title={`${title} by ${byLabel}`} subtitle={subtitle}>
-      {rows.length === 0 ? (
-        <p className="empty-state">{emptyLabel}</p>
-      ) : (
-        <div className="donut-layout">
-          <ResponsiveContainer width="100%" height={200}>
-            <PieChart>
-              <Pie
-                data={rows}
-                dataKey="total"
-                nameKey="name"
-                innerRadius="62%"
-                outerRadius="90%"
-                paddingAngle={2}
-                strokeWidth={0}
-              >
-                {rows.map((row, index) => (
-                  <Cell
-                    key={row.key}
-                    fill={CHART_COLORS[index % CHART_COLORS.length]!}
-                  />
-                ))}
-              </Pie>
-              <Tooltip
-                formatter={(value) =>
-                  typeof value === "number"
-                    ? formatMoney(value, currency)
-                    : String(value ?? "")
-                }
-              />
-            </PieChart>
-          </ResponsiveContainer>
-          <ul className="legend-list">
-            {rows.map((row, index) => (
-              <li key={row.key} className="legend-row">
-                <span className="legend-name">
-                  <span
-                    className="legend-dot"
-                    style={{
-                      background: CHART_COLORS[index % CHART_COLORS.length],
-                    }}
-                    aria-hidden
-                  />
-                  {row.name}
-                  <span className="muted">
-                    {" "}
-                    · {row.count} {row.count === 1 ? "tx" : "txs"}
-                  </span>
-                </span>
-                <span className={`legend-value ${toneClass}`.trim()}>
-                  {formatMoney(row.total, currency)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </ChartCard>
-  );
-}
-
-function DetailTable(props: {
-  title: string;
-  rows: CategoryTreeStatRow[];
-  currency: string;
-}) {
-  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(() => new Set());
-  const rowsSignature = props.rows.map((r) => r.key).join("|");
-
-  useEffect(() => {
-    setExpandedKeys(new Set());
-  }, [rowsSignature]);
-
-  const visible = useMemo(
-    () => visibleCategoryTreeRows(props.rows, expandedKeys),
-    [props.rows, expandedKeys],
-  );
-
-  function toggleExpanded(key: string) {
-    setExpandedKeys((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  }
-
-  return (
-    <section className="form-section-gap">
-      <h2 className="section-title">{props.title}</h2>
-      {props.rows.length === 0 ? (
-        <p className="empty-state">No rows.</p>
-      ) : (
-        <div className="table-wrap">
-          <table className="data-table stats-category-tree">
-            <thead>
-              <tr>
-                <th>Category</th>
-                <th className="num">Count</th>
-                <th className="num">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visible.map((row) => {
-                const expanded = expandedKeys.has(row.key);
-                return (
-                  <tr
-                    key={row.key}
-                    className={
-                      row.isRoot ? "stats-category-tree__root" : undefined
-                    }
-                  >
-                    <td
-                      className={
-                        row.isRoot
-                          ? "category-root stats-category-tree__name"
-                          : "stats-category-tree__name"
-                      }
-                      style={{
-                        paddingInlineStart: `${0.5 + row.depth * 1.25}rem`,
-                      }}
-                    >
-                      {row.hasChildren ? (
-                        <button
-                          type="button"
-                          className="stats-category-tree__toggle"
-                          aria-expanded={expanded}
-                          aria-label={
-                            expanded
-                              ? `Collapse ${row.name}`
-                              : `Expand ${row.name}`
-                          }
-                          onClick={() => toggleExpanded(row.key)}
-                        >
-                          <span aria-hidden>{expanded ? "▾" : "▸"}</span>
-                        </button>
-                      ) : (
-                        <span
-                          className="stats-category-tree__toggle-spacer"
-                          aria-hidden
-                        />
-                      )}
-                      {row.name}
-                    </td>
-                    <td className="num">{row.rolledCount}</td>
-                    <td className="num">
-                      {formatMoney(row.rolledTotal, props.currency)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </section>
-  );
-}
-
-function TagDetailTable(props: {
-  title: string;
-  rows: TagBreakdownRow[];
-  untaggedTotal: number;
-  untaggedCount: number;
-  currency: string;
-}) {
-  const hasUntagged = props.untaggedTotal > 0 || props.untaggedCount > 0;
-  const empty = props.rows.length === 0 && !hasUntagged;
-  return (
-    <section className="form-section-gap">
-      <h2 className="section-title">{props.title}</h2>
-      {empty ? (
-        <p className="empty-state">No rows.</p>
-      ) : (
-        <div className="table-wrap">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Tag</th>
-                <th className="num">Count</th>
-                <th className="num">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {props.rows.map((row) => (
-                <tr key={row.tagId}>
-                  <td>{row.tagName}</td>
-                  <td className="num">{row.count}</td>
-                  <td className="num">
-                    {formatMoney(row.total, props.currency)}
-                  </td>
-                </tr>
-              ))}
-              {hasUntagged && (
-                <tr>
-                  <td>Untagged</td>
-                  <td className="num">{props.untaggedCount}</td>
-                  <td className="num">
-                    {formatMoney(props.untaggedTotal, props.currency)}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </section>
   );
 }
