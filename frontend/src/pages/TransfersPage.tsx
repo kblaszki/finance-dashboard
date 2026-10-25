@@ -1,38 +1,23 @@
 import {
-  type KeyboardEvent,
   useCallback,
   useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { type Account } from "../api/accountsApi";
 import {
   fetchCategories,
-  type Category,
 } from "../api/categoriesApi";
 import {
   createTransfer,
-  deleteTransfer,
   exportTransfersCsv,
   fetchTransfers,
-  updateTransfer,
   type CashTransfer,
   type CreateTransferInput,
-  type UpdateTransferInput,
 } from "../api/transfersApi";
-import {
-  accountLabel,
-  TransferCreateRow,
-} from "../components/transfers/TransferCreateRow";
+import { TransferTable } from "../components/transfers/TransferTable";
 import { useTransferImport } from "../hooks/useTransferImport";
-import {
-  dateInputToIso,
-  formatOccurredAt,
-  toDateLocalValue,
-} from "../components/account/occurredAt";
-import { CategorySelectWithCreate } from "../components/account/CategorySelectWithCreate";
 import { categoriesForLedgerType } from "../components/account/categoryScope";
 import { AccountLedgerHeader } from "../components/account/AccountLedgerHeader";
 import { TransferFilterBar } from "../components/transfers/TransferFilterBar";
@@ -44,11 +29,9 @@ import {
   type ListViewMode,
 } from "../components/ui/MonthPager";
 import { PageHeader } from "../components/ui/PageHeader";
-import { SortableTh } from "../components/ui/SortableTh";
 import { StatusBlock } from "../components/ui/StatusBlock";
 import { useAsyncData } from "../hooks/useAsyncData";
 import { useCurrency } from "../state/currency";
-import { formatMoney } from "../utils/format";
 import {
   EMPTY_TRANSFER_FILTERS,
   filterTransferRows,
@@ -57,94 +40,10 @@ import {
 } from "../utils/listFilters";
 import {
   sortBy,
-  toggleSort,
   type SortState,
 } from "../utils/tableSort";
 
 type TransferSortKey = "occurredAt" | "amountFrom" | "amountTo" | "description";
-
-type EditableField =
-  | "occurredAt"
-  | "fromAccountId"
-  | "toAccountId"
-  | "amountFrom"
-  | "amountTo"
-  | "categoryId"
-  | "description";
-
-type EditingState = { transferId: number; field: EditableField };
-
-function categoryNameById(
-  categories: Category[],
-  categoryId: number | null,
-): string {
-  if (categoryId == null) return "—";
-  return categories.find((c) => c.id === categoryId)?.name ?? "—";
-}
-
-function draftFromTransfer(transfer: CashTransfer, field: EditableField): string {
-  switch (field) {
-    case "occurredAt":
-      return toDateLocalValue(transfer.occurredAt);
-    case "fromAccountId":
-      return String(transfer.fromAccountId);
-    case "toAccountId":
-      return String(transfer.toAccountId);
-    case "amountFrom":
-      return String(transfer.amountFrom);
-    case "amountTo":
-      return String(transfer.amountTo);
-    case "categoryId":
-      return transfer.categoryId == null ? "" : String(transfer.categoryId);
-    case "description":
-      return transfer.description ?? "";
-  }
-}
-
-function buildPatch(
-  field: EditableField,
-  draft: string,
-): UpdateTransferInput {
-  switch (field) {
-    case "occurredAt": {
-      return { occurredAt: dateInputToIso(draft) };
-    }
-    case "fromAccountId": {
-      const id = Number(draft);
-      if (!Number.isInteger(id) || id < 1) throw new Error("Invalid from account");
-      return { fromAccountId: id };
-    }
-    case "toAccountId": {
-      const id = Number(draft);
-      if (!Number.isInteger(id) || id < 1) throw new Error("Invalid to account");
-      return { toAccountId: id };
-    }
-    case "amountFrom": {
-      const amount = Number(draft);
-      if (!Number.isFinite(amount) || amount <= 0) {
-        throw new Error("Amount from must be a positive number");
-      }
-      return { amountFrom: amount };
-    }
-    case "amountTo": {
-      const amount = Number(draft);
-      if (!Number.isFinite(amount) || amount <= 0) {
-        throw new Error("Amount to must be a positive number");
-      }
-      return { amountTo: amount };
-    }
-    case "categoryId": {
-      if (draft === "") return { categoryId: null };
-      const id = Number(draft);
-      if (!Number.isInteger(id) || id < 1) throw new Error("Invalid category");
-      return { categoryId: id };
-    }
-    case "description": {
-      const trimmed = draft.trim();
-      return { description: trimmed ? trimmed : null };
-    }
-  }
-}
 
 function parseFromAccountIdParam(raw: string | null): number | null {
   if (raw == null || raw === "") return null;
@@ -164,20 +63,7 @@ export function TransfersPage() {
     () => parseFromAccountIdParam(searchParams.get("fromAccountId")),
   );
   const [actionError, setActionError] = useState<string | null>(null);
-  const [editing, setEditing] = useState<EditingState | null>(null);
-  const [draft, setDraft] = useState("");
-  const [editBusy, setEditBusy] = useState(false);
   const [exportBusy, setExportBusy] = useState(false);
-  const committingRef = useRef(false);
-  const blurTimeoutRef = useRef<number | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (blurTimeoutRef.current != null) {
-        window.clearTimeout(blurTimeoutRef.current);
-      }
-    };
-  }, []);
   const [listMode, setListMode] = useState<ListViewMode>("month");
   const [month, setMonth] = useState(currentUtcMonth);
   const [transfers, setTransfers] = useState<CashTransfer[]>([]);
@@ -186,6 +72,7 @@ export function TransfersPage() {
   const [filters, setFilters] = useState<TransferFilterState>({
     ...EMPTY_TRANSFER_FILTERS,
   });
+  const [sort, setSort] = useState<SortState<TransferSortKey> | null>(null);
 
   useEffect(() => {
     if (!searchParams.has("fromAccountId")) return;
@@ -215,7 +102,6 @@ export function TransfersPage() {
     setNextCursor(listMode === "all" ? transfersPage.nextCursor : null);
   }, [transfersPage, listMode]);
 
-  const [sort, setSort] = useState<SortState<TransferSortKey> | null>(null);
   const filteredTransfers = useMemo(
     () => filterTransferRows(transfers, filters),
     [transfers, filters],
@@ -232,7 +118,6 @@ export function TransfersPage() {
   );
   const filtersActive = isTransferFilterActive(filters);
 
-
   const loadCategories = useCallback(() => fetchCategories(), []);
   const {
     data: categories,
@@ -246,6 +131,7 @@ export function TransfersPage() {
     setImportMsg,
     importBusy,
     pendingImport,
+    setPendingImport,
     handleImportCsvFile,
     handleImportContinue,
     handleImportConfirm,
@@ -276,82 +162,6 @@ export function TransfersPage() {
     [categories],
   );
 
-  function startEdit(transfer: CashTransfer, field: EditableField) {
-    if (editBusy) return;
-    if (
-      field === "amountTo" &&
-      transfer.fromCurrency === transfer.toCurrency
-    ) {
-      return;
-    }
-    setEditing({ transferId: transfer.id, field });
-    setDraft(draftFromTransfer(transfer, field));
-    setActionError(null);
-  }
-
-  function cancelEdit() {
-    setEditing(null);
-    setDraft("");
-  }
-
-  function onEditorBlur() {
-    if (blurTimeoutRef.current != null) {
-      window.clearTimeout(blurTimeoutRef.current);
-    }
-    blurTimeoutRef.current = window.setTimeout(() => {
-      blurTimeoutRef.current = null;
-      if (!committingRef.current) cancelEdit();
-    }, 0);
-  }
-
-  async function commitEdit(transfer: CashTransfer) {
-    if (!editing || editing.transferId !== transfer.id || editBusy) return;
-    setActionError(null);
-    committingRef.current = true;
-    setEditBusy(true);
-    try {
-      const patch = buildPatch(editing.field, draft);
-      await updateTransfer(transfer.id, patch);
-      cancelEdit();
-      reloadTransfers();
-      refreshAccounts();
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Update failed");
-    } finally {
-      committingRef.current = false;
-      setEditBusy(false);
-    }
-  }
-
-  function onEditorKeyDown(e: KeyboardEvent, transfer: CashTransfer) {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      cancelEdit();
-      return;
-    }
-    if (e.key === "Enter") {
-      e.preventDefault();
-      void commitEdit(transfer);
-    }
-  }
-
-  function isEditing(transferId: number, field: EditableField): boolean {
-    return editing?.transferId === transferId && editing.field === field;
-  }
-
-  function cellClass(
-    transferId: number,
-    field: EditableField,
-    editable: boolean,
-    extra = "",
-  ): string {
-    const parts = ["ledger-cell"];
-    if (editable) parts.push("ledger-cell--editable");
-    if (isEditing(transferId, field)) parts.push("ledger-cell--editing");
-    if (extra) parts.push(extra);
-    return parts.join(" ");
-  }
-
   async function handleLoadMore() {
     if (!nextCursor || loadMoreBusy) return;
     setLoadMoreBusy(true);
@@ -378,25 +188,6 @@ export function TransfersPage() {
     }
     reloadTransfers();
     refreshAccounts();
-  }
-
-  async function handleDelete(transfer: CashTransfer) {
-    const fromName =
-      accountById.get(transfer.fromAccountId)?.name ?? `#${transfer.fromAccountId}`;
-    const toName =
-      accountById.get(transfer.toAccountId)?.name ?? `#${transfer.toAccountId}`;
-    const ok = window.confirm(
-      `Delete transfer ${formatMoney(transfer.amountFrom, transfer.fromCurrency)} from ${fromName} to ${toName}?`,
-    );
-    if (!ok) return;
-    setActionError(null);
-    try {
-      await deleteTransfer(transfer.id);
-      reloadTransfers();
-      refreshAccounts();
-    } catch (err) {
-      setActionError(err instanceof Error ? err.message : "Delete failed");
-    }
   }
 
   async function handleExportCsv() {
@@ -501,271 +292,25 @@ export function TransfersPage() {
                 </button>
               </p>
             )}
-          <div className="table-wrap">
-            <table className="data-table ledger-table ledger-table--transfers">
-              <thead>
-                <tr>
-                  <SortableTh
-                    label="Date"
-                    sortKey="occurredAt"
-                    sort={sort}
-                    onToggle={(key) => setSort((prev) => toggleSort(prev, key))}
-                    className="col-date"
-                  />
-                  <th className="col-text">From</th>
-                  <th className="col-text">To</th>
-                  <SortableTh
-                    label="Amount from"
-                    sortKey="amountFrom"
-                    sort={sort}
-                    onToggle={(key) => setSort((prev) => toggleSort(prev, key))}
-                    className="num"
-                  />
-                  <SortableTh
-                    label="Amount to"
-                    sortKey="amountTo"
-                    sort={sort}
-                    onToggle={(key) => setSort((prev) => toggleSort(prev, key))}
-                    className="num"
-                  />
-                  <th className="num">FX rate</th>
-                  <th className="col-text">Category</th>
-                  <SortableTh
-                    label="Description"
-                    sortKey="description"
-                    sort={sort}
-                    onToggle={(key) => setSort((prev) => toggleSort(prev, key))}
-                    className="col-text"
-                  />
-                  <th className="col-actions">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <TransferCreateRow
-                  accounts={sortedAccounts}
-                  transferCategories={transferCategories}
-                  seedFromAccountId={seedFromAccountId}
-                  onSeedConsumed={clearSeedFromAccountId}
-                  onCreate={handleCreate}
-                  onCategoryCreated={() => {
-                    void reloadCategories();
-                  }}
-                  onActionError={setActionError}
-                />
-                {sortedTransfers.map((transfer) => {
-                const cross = transfer.fromCurrency !== transfer.toCurrency;
-                const fromAccount = accountById.get(transfer.fromAccountId);
-                const toAccount = accountById.get(transfer.toAccountId);
-                return (
-                  <tr key={transfer.id}>
-                    <td
-                      className={cellClass(transfer.id, "occurredAt", true, "col-date")}
-                      title="Double-click to edit"
-                      onDoubleClick={() => startEdit(transfer, "occurredAt")}
-                    >
-                      {isEditing(transfer.id, "occurredAt") ? (
-                        <input
-                          type="date"
-                          className="ledger-cell-input"
-                          value={draft}
-                          disabled={editBusy}
-                          autoFocus
-                          onChange={(e) => setDraft(e.target.value)}
-                          onKeyDown={(e) => onEditorKeyDown(e, transfer)}
-                          onBlur={onEditorBlur}
-                          aria-label="Edit date"
-                        />
-                      ) : (
-                        formatOccurredAt(transfer.occurredAt)
-                      )}
-                    </td>
-                    <td
-                      className={cellClass(transfer.id, "fromAccountId", true, "col-text")}
-                      title={
-                        fromAccount
-                          ? accountLabel(fromAccount)
-                          : `#${transfer.fromAccountId}`
-                      }
-                      onDoubleClick={() => startEdit(transfer, "fromAccountId")}
-                    >
-                      {isEditing(transfer.id, "fromAccountId") ? (
-                        <select
-                          className="ledger-cell-input"
-                          value={draft}
-                          disabled={editBusy}
-                          autoFocus
-                          onChange={(e) => setDraft(e.target.value)}
-                          onKeyDown={(e) => onEditorKeyDown(e, transfer)}
-                          onBlur={onEditorBlur}
-                          aria-label="Edit from account"
-                        >
-                          {sortedAccounts.map((account) => (
-                            <option key={account.id} value={account.id}>
-                              {accountLabel(account)}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        (fromAccount ? accountLabel(fromAccount) : `#${transfer.fromAccountId}`)
-                      )}
-                    </td>
-                    <td
-                      className={cellClass(transfer.id, "toAccountId", true, "col-text")}
-                      title={
-                        toAccount
-                          ? accountLabel(toAccount)
-                          : `#${transfer.toAccountId}`
-                      }
-                      onDoubleClick={() => startEdit(transfer, "toAccountId")}
-                    >
-                      {isEditing(transfer.id, "toAccountId") ? (
-                        <select
-                          className="ledger-cell-input"
-                          value={draft}
-                          disabled={editBusy}
-                          autoFocus
-                          onChange={(e) => setDraft(e.target.value)}
-                          onKeyDown={(e) => onEditorKeyDown(e, transfer)}
-                          onBlur={onEditorBlur}
-                          aria-label="Edit to account"
-                        >
-                          {sortedAccounts.map((account) => (
-                            <option key={account.id} value={account.id}>
-                              {accountLabel(account)}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        (toAccount ? accountLabel(toAccount) : `#${transfer.toAccountId}`)
-                      )}
-                    </td>
-                    <td
-                      className={cellClass(transfer.id, "amountFrom", true, "num")}
-                      title="Double-click to edit"
-                      onDoubleClick={() => startEdit(transfer, "amountFrom")}
-                    >
-                      {isEditing(transfer.id, "amountFrom") ? (
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0.01"
-                          inputMode="decimal"
-                          className="ledger-cell-input"
-                          value={draft}
-                          disabled={editBusy}
-                          autoFocus
-                          onFocus={(e) => e.currentTarget.select()}
-                          onChange={(e) => setDraft(e.target.value)}
-                          onKeyDown={(e) => onEditorKeyDown(e, transfer)}
-                          onBlur={onEditorBlur}
-                          aria-label="Edit amount from"
-                        />
-                      ) : (
-                        formatMoney(transfer.amountFrom, transfer.fromCurrency)
-                      )}
-                    </td>
-                    <td
-                      className={cellClass(
-                        transfer.id,
-                        "amountTo",
-                        cross,
-                        "num",
-                      )}
-                      title={cross ? "Double-click to edit" : undefined}
-                      onDoubleClick={() => startEdit(transfer, "amountTo")}
-                    >
-                      {isEditing(transfer.id, "amountTo") ? (
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0.01"
-                          inputMode="decimal"
-                          className="ledger-cell-input"
-                          value={draft}
-                          disabled={editBusy}
-                          autoFocus
-                          onFocus={(e) => e.currentTarget.select()}
-                          onChange={(e) => setDraft(e.target.value)}
-                          onKeyDown={(e) => onEditorKeyDown(e, transfer)}
-                          onBlur={onEditorBlur}
-                          aria-label="Edit amount to"
-                        />
-                      ) : (
-                        formatMoney(transfer.amountTo, transfer.toCurrency)
-                      )}
-                    </td>
-                    <td className="num">
-                      {cross && transfer.fxRate != null
-                        ? transfer.fxRate.toLocaleString(undefined, {
-                            maximumFractionDigits: 4,
-                          })
-                        : "—"}
-                    </td>
-                    <td
-                      className={cellClass(transfer.id, "categoryId", true, "col-text")}
-                      title="Double-click to edit"
-                      onDoubleClick={() => startEdit(transfer, "categoryId")}
-                    >
-                      {isEditing(transfer.id, "categoryId") ? (
-                        <CategorySelectWithCreate
-                          value={draft}
-                          options={transferCategories}
-                          ledgerType="TRANSFER"
-                          disabled={editBusy}
-                          autoFocus
-                          onChange={setDraft}
-                          onCategoryCreated={() => {
-                            void reloadCategories();
-                          }}
-                          onError={setActionError}
-                          onKeyDown={(e) => onEditorKeyDown(e, transfer)}
-                          onBlur={onEditorBlur}
-                          aria-label="Edit category"
-                        />
-                      ) : (
-                        categoryNameById(transferCategories, transfer.categoryId)
-                      )}
-                    </td>
-                    <td
-                      className={cellClass(transfer.id, "description", true, "col-text")}
-                      title="Double-click to edit"
-                      onDoubleClick={() => startEdit(transfer, "description")}
-                    >
-                      {isEditing(transfer.id, "description") ? (
-                        <input
-                          type="text"
-                          className="ledger-cell-input"
-                          value={draft}
-                          disabled={editBusy}
-                          autoFocus
-                          onFocus={(e) => e.currentTarget.select()}
-                          onChange={(e) => setDraft(e.target.value)}
-                          onKeyDown={(e) => onEditorKeyDown(e, transfer)}
-                          onBlur={onEditorBlur}
-                          aria-label="Edit description"
-                        />
-                      ) : (
-                        (transfer.description ?? "—")
-                      )}
-                    </td>
-                    <td className="col-actions">
-                      <div className="form-actions-row">
-                        <button
-                          type="button"
-                          className="btn-danger"
-                          aria-label={`Delete transfer ${transfer.id}`}
-                          onClick={() => void handleDelete(transfer)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-              </tbody>
-            </table>
-          </div>
+          <TransferTable
+            transfers={sortedTransfers}
+            accounts={sortedAccounts}
+            accountById={accountById}
+            transferCategories={transferCategories}
+            sort={sort}
+            onSortChange={setSort}
+            seedFromAccountId={seedFromAccountId}
+            onSeedConsumed={clearSeedFromAccountId}
+            onCreate={handleCreate}
+            onCategoryCreated={() => {
+              void reloadCategories();
+            }}
+            onActionError={setActionError}
+            onMutated={() => {
+              reloadTransfers();
+              refreshAccounts();
+            }}
+          />
         </section>
       )}
     </>
