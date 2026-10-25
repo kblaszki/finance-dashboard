@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import type {
   AmountSignMode,
   ColumnMapping,
+  CsvImportPreset,
+  NamedColumnMapping,
   SuggestedColumnMapping,
 } from "../../api/transactionsApi";
 
@@ -9,9 +11,17 @@ type Props = {
   headers: string[];
   sampleRows: string[][];
   suggestedMapping: SuggestedColumnMapping;
+  presets: CsvImportPreset[];
+  matchingPresetId: number | null;
   busy: boolean;
   onConfirm: (mapping: ColumnMapping) => void;
   onCancel: () => void;
+  onSavePreset: (name: string, mapping: ColumnMapping) => Promise<void>;
+  onUpdatePreset: (
+    presetId: number,
+    mapping: ColumnMapping,
+  ) => Promise<void>;
+  onDeletePreset: (presetId: number) => Promise<void>;
 };
 
 type FieldKey = "occurredAt" | "amount" | "description" | "type" | "categoryPath";
@@ -29,6 +39,41 @@ function optionalIndex(
 ): number | null {
   if (value == null || !Number.isInteger(value) || value < 0) return null;
   return value;
+}
+
+function headerIndex(headers: string[], name: string): number | null {
+  const key = name.trim().toLowerCase();
+  const i = headers.findIndex((h) => h.trim().toLowerCase() === key);
+  return i >= 0 ? i : null;
+}
+
+function applyNamedMapping(
+  headers: string[],
+  named: NamedColumnMapping,
+): { ok: true; fields: Record<FieldKey, string>; amountSignMode: AmountSignMode } | { ok: false; missing: string[] } {
+  const missing: string[] = [];
+  const resolve = (name: string | null | undefined): string => {
+    if (name == null || name === "") return "";
+    const idx = headerIndex(headers, name);
+    if (idx == null) {
+      missing.push(name);
+      return "";
+    }
+    return String(idx);
+  };
+  const occurredAt = resolve(named.occurredAt);
+  const amount = resolve(named.amount);
+  const description = resolve(named.description ?? null);
+  const type = resolve(named.type ?? null);
+  const categoryPath = resolve(named.categoryPath ?? null);
+  if (!occurredAt || !amount || missing.length > 0) {
+    return { ok: false, missing: [...new Set(missing.length ? missing : [named.occurredAt, named.amount].filter(Boolean))] };
+  }
+  return {
+    ok: true,
+    fields: { occurredAt, amount, description, type, categoryPath },
+    amountSignMode: named.amountSignMode ?? "negativeIsExpense",
+  };
 }
 
 function parseSignedAmountPreview(raw: string): number | null {
@@ -67,41 +112,149 @@ function previewType(
   return { type: signed < 0 ? "INCOME" : "EXPENSE", amount: abs };
 }
 
-export function ImportColumnMappingPanel(props: Props) {
-  const { headers, sampleRows, suggestedMapping, busy, onConfirm, onCancel } =
-    props;
+function initialFromProps(
+  headers: string[],
+  suggestedMapping: SuggestedColumnMapping,
+  presets: CsvImportPreset[],
+  matchingPresetId: number | null,
+): {
+  occurredAt: string;
+  amount: string;
+  description: string;
+  type: string;
+  categoryPath: string;
+  amountSignMode: AmountSignMode;
+  selectedPresetId: string;
+  presetMsg: string | null;
+  presetErr: string | null;
+} {
+  const fallback = {
+    occurredAt:
+      suggestedMapping.occurredAt != null
+        ? String(suggestedMapping.occurredAt)
+        : "",
+    amount:
+      suggestedMapping.amount != null ? String(suggestedMapping.amount) : "",
+    description:
+      suggestedMapping.description != null
+        ? String(suggestedMapping.description)
+        : "",
+    type: suggestedMapping.type != null ? String(suggestedMapping.type) : "",
+    categoryPath:
+      suggestedMapping.categoryPath != null
+        ? String(suggestedMapping.categoryPath)
+        : "",
+    amountSignMode: suggestedMapping.amountSignMode ?? "negativeIsExpense",
+    selectedPresetId: "",
+    presetMsg: null as string | null,
+    presetErr: null as string | null,
+  };
+  if (matchingPresetId == null) return fallback;
+  const preset = presets.find((p) => p.id === matchingPresetId);
+  if (!preset) return fallback;
+  const result = applyNamedMapping(headers, preset.mapping);
+  if (!result.ok) {
+    return {
+      ...fallback,
+      selectedPresetId: String(matchingPresetId),
+      presetErr: `Preset "${preset.name}" needs columns: ${result.missing.join(", ")}`,
+    };
+  }
+  return {
+    occurredAt: result.fields.occurredAt,
+    amount: result.fields.amount,
+    description: result.fields.description,
+    type: result.fields.type,
+    categoryPath: result.fields.categoryPath,
+    amountSignMode: result.amountSignMode,
+    selectedPresetId: String(matchingPresetId),
+    presetMsg: `Loaded preset “${preset.name}”.`,
+    presetErr: null,
+  };
+}
 
-  const [occurredAt, setOccurredAt] = useState<string>(
-    suggestedMapping.occurredAt != null
-      ? String(suggestedMapping.occurredAt)
-      : "",
+export function ImportColumnMappingPanel(props: Props) {
+  const {
+    headers,
+    sampleRows,
+    suggestedMapping,
+    presets,
+    matchingPresetId,
+    busy,
+    onConfirm,
+    onCancel,
+    onSavePreset,
+    onUpdatePreset,
+    onDeletePreset,
+  } = props;
+
+  const initial = initialFromProps(
+    headers,
+    suggestedMapping,
+    presets,
+    matchingPresetId,
   );
-  const [amount, setAmount] = useState<string>(
-    suggestedMapping.amount != null ? String(suggestedMapping.amount) : "",
+
+  const [occurredAt, setOccurredAt] = useState(initial.occurredAt);
+  const [amount, setAmount] = useState(initial.amount);
+  const [description, setDescription] = useState(initial.description);
+  const [type, setType] = useState(initial.type);
+  const [categoryPath, setCategoryPath] = useState(initial.categoryPath);
+  const [amountSignMode, setAmountSignMode] = useState(initial.amountSignMode);
+  const [selectedPresetId, setSelectedPresetId] = useState(
+    initial.selectedPresetId,
   );
-  const [description, setDescription] = useState<string>(
-    suggestedMapping.description != null
-      ? String(suggestedMapping.description)
-      : "",
-  );
-  const [type, setType] = useState<string>(
-    suggestedMapping.type != null ? String(suggestedMapping.type) : "",
-  );
-  const [categoryPath, setCategoryPath] = useState<string>(
-    suggestedMapping.categoryPath != null
-      ? String(suggestedMapping.categoryPath)
-      : "",
-  );
-  const [amountSignMode, setAmountSignMode] = useState<AmountSignMode>(
-    suggestedMapping.amountSignMode ?? "negativeIsExpense",
-  );
+  const [presetMsg, setPresetMsg] = useState<string | null>(initial.presetMsg);
+  const [presetErr, setPresetErr] = useState<string | null>(initial.presetErr);
+  const [saveName, setSaveName] = useState("");
+  const [presetBusy, setPresetBusy] = useState(false);
+
+  function applyPreset(preset: CsvImportPreset) {
+    setPresetErr(null);
+    setPresetMsg(null);
+    const result = applyNamedMapping(headers, preset.mapping);
+    if (!result.ok) {
+      setPresetErr(
+        `Preset "${preset.name}" needs columns: ${result.missing.join(", ")}`,
+      );
+      return;
+    }
+    setOccurredAt(result.fields.occurredAt);
+    setAmount(result.fields.amount);
+    setDescription(result.fields.description);
+    setType(result.fields.type);
+    setCategoryPath(result.fields.categoryPath);
+    setAmountSignMode(result.amountSignMode);
+    setPresetMsg(`Loaded preset “${preset.name}”.`);
+  }
 
   const typeMapped = type !== "";
   const canSubmit =
     occurredAt !== "" &&
     amount !== "" &&
     occurredAt !== amount &&
-    (typeMapped || amountSignMode === "negativeIsExpense" || amountSignMode === "negativeIsIncome");
+    (typeMapped ||
+      amountSignMode === "negativeIsExpense" ||
+      amountSignMode === "negativeIsIncome");
+
+  const currentMapping = (): ColumnMapping | null => {
+    if (!canSubmit) return null;
+    const mapping: ColumnMapping = {
+      occurredAt: Number(occurredAt),
+      amount: Number(amount),
+      description: optionalIndex(
+        description === "" ? null : Number(description),
+      ),
+      type: optionalIndex(type === "" ? null : Number(type)),
+      categoryPath: optionalIndex(
+        categoryPath === "" ? null : Number(categoryPath),
+      ),
+    };
+    if (mapping.type == null) {
+      mapping.amountSignMode = amountSignMode;
+    }
+    return mapping;
+  };
 
   const previewRows = useMemo(() => {
     const dateIdx = occurredAt === "" ? null : Number(occurredAt);
@@ -143,7 +296,7 @@ export function ImportColumnMappingPanel(props: Props) {
           className="field-control"
           aria-label={FIELD_LABELS[field]}
           value={value}
-          disabled={busy}
+          disabled={busy || presetBusy}
           onChange={(e) => onChange(e.target.value)}
         >
           <option value="">{required ? "Choose…" : "— None —"}</option>
@@ -158,20 +311,73 @@ export function ImportColumnMappingPanel(props: Props) {
   }
 
   function handleContinue() {
-    if (!canSubmit) return;
-    const mapping: ColumnMapping = {
-      occurredAt: Number(occurredAt),
-      amount: Number(amount),
-      description: optionalIndex(description === "" ? null : Number(description)),
-      type: optionalIndex(type === "" ? null : Number(type)),
-      categoryPath: optionalIndex(
-        categoryPath === "" ? null : Number(categoryPath),
-      ),
-    };
-    if (mapping.type == null) {
-      mapping.amountSignMode = amountSignMode;
-    }
+    const mapping = currentMapping();
+    if (!mapping) return;
     onConfirm(mapping);
+  }
+
+  async function handleSaveAs() {
+    const mapping = currentMapping();
+    if (!mapping) return;
+    const name = saveName.trim();
+    if (!name) {
+      setPresetErr("Enter a name to save this mapping.");
+      return;
+    }
+    setPresetBusy(true);
+    setPresetErr(null);
+    setPresetMsg(null);
+    try {
+      await onSavePreset(name, mapping);
+      setSaveName("");
+      setPresetMsg(`Saved preset “${name}”.`);
+    } catch (err) {
+      setPresetErr(err instanceof Error ? err.message : "Save failed");
+    } finally {
+      setPresetBusy(false);
+    }
+  }
+
+  async function handleOverwrite() {
+    const mapping = currentMapping();
+    const id = Number(selectedPresetId);
+    if (!mapping || !Number.isInteger(id) || id < 1) return;
+    setPresetBusy(true);
+    setPresetErr(null);
+    setPresetMsg(null);
+    try {
+      await onUpdatePreset(id, mapping);
+      setPresetMsg("Updated selected preset.");
+    } catch (err) {
+      setPresetErr(err instanceof Error ? err.message : "Update failed");
+    } finally {
+      setPresetBusy(false);
+    }
+  }
+
+  async function handleDelete() {
+    const id = Number(selectedPresetId);
+    if (!Number.isInteger(id) || id < 1) return;
+    const preset = presets.find((p) => p.id === id);
+    if (
+      !window.confirm(
+        `Delete preset “${preset?.name ?? id}”? This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    setPresetBusy(true);
+    setPresetErr(null);
+    setPresetMsg(null);
+    try {
+      await onDeletePreset(id);
+      setSelectedPresetId("");
+      setPresetMsg("Deleted preset.");
+    } catch (err) {
+      setPresetErr(err instanceof Error ? err.message : "Delete failed");
+    } finally {
+      setPresetBusy(false);
+    }
   }
 
   return (
@@ -179,8 +385,37 @@ export function ImportColumnMappingPanel(props: Props) {
       <h2 className="section-title">Map CSV columns</h2>
       <p className="muted">
         This file is not a ledger export. Map columns to ledger fields, then
-        continue to category mapping.
+        continue to category mapping. Saved presets are stored for this account.
       </p>
+
+      {presets.length > 0 && (
+        <label className="form-section-gap">
+          Use saved preset
+          <select
+            className="field-control"
+            aria-label="Use saved preset"
+            value={selectedPresetId}
+            disabled={busy || presetBusy}
+            onChange={(e) => {
+              const value = e.target.value;
+              setSelectedPresetId(value);
+              if (!value) return;
+              const preset = presets.find((p) => p.id === Number(value));
+              if (preset) applyPreset(preset);
+            }}
+          >
+            <option value="">Choose…</option>
+            {presets.map((p) => (
+              <option key={p.id} value={String(p.id)}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+
+      {presetErr && <p className="error-banner">{presetErr}</p>}
+      {presetMsg && <p className="success-banner">{presetMsg}</p>}
 
       <div className="auth-form">
         {columnSelect("occurredAt", occurredAt, setOccurredAt, true)}
@@ -191,7 +426,7 @@ export function ImportColumnMappingPanel(props: Props) {
       </div>
 
       {!typeMapped && (
-        <fieldset className="form-section-gap" disabled={busy}>
+        <fieldset className="form-section-gap" disabled={busy || presetBusy}>
           <legend>Amount sign meaning</legend>
           <label>
             <input
@@ -245,11 +480,55 @@ export function ImportColumnMappingPanel(props: Props) {
         </div>
       )}
 
+      <div className="form-actions-row form-section-gap">
+        <label>
+          Save as preset
+          <input
+            type="text"
+            className="field-control"
+            aria-label="Preset name"
+            value={saveName}
+            disabled={busy || presetBusy || !canSubmit}
+            maxLength={80}
+            placeholder="e.g. mBank ROR"
+            onChange={(e) => setSaveName(e.target.value)}
+          />
+        </label>
+        <button
+          type="button"
+          className="btn-secondary"
+          disabled={busy || presetBusy || !canSubmit || !saveName.trim()}
+          onClick={() => void handleSaveAs()}
+        >
+          Save
+        </button>
+        {selectedPresetId !== "" && (
+          <>
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={busy || presetBusy || !canSubmit}
+              onClick={() => void handleOverwrite()}
+            >
+              Update selected
+            </button>
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={busy || presetBusy}
+              onClick={() => void handleDelete()}
+            >
+              Delete selected
+            </button>
+          </>
+        )}
+      </div>
+
       <p className="form-section-gap">
         <button
           type="button"
           className="btn-primary"
-          disabled={!canSubmit || busy}
+          disabled={!canSubmit || busy || presetBusy}
           onClick={handleContinue}
         >
           {busy ? "Working…" : "Continue"}
@@ -257,7 +536,7 @@ export function ImportColumnMappingPanel(props: Props) {
         <button
           type="button"
           className="btn-secondary"
-          disabled={busy}
+          disabled={busy || presetBusy}
           onClick={onCancel}
         >
           Cancel

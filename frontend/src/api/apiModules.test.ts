@@ -42,6 +42,10 @@ import {
   previewImportColumns,
   applyImportColumnMapping,
   commitImportColumnMapping,
+  fetchImportPresets,
+  createImportPreset,
+  updateImportPreset,
+  deleteImportPreset,
 } from './transactionsApi'
 import {
   fetchCategories,
@@ -236,6 +240,36 @@ describe('API modules', () => {
     expect(apiClient.post).toHaveBeenCalledWith(
       '/api/accounts/3/transactions/import/columns/commit',
       { csv: 'Date,Amount\n', columnMapping, categoryMappings: [] },
+    )
+
+    await fetchImportPresets(3)
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/accounts/3/import-presets',
+    )
+
+    await createImportPreset(3, {
+      name: 'Bank',
+      headers: ['Date', 'Amount'],
+      columnMapping,
+    })
+    expect(apiClient.post).toHaveBeenCalledWith(
+      '/api/accounts/3/import-presets',
+      {
+        name: 'Bank',
+        headers: ['Date', 'Amount'],
+        columnMapping,
+      },
+    )
+
+    await updateImportPreset(3, 9, { name: 'Card' })
+    expect(apiClient.patch).toHaveBeenCalledWith(
+      '/api/accounts/3/import-presets/9',
+      { name: 'Card' },
+    )
+
+    await deleteImportPreset(3, 9)
+    expect(apiClient.delete).toHaveBeenCalledWith(
+      '/api/accounts/3/import-presets/9',
     )
   })
 

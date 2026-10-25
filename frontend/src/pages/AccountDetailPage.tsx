@@ -6,17 +6,22 @@ import { fetchTags } from "../api/tagsApi";
 import {
   applyImportColumnMapping,
   commitImportColumnMapping,
+  createImportPreset,
   createTransaction,
+  deleteImportPreset,
   deleteTransaction,
   updateTransaction,
   exportTransactionsCsv,
+  fetchImportPresets,
   importTransactionsCsv,
   previewImportColumns,
   previewTransactionsImport,
   fetchTransactions,
+  updateImportPreset,
   type CashTransaction,
   type ColumnMapping,
   type CreateCashTransactionInput,
+  type CsvImportPreset,
   type ImportCategoryMapping,
   type ImportCategoryPreview,
   type ImportColumnsPreview,
@@ -57,6 +62,7 @@ type PendingImport = {
 type PendingColumnMap = {
   csv: string;
   columns: ImportColumnsPreview;
+  presets: CsvImportPreset[];
 };
 
 function isUnknownLedgerHeaderError(err: unknown): boolean {
@@ -246,8 +252,16 @@ export function AccountDetailPage() {
   }
 
   async function startColumnMappingFlow(csv: string) {
-    const columns = await previewImportColumns(accountId, csv);
-    setPendingColumnMap({ csv, columns });
+    const [columns, presets] = await Promise.all([
+      previewImportColumns(accountId, csv),
+      fetchImportPresets(accountId),
+    ]);
+    setPendingColumnMap({ csv, columns, presets });
+  }
+
+  async function reloadColumnPresets() {
+    const presets = await fetchImportPresets(accountId);
+    setPendingColumnMap((prev) => (prev ? { ...prev, presets } : null));
   }
 
   async function handleColumnMappingConfirm(mapping: ColumnMapping) {
@@ -418,15 +432,36 @@ export function AccountDetailPage() {
 
       {pendingColumnMap && (
         <ImportColumnMappingPanel
-          key={pendingColumnMap.columns.headers.join("|")}
+          key={`${pendingColumnMap.columns.headers.join("|")}-${pendingColumnMap.columns.matchingPresetId ?? "none"}`}
           headers={pendingColumnMap.columns.headers}
           sampleRows={pendingColumnMap.columns.sampleRows}
           suggestedMapping={pendingColumnMap.columns.suggestedMapping}
+          presets={pendingColumnMap.presets}
+          matchingPresetId={pendingColumnMap.columns.matchingPresetId}
           busy={importBusy}
           onConfirm={(mapping) => {
             void handleColumnMappingConfirm(mapping);
           }}
           onCancel={() => setPendingColumnMap(null)}
+          onSavePreset={async (name, mapping) => {
+            await createImportPreset(accountId, {
+              name,
+              headers: pendingColumnMap.columns.headers,
+              columnMapping: mapping,
+            });
+            await reloadColumnPresets();
+          }}
+          onUpdatePreset={async (presetId, mapping) => {
+            await updateImportPreset(accountId, presetId, {
+              headers: pendingColumnMap.columns.headers,
+              columnMapping: mapping,
+            });
+            await reloadColumnPresets();
+          }}
+          onDeletePreset={async (presetId) => {
+            await deleteImportPreset(accountId, presetId);
+            await reloadColumnPresets();
+          }}
         />
       )}
 

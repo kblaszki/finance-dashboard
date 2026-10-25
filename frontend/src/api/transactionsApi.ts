@@ -178,7 +178,72 @@ export type ImportColumnsPreview = {
   headers: string[];
   sampleRows: string[][];
   suggestedMapping: SuggestedColumnMapping;
+  matchingPresetId: number | null;
 };
+
+export type NamedColumnMapping = {
+  occurredAt: string;
+  amount: string;
+  description?: string | null;
+  type?: string | null;
+  categoryPath?: string | null;
+  amountSignMode?: AmountSignMode;
+};
+
+export type CsvImportPreset = {
+  id: number;
+  accountId: number;
+  name: string;
+  mapping: NamedColumnMapping;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export async function fetchImportPresets(
+  accountId: number,
+): Promise<CsvImportPreset[]> {
+  return apiClient.get<CsvImportPreset[]>(
+    `/api/accounts/${accountId}/import-presets`,
+  );
+}
+
+export async function createImportPreset(
+  accountId: number,
+  input: {
+    name: string;
+    headers: string[];
+    columnMapping: ColumnMapping;
+  },
+): Promise<CsvImportPreset> {
+  return apiClient.post<CsvImportPreset>(
+    `/api/accounts/${accountId}/import-presets`,
+    input,
+  );
+}
+
+export async function updateImportPreset(
+  accountId: number,
+  presetId: number,
+  input: {
+    name?: string;
+    headers?: string[];
+    columnMapping?: ColumnMapping;
+  },
+): Promise<CsvImportPreset> {
+  return apiClient.patch<CsvImportPreset>(
+    `/api/accounts/${accountId}/import-presets/${presetId}`,
+    input,
+  );
+}
+
+export async function deleteImportPreset(
+  accountId: number,
+  presetId: number,
+): Promise<void> {
+  return apiClient.delete(
+    `/api/accounts/${accountId}/import-presets/${presetId}`,
+  );
+}
 
 export async function previewImportColumns(
   accountId: number,
