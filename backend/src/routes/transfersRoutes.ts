@@ -27,6 +27,7 @@ import {
   buildTransferCategoryPathIndex,
   collectUsedAccounts,
   findDuplicateRows,
+  loadExistingTransfersForDedup,
   parseAccountMappings,
   parseSkipRows,
   resolveTransferDrafts,
@@ -38,6 +39,8 @@ import {
   parseListPageQuery,
 } from "../domain/listPageQuery";
 import { badRequest, handleRouteError, notFound, parseIdParam } from "./httpSupport";
+
+const MONTH_LIST_CAP = 2000;
 
 async function assertOwnedTransferCategory(
   prisma: PrismaClient,
@@ -114,7 +117,8 @@ export function createTransfersRouter(deps: TransfersDeps): Router {
               userId,
               ...cursorWhere(page.beforeOccurredAt, page.beforeId),
             };
-      const take = page.mode === "month" ? undefined : page.limit + 1;
+      const take =
+        page.mode === "month" ? MONTH_LIST_CAP + 1 : page.limit + 1;
       const rows = await prisma.cashTransfer.findMany({
         where,
         include: {
@@ -122,8 +126,13 @@ export function createTransfersRouter(deps: TransfersDeps): Router {
           toAccount: { select: { id: true, currency: true, name: true } },
         },
         orderBy: [{ occurredAt: "desc" }, { id: "desc" }],
-        ...(take !== undefined ? { take } : {}),
+        take,
       });
+      if (page.mode === "month" && rows.length > MONTH_LIST_CAP) {
+        throw badRequest(
+          `Month has more than ${MONTH_LIST_CAP} transfers; use cursor pagination (omit month)`,
+        );
+      }
       const sliced =
         page.mode === "month"
           ? { items: rows, nextCursor: null as string | null }
@@ -263,17 +272,11 @@ export function createTransfersRouter(deps: TransfersDeps): Router {
             });
             return;
           }
-          const existing = await prisma.cashTransfer.findMany({
-            where: { userId },
-            select: {
-              fromAccountId: true,
-              toAccountId: true,
-              amountFrom: true,
-              amountTo: true,
-              occurredAt: true,
-              description: true,
-            },
-          });
+          const existing = await loadExistingTransfersForDedup(
+            prisma,
+            userId,
+            resolved.rows,
+          );
           const marked = findDuplicateRows(resolved.rows, existing);
           body.rows = marked.map((r) => ({
             row: r.row,

@@ -1,3 +1,4 @@
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { decimalToMinor } from "./money";
 import type { TransferInput } from "./cashTransfers";
 import type { TransferCsvDraft } from "./transfersCsv";
@@ -7,6 +8,11 @@ import {
   categoryPathKey,
   parseCategoryPath,
 } from "./cashLedgerCsv";
+
+type Db = PrismaClient | Prisma.TransactionClient;
+
+/** Safety cap when scanning transfer history for import dedup. */
+export const TRANSFER_IMPORT_DEDUP_SCAN_LIMIT = 50_000;
 
 export type OwnedTransferCategory = {
   id: number;
@@ -298,6 +304,52 @@ export type ExistingTransferForDup = {
   occurredAt: Date;
   description: string | null;
 };
+
+/** Pad one UTC day around min/max occurredAt of resolved import rows. */
+export function occurredAtWindowForTransferRows(
+  rows: Array<{ input: { occurredAt: Date } }>,
+): { gte: Date; lte: Date } | null {
+  if (rows.length === 0) return null;
+  let minMs = Infinity;
+  let maxMs = -Infinity;
+  for (const row of rows) {
+    const ms = row.input.occurredAt.getTime();
+    if (ms < minMs) minMs = ms;
+    if (ms > maxMs) maxMs = ms;
+  }
+  const dayMs = 24 * 60 * 60 * 1000;
+  return {
+    gte: new Date(minMs - dayMs),
+    lte: new Date(maxMs + dayMs),
+  };
+}
+
+/** Load existing transfers for dedup, bounded by import date window + scan cap. */
+export async function loadExistingTransfersForDedup(
+  db: Db,
+  userId: number,
+  resolvedRows: Array<{ input: { occurredAt: Date } }>,
+): Promise<ExistingTransferForDup[]> {
+  const window = occurredAtWindowForTransferRows(resolvedRows);
+  return db.cashTransfer.findMany({
+    where: {
+      userId,
+      ...(window
+        ? { occurredAt: { gte: window.gte, lte: window.lte } }
+        : {}),
+    },
+    select: {
+      fromAccountId: true,
+      toAccountId: true,
+      amountFrom: true,
+      amountTo: true,
+      occurredAt: true,
+      description: true,
+    },
+    orderBy: [{ occurredAt: "desc" }, { id: "desc" }],
+    take: TRANSFER_IMPORT_DEDUP_SCAN_LIMIT,
+  });
+}
 
 function transferDupKey(
   fromAccountId: number,

@@ -5,10 +5,12 @@ import type { TransferCsvDraft } from "./transfersCsv";
 import {
   collectUsedAccounts,
   findDuplicateRows,
+  occurredAtWindowForTransferRows,
   parseAccountMappings,
   parseSkipRows,
   resolveTransferDrafts,
   suggestAccountMatches,
+  TRANSFER_IMPORT_DEDUP_SCAN_LIMIT,
 } from "./transfersImport";
 
 function draft(
@@ -137,6 +139,20 @@ describe("resolveTransferDrafts", () => {
     if (!result.ok) return;
     assert.equal(result.rows[0]!.input.fromAccountId, 10);
     assert.equal(result.rows[0]!.input.toAccountId, 20);
+  });
+});
+
+describe("occurredAtWindowForTransferRows", () => {
+  it("pads one UTC day around min/max and exports scan limit", () => {
+    assert.equal(occurredAtWindowForTransferRows([]), null);
+    const window = occurredAtWindowForTransferRows([
+      { input: { occurredAt: new Date("2026-01-10T12:00:00.000Z") } },
+      { input: { occurredAt: new Date("2026-01-20T12:00:00.000Z") } },
+    ]);
+    assert.ok(window);
+    assert.equal(window!.gte.toISOString(), "2026-01-09T12:00:00.000Z");
+    assert.equal(window!.lte.toISOString(), "2026-01-21T12:00:00.000Z");
+    assert.ok(TRANSFER_IMPORT_DEDUP_SCAN_LIMIT >= 10_000);
   });
 });
 
