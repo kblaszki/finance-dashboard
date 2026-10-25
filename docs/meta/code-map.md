@@ -21,7 +21,9 @@ Auth + multi-type accounts + category tree + cash ledger + category statistics b
 | Accounts HTTP routes | `backend/src/routes/accountsRoutes.ts` |
 | Categories HTTP routes | `backend/src/routes/categoriesRoutes.ts` |
 | Tags HTTP routes | `backend/src/routes/tagsRoutes.ts` |
-| Cash transactions routes | `backend/src/routes/cashTransactionsRoutes.ts` (CRUD/export; import handlers may live in `cashImportRoutes.ts`) |
+| Cash transactions routes | `backend/src/routes/cashTransactionsRoutes.ts` (CRUD + CSV export; month list capped) |
+| Cash ledger CSV import routes | `backend/src/routes/cashImportRoutes.ts` (preview/commit ledger + columns; description suggest) |
+| Owned-account helper | `backend/src/domain/ownedAccount.ts` |
 | CSV import presets routes | `backend/src/routes/csvImportPresetsRoutes.ts` |
 | Category description rules routes | `backend/src/routes/categoryDescriptionRulesRoutes.ts` |
 | Transfers routes | `backend/src/routes/transfersRoutes.ts` |
@@ -63,6 +65,7 @@ Auth + multi-type accounts + category tree + cash ledger + category statistics b
 | Shell / gates | `frontend/src/components/AppShell.tsx`, `AuthSwapShell.tsx`, `ProtectedRoute.tsx`, `ErrorBoundary.tsx` |
 | Shared UI | `frontend/src/components/ui/{PageHeader,KpiCard,ChartCard,StatusBlock,CurrencySelect}.tsx` |
 | Pages | `frontend/src/pages/{Landing,Login,Register,Dashboard,Accounts,AccountDetail,Categories,Tags,Transfers,Statistics,Settings}Page.tsx` |
+| Cash ledger import hook | `frontend/src/hooks/useCashLedgerImport.ts` (AccountDetail CSV flow) |
 | Transfers API client | `frontend/src/api/transfersApi.ts` |
 | Account ledger UI | `frontend/src/components/account/` |
 | Theme | `frontend/src/state/theme.tsx`, `ThemeToggle.tsx` (light/dark) |

@@ -8,6 +8,7 @@ related_code:
   - backend/src/routes/accountsRoutes.ts
   - backend/src/routes/categoriesRoutes.ts
   - backend/src/routes/cashTransactionsRoutes.ts
+  - backend/src/routes/cashImportRoutes.ts
   - backend/src/routes/transfersRoutes.ts
   - backend/src/routes/statisticsRoutes.ts
   - backend/src/routes/mountRouters.ts

@@ -9,10 +9,10 @@ import {
   presetNameKey,
   serializeNamedMapping,
 } from "../domain/csvImportPresets";
+import { findOwnedAccount } from "../domain/ownedAccount";
 import {
   badRequest,
   handleRouteError,
-  notFound,
   parseIdParam,
 } from "./httpSupport";
 
@@ -27,19 +27,6 @@ function isUniqueConstraintError(error: unknown): boolean {
     error instanceof PrismaNS.PrismaClientKnownRequestError &&
     error.code === "P2002"
   );
-}
-
-async function findOwnedAccount(
-  prisma: PrismaClient,
-  userId: number,
-  accountId: number,
-): Promise<{ id: number }> {
-  const account = await prisma.account.findFirst({
-    where: { id: accountId, userId },
-    select: { id: true },
-  });
-  if (!account) throw notFound("Account not found");
-  return account;
 }
 
 function parseHeaders(raw: unknown): string[] {

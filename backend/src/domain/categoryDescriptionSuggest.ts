@@ -381,9 +381,13 @@ export function applyDescriptionMappings(
   });
 }
 
+/** Cap history scan so import preview stays bounded as ledgers grow. */
+export const DESCRIPTION_HISTORY_SCAN_LIMIT = 10_000;
+
 export async function loadUserDescriptionHistory(
   db: Db,
   userId: number,
+  options?: { descriptionKeys?: string[] },
 ): Promise<HistoryRow[]> {
   const accounts = await db.account.findMany({
     where: { userId },
@@ -391,6 +395,11 @@ export async function loadUserDescriptionHistory(
   });
   const accountIds = accounts.map((a) => a.id);
   if (accountIds.length === 0) return [];
+
+  const keySet =
+    options?.descriptionKeys && options.descriptionKeys.length > 0
+      ? new Set(options.descriptionKeys)
+      : null;
 
   const rows = await db.cashTransaction.findMany({
     where: {
@@ -407,9 +416,11 @@ export async function loadUserDescriptionHistory(
       occurredAt: true,
       category: { select: { ledgerType: true } },
     },
+    orderBy: [{ occurredAt: "desc" }, { id: "desc" }],
+    take: DESCRIPTION_HISTORY_SCAN_LIMIT,
   });
 
-  return rows.map((r) => ({
+  const mapped = rows.map((r) => ({
     id: r.id,
     type: r.type,
     description: r.description,
@@ -417,6 +428,11 @@ export async function loadUserDescriptionHistory(
     occurredAt: r.occurredAt,
     categoryLedgerType: r.category?.ledgerType ?? null,
   }));
+
+  if (!keySet) return mapped;
+  return mapped.filter((r) =>
+    keySet.has(normalizeImportDescription(r.description)),
+  );
 }
 
 export async function buildDescriptionSuggestions(
@@ -438,7 +454,9 @@ export async function buildDescriptionSuggestions(
       categoryId: true,
     },
   });
-  const history = await loadUserDescriptionHistory(db, userId);
+  const history = await loadUserDescriptionHistory(db, userId, {
+    descriptionKeys: used.map((u) => u.descriptionKey),
+  });
   const fromRules = suggestFromRules(used, rules, owned);
   const fromHistory = suggestFromHistory(used, history);
   return mergeDescriptionSuggestions(used, fromRules, fromHistory);

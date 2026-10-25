@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   collectUsedDescriptions,
+  DESCRIPTION_HISTORY_SCAN_LIMIT,
   mergeDescriptionSuggestions,
   parseDescriptionMappings,
   suggestFromHistory,
@@ -107,4 +108,9 @@ test("parseDescriptionMappings requires complete coverage", () => {
     used,
   );
   assert.equal(ok.ok, true);
+});
+
+test("DESCRIPTION_HISTORY_SCAN_LIMIT bounds history loads", () => {
+  assert.ok(DESCRIPTION_HISTORY_SCAN_LIMIT >= 1_000);
+  assert.ok(DESCRIPTION_HISTORY_SCAN_LIMIT <= 50_000);
 });

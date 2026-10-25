@@ -10,11 +10,11 @@ import {
 } from "../domain/accountBalanceHistory";
 import { parseAccountType } from "../domain/accountTypes";
 import { decimalToMinor, minorToMajor, normalizeCurrencyCode, parseOpeningBalance } from "../domain/money";
+import { findOwnedAccount } from "../domain/ownedAccount";
 import {
   badRequest,
   conflict,
   handleRouteError,
-  notFound,
   parseIdParam,
   parseRequiredString,
 } from "./httpSupport";
@@ -69,16 +69,6 @@ export function accountPayload(account: Account) {
     createdAt: account.createdAt.toISOString(),
     updatedAt: account.updatedAt.toISOString(),
   };
-}
-
-async function findOwnedAccount(
-  prisma: PrismaClient,
-  userId: number,
-  id: number,
-): Promise<Account> {
-  const account = await prisma.account.findFirst({ where: { id, userId } });
-  if (!account) throw notFound("Account not found");
-  return account;
 }
 
 export function createAccountsRouter(deps: AccountsDeps): Router {

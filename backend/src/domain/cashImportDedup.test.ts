@@ -3,7 +3,9 @@ import assert from "node:assert/strict";
 import {
   cashImportFingerprint,
   fingerprintFromDraft,
+  IMPORT_FINGERPRINT_SCAN_LIMIT,
   normalizeImportDescription,
+  occurredAtWindowForDrafts,
   partitionDraftsByExisting,
   utcDayKey,
 } from "./cashImportDedup";
@@ -74,4 +76,22 @@ test("partitionDraftsByExisting imports all when empty ledger", () => {
   );
   assert.equal(toImport.length, 2);
   assert.equal(skippedDuplicates.length, 0);
+});
+
+test("occurredAtWindowForDrafts pads one UTC day around min/max", () => {
+  assert.equal(occurredAtWindowForDrafts([]), null);
+  const window = occurredAtWindowForDrafts([
+    draft({
+      row: 1,
+      occurredAt: new Date("2026-01-10T12:00:00.000Z"),
+    }),
+    draft({
+      row: 2,
+      occurredAt: new Date("2026-01-20T12:00:00.000Z"),
+    }),
+  ]);
+  assert.ok(window);
+  assert.equal(window!.gte.toISOString(), "2026-01-09T12:00:00.000Z");
+  assert.equal(window!.lte.toISOString(), "2026-01-21T12:00:00.000Z");
+  assert.ok(IMPORT_FINGERPRINT_SCAN_LIMIT >= 10_000);
 });

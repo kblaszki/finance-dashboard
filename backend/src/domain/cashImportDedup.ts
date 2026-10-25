@@ -82,14 +82,43 @@ export function partitionDraftsByExisting(
   return { toImport, skippedDuplicates };
 }
 
+/** Safety cap when scanning account history for import dedup. */
+export const IMPORT_FINGERPRINT_SCAN_LIMIT = 50_000;
+
+export function occurredAtWindowForDrafts(
+  drafts: CashLedgerImportDraft[],
+): { gte: Date; lte: Date } | null {
+  if (drafts.length === 0) return null;
+  let minMs = Infinity;
+  let maxMs = -Infinity;
+  for (const draft of drafts) {
+    const ms = draft.occurredAt.getTime();
+    if (ms < minMs) minMs = ms;
+    if (ms > maxMs) maxMs = ms;
+  }
+  // Pad one UTC day so day-boundary fingerprints still match.
+  const dayMs = 24 * 60 * 60 * 1000;
+  return {
+    gte: new Date(minMs - dayMs),
+    lte: new Date(maxMs + dayMs),
+  };
+}
+
 export async function loadAccountImportFingerprints(
   db: Db,
   accountId: number,
+  options?: { drafts?: CashLedgerImportDraft[] },
 ): Promise<Set<string>> {
+  const window = options?.drafts
+    ? occurredAtWindowForDrafts(options.drafts)
+    : null;
   const rows = await db.cashTransaction.findMany({
     where: {
       accountId,
       type: { in: [...CASH_TX_TYPES] },
+      ...(window
+        ? { occurredAt: { gte: window.gte, lte: window.lte } }
+        : {}),
     },
     select: {
       type: true,
@@ -97,6 +126,8 @@ export async function loadAccountImportFingerprints(
       occurredAt: true,
       description: true,
     },
+    orderBy: [{ occurredAt: "desc" }, { id: "desc" }],
+    take: IMPORT_FINGERPRINT_SCAN_LIMIT,
   });
   const set = new Set<string>();
   for (const row of rows) {
