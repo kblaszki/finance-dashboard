@@ -41,7 +41,7 @@ Shipped FR map: [docs/reference/requirements.md](docs/reference/requirements.md)
 | [docs/how-to/budgets-and-categories.md](docs/how-to/budgets-and-categories.md) | Category tree + cash tags (`/tags`) |
 | [docs/how-to/internal-transfers.md](docs/how-to/internal-transfers.md) | Move cash between owned accounts |
 | [docs/how-to/import-csv-column-map.md](docs/how-to/import-csv-column-map.md) | Map arbitrary CSV columns + description category suggest on account Upload |
-| [docs/how-to/dashboard-and-statistics.md](docs/how-to/dashboard-and-statistics.md) | Month category breakdown |
+| [docs/how-to/dashboard-and-statistics.md](docs/how-to/dashboard-and-statistics.md) | Dashboard KPIs, net worth, rolling 12m, statistics period/chart/breakdown |
 | [docs/how-to/write-integration-tests.md](docs/how-to/write-integration-tests.md) | HTTP / integration tests |
 | [docs/how-to/private-deploy.md](docs/how-to/private-deploy.md) | Private single-user deploy |
 

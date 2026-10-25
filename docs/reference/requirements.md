@@ -11,7 +11,7 @@ related_docs:
 
 Hub: [docs/README.md](../README.md).
 
-**Shipped in code** = auth + multi-type accounts + category tree + cash ledger (optional `categoryId`, CSV export/import) + internal cash transfers + statistics (category breakdown, period KPIs, cashflow history, cash net worth, rolling 12m averages) + NBP FX rate store/CLI below. Remaining backlog: [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) and `mvp/features/*`. Checklist: 22 done / 0 in_progress / 44 planned (as of 2026-10-24).
+**Shipped in code** = auth + multi-type accounts + category tree + tags + cash ledger (optional `categoryId`, CSV export/import) + internal cash transfers + statistics (category breakdown, period KPIs, cashflow history, cash net worth, rolling 12m averages) + NBP FX rate store/CLI below. Remaining backlog: [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) and `mvp/features/*`. Checklist: **27 done / 0 in_progress / 46 planned** (as of 2026-10-25; matches master table in CHECKLIST).
 
 ## Shipped
 
@@ -38,6 +38,10 @@ Hub: [docs/README.md](../README.md).
 | FR-002 | Net worth (cash buckets) | `GET /api/statistics/net-worth`; `/dashboard` byBucket from `cashBalance`; `CREDIT_CARD` debt → `liabilities` (no holdings/FX) |
 | FR-005 | Rolling 12-month cashflow averages | `GET /api/statistics/cashflow-rolling-12m`; `/dashboard` avg income/expense/net |
 | FR-011 | Internal cash transfers | `CashTransfer` + `TRANSFER_*` legs; `/api/transfers`; `/transfers`; [internal-transfers.md](../how-to/internal-transfers.md) |
+| MVP-015 | Transfers CSV export and mapped import | `GET/POST /api/transfers/export|import`; `/transfers` Download/Upload CSV |
+| MVP-016 | Categories CSV export and merge import | `GET/POST /api/categories/export|import`; `/categories` Download/Upload CSV |
+| MVP-017 | Transfer category group (`TRANSFER` ledgerType) | `Category.ledgerType`; `/categories` Transfers section; optional `categoryId` on transfers |
+| MVP-018 | Cash transaction tags | `Tag` + `CashTransactionTag`; `/tags`; ledger `tagIds`; `GET /api/statistics/tag-breakdown` |
 | FR-012 | Accounts list type filter | `/accounts` UI filter by `accountType` (`filterAccountsByType`) |
 | FR-010 | Historical NBP FX rates | `FxRateDaily`; `domain/fx.ts` + `fxRates.ts` + `nbpClient.ts`; `npm run fx:sync` (EUR/USD via PLN pivot). Net-worth FX rollup still FR-038 |
 

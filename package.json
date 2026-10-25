@@ -2,6 +2,9 @@
   "name": "finance-dashboard",
   "version": "1.0.0",
   "description": "Personal full-stack finance dashboard: multi-type accounts, cash ledger, transfers, CSV import, statistics (Node, React, SQLite).",
+  "engines": {
+    "node": ">=22"
+  },
   "main": "index.js",
   "scripts": {
     "dev:backend": "cd backend && npm run dev",

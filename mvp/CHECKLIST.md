@@ -15,7 +15,7 @@ Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + c
 
 | done | stub | planned | in_progress | total |
 |------|------|---------|-------------|-------|
-| 25 | 0 | 44 | 0 | 69 |
+| 27 | 0 | 46 | 0 | 73 |
 
 ## Master table
 
@@ -39,7 +39,7 @@ Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + c
 | FR-032 | Precious metal grams on account | planned | [features/accounts/precious-metal-grams.md](features/accounts/precious-metal-grams.md) | PRECIOUS_METAL account detail |
 | MVP-010 | Manual revalue and account detail | planned | [features/accounts/account-detail-revalue.md](features/accounts/account-detail-revalue.md) | /accounts/:id |
 | FR-011 | Internal cash transfers with FX suggestion | done | [features/cash-transfers/internal-cash-transfers.md](features/cash-transfers/internal-cash-transfers.md) | /transfers |
-| FR-018 | Transaction categories and splits | done | [features/cash-transfers/transaction-categories-splits.md](features/cash-transfers/transaction-categories-splits.md) | /accounts/:id ledger |
+| FR-018 | Transaction categories (splits deferred) | done | [features/cash-transfers/transaction-categories-splits.md](features/cash-transfers/transaction-categories-splits.md) | /accounts/:id ledger |
 | MVP-011 | Cash ledger transaction types | done | [features/cash-transfers/cash-ledger-types.md](features/cash-transfers/cash-ledger-types.md) | /accounts/:id cash ledger |
 | MVP-013 | Cash ledger CSV export | done | [features/cash-transfers/cash-ledger-csv-export.md](features/cash-transfers/cash-ledger-csv-export.md) | /accounts/:id Download CSV |
 | MVP-014 | Cash ledger CSV import | done | [features/cash-transfers/cash-ledger-csv-import.md](features/cash-transfers/cash-ledger-csv-import.md) | /accounts/:id Upload CSV |
@@ -93,7 +93,7 @@ Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + c
 | NFR-003 | Financial edit audit trail | planned | [features/automation-export/audit-trail.md](features/automation-export/audit-trail.md) | /settings |
 | MVP-050 | Health check with DB ping | done | [features/ops/health-endpoint.md](features/ops/health-endpoint.md) | GET /api/health |
 | MVP-051 | Private deploy: create-user and backup | done | [features/ops/private-deploy-tooling.md](features/ops/private-deploy-tooling.md) | CLI |
-| MVP-052 | Production auth and import rate limits | done | [features/ops/prod-rate-limits.md](features/ops/prod-rate-limits.md) | app.ts (prod) |
+| MVP-052 | Production auth rate limits | done | [features/ops/prod-rate-limits.md](features/ops/prod-rate-limits.md) | app.ts (prod) |
 
 ## By domain
 
@@ -107,7 +107,7 @@ Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + c
 ### accounts
 
 - **done** [FR-006 Extended account types](features/accounts/extended-account-types.md)
-- **planned** [FR-012 Accounts list with type filter](features/accounts/accounts-list-filter.md)
+- **done** [FR-012 Accounts list with type filter](features/accounts/accounts-list-filter.md)
 - **planned** [FR-032 Precious metal grams on account](features/accounts/precious-metal-grams.md)
 - **planned** [MVP-010 Manual revalue and account detail](features/accounts/account-detail-revalue.md)
 

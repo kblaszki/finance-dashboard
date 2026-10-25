@@ -9,7 +9,7 @@ Personal full-stack finance app (shipped surface below; backlog in [mvp/CHECKLIS
 
 ## Requirements
 
-- Node.js 20+ (CI tests on Node 22)
+- Node.js 22 (matches CI and the Docker image)
 - npm
 
 ## Installation
