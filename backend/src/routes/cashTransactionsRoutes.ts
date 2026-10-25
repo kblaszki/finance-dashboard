@@ -35,6 +35,7 @@ import {
   parseDelimitedTable,
   suggestColumnMapping,
 } from "../domain/csvColumnMap";
+import { findMatchingPresetId } from "../domain/csvImportPresets";
 import { expectedCategoryLedgerType } from "../domain/categories";
 import {
   cursorWhere,
@@ -368,18 +369,29 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
     async (req: AuthedRequest, res) => {
       try {
         const accountId = parseIdParam(req.params.accountId, "accountId");
-        await findOwnedAccount(prisma, uid(req), accountId);
+        const userId = uid(req);
+        await findOwnedAccount(prisma, userId, accountId);
         const csv = req.body?.csv;
         if (typeof csv !== "string") {
           throw badRequest("csv string required");
         }
         const table = parseDelimitedTable(csv);
         const sampleRows = table.rows.slice(0, 5);
+        const presets = await prisma.csvImportPreset.findMany({
+          where: { userId, accountId },
+          select: { id: true, mappingJson: true },
+          orderBy: { name: "asc" },
+        });
+        const matchingPresetId = findMatchingPresetId(
+          presets,
+          table.headers,
+        );
         res.status(200).json({
           delimiter: table.delimiter === "\t" ? "\\t" : table.delimiter,
           headers: table.headers,
           sampleRows,
           suggestedMapping: suggestColumnMapping(table.headers),
+          matchingPresetId,
         });
       } catch (e: unknown) {
         handleRouteError(res, e, "Failed to preview CSV columns");

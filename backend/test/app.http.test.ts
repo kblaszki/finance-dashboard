@@ -1144,6 +1144,7 @@ test("POST /api/accounts/:id/transactions/import/columns preview apply commit", 
   assert.equal(cols.body.suggestedMapping.occurredAt, 0);
   assert.equal(cols.body.suggestedMapping.amount, 1);
   assert.equal(cols.body.suggestedMapping.description, 2);
+  assert.equal(cols.body.matchingPresetId, null);
 
   const badMap = await request(app)
     .post(`/api/accounts/${accountId}/transactions/import/columns/apply`)
@@ -1222,6 +1223,118 @@ test("POST /api/accounts/:id/transactions/import/columns preview apply commit", 
   ).find((t) => t.description === "Payment");
   assert.equal(charge!.type, "EXPENSE");
   assert.equal(payment!.type, "INCOME");
+});
+
+test("CSV import presets CRUD and columns preview matchingPresetId", async () => {
+  const token = await registerAndLogin(
+    "csvpresets@test.local",
+    "csvpresets",
+    "password123",
+  );
+  const account = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      name: "Preset Bank",
+      accountType: "BANK",
+      currency: "PLN",
+      openingBalance: 0,
+    });
+  assert.equal(account.status, 201);
+  const accountId = account.body.id as number;
+  const headers = ["Data", "Kwota", "Opis"];
+
+  const unauth = await request(app).get(
+    `/api/accounts/${accountId}/import-presets`,
+  );
+  assert.equal(unauth.status, 401);
+
+  const created = await request(app)
+    .post(`/api/accounts/${accountId}/import-presets`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      name: "mBank ROR",
+      headers,
+      columnMapping: {
+        occurredAt: 0,
+        amount: 1,
+        description: 2,
+        amountSignMode: "negativeIsExpense",
+      },
+    });
+  assert.equal(created.status, 201);
+  assert.equal(created.body.name, "mBank ROR");
+  assert.equal(created.body.mapping.occurredAt, "Data");
+  assert.equal(created.body.mapping.amount, "Kwota");
+  assert.equal(created.body.mapping.description, "Opis");
+  assert.equal(created.body.mapping.amountSignMode, "negativeIsExpense");
+  const presetId = created.body.id as number;
+
+  const dup = await request(app)
+    .post(`/api/accounts/${accountId}/import-presets`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      name: "mbank ror",
+      headers,
+      columnMapping: {
+        occurredAt: 0,
+        amount: 1,
+        amountSignMode: "negativeIsExpense",
+      },
+    });
+  assert.equal(dup.status, 400);
+
+  const listed = await request(app)
+    .get(`/api/accounts/${accountId}/import-presets`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(listed.status, 200);
+  assert.equal(listed.body.length, 1);
+
+  const csv = ["Data;Kwota;Opis", "15.01.2026;-1,00;X"].join("\n");
+  const preview = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import/columns/preview`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv });
+  assert.equal(preview.status, 200);
+  assert.equal(preview.body.matchingPresetId, presetId);
+
+  const applyNamed = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import/columns/apply`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      csv,
+      columnMapping: {
+        occurredAt: "Data",
+        amount: "Kwota",
+        description: "Opis",
+        amountSignMode: "negativeIsExpense",
+      },
+    });
+  assert.equal(applyNamed.status, 200);
+  assert.equal(applyNamed.body.rowCount, 1);
+
+  const renamed = await request(app)
+    .patch(`/api/accounts/${accountId}/import-presets/${presetId}`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Bank export" });
+  assert.equal(renamed.status, 200);
+  assert.equal(renamed.body.name, "Bank export");
+
+  const deleted = await request(app)
+    .delete(`/api/accounts/${accountId}/import-presets/${presetId}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(deleted.status, 204);
+
+  const afterDelete = await request(app)
+    .get(`/api/accounts/${accountId}/import-presets`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(afterDelete.body.length, 0);
+
+  const previewNoMatch = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import/columns/preview`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv });
+  assert.equal(previewNoMatch.body.matchingPresetId, null);
 });
 
 test("DELETE /api/accounts/:id/transactions/:txId reverses cashBalance", async () => {

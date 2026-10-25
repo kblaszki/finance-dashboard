@@ -25,6 +25,7 @@ Hub: [docs/README.md](../README.md).
 | categories | Category[] | Owned category tree (`onDelete: Cascade`) |
 | tags | Tag[] | Owned flat tags (`onDelete: Cascade`) |
 | cashTransfers | CashTransfer[] | Owned internal transfers (`onDelete: Cascade`) |
+| csvImportPresets | CsvImportPreset[] | Saved CSV column maps (`onDelete: Cascade`) |
 
 ## Category
 
@@ -60,7 +61,24 @@ User-scoped financial account. Create accepts allow-listed types; `accountType` 
 | createdAt | DateTime | Default now |
 | updatedAt | DateTime | `@updatedAt` |
 
-Indexes: `[userId, accountType]`. API responses also expose computed `totalBalance` (= `cashBalance` until holdings exist). Allow-list: `backend/src/domain/accountTypes.ts`. Relations: `cashTransactions` → `CashTransaction[]` (`onDelete: Cascade`); `transfersFrom` / `transfersTo` → `CashTransfer[]` (`onDelete: Restrict` — delete account while transfers exist → API `409`).
+Indexes: `[userId, accountType]`. API responses also expose computed `totalBalance` (= `cashBalance` until holdings exist). Allow-list: `backend/src/domain/accountTypes.ts`. Relations: `cashTransactions` → `CashTransaction[]` (`onDelete: Cascade`); `transfersFrom` / `transfersTo` → `CashTransfer[]` (`onDelete: Restrict` — delete account while transfers exist → API `409`); `csvImportPresets` → `CsvImportPreset[]` (`onDelete: Cascade`).
+
+## CsvImportPreset
+
+Account-scoped saved column mapping for flexible CSV import (MVP-023). Domain: `backend/src/domain/csvImportPresets.ts`.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id | Int | PK |
+| userId | Int | FK → User (`onDelete: Cascade`) |
+| accountId | Int | FK → Account (`onDelete: Cascade`) |
+| name | String | Display name |
+| nameKey | String | Lowercase trimmed; unique per account |
+| mappingJson | String | JSON of header-name refs + optional `amountSignMode` |
+| createdAt | DateTime | Default now |
+| updatedAt | DateTime | `@updatedAt` |
+
+Indexes: `[userId]`, `[accountId]`, unique `[accountId, nameKey]`.
 
 ## CashTransfer
 
