@@ -72,13 +72,20 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
   if (!response.ok) {
     let message = `API error: ${response.status}`;
+    let code: string | undefined;
     try {
-      const body = (await response.json()) as { error?: string };
+      const body = (await response.json()) as {
+        error?: string;
+        code?: string;
+      };
       if (body.error) message = body.error;
+      if (typeof body.code === "string") code = body.code;
     } catch {
       // ignore parse errors
     }
-    throw new Error(message);
+    const err = new Error(message) as Error & { code?: string };
+    if (code) err.code = code;
+    throw err;
   }
 
   if (response.status === 204) {

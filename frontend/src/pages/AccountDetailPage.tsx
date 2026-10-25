@@ -4,31 +4,18 @@ import { fetchAccount, fetchAccountBalanceHistory } from "../api/accountsApi";
 import { fetchCategories } from "../api/categoriesApi";
 import { fetchTags } from "../api/tagsApi";
 import {
-  applyImportColumnMapping,
-  commitImportColumnMapping,
   createImportPreset,
   createTransaction,
   deleteImportPreset,
   deleteTransaction,
   updateTransaction,
   exportTransactionsCsv,
-  fetchImportPresets,
-  importTransactionsCsv,
-  previewImportColumns,
-  previewTransactionsImport,
   fetchTransactions,
   updateImportPreset,
   type CashTransaction,
-  type ColumnMapping,
   type CreateCashTransactionInput,
-  type CsvImportPreset,
-  type ImportCategoryMapping,
-  type ImportCategoryPreview,
-  type ImportColumnsPreview,
-  type ImportDescriptionMapping,
-  type ImportDescriptionSuggestion,
-  type SkippedDuplicateRow,
 } from "../api/transactionsApi";
+import { useCashLedgerImport } from "../hooks/useCashLedgerImport";
 import { AccountBalanceChart } from "../components/account/AccountBalanceChart";
 import { AccountLedgerHeader } from "../components/account/AccountLedgerHeader";
 import { AccountSubtitle } from "../components/account/AccountSubtitle";
@@ -52,63 +39,6 @@ import {
   isLedgerFilterActive,
   type LedgerFilterState,
 } from "../utils/listFilters";
-
-type PendingImport = {
-  csv: string;
-  rowCount: number;
-  categories: ImportCategoryPreview[];
-  descriptionSuggestions: ImportDescriptionSuggestion[];
-  skipped: number;
-  duplicateCount: number;
-  skippedDuplicates: SkippedDuplicateRow[];
-  /** Present when rows came from flexible column mapping. */
-  columnMapping?: ColumnMapping;
-};
-
-function needsImportConfirm(preview: {
-  categories: ImportCategoryPreview[];
-  descriptionSuggestions: ImportDescriptionSuggestion[];
-}): boolean {
-  return (
-    preview.categories.length > 0 || preview.descriptionSuggestions.length > 0
-  );
-}
-
-type PendingColumnMap = {
-  csv: string;
-  columns: ImportColumnsPreview;
-  presets: CsvImportPreset[];
-};
-
-function isUnknownLedgerHeaderError(err: unknown): boolean {
-  const msg = err instanceof Error ? err.message : String(err);
-  return /CSV header must be:/i.test(msg) || /CSV header required/i.test(msg);
-}
-
-function formatImportSuccessMessage(result: {
-  created: number;
-  createdCategories: number;
-  skipped: number;
-  duplicateCount?: number;
-}): string {
-  const createdNote =
-    result.createdCategories > 0
-      ? `Imported ${result.created} transaction(s); created ${result.createdCategories} categor${result.createdCategories === 1 ? "y" : "ies"}.`
-      : `Imported ${result.created} transaction(s).`;
-  const parts = [createdNote];
-  const duplicates = result.duplicateCount ?? 0;
-  if (duplicates > 0) {
-    parts.push(
-      `Skipped ${duplicates} duplicate row(s) already on this account.`,
-    );
-  }
-  if (result.skipped > 0) {
-    parts.push(
-      `Skipped ${result.skipped} internal transfer row(s) — manage transfers on the Transfers page.`,
-    );
-  }
-  return parts.join(" ");
-}
 
 export function AccountDetailPage() {
   const { id } = useParams();
@@ -208,14 +138,7 @@ export function AccountDetailPage() {
   }, [tags]);
 
   const [actionErr, setActionErr] = useState<string | null>(null);
-  const [importMsg, setImportMsg] = useState<string | null>(null);
   const [exportBusy, setExportBusy] = useState(false);
-  const [importBusy, setImportBusy] = useState(false);
-  const [pendingImport, setPendingImport] = useState<PendingImport | null>(
-    null,
-  );
-  const [pendingColumnMap, setPendingColumnMap] =
-    useState<PendingColumnMap | null>(null);
 
   async function refresh() {
     reloadAccount();
@@ -224,6 +147,24 @@ export function AccountDetailPage() {
     reloadCategories();
     refreshAccounts();
   }
+
+  const {
+    importMsg,
+    setImportMsg,
+    importBusy,
+    pendingImport,
+    pendingColumnMap,
+    setPendingImport,
+    setPendingColumnMap,
+    runImport,
+    reloadColumnPresets,
+    handleColumnMappingConfirm,
+    handleImportCsvFile,
+  } = useCashLedgerImport({
+    accountId,
+    onSuccess: refresh,
+    setActionErr,
+  });
 
   async function handleExportCsv() {
     setActionErr(null);
@@ -247,125 +188,6 @@ export function AccountDetailPage() {
       setActionErr(err instanceof Error ? err.message : "Export failed");
     } finally {
       setExportBusy(false);
-    }
-  }
-
-  async function runImport(
-    csv: string,
-    categoryMappings: ImportCategoryMapping[],
-    descriptionMappings: ImportDescriptionMapping[],
-    columnMapping?: ColumnMapping,
-  ) {
-    setImportBusy(true);
-    setActionErr(null);
-    setImportMsg(null);
-    try {
-      const result = columnMapping
-        ? await commitImportColumnMapping(
-            accountId,
-            csv,
-            columnMapping,
-            categoryMappings,
-            descriptionMappings,
-          )
-        : await importTransactionsCsv(
-            accountId,
-            csv,
-            categoryMappings,
-            descriptionMappings,
-          );
-      setImportMsg(formatImportSuccessMessage(result));
-      setPendingImport(null);
-      setPendingColumnMap(null);
-      await refresh();
-    } catch (err) {
-      setActionErr(err instanceof Error ? err.message : "Import failed");
-    } finally {
-      setImportBusy(false);
-    }
-  }
-
-  async function startColumnMappingFlow(csv: string) {
-    const [columns, presets] = await Promise.all([
-      previewImportColumns(accountId, csv),
-      fetchImportPresets(accountId),
-    ]);
-    setPendingColumnMap({ csv, columns, presets });
-  }
-
-  async function reloadColumnPresets() {
-    const presets = await fetchImportPresets(accountId);
-    setPendingColumnMap((prev) => (prev ? { ...prev, presets } : null));
-  }
-
-  async function handleColumnMappingConfirm(mapping: ColumnMapping) {
-    if (!pendingColumnMap) return;
-    setImportBusy(true);
-    setActionErr(null);
-    setImportMsg(null);
-    try {
-      const preview = await applyImportColumnMapping(
-        accountId,
-        pendingColumnMap.csv,
-        mapping,
-      );
-      setPendingColumnMap(null);
-      if (!needsImportConfirm(preview)) {
-        await runImport(pendingColumnMap.csv, [], [], mapping);
-        return;
-      }
-      setPendingImport({
-        csv: pendingColumnMap.csv,
-        rowCount: preview.rowCount,
-        categories: preview.categories,
-        descriptionSuggestions: preview.descriptionSuggestions,
-        skipped: preview.skipped,
-        duplicateCount: preview.duplicateCount,
-        skippedDuplicates: preview.skippedDuplicates,
-        columnMapping: mapping,
-      });
-    } catch (err) {
-      setActionErr(
-        err instanceof Error ? err.message : "Column mapping failed",
-      );
-    } finally {
-      setImportBusy(false);
-    }
-  }
-
-  async function handleImportCsvFile(file: File) {
-    setActionErr(null);
-    setImportMsg(null);
-    setPendingImport(null);
-    setPendingColumnMap(null);
-    setImportBusy(true);
-    try {
-      const csv = await file.text();
-      try {
-        const preview = await previewTransactionsImport(accountId, csv);
-        if (!needsImportConfirm(preview)) {
-          const result = await importTransactionsCsv(accountId, csv, [], []);
-          setImportMsg(formatImportSuccessMessage(result));
-          await refresh();
-          return;
-        }
-        setPendingImport({
-          csv,
-          rowCount: preview.rowCount,
-          categories: preview.categories,
-          descriptionSuggestions: preview.descriptionSuggestions,
-          skipped: preview.skipped,
-          duplicateCount: preview.duplicateCount,
-          skippedDuplicates: preview.skippedDuplicates,
-        });
-      } catch (err) {
-        if (!isUnknownLedgerHeaderError(err)) throw err;
-        await startColumnMappingFlow(csv);
-      }
-    } catch (err) {
-      setActionErr(err instanceof Error ? err.message : "Import failed");
-    } finally {
-      setImportBusy(false);
     }
   }
 

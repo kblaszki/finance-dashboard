@@ -8,7 +8,7 @@ import {
   useState,
 } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { fetchAccounts, type Account } from "../api/accountsApi";
+import { type Account } from "../api/accountsApi";
 import {
   fetchCategories,
   type Category,
@@ -420,7 +420,12 @@ function parseFromAccountIdParam(raw: string | null): number | null {
 }
 
 export function TransfersPage() {
-  const { refreshAccounts } = useCurrency();
+  const {
+    accounts,
+    accountsError,
+    accountsLoading,
+    refreshAccounts,
+  } = useCurrency();
   const [searchParams, setSearchParams] = useSearchParams();
   const [seedFromAccountId, setSeedFromAccountId] = useState<number | null>(
     () => parseFromAccountIdParam(searchParams.get("fromAccountId")),
@@ -488,14 +493,6 @@ export function TransfersPage() {
     [filteredTransfers, sort],
   );
   const filtersActive = isTransferFilterActive(filters);
-
-  const loadAccounts = useCallback(() => fetchAccounts(), []);
-  const {
-    data: accounts,
-    error: accountsError,
-    loading: accountsLoading,
-    reload: reloadAccounts,
-  } = useAsyncData(loadAccounts);
 
   const loadCategories = useCallback(() => fetchCategories(), []);
   const {
@@ -699,10 +696,13 @@ export function TransfersPage() {
         pendingImport.csv,
         mappings,
       );
+      if (!Array.isArray(preview.rows)) {
+        throw new Error("Import preview did not return row details");
+      }
       setPendingImport({
         ...pendingImport,
         accounts: preview.accounts,
-        rows: preview.rows ?? [],
+        rows: preview.rows,
         mappings,
       });
     } catch (err) {
@@ -731,7 +731,6 @@ export function TransfersPage() {
       );
       setPendingImport(null);
       reloadTransfers();
-      reloadAccounts();
       refreshAccounts();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Import failed");
