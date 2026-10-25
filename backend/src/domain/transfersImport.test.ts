@@ -8,6 +8,7 @@ import {
   occurredAtWindowForTransferRows,
   parseAccountMappings,
   parseSkipRows,
+  partitionTransferRowsByExisting,
   resolveTransferDrafts,
   suggestAccountMatches,
   TRANSFER_IMPORT_DEDUP_SCAN_LIMIT,
@@ -195,6 +196,71 @@ describe("findDuplicateRows", () => {
     ]);
     assert.equal(marked[0]!.duplicate, true);
     assert.equal(marked[1]!.duplicate, false);
+  });
+
+  it("flags intra-file duplicates when the ledger is empty", () => {
+    const occurredAt = new Date("2024-01-01T12:00:00.000Z");
+    const input = {
+      fromAccountId: 1,
+      toAccountId: 2,
+      amountFrom: new Prisma.Decimal("50"),
+      amountTo: new Prisma.Decimal("50"),
+      occurredAt,
+      description: null as string | null,
+    };
+    const marked = findDuplicateRows(
+      [
+        { row: 1, input },
+        { row: 2, input },
+      ],
+      [],
+    );
+    assert.equal(marked[0]!.duplicate, false);
+    assert.equal(marked[1]!.duplicate, true);
+  });
+});
+
+describe("partitionTransferRowsByExisting", () => {
+  it("keeps first of an intra-file pair and skips ledger matches", () => {
+    const occurredAt = new Date("2024-01-01T12:00:00.000Z");
+    const match = {
+      fromAccountId: 1,
+      toAccountId: 2,
+      amountFrom: new Prisma.Decimal("10"),
+      amountTo: new Prisma.Decimal("10"),
+      occurredAt,
+      description: "x" as string | null,
+    };
+    const novel = {
+      fromAccountId: 1,
+      toAccountId: 2,
+      amountFrom: new Prisma.Decimal("20"),
+      amountTo: new Prisma.Decimal("20"),
+      occurredAt,
+      description: null as string | null,
+    };
+    const { toImport, skippedDuplicateRows } = partitionTransferRowsByExisting(
+      [
+        { row: 1, input: match },
+        { row: 2, input: novel },
+        { row: 3, input: novel },
+      ],
+      [
+        {
+          fromAccountId: 1,
+          toAccountId: 2,
+          amountFrom: 1000,
+          amountTo: 1000,
+          occurredAt,
+          description: "x",
+        },
+      ],
+    );
+    assert.deepEqual(
+      toImport.map((r) => r.row),
+      [2],
+    );
+    assert.deepEqual(skippedDuplicateRows, [1, 3]);
   });
 });
 

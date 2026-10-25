@@ -19,20 +19,12 @@ import {
 import { minorToMajor } from "../domain/money";
 import {
   buildTransfersCsv,
-  formatImportErrors,
-  parseTransfersCsv,
   transfersExportFilename,
 } from "../domain/transfersCsv";
 import {
-  buildTransferCategoryPathIndex,
-  collectUsedAccounts,
-  findDuplicateRows,
-  loadExistingTransfersForDedup,
-  parseAccountMappings,
-  parseSkipRows,
-  resolveTransferDrafts,
-  suggestAccountMatches,
-} from "../domain/transfersImport";
+  commitTransferImport,
+  previewTransferImport,
+} from "../domain/transfersImportService";
 import {
   cursorWhere,
   pageResultFromRows,
@@ -91,13 +83,6 @@ async function loadOwnedAccountsMap(
     select: { id: true, currency: true },
   });
   return new Map(rows.map((row) => [row.id, row]));
-}
-
-async function loadOwnedAccountsForImport(prisma: PrismaClient, userId: number) {
-  return prisma.account.findMany({
-    where: { userId },
-    select: { id: true, name: true, currency: true },
-  });
 }
 
 export function createTransfersRouter(deps: TransfersDeps): Router {
@@ -212,91 +197,12 @@ export function createTransfersRouter(deps: TransfersDeps): Router {
         const userId = uid(req);
         const csv = req.body?.csv;
         if (typeof csv !== "string") throw badRequest("csv string required");
-
-        const parsed = parseTransfersCsv(csv);
-        if (!parsed.ok) {
-          res.status(400).json({
-            error: formatImportErrors(parsed.errors),
-            details: parsed.errors,
-          });
-          return;
-        }
-
-        const owned = await loadOwnedAccountsForImport(prisma, userId);
-        const used = collectUsedAccounts(parsed.drafts);
-        const accounts = suggestAccountMatches(used, owned);
-        type PreviewRow = {
-          row: number;
-          occurredAt: string;
-          fromAccountId: number;
-          toAccountId: number;
-          amountFrom: number;
-          amountTo: number;
-          description: string | null;
-          duplicate: boolean;
-        };
-        const body: {
-          rowCount: number;
-          accounts: typeof accounts;
-          rows: PreviewRow[];
-        } = {
-          rowCount: parsed.drafts.length,
-          accounts,
-          rows: [],
-        };
-
-        if (req.body?.accountMappings !== undefined) {
-          const mappings = parseAccountMappings(
-            req.body.accountMappings,
-            used,
-            owned,
-          );
-          if (!mappings.ok) {
-            res.status(400).json({
-              error: formatImportErrors(mappings.errors),
-              details: mappings.errors,
-            });
-            return;
-          }
-          const transferCategories = await prisma.category.findMany({
-            where: { userId, ledgerType: "TRANSFER" },
-            select: {
-              id: true,
-              name: true,
-              parentId: true,
-              ledgerType: true,
-            },
-          });
-          const resolved = resolveTransferDrafts(
-            parsed.drafts,
-            mappings.byKey,
-            buildTransferCategoryPathIndex(transferCategories),
-          );
-          if (!resolved.ok) {
-            res.status(400).json({
-              error: formatImportErrors(resolved.errors),
-              details: resolved.errors,
-            });
-            return;
-          }
-          const existing = await loadExistingTransfersForDedup(
-            prisma,
-            userId,
-            resolved.rows,
-          );
-          const marked = findDuplicateRows(resolved.rows, existing);
-          body.rows = marked.map((r) => ({
-            row: r.row,
-            occurredAt: r.input.occurredAt.toISOString(),
-            fromAccountId: r.input.fromAccountId,
-            toAccountId: r.input.toAccountId,
-            amountFrom: Number(r.input.amountFrom),
-            amountTo: Number(r.input.amountTo),
-            description: r.input.description,
-            duplicate: r.duplicate,
-          }));
-        }
-
+        const body = await previewTransferImport(
+          prisma,
+          userId,
+          csv,
+          req.body?.accountMappings,
+        );
         res.status(200).json(body);
       } catch (e: unknown) {
         handleRouteError(res, e, "Failed to preview transfer import");
@@ -312,74 +218,14 @@ export function createTransfersRouter(deps: TransfersDeps): Router {
         const userId = uid(req);
         const csv = req.body?.csv;
         if (typeof csv !== "string") throw badRequest("csv string required");
-
-        const parsed = parseTransfersCsv(csv);
-        if (!parsed.ok) {
-          res.status(400).json({
-            error: formatImportErrors(parsed.errors),
-            details: parsed.errors,
-          });
-          return;
-        }
-
-        const owned = await loadOwnedAccountsForImport(prisma, userId);
-        const used = collectUsedAccounts(parsed.drafts);
-        const mappings = parseAccountMappings(
+        const result = await commitTransferImport(
+          prisma,
+          userId,
+          csv,
           req.body?.accountMappings,
-          used,
-          owned,
-        );
-        if (!mappings.ok) {
-          res.status(400).json({
-            error: formatImportErrors(mappings.errors),
-            details: mappings.errors,
-          });
-          return;
-        }
-
-        const transferCategories = await prisma.category.findMany({
-          where: { userId, ledgerType: "TRANSFER" },
-          select: { id: true, name: true, parentId: true, ledgerType: true },
-        });
-        const categoryPathIndex =
-          buildTransferCategoryPathIndex(transferCategories);
-        const resolved = resolveTransferDrafts(
-          parsed.drafts,
-          mappings.byKey,
-          categoryPathIndex,
-        );
-        if (!resolved.ok) {
-          res.status(400).json({
-            error: formatImportErrors(resolved.errors),
-            details: resolved.errors,
-          });
-          return;
-        }
-
-        const skipParsed = parseSkipRows(
           req.body?.skipRows,
-          resolved.rows.map((r) => r.row),
         );
-        if (!skipParsed.ok) {
-          res.status(400).json({
-            error: formatImportErrors(skipParsed.errors),
-            details: skipParsed.errors,
-          });
-          return;
-        }
-
-        const toCreate = resolved.rows.filter(
-          (r) => !skipParsed.skip.has(r.row),
-        );
-        const skipped = resolved.rows.length - toCreate.length;
-
-        await prisma.$transaction(async (tx) => {
-          for (const item of toCreate) {
-            await createTransfer(tx, userId, item.input);
-          }
-        });
-
-        res.status(201).json({ created: toCreate.length, skipped });
+        res.status(201).json(result);
       } catch (e: unknown) {
         handleRouteError(res, e, "Failed to import transfers");
       }

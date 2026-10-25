@@ -33,7 +33,7 @@ JWT auth, multi-type accounts, category tree + tags, cash ledger + transfers, CS
 | Categories domain | `backend/src/domain/categories.ts` |
 | Tags domain | `backend/src/domain/tags.ts` |
 | Cash ledger domain | `backend/src/domain/cashLedger.ts`, `money.ts`, `cashLedgerCsv.ts`, `cashLedgerCsvImport.ts`, `cashLedgerImportService.ts`, `csvColumnMap.ts`, `csvImportPresets.ts`, `cashImportDedup.ts`, `categoryDescriptionSuggest.ts` |
-| Cash transfers domain | `backend/src/domain/cashTransfers.ts` |
+| Cash transfers domain | `backend/src/domain/cashTransfers.ts`, `transfersImport.ts`, `transfersImportService.ts`, `transfersCsv.ts` |
 | Category breakdown domain | `backend/src/domain/categoryBreakdown.ts` |
 | Stats period (M/Q/Y) | `backend/src/domain/statsPeriod.ts` |
 | Tag breakdown domain | `backend/src/domain/tagBreakdown.ts` |

@@ -49,7 +49,7 @@ sequenceDiagram
 | Cash import routes | `backend/src/routes/cashImportRoutes.ts` | Thin HTTP; preview/persist in `domain/cashLedgerImportService.ts` |
 | CSV import presets | `backend/src/routes/csvImportPresetsRoutes.ts` | Account-scoped column-map presets |
 | Description rules | `backend/src/routes/categoryDescriptionRulesRoutes.ts` | Import description → category rules |
-| Transfers routes | `backend/src/routes/transfersRoutes.ts` | Internal transfers CRUD + CSV import (month list capped at 2000; import dedup windowed) |
+| Transfers routes | `backend/src/routes/transfersRoutes.ts` | Internal transfers CRUD + CSV import (month list capped at 2000; preview/commit in `domain/transfersImportService.ts` with commit-time re-dedup) |
 | Statistics routes | `backend/src/routes/statisticsRoutes.ts` | Category/tag breakdown, period summary, cashflow, net worth, rolling 12m (period loads soft-capped) |
 | Errors | `routes/httpSupport.ts`, `lib/errors.ts` | Typed HTTP errors (incl. 409 conflict) |
 | Scripts | `backend/src/scripts/` | `createUser` (empty user), `backupDb`, `syncFxRates` (NBP EUR/USD) |

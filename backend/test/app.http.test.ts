@@ -3206,16 +3206,18 @@ test("GET/POST /api/transfers export import preview with account mapping", async
     .set("Authorization", `Bearer ${tokenB}`);
   assert.equal(balAfterSkip.body.cashBalance, 400);
 
+  // Re-import without skipRows must server-side skip ledger duplicates (not trust client).
   const recreated = await request(app)
     .post("/api/transfers/import")
     .set("Authorization", `Bearer ${tokenB}`)
     .send({ csv: exported.text, accountMappings: mappings });
   assert.equal(recreated.status, 201);
-  assert.equal(recreated.body.created, 2);
+  assert.equal(recreated.body.created, 0);
+  assert.equal(recreated.body.skipped, 2);
   const balAfterRecreate = await request(app)
     .get(`/api/accounts/${bFrom.body.id}`)
     .set("Authorization", `Bearer ${tokenB}`);
-  assert.equal(balAfterRecreate.body.cashBalance, -200);
+  assert.equal(balAfterRecreate.body.cashBalance, 400);
 
   const header =
     "id,occurredAt,fromAccount,fromCurrency,toAccount,toCurrency,amountFrom,amountTo,description,createdAt";

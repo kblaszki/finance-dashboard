@@ -373,12 +373,10 @@ function transferDupKey(
   ].join("\0");
 }
 
-/** Mark resolved rows that exactly match an existing user transfer. */
-export function findDuplicateRows(
-  rows: Array<{ row: number; input: TransferInput }>,
+function existingTransferKeys(
   existing: ExistingTransferForDup[],
-): ResolvedTransferRow[] {
-  const existingKeys = new Set(
+): Set<string> {
+  return new Set(
     existing.map((t) =>
       transferDupKey(
         t.fromAccountId,
@@ -390,22 +388,60 @@ export function findDuplicateRows(
       ),
     ),
   );
+}
 
+function resolvedRowKey(input: TransferInput): string {
+  return transferDupKey(
+    input.fromAccountId,
+    input.toAccountId,
+    decimalToMinor(input.amountFrom, "amountFrom"),
+    decimalToMinor(input.amountTo, "amountTo"),
+    input.occurredAt,
+    input.description,
+  );
+}
+
+/**
+ * Mark resolved rows that match an existing transfer or an earlier row in the
+ * same file (intra-file dedup).
+ */
+export function findDuplicateRows(
+  rows: Array<{ row: number; input: TransferInput }>,
+  existing: ExistingTransferForDup[],
+): ResolvedTransferRow[] {
+  const keys = existingTransferKeys(existing);
   return rows.map(({ row, input }) => {
-    const key = transferDupKey(
-      input.fromAccountId,
-      input.toAccountId,
-      decimalToMinor(input.amountFrom, "amountFrom"),
-      decimalToMinor(input.amountTo, "amountTo"),
-      input.occurredAt,
-      input.description,
-    );
-    return {
-      row,
-      input,
-      duplicate: existingKeys.has(key),
-    };
+    const key = resolvedRowKey(input);
+    const duplicate = keys.has(key);
+    if (!duplicate) keys.add(key);
+    return { row, input, duplicate };
   });
+}
+
+/**
+ * Partition resolved rows into create vs skip using ledger fingerprints.
+ * Also collapses intra-file duplicates (first wins).
+ */
+export function partitionTransferRowsByExisting(
+  rows: Array<{ row: number; input: TransferInput }>,
+  existing: ExistingTransferForDup[],
+): {
+  toImport: Array<{ row: number; input: TransferInput }>;
+  skippedDuplicateRows: number[];
+} {
+  const keys = existingTransferKeys(existing);
+  const toImport: Array<{ row: number; input: TransferInput }> = [];
+  const skippedDuplicateRows: number[] = [];
+  for (const item of rows) {
+    const key = resolvedRowKey(item.input);
+    if (keys.has(key)) {
+      skippedDuplicateRows.push(item.row);
+      continue;
+    }
+    keys.add(key);
+    toImport.push(item);
+  }
+  return { toImport, skippedDuplicateRows };
 }
 
 export type ParseSkipRowsResult =
