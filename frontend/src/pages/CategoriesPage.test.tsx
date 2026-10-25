@@ -32,7 +32,11 @@ import {
   importCategoriesCsv,
   previewCategoriesImport,
 } from "../api/categoriesApi";
-import { fetchCategoryDescriptionRules } from "../api/categoryDescriptionRulesApi";
+import {
+  createCategoryDescriptionRule,
+  deleteCategoryDescriptionRule,
+  fetchCategoryDescriptionRules,
+} from "../api/categoryDescriptionRulesApi";
 
 const categories = [
   {
@@ -141,5 +145,60 @@ describe("CategoriesPage CSV import/export", () => {
       await screen.findByText("All 1 category already exists."),
     ).toBeTruthy();
     expect(importCategoriesCsv).not.toHaveBeenCalled();
+  });
+});
+
+describe("CategoriesPage description rules", () => {
+  beforeEach(() => {
+    cleanup();
+    vi.clearAllMocks();
+    vi.mocked(fetchCategories).mockResolvedValue(categories);
+    vi.mocked(fetchCategoryDescriptionRules).mockResolvedValue([
+      {
+        id: 9,
+        pattern: "uber",
+        ledgerType: "EXPENSE",
+        categoryId: 1,
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-01T00:00:00.000Z",
+      },
+    ]);
+    vi.mocked(createCategoryDescriptionRule).mockResolvedValue({
+      id: 10,
+      pattern: "zabka",
+      ledgerType: "EXPENSE",
+      categoryId: 1,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    });
+    vi.mocked(deleteCategoryDescriptionRule).mockResolvedValue(undefined);
+  });
+
+  it("creates and deletes a description rule", async () => {
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+    renderCategories();
+    expect(await screen.findByText("Description rules")).toBeTruthy();
+    expect(screen.getByText("uber")).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText("Rule pattern"), {
+      target: { value: "zabka" },
+    });
+    fireEvent.change(screen.getByLabelText("Rule category"), {
+      target: { value: "1" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Add rule" }));
+
+    await waitFor(() => {
+      expect(createCategoryDescriptionRule).toHaveBeenCalledWith({
+        pattern: "zabka",
+        ledgerType: "EXPENSE",
+        categoryId: 1,
+      });
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete rule uber" }));
+    await waitFor(() => {
+      expect(deleteCategoryDescriptionRule).toHaveBeenCalledWith(9);
+    });
   });
 });

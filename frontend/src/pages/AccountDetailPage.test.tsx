@@ -34,6 +34,10 @@ vi.mock("../api/transactionsApi", async () => {
     exportTransactionsCsv: vi.fn(),
     previewTransactionsImport: vi.fn(),
     importTransactionsCsv: vi.fn(),
+    previewImportColumns: vi.fn(),
+    applyImportColumnMapping: vi.fn(),
+    commitImportColumnMapping: vi.fn(),
+    fetchImportPresets: vi.fn(),
   };
 });
 
@@ -45,11 +49,15 @@ import {
 import { fetchCategories } from "../api/categoriesApi";
 import { fetchTags } from "../api/tagsApi";
 import {
+  applyImportColumnMapping,
+  commitImportColumnMapping,
   createTransaction,
   deleteTransaction,
   exportTransactionsCsv,
+  fetchImportPresets,
   fetchTransactions,
   importTransactionsCsv,
+  previewImportColumns,
   previewTransactionsImport,
 } from "../api/transactionsApi";
 
@@ -143,6 +151,47 @@ describe("AccountDetailPage", () => {
       skippedDuplicates: [],
     });
     vi.mocked(importTransactionsCsv).mockResolvedValue({
+      created: 1,
+      createdCategories: 0,
+      skipped: 0,
+      skippedTransfers: [],
+      duplicateCount: 0,
+      skippedDuplicates: [],
+    });
+    vi.mocked(fetchImportPresets).mockResolvedValue([]);
+    vi.mocked(previewImportColumns).mockResolvedValue({
+      delimiter: ",",
+      headers: ["Date", "Amount", "Memo"],
+      sampleRows: [["2026-01-01", "-5.00", "Shop"]],
+      suggestedMapping: {
+        occurredAt: 0,
+        amount: 1,
+        description: 2,
+        type: null,
+        categoryPath: null,
+        amountSignMode: "negativeIsExpense",
+      },
+      matchingPresetId: null,
+    });
+    vi.mocked(applyImportColumnMapping).mockResolvedValue({
+      rowCount: 1,
+      categories: [],
+      descriptionSuggestions: [
+        {
+          description: "Shop",
+          descriptionKey: "shop",
+          ledgerType: "EXPENSE",
+          rowCount: 1,
+          suggestedCategoryId: 2,
+          suggestionSource: "history",
+        },
+      ],
+      skipped: 0,
+      skippedTransfers: [],
+      duplicateCount: 0,
+      skippedDuplicates: [],
+    });
+    vi.mocked(commitImportColumnMapping).mockResolvedValue({
       created: 1,
       createdCategories: 0,
       skipped: 0,
@@ -335,6 +384,59 @@ describe("AccountDetailPage", () => {
           },
         ],
         [],
+      );
+    });
+  });
+
+  it("maps unknown CSV header via columns then description suggestions", async () => {
+    vi.mocked(previewTransactionsImport).mockRejectedValue(
+      new Error('CSV header must be: id,type,amount,...'),
+    );
+
+    renderLedger();
+    await screen.findByText("Coffee");
+
+    const input = document.querySelector(
+      'input[type="file"]',
+    ) as HTMLInputElement;
+    const file = new File(["Date,Amount,Memo\n"], "bank.csv", {
+      type: "text/csv",
+    });
+    Object.defineProperty(file, "text", {
+      value: () => Promise.resolve("Date,Amount,Memo\n2026-01-01,-5.00,Shop\n"),
+    });
+    fireEvent.change(input, { target: { files: [file] } });
+
+    expect(await screen.findByText(/Map CSV columns/i)).toBeTruthy();
+    await waitFor(() => {
+      expect(previewImportColumns).toHaveBeenCalled();
+      expect(fetchImportPresets).toHaveBeenCalledWith(1);
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    expect(await screen.findByText("Confirm import categories")).toBeTruthy();
+    expect(screen.getByText("Shop")).toBeTruthy();
+    expect(screen.getByText("History")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Import" }));
+    await waitFor(() => {
+      expect(commitImportColumnMapping).toHaveBeenCalledWith(
+        1,
+        expect.any(String),
+        expect.objectContaining({
+          occurredAt: 0,
+          amount: 1,
+          description: 2,
+        }),
+        [],
+        [
+          {
+            descriptionKey: "shop",
+            ledgerType: "EXPENSE",
+            action: "map",
+            categoryId: 2,
+          },
+        ],
       );
     });
   });
