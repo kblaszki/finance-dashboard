@@ -161,9 +161,7 @@ function assertDescriptionRuleShape(value: CategoryDescriptionRule): void {
 function assertTransferImportPreviewShape(value: TransferImportPreview): void {
   if (typeof value.rowCount !== "number") throw new Error("transfer.rowCount");
   if (!Array.isArray(value.accounts)) throw new Error("transfer.accounts");
-  if (value.rows !== undefined && !Array.isArray(value.rows)) {
-    throw new Error("transfer.rows");
-  }
+  if (!Array.isArray(value.rows)) throw new Error("transfer.rows");
 }
 
 export function validateApiContractFixtures(): void {

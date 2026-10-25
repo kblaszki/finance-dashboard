@@ -209,22 +209,24 @@ export function createTransfersRouter(deps: TransfersDeps): Router {
         const owned = await loadOwnedAccountsForImport(prisma, userId);
         const used = collectUsedAccounts(parsed.drafts);
         const accounts = suggestAccountMatches(used, owned);
+        type PreviewRow = {
+          row: number;
+          occurredAt: string;
+          fromAccountId: number;
+          toAccountId: number;
+          amountFrom: number;
+          amountTo: number;
+          description: string | null;
+          duplicate: boolean;
+        };
         const body: {
           rowCount: number;
           accounts: typeof accounts;
-          rows?: Array<{
-            row: number;
-            occurredAt: string;
-            fromAccountId: number;
-            toAccountId: number;
-            amountFrom: number;
-            amountTo: number;
-            description: string | null;
-            duplicate: boolean;
-          }>;
+          rows: PreviewRow[];
         } = {
           rowCount: parsed.drafts.length,
           accounts,
+          rows: [],
         };
 
         if (req.body?.accountMappings !== undefined) {

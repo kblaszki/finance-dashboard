@@ -48,7 +48,8 @@ export type TransferImportRowPreview = {
 export type TransferImportPreview = {
   rowCount: number;
   accounts: TransferAccountPreview[];
-  rows?: TransferImportRowPreview[];
+  /** Always present; empty until accountMappings are supplied. */
+  rows: TransferImportRowPreview[];
 };
 
 export type TransferAccountMapping = {

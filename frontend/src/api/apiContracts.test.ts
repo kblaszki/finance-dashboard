@@ -54,7 +54,7 @@ describe("API contract fixtures", () => {
 
   it("transfer import preview fixture includes mapped rows", () => {
     const preview: TransferImportPreview = transferImportPreviewFixture;
-    expect(preview.rows?.length).toBe(1);
+    expect(preview.rows.length).toBe(1);
     expect(preview.accounts[0]?.suggestedAccountId).toBe(1);
   });
 });

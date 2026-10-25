@@ -19,7 +19,7 @@ Practical habits for this monorepo. Examples match the **shipped** surface (auth
 - Route handlers coordinate work; business rules live in `backend/src/domain/*`.
 - Make it obvious where new logic belongs before adding code.
 
-Wire-up: `backend/src/app.ts` → `routes/mountRouters.ts`. HTTP: `backend/src/routes/*` (auth, accounts, categories, tags, cashTransactions, csvImportPresets, categoryDescriptionRules, transfers, statistics). Shared helpers: `httpSupport.ts`, `routeSupport.ts`, `lib/errors.ts`. Money, FX, ledger, import, and stats rules stay in domain modules — not in handlers or the SPA.
+Wire-up: `backend/src/app.ts` → `routes/mountRouters.ts`. HTTP: `backend/src/routes/*` (auth, accounts, categories, tags, cashTransactions, cashImport, csvImportPresets, categoryDescriptionRules, transfers, statistics). Shared helpers: `httpSupport.ts`, `routeSupport.ts`, `lib/errors.ts`. Money, FX, ledger, import, and stats rules stay in domain modules — not in handlers or the SPA.
 
 ## 2. Boring request flow
 

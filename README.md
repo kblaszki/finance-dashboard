@@ -1,15 +1,15 @@
 # Finance Dashboard
 
-Personal full-stack finance app (auth baseline today; more domains tracked in [mvp/CHECKLIST.md](mvp/CHECKLIST.md)). Built with:
+Personal full-stack finance app (shipped surface below; backlog in [mvp/CHECKLIST.md](mvp/CHECKLIST.md)). Built with:
 
 - **Backend:** Node.js + TypeScript + Express + Prisma + SQLite
 - **Frontend:** Vite + React + TypeScript
 
-**Current code:** register/login (JWT), profile / email / password settings, multi-type accounts, cash ledger with categories, month statistics, health check, and a demo user with sample portfolio data. Broader portfolio/tax features remain in [mvp/CHECKLIST.md](mvp/CHECKLIST.md).
+**Current code:** JWT auth (register/login, profile / email / password), multi-type accounts, category tree + tags, cash ledger + transfers, CSV import (column map, presets, dedup, description suggest), statistics, NBP FX domain, health check, and a demo user with sample portfolio. Broader portfolio/tax features remain in [mvp/CHECKLIST.md](mvp/CHECKLIST.md).
 
 ## Requirements
 
-- Node.js 20+ (CI tests on Node 24)
+- Node.js 20+ (CI tests on Node 22)
 - npm
 
 ## Installation

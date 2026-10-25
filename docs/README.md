@@ -16,7 +16,7 @@ Finance-dashboard docs follow [Diátaxis](https://diataxis.fr/): each page has o
 | Explanation | Understand why | [explanation/](explanation/) |
 | Meta | Agent maps (not a Diátaxis mode) | [meta/](meta/) |
 
-**Code baseline:** JWT auth, account settings, multi-type accounts, cash ledger + categories, month statistics, demo user with sample portfolio. Product backlog: [mvp/CHECKLIST.md](../mvp/CHECKLIST.md) (do not treat checklist “done” as shipped code).
+**Code baseline:** JWT auth, multi-type accounts, category tree + tags, cash ledger + transfers, CSV import (column map, presets, dedup, description suggest), statistics, NBP FX domain, demo user with sample portfolio. Product backlog: [mvp/CHECKLIST.md](../mvp/CHECKLIST.md) (do not treat checklist “done” as shipped code).
 
 ## AI reading order
 
