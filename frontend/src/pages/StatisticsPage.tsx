@@ -1,15 +1,4 @@
 import { useCallback, useMemo, useState } from "react";
-import {
-  Bar,
-  CartesianGrid,
-  ComposedChart,
-  Legend,
-  Line,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import { fetchCategories } from "../api/categoriesApi";
 import {
   fetchCashflowHistory,
@@ -20,44 +9,29 @@ import {
   type StatsPeriod,
   type TagBreakdown,
 } from "../api/statisticsApi";
-import { BreakdownPanel } from "../components/statistics/BreakdownPanel";
-import { DetailTable } from "../components/statistics/DetailTable";
-import { TagDetailTable } from "../components/statistics/TagDetailTable";
-import { ChartCard } from "../components/ui/ChartCard";
-import { KpiCard } from "../components/ui/KpiCard";
+import { CashflowHistoryChart } from "../components/statistics/CashflowHistoryChart";
+import {
+  StatisticsAnalysisSection,
+  type AnalysisView,
+  type CategoryFacet,
+  type TagFacet,
+} from "../components/statistics/StatisticsAnalysisSection";
+import { StatisticsKpiGrid } from "../components/statistics/StatisticsKpiGrid";
+import { StatisticsPeriodFilter } from "../components/statistics/StatisticsPeriodFilter";
 import { StatusBlock } from "../components/ui/StatusBlock";
 import { useAsyncData } from "../hooks/useAsyncData";
 import { useCurrency } from "../state/currency";
-import { buildCategoryTreeRows } from "../utils/categoryTreeStats";
-import { formatMoney, formatPercent } from "../utils/format";
 import {
-  formatPeriodDelta,
-  previousPeriodAnchor,
-} from "../utils/periodCompare";
-import {
-  anchorForQuarter,
-  anchorForYear,
-  currentUtcMonth,
-  quarterOf,
-  YEAR_OPTIONS,
-  yearOf,
-} from "../utils/statisticsPeriod";
+  buildCategoryTreeRows,
+  type CategoryTreeStatRow,
+} from "../utils/categoryTreeStats";
+import { previousPeriodAnchor } from "../utils/periodCompare";
+import { currentUtcMonth } from "../utils/statisticsPeriod";
 import {
   rollupByParent,
   tagRollupRows,
   withUntagged,
 } from "../utils/statisticsRollup";
-
-const HISTORY_MONTH_OPTIONS = [6, 12, 24] as const;
-const PERIOD_OPTIONS: { value: StatsPeriod; label: string }[] = [
-  { value: "month", label: "Month" },
-  { value: "quarter", label: "Quarter" },
-  { value: "year", label: "Year" },
-];
-
-type AnalysisView = "categories" | "tags";
-type CategoryFacet = "income" | "expense" | "transfer";
-type TagFacet = "income" | "expense";
 
 export function StatisticsPage() {
   const { currencies, currency } = useCurrency();
@@ -195,117 +169,16 @@ export function StatisticsPage() {
 
   return (
     <>
-      <section className="card form-section-gap period-filter">
-        <div
-          className="stats-segmented"
-          role="group"
-          aria-label="Analysis period"
-        >
-          {PERIOD_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              type="button"
-              className={
-                period === opt.value
-                  ? "stats-segmented__btn stats-segmented__btn--active"
-                  : "stats-segmented__btn"
-              }
-              aria-pressed={period === opt.value}
-              onClick={() => setPeriod(opt.value)}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="period-filter-row">
-          {period === "month" && (
-            <label>
-              Month
-              <input
-                type="month"
-                value={month}
-                onChange={(e) => setMonth(e.target.value)}
-                required
-              />
-            </label>
-          )}
-          {period === "quarter" && (
-            <>
-              <label>
-                Year
-                <select
-                  value={yearOf(month)}
-                  onChange={(e) =>
-                    setMonth(
-                      anchorForQuarter(Number(e.target.value), quarterOf(month)),
-                    )
-                  }
-                >
-                  {YEAR_OPTIONS.map((y) => (
-                    <option key={y} value={y}>
-                      {y}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Quarter
-                <select
-                  value={quarterOf(month)}
-                  onChange={(e) =>
-                    setMonth(
-                      anchorForQuarter(yearOf(month), Number(e.target.value)),
-                    )
-                  }
-                >
-                  {[1, 2, 3, 4].map((q) => (
-                    <option key={q} value={q}>
-                      Q{q}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </>
-          )}
-          {period === "year" && (
-            <label>
-              Year
-              <select
-                value={yearOf(month)}
-                onChange={(e) =>
-                  setMonth(anchorForYear(Number(e.target.value)))
-                }
-              >
-                {YEAR_OPTIONS.map((y) => (
-                  <option key={y} value={y}>
-                    {y}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-          <label>
-            History range
-            <select
-              value={historyMonths}
-              onChange={(e) => setHistoryMonths(Number(e.target.value))}
-            >
-              {HISTORY_MONTH_OPTIONS.map((n) => (
-                <option key={n} value={n}>
-                  {n} months
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <p className="muted period-filter-summary">
-          Showing <strong>{periodLabel}</strong>
-          {currency ? ` · ${currency}` : ""}. Currency is set in the top bar.
-          Transfers are listed separately and do not change income, expense, or
-          net. Tag totals count the full amount on each attached tag.
-        </p>
-      </section>
+      <StatisticsPeriodFilter
+        period={period}
+        month={month}
+        historyMonths={historyMonths}
+        periodLabel={periodLabel}
+        currency={currency}
+        onPeriodChange={setPeriod}
+        onMonthChange={setMonth}
+        onHistoryMonthsChange={setHistoryMonths}
+      />
 
       <StatusBlock
         loading={loading}
@@ -316,320 +189,39 @@ export function StatisticsPage() {
       />
 
       {!loading && !error && currency && summary && (
-        <div className="kpi-grid">
-          <KpiCard
-            label={`Income · ${periodLabel}`}
-            value={formatMoney(summary.income, currency)}
-            tone="positive"
-            sub={
-              prevSummary
-                ? formatPeriodDelta(summary.income, prevSummary.income)
-                : undefined
-            }
-          />
-          <KpiCard
-            label={`Expense · ${periodLabel}`}
-            value={formatMoney(summary.expense, currency)}
-            tone="negative"
-            sub={
-              prevSummary
-                ? formatPeriodDelta(summary.expense, prevSummary.expense)
-                : undefined
-            }
-          />
-          <KpiCard
-            label={`Net · ${periodLabel}`}
-            value={formatMoney(summary.net, currency)}
-            tone={summary.net >= 0 ? "positive" : "negative"}
-            sub={
-              prevSummary
-                ? formatPeriodDelta(summary.net, prevSummary.net)
-                : undefined
-            }
-          />
-          <KpiCard
-            label={`Transfers · ${periodLabel}`}
-            value={formatMoney(summary.transfers, currency)}
-            sub={
-              prevSummary
-                ? formatPeriodDelta(summary.transfers, prevSummary.transfers)
-                : undefined
-            }
-          />
-        </div>
+        <StatisticsKpiGrid
+          summary={summary}
+          prevSummary={prevSummary}
+          periodLabel={periodLabel}
+          currency={currency}
+        />
       )}
 
       {!loading && !error && currency && history && (
-        <ChartCard
-          title={`Cashflow history (${currency})`}
-          subtitle={`${historyMonths} months ending ${periodLabel}, with savings rate on the right axis.`}
-        >
-          <ResponsiveContainer width="100%" height={320}>
-            <ComposedChart data={chartSeries}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-              <XAxis dataKey="month" tick={{ fontSize: 12, fill: "var(--color-text-muted)" }} />
-              <YAxis
-                yAxisId="money"
-                tick={{ fontSize: 12, fill: "var(--color-text-muted)" }}
-                width={70}
-              />
-              <YAxis
-                yAxisId="pct"
-                orientation="right"
-                tick={{ fontSize: 12, fill: "var(--color-text-muted)" }}
-                width={48}
-                tickFormatter={(v) => `${v}%`}
-              />
-              <Tooltip
-                formatter={(value, name) => {
-                  if (name === "Savings %") {
-                    return [
-                      typeof value === "number"
-                        ? formatPercent(value, { decimals: 1 })
-                        : "—",
-                      "Savings %",
-                    ];
-                  }
-                  return [
-                    typeof value === "number"
-                      ? formatMoney(value, currency)
-                      : String(value ?? ""),
-                    String(name),
-                  ];
-                }}
-              />
-              <Legend />
-              <Bar
-                yAxisId="money"
-                dataKey="income"
-                name="Income"
-                fill="var(--chart-1)"
-                maxBarSize={24}
-                radius={[3, 3, 0, 0]}
-              />
-              <Bar
-                yAxisId="money"
-                dataKey="expense"
-                name="Expense"
-                fill="var(--chart-3)"
-                maxBarSize={24}
-                radius={[3, 3, 0, 0]}
-              />
-              <Line
-                yAxisId="money"
-                type="monotone"
-                dataKey="net"
-                name="Net"
-                stroke="var(--chart-4)"
-                strokeWidth={2}
-                dot={false}
-              />
-              <Line
-                yAxisId="pct"
-                type="monotone"
-                dataKey="savingsRate"
-                name="Savings %"
-                stroke="var(--chart-2)"
-                strokeWidth={2}
-                strokeDasharray="4 3"
-                dot={false}
-                connectNulls={false}
-              />
-            </ComposedChart>
-          </ResponsiveContainer>
-          <p className="muted">
-            Legend: Income, Expense, and Net use the left axis. Savings % uses the right axis.
-          </p>
-          <div className="table-wrap">
-            <table className="data-table">
-              <caption className="muted">Cashflow history values</caption>
-              <thead>
-                <tr>
-                  <th>Month</th>
-                  <th className="num">Income</th>
-                  <th className="num">Expense</th>
-                  <th className="num">Net</th>
-                  <th className="num">Savings %</th>
-                </tr>
-              </thead>
-              <tbody>
-                {chartSeries.map((row) => (
-                  <tr key={row.month}>
-                    <td>{row.month}</td>
-                    <td className="num">{formatMoney(row.income, currency)}</td>
-                    <td className="num">{formatMoney(row.expense, currency)}</td>
-                    <td className="num">{formatMoney(row.net, currency)}</td>
-                    <td className="num">
-                      {row.savingsRate == null
-                        ? "—"
-                        : formatPercent(row.savingsRate, { decimals: 1 })}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </ChartCard>
+        <CashflowHistoryChart
+          series={chartSeries}
+          currency={currency}
+          historyMonths={historyMonths}
+          periodLabel={periodLabel}
+        />
       )}
 
       {!loading && !error && currency && (
-        <section className="card form-section-gap stats-analysis">
-          <div
-            className="stats-segmented"
-            role="tablist"
-            aria-label="Breakdown view"
-          >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={analysisView === "categories"}
-              className={
-                analysisView === "categories"
-                  ? "stats-segmented__btn stats-segmented__btn--active"
-                  : "stats-segmented__btn"
-              }
-              onClick={() => setAnalysisView("categories")}
-            >
-              Categories
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={analysisView === "tags"}
-              className={
-                analysisView === "tags"
-                  ? "stats-segmented__btn stats-segmented__btn--active"
-                  : "stats-segmented__btn"
-              }
-              onClick={() => setAnalysisView("tags")}
-            >
-              Tags
-            </button>
-          </div>
-
-          {analysisView === "categories" && breakdown && (
-            <>
-              <div
-                className="stats-facet-tabs"
-                role="tablist"
-                aria-label="Category type"
-              >
-                {(
-                  [
-                    ["income", "Income"],
-                    ["expense", "Expense"],
-                    ["transfer", "Transfers"],
-                  ] as const
-                ).map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    role="tab"
-                    aria-selected={categoryFacet === value}
-                    className={
-                      categoryFacet === value
-                        ? "stats-facet-tabs__btn stats-facet-tabs__btn--active"
-                        : "stats-facet-tabs__btn"
-                    }
-                    onClick={() => setCategoryFacet(value)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-              <BreakdownPanel
-                title={
-                  categoryFacet === "income"
-                    ? "Income"
-                    : categoryFacet === "expense"
-                      ? "Expense"
-                      : "Transfers"
-                }
-                rows={categoryFacetRows}
-                currency={currency}
-                tone={
-                  categoryFacet === "income"
-                    ? "positive"
-                    : categoryFacet === "expense"
-                      ? "negative"
-                      : "neutral"
-                }
-                emptyLabel={`No ${categoryFacet} in ${periodLabel} for the selected currency.`}
-                subtitle={`Root category rollup · ${periodLabel} · ${currency}`}
-              />
-              <DetailTable
-                title={`${categoryFacet === "transfer" ? "Transfer" : categoryFacet === "income" ? "Income" : "Expense"} detail`}
-                rows={categoryDetailRows}
-                currency={currency}
-              />
-              {categoryDetailRows.length > 0 && (
-                <p className="muted stats-detail-hint">
-                  Totals include nested subcategories.
-                </p>
-              )}
-            </>
-          )}
-
-          {analysisView === "tags" && tagBreakdown && (
-            <>
-              <div
-                className="stats-facet-tabs"
-                role="tablist"
-                aria-label="Tag type"
-              >
-                {(
-                  [
-                    ["income", "Income"],
-                    ["expense", "Expense"],
-                  ] as const
-                ).map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    role="tab"
-                    aria-selected={tagFacet === value}
-                    className={
-                      tagFacet === value
-                        ? "stats-facet-tabs__btn stats-facet-tabs__btn--active"
-                        : "stats-facet-tabs__btn"
-                    }
-                    onClick={() => setTagFacet(value)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-              <BreakdownPanel
-                title={tagFacet === "income" ? "Income" : "Expense"}
-                rows={tagFacetRows}
-                currency={currency}
-                tone={tagFacet === "income" ? "positive" : "negative"}
-                emptyLabel={`No tagged ${tagFacet} in ${periodLabel} for the selected currency.`}
-                subtitle={`By tag · ${periodLabel} · ${currency}`}
-                byLabel="tag"
-              />
-              <TagDetailTable
-                title={`${tagFacet === "income" ? "Income" : "Expense"} by tag`}
-                rows={
-                  tagFacet === "income"
-                    ? tagBreakdown.income
-                    : tagBreakdown.expense
-                }
-                untaggedTotal={
-                  tagFacet === "income"
-                    ? tagBreakdown.untagged.income
-                    : tagBreakdown.untagged.expense
-                }
-                untaggedCount={
-                  tagFacet === "income"
-                    ? tagBreakdown.untagged.incomeCount
-                    : tagBreakdown.untagged.expenseCount
-                }
-                currency={currency}
-              />
-            </>
-          )}
-        </section>
+        <StatisticsAnalysisSection
+          analysisView={analysisView}
+          categoryFacet={categoryFacet}
+          tagFacet={tagFacet}
+          periodLabel={periodLabel}
+          currency={currency}
+          breakdown={breakdown}
+          tagBreakdown={tagBreakdown}
+          categoryFacetRows={categoryFacetRows}
+          categoryDetailRows={categoryDetailRows}
+          tagFacetRows={tagFacetRows}
+          onAnalysisViewChange={setAnalysisView}
+          onCategoryFacetChange={setCategoryFacet}
+          onTagFacetChange={setTagFacet}
+        />
       )}
     </>
   );
