@@ -18,6 +18,8 @@ import {
 import {
   formatImportErrors,
   parseCashLedgerCsvImport,
+  type CashLedgerImportDraft,
+  type SkippedTransferRow,
 } from "../domain/cashLedgerCsvImport";
 import {
   applyCategoryMappings,
@@ -27,6 +29,12 @@ import {
   resolveDraftsWithMappings,
   suggestCategoryMatches,
 } from "../domain/cashLedgerImportCategories";
+import {
+  normalizeMappedRows,
+  parseColumnMapping,
+  parseDelimitedTable,
+  suggestColumnMapping,
+} from "../domain/csvColumnMap";
 import { expectedCategoryLedgerType } from "../domain/categories";
 import {
   cursorWhere,
@@ -136,6 +144,32 @@ async function findOwnedAccount(
   });
   if (!account) throw notFound("Account not found");
   return account;
+}
+
+async function buildCategoryImportPreview(
+  prisma: PrismaClient,
+  userId: number,
+  draftsIn: CashLedgerImportDraft[],
+  skippedTransfers: SkippedTransferRow[],
+): Promise<{
+  rowCount: number;
+  categories: ReturnType<typeof suggestCategoryMatches>;
+  skipped: number;
+  skippedTransfers: SkippedTransferRow[];
+}> {
+  const ownedCategories = await prisma.category.findMany({
+    where: { userId },
+    select: { id: true, name: true, parentId: true, ledgerType: true },
+  });
+  const drafts = enrichLegacyCategoryPaths(draftsIn, ownedCategories);
+  const used = collectUsedCategories(drafts);
+  const categories = suggestCategoryMatches(used, ownedCategories);
+  return {
+    rowCount: drafts.length,
+    categories,
+    skipped: skippedTransfers.length,
+    skippedTransfers,
+  };
 }
 
 export function createCashTransactionsRouter(deps: CashTxDeps): Router {
@@ -324,6 +358,153 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
         });
       } catch (e: unknown) {
         handleRouteError(res, e, "Failed to import transactions");
+      }
+    },
+  );
+
+  router.post(
+    "/api/accounts/:accountId/transactions/import/columns/preview",
+    requireAuth,
+    async (req: AuthedRequest, res) => {
+      try {
+        const accountId = parseIdParam(req.params.accountId, "accountId");
+        await findOwnedAccount(prisma, uid(req), accountId);
+        const csv = req.body?.csv;
+        if (typeof csv !== "string") {
+          throw badRequest("csv string required");
+        }
+        const table = parseDelimitedTable(csv);
+        const sampleRows = table.rows.slice(0, 5);
+        res.status(200).json({
+          delimiter: table.delimiter === "\t" ? "\\t" : table.delimiter,
+          headers: table.headers,
+          sampleRows,
+          suggestedMapping: suggestColumnMapping(table.headers),
+        });
+      } catch (e: unknown) {
+        handleRouteError(res, e, "Failed to preview CSV columns");
+      }
+    },
+  );
+
+  router.post(
+    "/api/accounts/:accountId/transactions/import/columns/apply",
+    requireAuth,
+    async (req: AuthedRequest, res) => {
+      try {
+        const accountId = parseIdParam(req.params.accountId, "accountId");
+        const userId = uid(req);
+        await findOwnedAccount(prisma, userId, accountId);
+        const csv = req.body?.csv;
+        if (typeof csv !== "string") {
+          throw badRequest("csv string required");
+        }
+        const table = parseDelimitedTable(csv);
+        const mapping = parseColumnMapping(req.body?.columnMapping, table.headers);
+        const parsed = normalizeMappedRows(table, mapping);
+        if (!parsed.ok) {
+          res.status(400).json({
+            error: formatImportErrors(parsed.errors),
+            details: parsed.errors,
+          });
+          return;
+        }
+        const preview = await buildCategoryImportPreview(
+          prisma,
+          userId,
+          parsed.drafts,
+          parsed.skippedTransfers,
+        );
+        res.status(200).json(preview);
+      } catch (e: unknown) {
+        handleRouteError(res, e, "Failed to apply column mapping");
+      }
+    },
+  );
+
+  router.post(
+    "/api/accounts/:accountId/transactions/import/columns/commit",
+    requireAuth,
+    async (req: AuthedRequest, res) => {
+      try {
+        const accountId = parseIdParam(req.params.accountId, "accountId");
+        const userId = uid(req);
+        await findOwnedAccount(prisma, userId, accountId);
+        const csv = req.body?.csv;
+        if (typeof csv !== "string") {
+          throw badRequest("csv string required");
+        }
+        const table = parseDelimitedTable(csv);
+        const mapping = parseColumnMapping(req.body?.columnMapping, table.headers);
+        const parsed = normalizeMappedRows(table, mapping);
+        if (!parsed.ok) {
+          res.status(400).json({
+            error: formatImportErrors(parsed.errors),
+            details: parsed.errors,
+          });
+          return;
+        }
+
+        const ownedCategories = await prisma.category.findMany({
+          where: { userId },
+          select: { id: true, name: true, parentId: true, ledgerType: true },
+        });
+        const drafts = enrichLegacyCategoryPaths(
+          parsed.drafts,
+          ownedCategories,
+        );
+        const used = collectUsedCategories(drafts);
+        const mappingsResult = parseCategoryMappings(
+          req.body?.categoryMappings,
+          used,
+        );
+        if (!mappingsResult.ok) {
+          res.status(400).json({
+            error: formatImportErrors(mappingsResult.errors),
+            details: mappingsResult.errors,
+          });
+          return;
+        }
+
+        const { created, createdCategories } = await prisma.$transaction(
+          async (tx) => {
+            const applied = await applyCategoryMappings(
+              tx,
+              userId,
+              mappingsResult.mappings,
+              used,
+              ownedCategories,
+            );
+            const resolved = resolveDraftsWithMappings(
+              drafts,
+              applied.resolvedIds,
+            );
+            const createdCount = await postCashTransactionBatch(
+              tx,
+              accountId,
+              resolved.map((row) => ({
+                type: row.type,
+                amount: parsePositiveAmount(row.amount),
+                occurredAt: row.occurredAt,
+                description: row.description,
+                categoryId: row.categoryId,
+              })),
+            );
+            return {
+              created: createdCount,
+              createdCategories: applied.createdCategories,
+            };
+          },
+        );
+
+        res.status(201).json({
+          created,
+          createdCategories,
+          skipped: parsed.skippedTransfers.length,
+          skippedTransfers: parsed.skippedTransfers,
+        });
+      } catch (e: unknown) {
+        handleRouteError(res, e, "Failed to commit column-mapped import");
       }
     },
   );

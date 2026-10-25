@@ -1104,6 +1104,126 @@ test("POST /api/accounts/:id/transactions/import preview and mapped import", asy
   assert.equal(legacyImported.body.created, 3);
 });
 
+test("POST /api/accounts/:id/transactions/import/columns preview apply commit", async () => {
+  const token = await registerAndLogin(
+    "csvcols@test.local",
+    "csvcols",
+    "password123",
+  );
+  const account = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      name: "Column Map Bank",
+      accountType: "BANK",
+      currency: "PLN",
+      openingBalance: 200,
+    });
+  assert.equal(account.status, 201);
+  const accountId = account.body.id as number;
+
+  const csv = [
+    "Data;Kwota;Opis",
+    "15.01.2026;-12,50;Sklep",
+    "16.01.2026;100,00;Wplata",
+  ].join("\n");
+
+  const unauth = await request(app).post(
+    `/api/accounts/${accountId}/transactions/import/columns/preview`,
+  );
+  assert.equal(unauth.status, 401);
+
+  const cols = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import/columns/preview`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv });
+  assert.equal(cols.status, 200);
+  assert.equal(cols.body.delimiter, ";");
+  assert.deepEqual(cols.body.headers, ["Data", "Kwota", "Opis"]);
+  assert.equal(cols.body.sampleRows.length, 2);
+  assert.equal(cols.body.suggestedMapping.occurredAt, 0);
+  assert.equal(cols.body.suggestedMapping.amount, 1);
+  assert.equal(cols.body.suggestedMapping.description, 2);
+
+  const badMap = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import/columns/apply`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      csv,
+      columnMapping: { occurredAt: 0, amount: 1 },
+    });
+  assert.equal(badMap.status, 400);
+
+  const columnMapping = {
+    occurredAt: 0,
+    amount: 1,
+    description: 2,
+    amountSignMode: "negativeIsExpense",
+  };
+
+  const apply = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import/columns/apply`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv, columnMapping });
+  assert.equal(apply.status, 200);
+  assert.equal(apply.body.rowCount, 2);
+  assert.equal(apply.body.categories.length, 0);
+
+  const committed = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import/columns/commit`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv, columnMapping, categoryMappings: [] });
+  assert.equal(committed.status, 201);
+  assert.equal(committed.body.created, 2);
+
+  const listed = await request(app)
+    .get(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(listed.status, 200);
+  const items = listed.body.items as Array<{
+    type: string;
+    amount: number;
+    description: string | null;
+  }>;
+  assert.equal(items.length, 2);
+  const sklep = items.find((t) => t.description === "Sklep");
+  const wplata = items.find((t) => t.description === "Wplata");
+  assert.equal(sklep!.type, "EXPENSE");
+  assert.equal(sklep!.amount, 12.5);
+  assert.equal(wplata!.type, "INCOME");
+  assert.equal(wplata!.amount, 100);
+
+  const ccCsv = [
+    "Date,Amount,Memo",
+    "2026-02-01,45.00,Charge",
+    "2026-02-02,-20.00,Payment",
+  ].join("\n");
+  const ccMap = {
+    occurredAt: 0,
+    amount: 1,
+    description: 2,
+    amountSignMode: "negativeIsIncome",
+  };
+  const ccCommit = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import/columns/commit`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv: ccCsv, columnMapping: ccMap, categoryMappings: [] });
+  assert.equal(ccCommit.status, 201);
+  assert.equal(ccCommit.body.created, 2);
+
+  const afterCc = await request(app)
+    .get(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`);
+  const charge = (
+    afterCc.body.items as Array<{ type: string; description: string | null }>
+  ).find((t) => t.description === "Charge");
+  const payment = (
+    afterCc.body.items as Array<{ type: string; description: string | null }>
+  ).find((t) => t.description === "Payment");
+  assert.equal(charge!.type, "EXPENSE");
+  assert.equal(payment!.type, "INCOME");
+});
+
 test("DELETE /api/accounts/:id/transactions/:txId reverses cashBalance", async () => {
   const { token } = await createUserAndToken();
   const account = await request(app)
