@@ -27,6 +27,7 @@ Hub: [docs/README.md](../README.md).
 | cashTransfers | CashTransfer[] | Owned internal transfers (`onDelete: Cascade`) |
 | csvImportPresets | CsvImportPreset[] | Saved CSV column maps (`onDelete: Cascade`) |
 | importBatches | ImportBatch[] | Cash CSV import audit rows (`onDelete: Cascade`) |
+| categoryDescriptionRules | CategoryDescriptionRule[] | Import description → category rules (`onDelete: Cascade`) |
 
 ## Category
 
@@ -41,8 +42,26 @@ User-scoped nested label (`parentId` self-relation). Each row has a fixed `ledge
 | ledgerType | String | `INCOME`, `EXPENSE`, or `TRANSFER`; immutable after create |
 | parentId | Int? | FK → Category (`onDelete: Restrict`); null = root |
 | createdAt | DateTime | Default now |
+| descriptionRules | CategoryDescriptionRule[] | Rules pointing at this category (`onDelete: Cascade`) |
 
 Indexes: `[userId]`, `[parentId]`, `[userId, ledgerType]`, unique `[userId, nameKey]`. Domain: `backend/src/domain/categories.ts`. Seeded on register / create-user / demo seed.
+
+## CategoryDescriptionRule
+
+User-scoped import suggestion: if a normalized description **contains** `pattern`, suggest `categoryId` (INCOME/EXPENSE). Longest matching pattern wins. Confirming a mapped description on import upserts an exact-pattern rule. Domain: `backend/src/domain/categoryDescriptionSuggest.ts`.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id | Int | PK |
+| userId | Int | FK → User (`onDelete: Cascade`) |
+| pattern | String | Normalized substring (≤ 120) |
+| patternKey | String | Same as pattern for uniqueness |
+| ledgerType | String | `INCOME` \| `EXPENSE` |
+| categoryId | Int | FK → Category (`onDelete: Cascade`) |
+| createdAt | DateTime | Default now |
+| updatedAt | DateTime | `@updatedAt` |
+
+Indexes: `[userId, ledgerType]`, `[categoryId]`, unique `[userId, ledgerType, patternKey]`.
 
 ## Account
 

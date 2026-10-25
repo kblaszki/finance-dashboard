@@ -54,6 +54,7 @@ Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + c
 | MVP-022 | Generic CSV column map on account | done | [features/import/generic-csv-column-map.md](features/import/generic-csv-column-map.md) | /accounts/:id Upload CSV |
 | MVP-023 | Account CSV import column presets | done | [features/import/account-csv-import-presets.md](features/import/account-csv-import-presets.md) | /accounts/:id Upload CSV presets |
 | MVP-024 | Cash ledger import dedup + ImportBatch | done | [features/import/cash-ledger-import-dedup.md](features/import/cash-ledger-import-dedup.md) | /accounts/:id Upload CSV dedup |
+| MVP-025 | Import category suggest from description | done | [features/import/category-suggest-from-description.md](features/import/category-suggest-from-description.md) | /accounts/:id + /categories rules |
 | FR-010 | Historical NBP FX rates | done | [features/market-fx/nbp-fx-history.md](features/market-fx/nbp-fx-history.md) | FxRateDaily + `npm run fx:sync` + `domain/fx.ts` |
 | FR-031 | Crypto EOD sync on CRYPTO accounts | planned | [features/market-fx/crypto-eod-sync.md](features/market-fx/crypto-eod-sync.md) | MarketPricesStatus |
 | MVP-021 | STOCK/ETF market data sync | planned | [features/market-fx/stock-etf-market-sync.md](features/market-fx/stock-etf-market-sync.md) | Market sync + CLI |
@@ -134,6 +135,7 @@ Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + c
 - **done** [MVP-022 Generic CSV column map on account](features/import/generic-csv-column-map.md)
 - **done** [MVP-023 Account CSV import column presets](features/import/account-csv-import-presets.md)
 - **done** [MVP-024 Cash ledger import dedup + ImportBatch](features/import/cash-ledger-import-dedup.md)
+- **done** [MVP-025 Import category suggest from description](features/import/category-suggest-from-description.md)
 
 ### market-fx
 

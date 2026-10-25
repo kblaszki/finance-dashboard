@@ -38,6 +38,6 @@ Safe re-upload of bank statements without creating duplicate ledger rows; clear 
 
 ## Out of scope / follow-ups
 
-- Auto category from description (next slice)
+- Auto category from description — done as [MVP-025](category-suggest-from-description.md)
 - FR-019 bank/broker `/import`
 - Force overwrite / ImportBatchRow fingerprints

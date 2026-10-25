@@ -25,6 +25,7 @@ This page covers the shipped category tree and optional cash tagging. Monthly bu
 4. Delete returns `409` when the category has children. Deleting a leaf clears `CashTransaction.categoryId` / `CashTransfer.categoryId` (`SetNull`).
 5. **CSV:** Download / Upload on `/categories` (`GET /api/categories/export`, `POST …/import/preview`, `POST …/import`). Format `path,ledgerType` (`INCOME`\|`EXPENSE`\|`TRANSFER`). Import **merges**: existing path+type skipped, missing paths created; never deletes. Prefer importing the category tree before a ledger or transfers CSV when moving between environments.
 6. Tag internal transfers on `/transfers` with a **Transfers** category (optional); both ledger legs show the same tag. Cashflow statistics still ignore transfer legs.
+7. **Description rules** (bottom of `/categories`): contains-patterns that suggest a category during cash CSV import when the row has no category path. Rules beat ledger history; confirming a map on import also saves an exact-description rule. API: `GET|POST /api/category-description-rules`, `PATCH|DELETE …/:id`. See [import-csv-column-map.md](import-csv-column-map.md).
 
 ## Tag a cash transaction (category)
 

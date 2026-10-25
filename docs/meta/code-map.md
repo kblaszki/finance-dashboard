@@ -27,7 +27,7 @@ Auth + multi-type accounts + category tree + cash ledger + category statistics b
 | Account type allow-list | `backend/src/domain/accountTypes.ts` |
 | Categories domain | `backend/src/domain/categories.ts` |
 | Tags domain | `backend/src/domain/tags.ts` |
-| Cash ledger domain | `backend/src/domain/cashLedger.ts`, `money.ts`, `cashLedgerCsv.ts`, `cashLedgerCsvImport.ts`, `csvColumnMap.ts`, `csvImportPresets.ts`, `cashImportDedup.ts` |
+| Cash ledger domain | `backend/src/domain/cashLedger.ts`, `money.ts`, `cashLedgerCsv.ts`, `cashLedgerCsvImport.ts`, `csvColumnMap.ts`, `csvImportPresets.ts`, `cashImportDedup.ts`, `categoryDescriptionSuggest.ts` |
 | Cash transfers domain | `backend/src/domain/cashTransfers.ts` |
 | Category breakdown domain | `backend/src/domain/categoryBreakdown.ts` |
 | Stats period (M/Q/Y) | `backend/src/domain/statsPeriod.ts` |
@@ -40,7 +40,7 @@ Auth + multi-type accounts + category tree + cash ledger + category statistics b
 | Router mount | `backend/src/routes/mountRouters.ts` |
 | HTTP helpers / errors | `backend/src/routes/httpSupport.ts`, `backend/src/lib/errors.ts` |
 | Route uid helper | `backend/src/routes/routeSupport.ts` |
-| Prisma schema | `backend/prisma/schema.prisma` (`User`, `Category`, `Tag`, `CashTransactionTag`, `Account`, `CashTransfer`, `CashTransaction`, `FxRateDaily`) |
+| Prisma schema | `backend/prisma/schema.prisma` (`User`, `Category`, `CategoryDescriptionRule`, `Tag`, `CashTransactionTag`, `Account`, `CashTransfer`, `CashTransaction`, `CsvImportPreset`, `ImportBatch`, `FxRateDaily`) |
 | Migrations | `backend/prisma/migrations/` |
 | Demo user seed | `backend/prisma/seed.ts`, `backend/src/domain/seedDemoPortfolio.ts` |
 | Create user CLI | `backend/src/scripts/createUser.ts` |

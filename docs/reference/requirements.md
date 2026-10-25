@@ -29,6 +29,7 @@ Hub: [docs/README.md](../README.md).
 | MVP-022 | Generic CSV column map on account | `POST …/import/columns/{preview,apply,commit}`; `domain/csvColumnMap.ts`; `ImportColumnMappingPanel` on `/accounts/:id` |
 | MVP-023 | Account CSV import column presets | `CsvImportPreset`; `…/import-presets` CRUD; `matchingPresetId` on columns preview; save/load in `ImportColumnMappingPanel` |
 | MVP-024 | Cash ledger import dedup + ImportBatch | `domain/cashImportDedup.ts`; skip duplicates on preview/commit; `ImportBatch` audit on commit |
+| MVP-025 | Import category suggest from description | `CategoryDescriptionRule`; `domain/categoryDescriptionSuggest.ts`; import `descriptionSuggestions` / `descriptionMappings`; rules CRUD |
 | FR-015 | Category tree CRUD | `Category`; `domain/categories.ts`; `/api/categories`; `/categories`; empty on register (user-defined) |
 | FR-018 | Transaction categories | Optional `CashTransaction.categoryId` on ledger create/list; multi-line splits deferred |
 | FR-016 | Category spend breakdown | `GET /api/statistics/category-breakdown`; `/statistics` month Income/Expense lists (UTC, no FX) |
