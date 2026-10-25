@@ -36,6 +36,12 @@ import {
   suggestColumnMapping,
 } from "../domain/csvColumnMap";
 import { findMatchingPresetId } from "../domain/csvImportPresets";
+import {
+  createImportBatch,
+  loadAccountImportFingerprints,
+  partitionDraftsByExisting,
+  type SkippedDuplicateRow,
+} from "../domain/cashImportDedup";
 import { expectedCategoryLedgerType } from "../domain/categories";
 import {
   cursorWhere,
@@ -150,6 +156,7 @@ async function findOwnedAccount(
 async function buildCategoryImportPreview(
   prisma: PrismaClient,
   userId: number,
+  accountId: number,
   draftsIn: CashLedgerImportDraft[],
   skippedTransfers: SkippedTransferRow[],
 ): Promise<{
@@ -157,19 +164,28 @@ async function buildCategoryImportPreview(
   categories: ReturnType<typeof suggestCategoryMatches>;
   skipped: number;
   skippedTransfers: SkippedTransferRow[];
+  duplicateCount: number;
+  skippedDuplicates: SkippedDuplicateRow[];
 }> {
   const ownedCategories = await prisma.category.findMany({
     where: { userId },
     select: { id: true, name: true, parentId: true, ledgerType: true },
   });
   const drafts = enrichLegacyCategoryPaths(draftsIn, ownedCategories);
-  const used = collectUsedCategories(drafts);
+  const fingerprints = await loadAccountImportFingerprints(prisma, accountId);
+  const { toImport, skippedDuplicates } = partitionDraftsByExisting(
+    drafts,
+    fingerprints,
+  );
+  const used = collectUsedCategories(toImport);
   const categories = suggestCategoryMatches(used, ownedCategories);
   return {
-    rowCount: drafts.length,
+    rowCount: toImport.length,
     categories,
     skipped: skippedTransfers.length,
     skippedTransfers,
+    duplicateCount: skippedDuplicates.length,
+    skippedDuplicates,
   };
 }
 
@@ -255,22 +271,14 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
           return;
         }
 
-        const ownedCategories = await prisma.category.findMany({
-          where: { userId },
-          select: { id: true, name: true, parentId: true, ledgerType: true },
-        });
-        const drafts = enrichLegacyCategoryPaths(
+        const preview = await buildCategoryImportPreview(
+          prisma,
+          userId,
+          accountId,
           parsed.drafts,
-          ownedCategories,
+          parsed.skippedTransfers,
         );
-        const used = collectUsedCategories(drafts);
-        const categories = suggestCategoryMatches(used, ownedCategories);
-        res.status(200).json({
-          rowCount: drafts.length,
-          categories,
-          skipped: parsed.skippedTransfers.length,
-          skippedTransfers: parsed.skippedTransfers,
-        });
+        res.status(200).json(preview);
       } catch (e: unknown) {
         handleRouteError(res, e, "Failed to preview import");
       }
@@ -307,7 +315,15 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
           parsed.drafts,
           ownedCategories,
         );
-        const used = collectUsedCategories(drafts);
+        const fingerprints = await loadAccountImportFingerprints(
+          prisma,
+          accountId,
+        );
+        const { toImport, skippedDuplicates } = partitionDraftsByExisting(
+          drafts,
+          fingerprints,
+        );
+        const used = collectUsedCategories(toImport);
         const mappingsResult = parseCategoryMappings(
           req.body?.categoryMappings,
           used,
@@ -330,7 +346,7 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
               ownedCategories,
             );
             const resolved = resolveDraftsWithMappings(
-              drafts,
+              toImport,
               applied.resolvedIds,
             );
             const createdCount = await postCashTransactionBatch(
@@ -344,6 +360,14 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
                 categoryId: row.categoryId,
               })),
             );
+            await createImportBatch(tx, {
+              userId,
+              accountId,
+              source: "ledger_csv",
+              createdCount,
+              skippedDuplicateCount: skippedDuplicates.length,
+              skippedTransferCount: parsed.skippedTransfers.length,
+            });
             return {
               created: createdCount,
               createdCategories: applied.createdCategories,
@@ -356,6 +380,8 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
           createdCategories,
           skipped: parsed.skippedTransfers.length,
           skippedTransfers: parsed.skippedTransfers,
+          duplicateCount: skippedDuplicates.length,
+          skippedDuplicates,
         });
       } catch (e: unknown) {
         handleRouteError(res, e, "Failed to import transactions");
@@ -424,6 +450,7 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
         const preview = await buildCategoryImportPreview(
           prisma,
           userId,
+          accountId,
           parsed.drafts,
           parsed.skippedTransfers,
         );
@@ -465,7 +492,15 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
           parsed.drafts,
           ownedCategories,
         );
-        const used = collectUsedCategories(drafts);
+        const fingerprints = await loadAccountImportFingerprints(
+          prisma,
+          accountId,
+        );
+        const { toImport, skippedDuplicates } = partitionDraftsByExisting(
+          drafts,
+          fingerprints,
+        );
+        const used = collectUsedCategories(toImport);
         const mappingsResult = parseCategoryMappings(
           req.body?.categoryMappings,
           used,
@@ -488,7 +523,7 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
               ownedCategories,
             );
             const resolved = resolveDraftsWithMappings(
-              drafts,
+              toImport,
               applied.resolvedIds,
             );
             const createdCount = await postCashTransactionBatch(
@@ -502,6 +537,14 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
                 categoryId: row.categoryId,
               })),
             );
+            await createImportBatch(tx, {
+              userId,
+              accountId,
+              source: "columns_csv",
+              createdCount,
+              skippedDuplicateCount: skippedDuplicates.length,
+              skippedTransferCount: parsed.skippedTransfers.length,
+            });
             return {
               created: createdCount,
               createdCategories: applied.createdCategories,
@@ -514,6 +557,8 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
           createdCategories,
           skipped: parsed.skippedTransfers.length,
           skippedTransfers: parsed.skippedTransfers,
+          duplicateCount: skippedDuplicates.length,
+          skippedDuplicates,
         });
       } catch (e: unknown) {
         handleRouteError(res, e, "Failed to commit column-mapped import");

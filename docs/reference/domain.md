@@ -26,6 +26,7 @@ Hub: [docs/README.md](../README.md).
 | tags | Tag[] | Owned flat tags (`onDelete: Cascade`) |
 | cashTransfers | CashTransfer[] | Owned internal transfers (`onDelete: Cascade`) |
 | csvImportPresets | CsvImportPreset[] | Saved CSV column maps (`onDelete: Cascade`) |
+| importBatches | ImportBatch[] | Cash CSV import audit rows (`onDelete: Cascade`) |
 
 ## Category
 
@@ -61,7 +62,7 @@ User-scoped financial account. Create accepts allow-listed types; `accountType` 
 | createdAt | DateTime | Default now |
 | updatedAt | DateTime | `@updatedAt` |
 
-Indexes: `[userId, accountType]`. API responses also expose computed `totalBalance` (= `cashBalance` until holdings exist). Allow-list: `backend/src/domain/accountTypes.ts`. Relations: `cashTransactions` → `CashTransaction[]` (`onDelete: Cascade`); `transfersFrom` / `transfersTo` → `CashTransfer[]` (`onDelete: Restrict` — delete account while transfers exist → API `409`); `csvImportPresets` → `CsvImportPreset[]` (`onDelete: Cascade`).
+Indexes: `[userId, accountType]`. API responses also expose computed `totalBalance` (= `cashBalance` until holdings exist). Allow-list: `backend/src/domain/accountTypes.ts`. Relations: `cashTransactions` → `CashTransaction[]` (`onDelete: Cascade`); `transfersFrom` / `transfersTo` → `CashTransfer[]` (`onDelete: Restrict` — delete account while transfers exist → API `409`); `csvImportPresets` → `CsvImportPreset[]` (`onDelete: Cascade`); `importBatches` → `ImportBatch[]` (`onDelete: Cascade`).
 
 ## CsvImportPreset
 
@@ -79,6 +80,23 @@ Account-scoped saved column mapping for flexible CSV import (MVP-023). Domain: `
 | updatedAt | DateTime | `@updatedAt` |
 
 Indexes: `[userId]`, `[accountId]`, unique `[accountId, nameKey]`.
+
+## ImportBatch
+
+Audit row written on successful cash ledger CSV commit (fixed header or column-mapped). Dedup itself compares fingerprints against existing `CashTransaction` rows — see `domain/cashImportDedup.ts`.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id | Int | PK |
+| userId | Int | FK → User |
+| accountId | Int | FK → Account |
+| source | String | `ledger_csv` \| `columns_csv` |
+| createdCount | Int | Rows inserted |
+| skippedDuplicateCount | Int | Rows skipped as duplicates |
+| skippedTransferCount | Int | `TRANSFER_*` CSV rows skipped |
+| createdAt | DateTime | Default now |
+
+Indexes: `[userId, createdAt]`, `[accountId, createdAt]`.
 
 ## CashTransfer
 

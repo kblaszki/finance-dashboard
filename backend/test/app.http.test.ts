@@ -934,43 +934,19 @@ test("POST /api/accounts/:id/transactions/import preview and mapped import", asy
     .set("Authorization", `Bearer ${token}`)
     .send({ csv: roundTrip.text });
   assert.equal(reimportPreview.status, 200);
-  assert.ok(reimportPreview.body.rowCount >= 3);
-  const suggested = (
-    reimportPreview.body.categories as Array<{
-      path: string;
-      ledgerType: string;
-      suggestedCategoryId: number | null;
-    }>
-  ).filter((c) => c.suggestedCategoryId != null);
-  assert.ok(suggested.length >= 1);
+  assert.equal(reimportPreview.body.rowCount, 0);
+  assert.ok(reimportPreview.body.duplicateCount >= 3);
+  assert.equal(reimportPreview.body.categories.length, 0);
   const reimported = await request(app)
     .post(`/api/accounts/${accountId}/transactions/import`)
     .set("Authorization", `Bearer ${token}`)
     .send({
       csv: roundTrip.text,
-      categoryMappings: (
-        reimportPreview.body.categories as Array<{
-          path: string;
-          ledgerType: string;
-          suggestedCategoryId: number | null;
-        }>
-      ).map((c) =>
-        c.suggestedCategoryId != null
-          ? {
-              path: c.path,
-              ledgerType: c.ledgerType,
-              action: "map" as const,
-              categoryId: c.suggestedCategoryId,
-            }
-          : {
-              path: c.path,
-              ledgerType: c.ledgerType,
-              action: "none" as const,
-            },
-      ),
+      categoryMappings: [],
     });
   assert.equal(reimported.status, 201);
-  assert.equal(reimported.body.created, reimportPreview.body.rowCount);
+  assert.equal(reimported.body.created, 0);
+  assert.ok(reimported.body.duplicateCount >= 3);
 
   const noCatCsv = `${header}\n,INCOME,10.00,PLN,2024-04-01T12:00:00.000Z,Bonus,,\n`;
   const emptyCats = await request(app)
@@ -1335,6 +1311,107 @@ test("CSV import presets CRUD and columns preview matchingPresetId", async () =>
     .set("Authorization", `Bearer ${token}`)
     .send({ csv });
   assert.equal(previewNoMatch.body.matchingPresetId, null);
+});
+
+test("cash ledger CSV import skips duplicates and records ImportBatch", async () => {
+  const token = await registerAndLogin(
+    "csvdedup@test.local",
+    "csvdedup",
+    "password123",
+  );
+  const account = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      name: "Dedup Bank",
+      accountType: "BANK",
+      currency: "PLN",
+      openingBalance: 0,
+    });
+  assert.equal(account.status, 201);
+  const accountId = account.body.id as number;
+
+  const header =
+    "id,type,amount,currency,occurredAt,description,categoryPath,createdAt";
+  const csv = [
+    header,
+    `,INCOME,50.00,PLN,2024-03-01T12:00:00.000Z,Pay,,`,
+    `,EXPENSE,20.00,PLN,2024-03-02T12:00:00.000Z,Lunch,,`,
+    `,EXPENSE,20.00,PLN,2024-03-02T12:00:00.000Z,Lunch,,`,
+  ].join("\n");
+
+  const firstPreview = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import/preview`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv });
+  assert.equal(firstPreview.status, 200);
+  assert.equal(firstPreview.body.rowCount, 2);
+  assert.equal(firstPreview.body.duplicateCount, 1);
+  assert.equal(firstPreview.body.skippedDuplicates.length, 1);
+  assert.equal(firstPreview.body.skippedDuplicates[0].row, 3);
+
+  const first = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv, categoryMappings: [] });
+  assert.equal(first.status, 201);
+  assert.equal(first.body.created, 2);
+  assert.equal(first.body.duplicateCount, 1);
+
+  const secondPreview = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import/preview`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv });
+  assert.equal(secondPreview.status, 200);
+  assert.equal(secondPreview.body.rowCount, 0);
+  assert.equal(secondPreview.body.duplicateCount, 3);
+
+  const second = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv, categoryMappings: [] });
+  assert.equal(second.status, 201);
+  assert.equal(second.body.created, 0);
+  assert.equal(second.body.duplicateCount, 3);
+  assert.equal(second.body.skippedDuplicates.length, 3);
+
+  const listed = await request(app)
+    .get(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(listed.body.items.length, 2);
+
+  const mixCsv = [
+    header,
+    `,INCOME,50.00,PLN,2024-03-01T12:00:00.000Z,Pay,,`,
+    `,EXPENSE,7.00,PLN,2024-03-05T12:00:00.000Z,New,,`,
+  ].join("\n");
+  const mix = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv: mixCsv, categoryMappings: [] });
+  assert.equal(mix.status, 201);
+  assert.equal(mix.body.created, 1);
+  assert.equal(mix.body.duplicateCount, 1);
+
+  const colsCsv = [
+    "Date,Amount,Memo",
+    "2024-03-05,-7.00,New",
+    "2024-03-06,3.00,Fresh",
+  ].join("\n");
+  const colsMap = {
+    occurredAt: 0,
+    amount: 1,
+    description: 2,
+    amountSignMode: "negativeIsExpense",
+  };
+  const colsCommit = await request(app)
+    .post(`/api/accounts/${accountId}/transactions/import/columns/commit`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ csv: colsCsv, columnMapping: colsMap, categoryMappings: [] });
+  assert.equal(colsCommit.status, 201);
+  assert.equal(colsCommit.body.created, 1);
+  assert.equal(colsCommit.body.duplicateCount, 1);
+  assert.equal(colsCommit.body.skippedDuplicates[0].description, "New");
 });
 
 test("DELETE /api/accounts/:id/transactions/:txId reverses cashBalance", async () => {

@@ -22,6 +22,7 @@ model User {
   tags         Tag[]
   cashTransfers CashTransfer[]
   csvImportPresets CsvImportPreset[]
+  importBatches ImportBatch[]
 }
 
 model Category {
@@ -64,9 +65,28 @@ model Account {
   transfersFrom   CashTransfer[]    @relation("TransferFrom")
   transfersTo     CashTransfer[]    @relation("TransferTo")
   csvImportPresets CsvImportPreset[]
+  importBatches ImportBatch[]
 
   @@unique([userId, name])
   @@index([userId, accountType])
+}
+
+/// Audit record for a cash ledger CSV import commit (deduped uploads).
+model ImportBatch {
+  id                    Int      @id @default(autoincrement())
+  userId                Int
+  accountId             Int
+  /// ledger_csv | columns_csv
+  source                String
+  createdCount          Int
+  skippedDuplicateCount Int
+  skippedTransferCount  Int
+  createdAt             DateTime @default(now())
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account               Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([accountId, createdAt])
 }
 
 /// Saved CSV column mapping for flexible account imports (header names, not indices).
