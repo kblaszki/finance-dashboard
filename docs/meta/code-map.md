@@ -67,6 +67,7 @@ Auth + multi-type accounts + category tree + cash ledger + category statistics b
 | Pages | `frontend/src/pages/{Landing,Login,Register,Dashboard,Accounts,AccountDetail,Categories,Tags,Transfers,Statistics,Settings}Page.tsx` |
 | Statistics UI | `frontend/src/components/statistics/`, `frontend/src/utils/statisticsPeriod.ts`, `statisticsRollup.ts` |
 | Cash ledger import hook | `frontend/src/hooks/useCashLedgerImport.ts` (AccountDetail CSV flow) |
+| Transfers import hook | `frontend/src/hooks/useTransferImport.ts`; `components/transfers/TransferCreateRow.tsx` |
 | Transfers API client | `frontend/src/api/transfersApi.ts` |
 | Account ledger UI | `frontend/src/components/account/` |
 | Theme | `frontend/src/state/theme.tsx`, `ThemeToggle.tsx` (light/dark) |
