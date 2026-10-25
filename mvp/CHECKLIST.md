@@ -15,7 +15,7 @@ Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + c
 
 | done | stub | planned | in_progress | total |
 |------|------|---------|-------------|-------|
-| 22 | 0 | 44 | 0 | 66 |
+| 23 | 0 | 44 | 0 | 67 |
 
 ## Master table
 
@@ -51,6 +51,7 @@ Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + c
 | FR-019 | Bank and broker CSV import | planned | [features/import/csv-import-bank-broker.md](features/import/csv-import-bank-broker.md) | /import |
 | FR-047 | Import presets catalog | planned | [features/import/import-presets.md](features/import/import-presets.md) | /import/presets |
 | MVP-020 | Import preset column mapping UI wired to import | planned | [features/import/preset-column-mapping-ui.md](features/import/preset-column-mapping-ui.md) | /import/presets + /import |
+| MVP-022 | Generic CSV column map on account | done | [features/import/generic-csv-column-map.md](features/import/generic-csv-column-map.md) | /accounts/:id Upload CSV |
 | FR-010 | Historical NBP FX rates | done | [features/market-fx/nbp-fx-history.md](features/market-fx/nbp-fx-history.md) | FxRateDaily + `npm run fx:sync` + `domain/fx.ts` |
 | FR-031 | Crypto EOD sync on CRYPTO accounts | planned | [features/market-fx/crypto-eod-sync.md](features/market-fx/crypto-eod-sync.md) | MarketPricesStatus |
 | MVP-021 | STOCK/ETF market data sync | planned | [features/market-fx/stock-etf-market-sync.md](features/market-fx/stock-etf-market-sync.md) | Market sync + CLI |
@@ -128,6 +129,7 @@ Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + c
 - **planned** [FR-019 Bank and broker CSV import](features/import/csv-import-bank-broker.md)
 - **planned** [FR-047 Import presets catalog](features/import/import-presets.md)
 - **planned** [MVP-020 Import preset column mapping UI wired to import](features/import/preset-column-mapping-ui.md)
+- **done** [MVP-022 Generic CSV column map on account](features/import/generic-csv-column-map.md)
 
 ### market-fx
 

@@ -53,6 +53,7 @@ Never load all docs. Prefer reference for facts, how-to for tasks, explanation f
 | [account-settings.md](how-to/account-settings.md) | Profile, email, password |
 | [budgets-and-categories.md](how-to/budgets-and-categories.md) | Category tree + tag cash txs |
 | [internal-transfers.md](how-to/internal-transfers.md) | Move cash between owned accounts |
+| [import-csv-column-map.md](how-to/import-csv-column-map.md) | Map arbitrary CSV columns on account Upload |
 | [dashboard-and-statistics.md](how-to/dashboard-and-statistics.md) | Home net worth / rolling 12m; period KPIs, chart, category breakdown |
 | [write-integration-tests.md](how-to/write-integration-tests.md) | HTTP / integration tests |
 | [private-deploy.md](how-to/private-deploy.md) | Private single-user deploy |
