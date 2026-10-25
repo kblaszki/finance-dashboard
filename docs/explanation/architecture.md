@@ -46,7 +46,7 @@ sequenceDiagram
 | Categories routes | `backend/src/routes/categoriesRoutes.ts` | Nested category CRUD + CSV export/import |
 | Tags routes | `backend/src/routes/tagsRoutes.ts` | Flat tag CRUD |
 | Cash tx routes | `backend/src/routes/cashTransactionsRoutes.ts` | Ledger CRUD + CSV export (month list capped at 2000) |
-| Cash import routes | `backend/src/routes/cashImportRoutes.ts` | Ledger/columns CSV preview + commit; description suggest; import dedup |
+| Cash import routes | `backend/src/routes/cashImportRoutes.ts` | Thin HTTP; preview/persist in `domain/cashLedgerImportService.ts` |
 | CSV import presets | `backend/src/routes/csvImportPresetsRoutes.ts` | Account-scoped column-map presets |
 | Description rules | `backend/src/routes/categoryDescriptionRulesRoutes.ts` | Import description → category rules |
 | Transfers routes | `backend/src/routes/transfersRoutes.ts` | Internal transfers CRUD + CSV import (month list capped at 2000; import dedup windowed) |
