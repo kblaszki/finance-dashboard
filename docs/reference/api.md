@@ -75,7 +75,7 @@ User-scoped nested tree (`parentId`). Flat list responses include `id`, `name`, 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
 | GET | `/api/categories` | Bearer | Flat list, name ascending |
-| GET | `/api/categories/export` | Bearer | CSV download; header `path,ledgerType`; full tree paths (`Food/Groceries`); parents before children; empty tree = header only |
+| GET | `/api/categories/export` | Bearer | CSV download; header `path,ledgerType`; full tree paths (`Food/Groceries`); parents before children; empty tree = header only. Soft-capped at `CSV_EXPORT_ROW_CAP` → `400` when exceeded. |
 | POST | `/api/categories/import/preview` | Bearer | Body `{ csv }`. `200 { rowCount, existing, toCreate, rows: [{ path, ledgerType, status: "exists"\|"create" }] }`. Same path with different owned `ledgerType` → `400` |
 | POST | `/api/categories/import` | Bearer | Body `{ csv }`. Merge only: skip exact path+ledgerType matches, create missing (parents first); `201 { created, skipped }`; no deletes |
 | POST | `/api/categories` | Bearer | Body: `name`; optional `parentId`; `ledgerType` (`INCOME`\|`EXPENSE`\|`TRANSFER`) required when `parentId` is null/omitted. 201 |

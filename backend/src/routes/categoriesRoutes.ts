@@ -24,6 +24,10 @@ import {
 } from "../domain/categoriesImport";
 import { buildCategoryPathMap } from "../domain/cashLedgerCsv";
 import { formatImportErrors } from "../domain/cashLedgerCsvImport";
+import {
+  assertExportRowCap,
+  CSV_EXPORT_ROW_CAP,
+} from "../domain/rowCaps";
 import { badRequest, handleRouteError, parseIdParam } from "./httpSupport";
 
 type CategoriesDeps = {
@@ -59,8 +63,10 @@ export function createCategoriesRouter(deps: CategoriesDeps): Router {
       try {
         const rows = await prisma.category.findMany({
           where: { userId: uid(req) },
+          take: CSV_EXPORT_ROW_CAP + 1,
           select: { id: true, name: true, parentId: true, ledgerType: true },
         });
+        assertExportRowCap(rows.length, "categories");
         const pathById = buildCategoryPathMap(rows);
         const csvRows = rows
           .map((row) => {
