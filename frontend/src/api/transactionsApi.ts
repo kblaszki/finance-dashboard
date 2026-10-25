@@ -152,3 +152,63 @@ export async function importTransactionsCsv(
     { csv, categoryMappings },
   );
 }
+
+export type AmountSignMode = "negativeIsExpense" | "negativeIsIncome";
+
+export type SuggestedColumnMapping = {
+  occurredAt: number | null;
+  amount: number | null;
+  description: number | null;
+  type: number | null;
+  categoryPath: number | null;
+  amountSignMode: AmountSignMode;
+};
+
+export type ColumnMapping = {
+  occurredAt: number;
+  amount: number;
+  description?: number | null;
+  type?: number | null;
+  categoryPath?: number | null;
+  amountSignMode?: AmountSignMode;
+};
+
+export type ImportColumnsPreview = {
+  delimiter: string;
+  headers: string[];
+  sampleRows: string[][];
+  suggestedMapping: SuggestedColumnMapping;
+};
+
+export async function previewImportColumns(
+  accountId: number,
+  csv: string,
+): Promise<ImportColumnsPreview> {
+  return apiClient.post<ImportColumnsPreview>(
+    `/api/accounts/${accountId}/transactions/import/columns/preview`,
+    { csv },
+  );
+}
+
+export async function applyImportColumnMapping(
+  accountId: number,
+  csv: string,
+  columnMapping: ColumnMapping,
+): Promise<ImportPreviewResult> {
+  return apiClient.post<ImportPreviewResult>(
+    `/api/accounts/${accountId}/transactions/import/columns/apply`,
+    { csv, columnMapping },
+  );
+}
+
+export async function commitImportColumnMapping(
+  accountId: number,
+  csv: string,
+  columnMapping: ColumnMapping,
+  categoryMappings: ImportCategoryMapping[],
+): Promise<ImportTransactionsResult> {
+  return apiClient.post<ImportTransactionsResult>(
+    `/api/accounts/${accountId}/transactions/import/columns/commit`,
+    { csv, columnMapping, categoryMappings },
+  );
+}

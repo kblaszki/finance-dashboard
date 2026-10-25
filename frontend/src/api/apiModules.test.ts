@@ -39,6 +39,9 @@ import {
   exportTransactionsCsv,
   importTransactionsCsv,
   previewTransactionsImport,
+  previewImportColumns,
+  applyImportColumnMapping,
+  commitImportColumnMapping,
 } from './transactionsApi'
 import {
   fetchCategories,
@@ -210,6 +213,29 @@ describe('API modules', () => {
     expect(apiClient.post).toHaveBeenCalledWith(
       '/api/accounts/3/transactions/import',
       { csv: 'id,type\n', categoryMappings: [] },
+    )
+
+    await previewImportColumns(3, 'Date,Amount\n')
+    expect(apiClient.post).toHaveBeenCalledWith(
+      '/api/accounts/3/transactions/import/columns/preview',
+      { csv: 'Date,Amount\n' },
+    )
+
+    const columnMapping = {
+      occurredAt: 0,
+      amount: 1,
+      amountSignMode: 'negativeIsExpense' as const,
+    }
+    await applyImportColumnMapping(3, 'Date,Amount\n', columnMapping)
+    expect(apiClient.post).toHaveBeenCalledWith(
+      '/api/accounts/3/transactions/import/columns/apply',
+      { csv: 'Date,Amount\n', columnMapping },
+    )
+
+    await commitImportColumnMapping(3, 'Date,Amount\n', columnMapping, [])
+    expect(apiClient.post).toHaveBeenCalledWith(
+      '/api/accounts/3/transactions/import/columns/commit',
+      { csv: 'Date,Amount\n', columnMapping, categoryMappings: [] },
     )
   })
 
