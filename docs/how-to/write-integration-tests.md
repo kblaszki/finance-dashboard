@@ -6,6 +6,8 @@ related_docs:
   - docs/reference/testing.md
   - docs/how-to/run-tests-and-coverage.md
 related_code:
+  - backend/test/httpHarness.ts
+  - backend/test/auth.http.test.ts
   - backend/test/app.http.test.ts
   - backend/test/prismaTestClient.ts
 ---
@@ -22,14 +24,15 @@ Pyramid and thresholds: [testing.md](../reference/testing.md). Gate: [run-tests-
 |------|-----------|
 | Pure helper / auth rule | `backend/src/**/*.test.ts` next to module |
 | Schema uniqueness / migrate | `backend/test/schema.integration.test.ts`, `migrateDeploy.test.ts` |
-| HTTP auth / health / route contract | `backend/test/app.http.test.ts` |
+| HTTP health / auth contract | `backend/test/auth.http.test.ts` (via `httpHarness.ts`) |
+| HTTP domain route contract + IDOR | `backend/test/app.http.test.ts` (via `httpHarness.ts`) |
 
 ## Integration test setup
 
 1. Use `createTestPrisma` / `resetDatabase` from `backend/test/prismaTestClient.ts` (`resetDatabase` clears `User`).
 2. Env is preloaded via `setupTestEnv.ts` (ephemeral SQLite) — do not require `backend/.env`.
 3. Tests run with `--test-concurrency=1` (SQLite).
-4. For HTTP tests, set `JWT_SECRET` in `test.before` and import `app` from `backend/src/app.ts`.
+4. For HTTP tests, prefer `startHttpSuite` / `registerAndLogin` from `backend/test/httpHarness.ts` (sets `JWT_SECRET`, resets DB, starts the app).
 
 ## Frontend API coverage
 
