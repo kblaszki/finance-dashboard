@@ -15,7 +15,7 @@ Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + c
 
 | done | stub | planned | in_progress | total |
 |------|------|---------|-------------|-------|
-| 24 | 0 | 44 | 0 | 68 |
+| 25 | 0 | 44 | 0 | 69 |
 
 ## Master table
 
@@ -53,6 +53,7 @@ Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + c
 | MVP-020 | Import preset column mapping UI wired to import | planned | [features/import/preset-column-mapping-ui.md](features/import/preset-column-mapping-ui.md) | /import/presets + /import |
 | MVP-022 | Generic CSV column map on account | done | [features/import/generic-csv-column-map.md](features/import/generic-csv-column-map.md) | /accounts/:id Upload CSV |
 | MVP-023 | Account CSV import column presets | done | [features/import/account-csv-import-presets.md](features/import/account-csv-import-presets.md) | /accounts/:id Upload CSV presets |
+| MVP-024 | Cash ledger import dedup + ImportBatch | done | [features/import/cash-ledger-import-dedup.md](features/import/cash-ledger-import-dedup.md) | /accounts/:id Upload CSV dedup |
 | FR-010 | Historical NBP FX rates | done | [features/market-fx/nbp-fx-history.md](features/market-fx/nbp-fx-history.md) | FxRateDaily + `npm run fx:sync` + `domain/fx.ts` |
 | FR-031 | Crypto EOD sync on CRYPTO accounts | planned | [features/market-fx/crypto-eod-sync.md](features/market-fx/crypto-eod-sync.md) | MarketPricesStatus |
 | MVP-021 | STOCK/ETF market data sync | planned | [features/market-fx/stock-etf-market-sync.md](features/market-fx/stock-etf-market-sync.md) | Market sync + CLI |
@@ -132,6 +133,7 @@ Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + c
 - **planned** [MVP-020 Import preset column mapping UI wired to import](features/import/preset-column-mapping-ui.md)
 - **done** [MVP-022 Generic CSV column map on account](features/import/generic-csv-column-map.md)
 - **done** [MVP-023 Account CSV import column presets](features/import/account-csv-import-presets.md)
+- **done** [MVP-024 Cash ledger import dedup + ImportBatch](features/import/cash-ledger-import-dedup.md)
 
 ### market-fx
 

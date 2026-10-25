@@ -24,6 +24,10 @@ Use this when **Upload CSV** on `/accounts/:id` is not a Finance Dashboard ledge
 5. If the CSV used category paths, complete **Map import categories** as for ledger imports.
 6. Confirm import. Ledger amounts are always stored as positive majors with `INCOME` / `EXPENSE`.
 
+## Duplicates
+
+Re-uploading the same (or overlapping) statement **skips** rows that already match a cash transaction on the account: same UTC day, type, amount, and normalized description. Preview/commit list those rows under `skippedDuplicates`. Identical rows twice in one file: the first imports, the rest are duplicates. The same rules apply to fixed ledger-header CSV imports.
+
 ## Notes
 
 - Separators `,` / `;` / tab are detected from the header line.
