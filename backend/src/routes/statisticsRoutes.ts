@@ -19,16 +19,11 @@ import { minorToDecimal } from "../domain/money";
 import { aggregateNetWorth } from "../domain/netWorth";
 import { parseStatsPeriod } from "../domain/statsPeriod";
 import { aggregateTagBreakdown } from "../domain/tagBreakdown";
-import { STATS_PERIOD_ROW_CAP } from "../domain/rowCaps";
-import { badRequest, handleRouteError } from "./httpSupport";
-
-function assertStatsRowCap(count: number, label: string): void {
-  if (count > STATS_PERIOD_ROW_CAP) {
-    throw badRequest(
-      `${label} has more than ${STATS_PERIOD_ROW_CAP} rows in this period; narrow the period`,
-    );
-  }
-}
+import {
+  assertStatsPeriodRowCap,
+  STATS_PERIOD_ROW_CAP,
+} from "../domain/rowCaps";
+import { handleRouteError } from "./httpSupport";
 
 
 type StatisticsDeps = {
@@ -73,8 +68,8 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
             take: STATS_PERIOD_ROW_CAP + 1,
           }),
         ]);
-        assertStatsRowCap(rows.length, "Cash transactions");
-        assertStatsRowCap(transfers.length, "Transfers");
+        assertStatsPeriodRowCap(rows.length, "Cash transactions");
+        assertStatsPeriodRowCap(transfers.length, "Transfers");
         res.json(
           aggregateCategoryBreakdown(
             month,
@@ -130,8 +125,8 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
             take: STATS_PERIOD_ROW_CAP + 1,
           }),
         ]);
-        assertStatsRowCap(rows.length, "Cash transactions");
-        assertStatsRowCap(transfers.length, "Transfers");
+        assertStatsPeriodRowCap(rows.length, "Cash transactions");
+        assertStatsPeriodRowCap(transfers.length, "Transfers");
         res.json(
           aggregatePeriodSummary(
             month,
@@ -179,7 +174,7 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
           },
           take: STATS_PERIOD_ROW_CAP + 1,
         });
-        assertStatsRowCap(rows.length, "Cash transactions");
+        assertStatsPeriodRowCap(rows.length, "Cash transactions");
         res.json(
           aggregateTagBreakdown(
             month,
@@ -220,7 +215,7 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
           },
           take: STATS_PERIOD_ROW_CAP + 1,
         });
-        assertStatsRowCap(rows.length, "Cash transactions");
+        assertStatsPeriodRowCap(rows.length, "Cash transactions");
         res.json(
           aggregateCashflowHistory(
             months,
@@ -286,7 +281,7 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
           },
           take: STATS_PERIOD_ROW_CAP + 1,
         });
-        assertStatsRowCap(rows.length, "Cash transactions");
+        assertStatsPeriodRowCap(rows.length, "Cash transactions");
         res.json(
           aggregateRollingCashflow12m(
             currency,

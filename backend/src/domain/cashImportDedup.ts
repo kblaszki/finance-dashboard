@@ -2,7 +2,10 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import type { CashLedgerImportDraft } from "./cashLedgerCsvImport";
 import { CASH_TX_TYPES, type CashTxType } from "./cashLedger";
 import { majorToMinor } from "./money";
-import { badRequest } from "../lib/errors";
+import {
+  assertImportFingerprintScanCap,
+  IMPORT_FINGERPRINT_SCAN_LIMIT,
+} from "./rowCaps";
 
 type Db = PrismaClient | Prisma.TransactionClient;
 
@@ -83,8 +86,7 @@ export function partitionDraftsByExisting(
   return { toImport, skippedDuplicates };
 }
 
-/** Safety cap when scanning account history for import dedup. */
-export const IMPORT_FINGERPRINT_SCAN_LIMIT = 50_000;
+export { IMPORT_FINGERPRINT_SCAN_LIMIT } from "./rowCaps";
 
 export function occurredAtWindowForDrafts(
   drafts: CashLedgerImportDraft[],
@@ -130,11 +132,7 @@ export async function loadAccountImportFingerprints(
     orderBy: [{ occurredAt: "desc" }, { id: "desc" }],
     take: IMPORT_FINGERPRINT_SCAN_LIMIT + 1,
   });
-  if (rows.length > IMPORT_FINGERPRINT_SCAN_LIMIT) {
-    throw badRequest(
-      `Too many ledger rows in the import date window (max ${IMPORT_FINGERPRINT_SCAN_LIMIT}); narrow the CSV date range`,
-    );
-  }
+  assertImportFingerprintScanCap(rows.length);
   const set = new Set<string>();
   for (const row of rows) {
     set.add(

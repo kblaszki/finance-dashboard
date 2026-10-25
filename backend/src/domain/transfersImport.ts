@@ -8,12 +8,14 @@ import {
   categoryPathKey,
   parseCategoryPath,
 } from "./cashLedgerCsv";
-import { badRequest } from "../lib/errors";
+import {
+  assertTransferImportDedupScanCap,
+  TRANSFER_IMPORT_DEDUP_SCAN_LIMIT,
+} from "./rowCaps";
 
 type Db = PrismaClient | Prisma.TransactionClient;
 
-/** Safety cap when scanning transfer history for import dedup. */
-export const TRANSFER_IMPORT_DEDUP_SCAN_LIMIT = 50_000;
+export { TRANSFER_IMPORT_DEDUP_SCAN_LIMIT } from "./rowCaps";
 
 export type OwnedTransferCategory = {
   id: number;
@@ -350,11 +352,7 @@ export async function loadExistingTransfersForDedup(
     orderBy: [{ occurredAt: "desc" }, { id: "desc" }],
     take: TRANSFER_IMPORT_DEDUP_SCAN_LIMIT + 1,
   });
-  if (rows.length > TRANSFER_IMPORT_DEDUP_SCAN_LIMIT) {
-    throw badRequest(
-      `Too many transfers in the import date window (max ${TRANSFER_IMPORT_DEDUP_SCAN_LIMIT}); narrow the CSV date range`,
-    );
-  }
+  assertTransferImportDedupScanCap(rows.length);
   return rows;
 }
 

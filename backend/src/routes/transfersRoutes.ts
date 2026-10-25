@@ -30,7 +30,12 @@ import {
   pageResultFromRows,
   parseListPageQuery,
 } from "../domain/listPageQuery";
-import { CSV_EXPORT_ROW_CAP, MONTH_LIST_CAP } from "../domain/rowCaps";
+import {
+  assertExportRowCap,
+  assertMonthListCap,
+  CSV_EXPORT_ROW_CAP,
+  MONTH_LIST_CAP,
+} from "../domain/rowCaps";
 import { badRequest, handleRouteError, notFound, parseIdParam } from "./httpSupport";
 
 async function assertOwnedTransferCategory(
@@ -112,10 +117,8 @@ export function createTransfersRouter(deps: TransfersDeps): Router {
         orderBy: [{ occurredAt: "desc" }, { id: "desc" }],
         take,
       });
-      if (page.mode === "month" && rows.length > MONTH_LIST_CAP) {
-        throw badRequest(
-          `Month has more than ${MONTH_LIST_CAP} transfers; use cursor pagination (omit month)`,
-        );
+      if (page.mode === "month") {
+        assertMonthListCap(rows.length, "transfers");
       }
       const sliced =
         page.mode === "month"
@@ -151,11 +154,7 @@ export function createTransfersRouter(deps: TransfersDeps): Router {
             select: { id: true, name: true, parentId: true },
           }),
         ]);
-        if (rows.length > CSV_EXPORT_ROW_CAP) {
-          throw badRequest(
-            `Export exceeds ${CSV_EXPORT_ROW_CAP} rows; filter transfers or split exports`,
-          );
-        }
+        assertExportRowCap(rows.length, "transfers");
         const pathById = buildCategoryPathMap(categories);
         const csv = buildTransfersCsv(
           rows.map((row) => ({

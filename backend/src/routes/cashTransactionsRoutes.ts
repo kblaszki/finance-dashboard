@@ -27,7 +27,12 @@ import {
   setTransactionTags,
 } from "../domain/tags";
 import { findOwnedAccount, findOwnedAccountId } from "../domain/ownedAccount";
-import { CSV_EXPORT_ROW_CAP, MONTH_LIST_CAP } from "../domain/rowCaps";
+import {
+  assertExportRowCap,
+  assertMonthListCap,
+  CSV_EXPORT_ROW_CAP,
+  MONTH_LIST_CAP,
+} from "../domain/rowCaps";
 import {
   badRequest,
   handleRouteError,
@@ -137,11 +142,7 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
             select: { id: true, name: true, parentId: true },
           }),
         ]);
-        if (rows.length > CSV_EXPORT_ROW_CAP) {
-          throw badRequest(
-            `Export exceeds ${CSV_EXPORT_ROW_CAP} rows; filter the ledger or split exports`,
-          );
-        }
+        assertExportRowCap(rows.length, "the ledger");
         const pathById = buildCategoryPathMap(categories);
         const csv = buildCashLedgerCsv({
           currency: account.currency,
@@ -196,10 +197,8 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
           orderBy: [{ occurredAt: "desc" }, { id: "desc" }],
           take,
         });
-        if (page.mode === "month" && rows.length > MONTH_LIST_CAP) {
-          throw badRequest(
-            `Month has more than ${MONTH_LIST_CAP} transactions; use cursor pagination (omit month)`,
-          );
+        if (page.mode === "month") {
+          assertMonthListCap(rows.length, "transactions");
         }
         const sliced =
           page.mode === "month"

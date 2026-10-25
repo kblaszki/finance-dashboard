@@ -11,7 +11,10 @@ import {
 import { parseAccountType } from "../domain/accountTypes";
 import { decimalToMinor, minorToMajor, normalizeCurrencyCode, parseOpeningBalance } from "../domain/money";
 import { findOwnedAccount } from "../domain/ownedAccount";
-import { BALANCE_HISTORY_TX_CAP } from "../domain/rowCaps";
+import {
+  assertBalanceHistoryTxCap,
+  BALANCE_HISTORY_TX_CAP,
+} from "../domain/rowCaps";
 import {
   badRequest,
   conflict,
@@ -158,11 +161,7 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
           orderBy: [{ occurredAt: "asc" }, { id: "asc" }],
           take: BALANCE_HISTORY_TX_CAP + 1,
         });
-        if (rows.length > BALANCE_HISTORY_TX_CAP) {
-          throw badRequest(
-            `Account has more than ${BALANCE_HISTORY_TX_CAP} transactions before this month; shorten history or archive older rows`,
-          );
-        }
+        assertBalanceHistoryTxCap(rows.length);
         res.json(
           aggregateAccountBalanceHistory(
             account.id,

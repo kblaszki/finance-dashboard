@@ -24,10 +24,12 @@ Hobby-scale guardrails in `backend/src/domain/rowCaps.ts` (and month-list caps o
 
 | Cap | Value | Endpoints |
 |-----|------:|-----------|
-| `CSV_EXPORT_ROW_CAP` | 50_000 | `GET …/transactions/export`, `GET /api/transfers/export` |
+| `CSV_EXPORT_ROW_CAP` | 50_000 | `GET …/transactions/export`, `GET /api/transfers/export`, `GET /api/categories/export` |
 | `BALANCE_HISTORY_TX_CAP` | 100_000 | `GET /api/accounts/:id/balance-history` |
 | `STATS_PERIOD_ROW_CAP` | 50_000 | Statistics period loaders (`category-breakdown`, `period-summary`, `tag-breakdown`, `cashflow-history`, `cashflow-rolling-12m`) |
 | `MONTH_LIST_CAP` | 2_000 | `GET …/transactions?month=…`, `GET /api/transfers?month=…` (omit `month` and use cursor pagination when over) |
+| `IMPORT_FINGERPRINT_SCAN_LIMIT` | 50_000 | Cash ledger import fingerprint window (`…/transactions/import*`) — overflow → `400` |
+| `TRANSFER_IMPORT_DEDUP_SCAN_LIMIT` | 50_000 | Transfer CSV import dedup window (`POST /api/transfers/import*`) — overflow → `400` |
 
 ## Health
 
