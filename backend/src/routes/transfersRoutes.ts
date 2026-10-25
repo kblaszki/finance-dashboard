@@ -38,6 +38,7 @@ import {
   pageResultFromRows,
   parseListPageQuery,
 } from "../domain/listPageQuery";
+import { CSV_EXPORT_ROW_CAP } from "../domain/rowCaps";
 import { badRequest, handleRouteError, notFound, parseIdParam } from "./httpSupport";
 
 const MONTH_LIST_CAP = 2000;
@@ -160,12 +161,18 @@ export function createTransfersRouter(deps: TransfersDeps): Router {
               toAccount: { select: { name: true, currency: true } },
             },
             orderBy: [{ occurredAt: "asc" }, { id: "asc" }],
+            take: CSV_EXPORT_ROW_CAP + 1,
           }),
           prisma.category.findMany({
             where: { userId, ledgerType: "TRANSFER" },
             select: { id: true, name: true, parentId: true },
           }),
         ]);
+        if (rows.length > CSV_EXPORT_ROW_CAP) {
+          throw badRequest(
+            `Export exceeds ${CSV_EXPORT_ROW_CAP} rows; filter transfers or split exports`,
+          );
+        }
         const pathById = buildCategoryPathMap(categories);
         const csv = buildTransfersCsv(
           rows.map((row) => ({

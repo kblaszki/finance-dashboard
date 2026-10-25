@@ -55,4 +55,4 @@ When `NODE_ENV=production`, Express rate-limits `POST /api/auth/login`, `POST /a
 |----------|------|
 | `VITE_API_BASE_URL` | API base URL; empty in production builds (same-origin `/api`); in Vite DEV defaults to `http://localhost:4000` if unset |
 
-Docker production template: [`.env.example`](../../.env.example). Local API: [`backend/.env.example`](../../backend/.env.example). Unused market-data keys in the backend template are not consumed by the auth baseline.
+Docker production template: [`.env.example`](../../.env.example). Local API: [`backend/.env.example`](../../backend/.env.example). Unused market-data keys in the backend template are not consumed by the current shipped surface.

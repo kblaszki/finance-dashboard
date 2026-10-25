@@ -66,5 +66,5 @@ Use the **Question** issue template for setup or usage questions. Include what y
 
 These items are configured in GitHub, not in git:
 
-1. **About description** (repo homepage): keep aligned with the auth baseline / product direction in `README.md` and `package.json`.
+1. **About description** (repo homepage): keep aligned with the shipped surface in `README.md` / `AGENTS.md` and `package.json`.
 2. **Private vulnerability reporting:** Settings → Security → Code security and analysis → enable **Private vulnerability reporting**.

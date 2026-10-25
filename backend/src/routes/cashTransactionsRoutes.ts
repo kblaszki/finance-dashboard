@@ -27,6 +27,7 @@ import {
   setTransactionTags,
 } from "../domain/tags";
 import { findOwnedAccount, findOwnedAccountId } from "../domain/ownedAccount";
+import { CSV_EXPORT_ROW_CAP } from "../domain/rowCaps";
 import {
   badRequest,
   handleRouteError,
@@ -120,6 +121,7 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
           prisma.cashTransaction.findMany({
             where: { accountId },
             orderBy: [{ occurredAt: "asc" }, { id: "asc" }],
+            take: CSV_EXPORT_ROW_CAP + 1,
             select: {
               id: true,
               type: true,
@@ -135,6 +137,11 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
             select: { id: true, name: true, parentId: true },
           }),
         ]);
+        if (rows.length > CSV_EXPORT_ROW_CAP) {
+          throw badRequest(
+            `Export exceeds ${CSV_EXPORT_ROW_CAP} rows; filter the ledger or split exports`,
+          );
+        }
         const pathById = buildCategoryPathMap(categories);
         const csv = buildCashLedgerCsv({
           currency: account.currency,

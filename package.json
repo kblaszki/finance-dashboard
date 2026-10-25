@@ -1,7 +1,7 @@
 {
   "name": "finance-dashboard",
   "version": "1.0.0",
-  "description": "Personal full-stack finance dashboard: bank accounts, brokerage positions, manual assets (Node, React, SQLite).",
+  "description": "Personal full-stack finance dashboard: multi-type accounts, cash ledger, transfers, CSV import, statistics (Node, React, SQLite).",
   "main": "index.js",
   "scripts": {
     "dev:backend": "cd backend && npm run dev",

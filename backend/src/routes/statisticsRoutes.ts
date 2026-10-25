@@ -19,7 +19,17 @@ import { minorToDecimal } from "../domain/money";
 import { aggregateNetWorth } from "../domain/netWorth";
 import { parseStatsPeriod } from "../domain/statsPeriod";
 import { aggregateTagBreakdown } from "../domain/tagBreakdown";
-import { handleRouteError } from "./httpSupport";
+import { STATS_PERIOD_ROW_CAP } from "../domain/rowCaps";
+import { badRequest, handleRouteError } from "./httpSupport";
+
+function assertStatsRowCap(count: number, label: string): void {
+  if (count > STATS_PERIOD_ROW_CAP) {
+    throw badRequest(
+      `${label} has more than ${STATS_PERIOD_ROW_CAP} rows in this period; narrow the period`,
+    );
+  }
+}
+
 
 type StatisticsDeps = {
   prisma: PrismaClient;
@@ -49,7 +59,9 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
               account: { select: { currency: true } },
               category: { select: { id: true, name: true } },
             },
-          }),
+          },
+            take: STATS_PERIOD_ROW_CAP + 1
+          },
           prisma.cashTransfer.findMany({
             where: {
               occurredAt: { gte: start, lt: end },
@@ -59,8 +71,12 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
               fromAccount: { select: { currency: true } },
               category: { select: { id: true, name: true } },
             },
-          }),
+          },
+            take: STATS_PERIOD_ROW_CAP + 1
+          },
         ]);
+        assertStatsRowCap(rows.length, "Cash transactions");
+        assertStatsRowCap(transfers.length, "Transfers");
         res.json(
           aggregateCategoryBreakdown(
             month,
@@ -101,7 +117,9 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
             include: {
               account: { select: { currency: true } },
             },
-          }),
+          },
+            take: STATS_PERIOD_ROW_CAP + 1
+          },
           prisma.cashTransfer.findMany({
             where: {
               occurredAt: { gte: start, lt: end },
@@ -112,8 +130,12 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
               fromAccount: { select: { currency: true } },
               category: { select: { id: true, name: true } },
             },
-          }),
+          },
+            take: STATS_PERIOD_ROW_CAP + 1
+          },
         ]);
+        assertStatsRowCap(rows.length, "Cash transactions");
+        assertStatsRowCap(transfers.length, "Transfers");
         res.json(
           aggregatePeriodSummary(
             month,
@@ -159,7 +181,9 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
               include: { tag: { select: { id: true, name: true } } },
             },
           },
+          take: STATS_PERIOD_ROW_CAP + 1,
         });
+        assertStatsRowCap(rows.length, "Cash transactions");
         res.json(
           aggregateTagBreakdown(
             month,
@@ -198,7 +222,9 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
           include: {
             account: { select: { currency: true } },
           },
+          take: STATS_PERIOD_ROW_CAP + 1,
         });
+        assertStatsRowCap(rows.length, "Cash transactions");
         res.json(
           aggregateCashflowHistory(
             months,
@@ -262,7 +288,9 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
           include: {
             account: { select: { currency: true } },
           },
+          take: STATS_PERIOD_ROW_CAP + 1,
         });
+        assertStatsRowCap(rows.length, "Cash transactions");
         res.json(
           aggregateRollingCashflow12m(
             currency,

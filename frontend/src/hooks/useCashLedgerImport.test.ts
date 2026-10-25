@@ -41,11 +41,10 @@ describe("isUnknownLedgerHeaderError", () => {
     ).toBe(true);
   });
 
-  it("falls back to header message regex", () => {
+  it("ignores message-only errors without the stable code", () => {
     expect(
       isUnknownLedgerHeaderError(new Error("CSV header must be: type,...")),
-    ).toBe(true);
-    expect(isUnknownLedgerHeaderError(new Error("other"))).toBe(false);
+    ).toBe(false);
   });
 });
 

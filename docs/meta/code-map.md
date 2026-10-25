@@ -11,7 +11,7 @@ related_docs:
 
 Hub: [docs/README.md](../README.md).
 
-Auth + multi-type accounts + category tree + cash ledger + category statistics baseline. Remaining product backlog: [mvp/](../../mvp/).
+JWT auth, multi-type accounts, category tree + tags, cash ledger + transfers, CSV import, statistics, NBP FX. Remaining product backlog: [mvp/](../../mvp/).
 
 | Area | Primary paths |
 |------|----------------|
@@ -24,6 +24,7 @@ Auth + multi-type accounts + category tree + cash ledger + category statistics b
 | Cash transactions routes | `backend/src/routes/cashTransactionsRoutes.ts` (CRUD + CSV export; month list capped) |
 | Cash ledger CSV import routes | `backend/src/routes/cashImportRoutes.ts` (preview/commit ledger + columns; description suggest) |
 | Owned-account helper | `backend/src/domain/ownedAccount.ts` |
+| Soft row caps | `backend/src/domain/rowCaps.ts` (export, balance-history, stats period) |
 | CSV import presets routes | `backend/src/routes/csvImportPresetsRoutes.ts` |
 | Category description rules routes | `backend/src/routes/categoryDescriptionRulesRoutes.ts` |
 | Transfers routes | `backend/src/routes/transfersRoutes.ts` |

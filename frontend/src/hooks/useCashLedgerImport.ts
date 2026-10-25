@@ -43,16 +43,12 @@ function needsImportConfirm(preview: {
 }
 
 export function isUnknownLedgerHeaderError(err: unknown): boolean {
-  if (
-    err &&
+  return (
+    !!err &&
     typeof err === "object" &&
     "code" in err &&
     (err as { code?: string }).code === "UNKNOWN_LEDGER_CSV_HEADER"
-  ) {
-    return true;
-  }
-  const msg = err instanceof Error ? err.message : String(err);
-  return /CSV header must be:/i.test(msg) || /CSV header required/i.test(msg);
+  );
 }
 
 export function formatCashImportSuccessMessage(result: {
