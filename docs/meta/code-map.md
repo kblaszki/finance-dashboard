@@ -21,7 +21,9 @@ Auth + multi-type accounts + category tree + cash ledger + category statistics b
 | Accounts HTTP routes | `backend/src/routes/accountsRoutes.ts` |
 | Categories HTTP routes | `backend/src/routes/categoriesRoutes.ts` |
 | Tags HTTP routes | `backend/src/routes/tagsRoutes.ts` |
-| Cash transactions routes | `backend/src/routes/cashTransactionsRoutes.ts` |
+| Cash transactions routes | `backend/src/routes/cashTransactionsRoutes.ts` (CRUD/export; import handlers may live in `cashImportRoutes.ts`) |
+| CSV import presets routes | `backend/src/routes/csvImportPresetsRoutes.ts` |
+| Category description rules routes | `backend/src/routes/categoryDescriptionRulesRoutes.ts` |
 | Transfers routes | `backend/src/routes/transfersRoutes.ts` |
 | Statistics routes | `backend/src/routes/statisticsRoutes.ts` |
 | Account type allow-list | `backend/src/domain/accountTypes.ts` |
@@ -54,8 +56,9 @@ Auth + multi-type accounts + category tree + cash ledger + category statistics b
 | Auth API client | `frontend/src/api/authApi.ts`, `frontend/src/api/client.ts` |
 | Accounts API client | `frontend/src/api/accountsApi.ts` |
 | Categories API client | `frontend/src/api/categoriesApi.ts` |
+| Description rules API client | `frontend/src/api/categoryDescriptionRulesApi.ts` |
 | Tags API client | `frontend/src/api/tagsApi.ts` |
-| Transactions API client | `frontend/src/api/transactionsApi.ts` |
+| Transactions API client | `frontend/src/api/transactionsApi.ts` (incl. import presets + column map) |
 | Statistics API client | `frontend/src/api/statisticsApi.ts` |
 | Shell / gates | `frontend/src/components/AppShell.tsx`, `AuthSwapShell.tsx`, `ProtectedRoute.tsx`, `ErrorBoundary.tsx` |
 | Shared UI | `frontend/src/components/ui/{PageHeader,KpiCard,ChartCard,StatusBlock,CurrencySelect}.tsx` |

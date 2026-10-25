@@ -16,7 +16,7 @@ related_code:
 
 Hub: [docs/README.md](../README.md).
 
-Monorepo: Express API (`backend/`) + Vite React SPA (`frontend/`). SQLite via Prisma. **Baseline:** `User`, nested `Category` tree (empty until the user creates them), user-scoped `Account` (allow-listed types), and `CashTransaction` ledger (INCOME/EXPENSE, optional `categoryId`). Product backlog: [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md).
+Monorepo: Express API (`backend/`) + Vite React SPA (`frontend/`). SQLite via Prisma. **Baseline:** `User`, nested `Category` tree (empty until the user creates them), tags, user-scoped `Account` (allow-listed types), `CashTransaction` ledger, internal `CashTransfer`, CSV import (presets, dedup, description rules), and statistics. Product backlog: [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md).
 
 Local development: Vite (`:5173`) + API (`:4000`). Production Docker: one Express process serves `/api` and the Vite `dist` (SPA fallback for non-API routes).
 
@@ -40,12 +40,16 @@ sequenceDiagram
 |-------|--------|------|
 | Frontend | `frontend/src/api/client.ts` | `fetch` + `Authorization: Bearer` from `localStorage` |
 | Auth helpers | `backend/src/auth.ts`, `authConfig.ts` | Password/JWT validation, `requireAuth`, register flag |
-| HTTP | `backend/src/app.ts`, `httpConfig.ts` + `routes/mountRouters.ts` | Health, Helmet/CORS, static SPA, rate limits, mounts auth + accounts + categories + cash-tx + statistics routers |
+| HTTP | `backend/src/app.ts`, `httpConfig.ts` + `routes/mountRouters.ts` | Health, Helmet/CORS, static SPA, rate limits, mounts all `/api` routers |
 | Auth routes | `backend/src/routes/authRoutes.ts` | Register/login/me/profile/email/password; register creates an empty user (no default categories/tags) |
 | Accounts routes | `backend/src/routes/accountsRoutes.ts` | Account CRUD (user-scoped; type allow-list) |
-| Categories routes | `backend/src/routes/categoriesRoutes.ts` | Nested category CRUD |
-| Cash tx routes | `backend/src/routes/cashTransactionsRoutes.ts` | Nested INCOME/EXPENSE ledger (optional category) |
-| Statistics routes | `backend/src/routes/statisticsRoutes.ts` | Category breakdown, period summary, cashflow history, net worth, rolling 12m |
+| Categories routes | `backend/src/routes/categoriesRoutes.ts` | Nested category CRUD + CSV export/import |
+| Tags routes | `backend/src/routes/tagsRoutes.ts` | Flat tag CRUD |
+| Cash tx routes | `backend/src/routes/cashTransactionsRoutes.ts` | Ledger CRUD/export + CSV import (fixed header + column map) |
+| CSV import presets | `backend/src/routes/csvImportPresetsRoutes.ts` | Account-scoped column-map presets |
+| Description rules | `backend/src/routes/categoryDescriptionRulesRoutes.ts` | Import description → category rules |
+| Transfers routes | `backend/src/routes/transfersRoutes.ts` | Internal transfers CRUD + CSV import |
+| Statistics routes | `backend/src/routes/statisticsRoutes.ts` | Category/tag breakdown, period summary, cashflow, net worth, rolling 12m |
 | Errors | `routes/httpSupport.ts`, `lib/errors.ts` | Typed HTTP errors (incl. 409 conflict) |
 | Scripts | `backend/src/scripts/` | `createUser` (empty user), `backupDb`, `syncFxRates` (NBP EUR/USD) |
 | Seed | `backend/prisma/seed.ts`, `domain/seedDemoPortfolio.ts` | Demo user + wipe/rebuild sample portfolio |
@@ -65,10 +69,10 @@ Money and FX conversion live in `domain/fx*.ts` / `nbpClient.ts` — not in rout
 ## Frontend shell
 
 - Guests: Landing; Login/Register inside `AuthSwapShell` (50/50 form + visual; sides swap by route).
-- Authed: AppShell sidebar + topbar with Dashboard, Accounts, Categories, Statistics, Settings; account detail `/accounts/:id` for cash ledger; global currency in topbar (`CurrencyProvider`); default post-login path `/dashboard` (`/home` redirects).
+- Authed: AppShell sidebar + topbar with Dashboard, Accounts, Categories, Tags, Transfers, Statistics, Settings; account detail `/accounts/:id` for cash ledger; global currency in topbar (`CurrencyProvider`); default post-login path `/dashboard` (`/home` redirects).
 
 ## Related
 
 - [code-map.md](../meta/code-map.md) — path index
 - [api.md](../reference/api.md) — route catalog
-- [domain.md](../reference/domain.md) — `User`, `Category`, `Account`, `CashTransaction`, `FxRateDaily` models
+- [domain.md](../reference/domain.md) — Prisma models (User through FxRateDaily, import presets/rules/batches)

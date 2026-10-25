@@ -44,7 +44,7 @@ User-scoped nested label (`parentId` self-relation). Each row has a fixed `ledge
 | createdAt | DateTime | Default now |
 | descriptionRules | CategoryDescriptionRule[] | Rules pointing at this category (`onDelete: Cascade`) |
 
-Indexes: `[userId]`, `[parentId]`, `[userId, ledgerType]`, unique `[userId, nameKey]`. Domain: `backend/src/domain/categories.ts`. Seeded on register / create-user / demo seed.
+Indexes: `[userId]`, `[parentId]`, `[userId, ledgerType]`, unique `[userId, nameKey]`. Domain: `backend/src/domain/categories.ts`. Register / `create-user` leave the tree empty; demo seed (`db:seed`) installs sample roots.
 
 ## CategoryDescriptionRule
 
