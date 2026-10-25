@@ -25,6 +25,7 @@ import {
   type ImportCategoryMapping,
   type ImportCategoryPreview,
   type ImportColumnsPreview,
+  type SkippedDuplicateRow,
 } from "../api/transactionsApi";
 import { AccountBalanceChart } from "../components/account/AccountBalanceChart";
 import { AccountLedgerHeader } from "../components/account/AccountLedgerHeader";
@@ -55,6 +56,8 @@ type PendingImport = {
   rowCount: number;
   categories: ImportCategoryPreview[];
   skipped: number;
+  duplicateCount: number;
+  skippedDuplicates: SkippedDuplicateRow[];
   /** Present when rows came from flexible column mapping. */
   columnMapping?: ColumnMapping;
 };
@@ -74,13 +77,25 @@ function formatImportSuccessMessage(result: {
   created: number;
   createdCategories: number;
   skipped: number;
+  duplicateCount?: number;
 }): string {
   const createdNote =
     result.createdCategories > 0
       ? `Imported ${result.created} transaction(s); created ${result.createdCategories} categor${result.createdCategories === 1 ? "y" : "ies"}.`
       : `Imported ${result.created} transaction(s).`;
-  if (result.skipped <= 0) return createdNote;
-  return `${createdNote} Skipped ${result.skipped} internal transfer row(s) — manage transfers on the Transfers page.`;
+  const parts = [createdNote];
+  const duplicates = result.duplicateCount ?? 0;
+  if (duplicates > 0) {
+    parts.push(
+      `Skipped ${duplicates} duplicate row(s) already on this account.`,
+    );
+  }
+  if (result.skipped > 0) {
+    parts.push(
+      `Skipped ${result.skipped} internal transfer row(s) — manage transfers on the Transfers page.`,
+    );
+  }
+  return parts.join(" ");
 }
 
 export function AccountDetailPage() {
@@ -285,6 +300,8 @@ export function AccountDetailPage() {
         rowCount: preview.rowCount,
         categories: preview.categories,
         skipped: preview.skipped,
+        duplicateCount: preview.duplicateCount,
+        skippedDuplicates: preview.skippedDuplicates,
         columnMapping: mapping,
       });
     } catch (err) {
@@ -317,6 +334,8 @@ export function AccountDetailPage() {
           rowCount: preview.rowCount,
           categories: preview.categories,
           skipped: preview.skipped,
+          duplicateCount: preview.duplicateCount,
+          skippedDuplicates: preview.skippedDuplicates,
         });
       } catch (err) {
         if (!isUnknownLedgerHeaderError(err)) throw err;
@@ -467,6 +486,40 @@ export function AccountDetailPage() {
 
       {pendingImport && (
         <>
+          {pendingImport.duplicateCount > 0 && (
+            <div className="form-section-gap">
+              <p className="muted">
+                Skipping {pendingImport.duplicateCount} duplicate row(s) already
+                on this account:
+              </p>
+              <div className="table-wrap">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th className="num">Row</th>
+                      <th>Date</th>
+                      <th>Type</th>
+                      <th className="num">Amount</th>
+                      <th>Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendingImport.skippedDuplicates.map((dup) => (
+                      <tr key={`dup-${dup.row}`}>
+                        <td className="num">{dup.row}</td>
+                        <td>{dup.occurredAt}</td>
+                        <td>
+                          <span className="badge">{dup.type}</span>
+                        </td>
+                        <td className="num">{dup.amount.toFixed(2)}</td>
+                        <td>{dup.description ?? "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
           {pendingImport.skipped > 0 && (
             <p className="muted form-section-gap">
               Skipping {pendingImport.skipped} internal transfer row(s) — manage

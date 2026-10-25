@@ -100,11 +100,22 @@ export type SkippedTransferRow = {
   message: string;
 };
 
+export type SkippedDuplicateRow = {
+  row: number;
+  type: CashTxType;
+  amount: number;
+  occurredAt: string;
+  description: string | null;
+  message: string;
+};
+
 export type ImportPreviewResult = {
   rowCount: number;
   categories: ImportCategoryPreview[];
   skipped: number;
   skippedTransfers: SkippedTransferRow[];
+  duplicateCount: number;
+  skippedDuplicates: SkippedDuplicateRow[];
 };
 
 export type ImportCategoryMapping =
@@ -130,6 +141,8 @@ export type ImportTransactionsResult = {
   createdCategories: number;
   skipped: number;
   skippedTransfers: SkippedTransferRow[];
+  duplicateCount: number;
+  skippedDuplicates: SkippedDuplicateRow[];
 };
 
 export async function previewTransactionsImport(
