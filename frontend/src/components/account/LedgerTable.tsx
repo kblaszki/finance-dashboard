@@ -1,4 +1,10 @@
-import { type KeyboardEvent, useMemo, useRef, useState } from "react";
+import {
+  type KeyboardEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Link } from "react-router-dom";
 import type { Category } from "../../api/categoriesApi";
 import type { Tag } from "../../api/tagsApi";
@@ -163,6 +169,15 @@ export function LedgerTable(props: {
   const [draft, setDraft] = useState("");
   const [editBusy, setEditBusy] = useState(false);
   const committingRef = useRef(false);
+  const blurTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (blurTimeoutRef.current != null) {
+        window.clearTimeout(blurTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const sortedTransactions = useMemo(
     () =>
@@ -188,7 +203,11 @@ export function LedgerTable(props: {
 
   /** Blur cancels; defer so Enter commit can set committingRef first. */
   function onEditorBlur() {
-    window.setTimeout(() => {
+    if (blurTimeoutRef.current != null) {
+      window.clearTimeout(blurTimeoutRef.current);
+    }
+    blurTimeoutRef.current = window.setTimeout(() => {
+      blurTimeoutRef.current = null;
       if (!committingRef.current) cancelEdit();
     }, 0);
   }

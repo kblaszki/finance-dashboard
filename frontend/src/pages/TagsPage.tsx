@@ -37,10 +37,15 @@ function TagCreateRow(props: {
 
   useEffect(() => {
     if (focusNonce === 0) return;
+    let cancelled = false;
     const id = window.setTimeout(() => {
+      if (cancelled) return;
       nameRef.current?.focus({ preventScroll: true });
     }, 0);
-    return () => window.clearTimeout(id);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(id);
+    };
   }, [focusNonce]);
 
   async function submit() {

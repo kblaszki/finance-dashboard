@@ -169,6 +169,15 @@ export function TransfersPage() {
   const [editBusy, setEditBusy] = useState(false);
   const [exportBusy, setExportBusy] = useState(false);
   const committingRef = useRef(false);
+  const blurTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (blurTimeoutRef.current != null) {
+        window.clearTimeout(blurTimeoutRef.current);
+      }
+    };
+  }, []);
   const [listMode, setListMode] = useState<ListViewMode>("month");
   const [month, setMonth] = useState(currentUtcMonth);
   const [transfers, setTransfers] = useState<CashTransfer[]>([]);
@@ -286,7 +295,11 @@ export function TransfersPage() {
   }
 
   function onEditorBlur() {
-    window.setTimeout(() => {
+    if (blurTimeoutRef.current != null) {
+      window.clearTimeout(blurTimeoutRef.current);
+    }
+    blurTimeoutRef.current = window.setTimeout(() => {
+      blurTimeoutRef.current = null;
       if (!committingRef.current) cancelEdit();
     }, 0);
   }

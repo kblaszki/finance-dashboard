@@ -26,8 +26,11 @@ Hub: [docs/README.md](../README.md). Checklist: [run-tests-and-coverage.md](../h
 - Runner: Node test via `tsx` (`backend/package.json`), concurrency 1.
 - Unit: `backend/src/**/*.test.ts` — auth, money, cash ledger/CSV/import/dedup/suggest, transfers, categories, tags, FX/NBP, statistics domains, http/route support.
 - Integration / HTTP: `backend/test/*.test.ts`.
-  - `app.http.test.ts` — primary **contract + IDOR** suite (auth, accounts, categories, tags, cash ledger import/export, CSV presets, description rules, transfers, statistics). New user-scoped resources should add foreign-user `404` cases.
+  - Shared harness: `httpHarness.ts` (`startHttpSuite`, `registerAndLogin`, …).
+  - `auth.http.test.ts` — health + auth contract tests (split from the monolith).
+  - `app.http.test.ts` — primary **contract + IDOR** suite (accounts, categories, tags, cash ledger import/export, CSV presets, description rules, transfers, statistics). New user-scoped resources should add foreign-user `404` cases.
   - `schema.integration.test.ts`, `migrateDeploy.test.ts`.
+- Soft row caps (`domain/rowCaps.ts`) guard export / balance-history / stats period loads; SQL aggregation remains deferred until volume requires it.
 - Ephemeral SQLite: `prismaTestClient.ts` + `setupTestEnv.ts`.
 
 ### Coverage (c8)
@@ -39,7 +42,7 @@ From `backend/.c8rc.json`: lines/statements 85, branches 75, functions 88. Inclu
 - Vitest + jsdom: `frontend/src/**/*.test.ts(x)`.
 - Suites include: `apiModules`, `apiContracts`, `client`, hooks (`useAsyncData`), utils, `AccountDetailPage`, `CategoriesPage`, `TransfersPage`, `StatisticsPage`, `TagsPage`, `AccountsPage`, `AppShell`, ledger components, theme.
 - Lint: `cd frontend && npm run lint` runs ESLint (`--max-warnings 0`) then Stylelint (`npm run lint:css` on `src/**/*.css`, `--max-warnings 0`). Config: `frontend/stylelint.config.js` (extends `stylelint-config-standard`; hex colors only in `styles/tokens.css`; no `font-size` in `px`; no `!important`).
-- **No E2E** (Playwright/Cypress) by design at hobby scale; page tests cover critical import/ledger flows.
+- **No E2E** (Playwright/Cypress) by design at hobby scale; page tests cover critical import/ledger flows. Revisit only if multi-page regressions slip past Vitest.
 
 ### Coverage (Vitest)
 

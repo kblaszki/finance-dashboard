@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TagsPage } from "./TagsPage";
@@ -29,7 +29,6 @@ function renderTags() {
 
 describe("TagsPage", () => {
   beforeEach(() => {
-    cleanup();
     vi.clearAllMocks();
     vi.mocked(fetchTags).mockResolvedValue(tags);
     vi.mocked(createTag).mockResolvedValue({
@@ -58,6 +57,11 @@ describe("TagsPage", () => {
 
     await waitFor(() => {
       expect(createTag).toHaveBeenCalledWith({ name: "Reimbursable" });
+    });
+    await waitFor(() => {
+      expect(
+        (screen.getByLabelText("New tag name") as HTMLInputElement).value,
+      ).toBe("");
     });
   });
 

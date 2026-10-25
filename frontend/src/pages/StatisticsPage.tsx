@@ -2,7 +2,6 @@ import { useCallback, useMemo, useState } from "react";
 import {
   Bar,
   CartesianGrid,
-  Cell,
   ComposedChart,
   Legend,
   Line,
@@ -22,7 +21,6 @@ import {
   type TagBreakdown,
 } from "../api/statisticsApi";
 import { BreakdownPanel } from "../components/statistics/BreakdownPanel";
-import { CHART_COLORS } from "../components/statistics/chartColors";
 import { DetailTable } from "../components/statistics/DetailTable";
 import { TagDetailTable } from "../components/statistics/TagDetailTable";
 import { ChartCard } from "../components/ui/ChartCard";

@@ -1,4 +1,5 @@
-import { beforeEach } from "vitest";
+import { cleanup } from "@testing-library/react";
+import { afterEach, beforeEach } from "vitest";
 
 function createMemoryStorage(): Storage {
   const store = new Map<string, string>();
@@ -40,4 +41,16 @@ ensureTestLocalStorage();
 beforeEach(() => {
   ensureTestLocalStorage();
   globalThis.localStorage.clear();
+});
+
+afterEach(async () => {
+  cleanup();
+  // React 19 schedules work via setImmediate; flush before jsdom teardown
+  // so focus()/state updates do not hit "window is not defined".
+  await new Promise<void>((resolve) => {
+    setTimeout(resolve, 0);
+  });
+  await new Promise<void>((resolve) => {
+    setImmediate(resolve);
+  });
 });

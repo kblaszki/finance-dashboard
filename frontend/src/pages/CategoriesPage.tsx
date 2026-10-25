@@ -72,10 +72,15 @@ function CategoryCreateRow(props: {
 
   useEffect(() => {
     if (focusNonce === 0) return;
+    let cancelled = false;
     const id = window.setTimeout(() => {
+      if (cancelled) return;
       nameRef.current?.focus({ preventScroll: true });
     }, 0);
-    return () => window.clearTimeout(id);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(id);
+    };
   }, [focusNonce]);
 
   async function submit() {
@@ -257,15 +262,20 @@ export function CategoriesPage() {
 
   useEffect(() => {
     if (!focusLedgerType) return;
+    let cancelled = false;
     const el = document.getElementById(`category-section-${focusLedgerType}`);
     el?.scrollIntoView({ behavior: "smooth", block: "start" });
     const input = el?.querySelector<HTMLInputElement>(
       'input[aria-label="New category name"]',
     );
     const id = window.setTimeout(() => {
+      if (cancelled) return;
       input?.focus({ preventScroll: true });
     }, 0);
-    return () => window.clearTimeout(id);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(id);
+    };
   }, [focusLedgerType]);
 
   const loadCategories = useCallback(() => fetchCategories(), []);
@@ -288,7 +298,16 @@ export function CategoriesPage() {
   const [pendingImport, setPendingImport] =
     useState<PendingCategoriesImport | null>(null);
   const committingRef = useRef(false);
+  const blurTimeoutRef = useRef<number | null>(null);
   const [sort, setSort] = useState<SortState<"name"> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (blurTimeoutRef.current != null) {
+        window.clearTimeout(blurTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const nameById = new Map((categories ?? []).map((c) => [c.id, c.name]));
 
@@ -333,7 +352,11 @@ export function CategoriesPage() {
 
   /** Blur cancels; defer so Enter commit can set committingRef first. */
   function onEditorBlur() {
-    window.setTimeout(() => {
+    if (blurTimeoutRef.current != null) {
+      window.clearTimeout(blurTimeoutRef.current);
+    }
+    blurTimeoutRef.current = window.setTimeout(() => {
+      blurTimeoutRef.current = null;
       if (!committingRef.current) cancelEdit();
     }, 0);
   }

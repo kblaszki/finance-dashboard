@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CategoriesPage } from "./CategoriesPage";
@@ -67,7 +67,6 @@ function renderCategories() {
 
 describe("CategoriesPage CSV import/export", () => {
   beforeEach(() => {
-    cleanup();
     vi.clearAllMocks();
     vi.mocked(fetchCategories).mockResolvedValue(categories);
     vi.mocked(fetchCategoryDescriptionRules).mockResolvedValue([]);
@@ -150,7 +149,6 @@ describe("CategoriesPage CSV import/export", () => {
 
 describe("CategoriesPage description rules", () => {
   beforeEach(() => {
-    cleanup();
     vi.clearAllMocks();
     vi.mocked(fetchCategories).mockResolvedValue(categories);
     vi.mocked(fetchCategoryDescriptionRules).mockResolvedValue([
@@ -194,6 +192,15 @@ describe("CategoriesPage description rules", () => {
         ledgerType: "EXPENSE",
         categoryId: 1,
       });
+    });
+    await waitFor(() => {
+      expect(
+        (screen.getByLabelText("Rule pattern") as HTMLInputElement).value,
+      ).toBe("");
+      expect(
+        (screen.getByRole("button", { name: "Add rule" }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(false);
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Delete rule uber" }));

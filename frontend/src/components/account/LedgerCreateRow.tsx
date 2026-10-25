@@ -56,10 +56,15 @@ export function LedgerCreateRow(props: {
   useEffect(() => {
     if (focusNonce === 0) return;
     // Defer past disabled→enabled commit and parent soft-reload re-render.
+    let cancelled = false;
     const id = window.setTimeout(() => {
+      if (cancelled) return;
       firstInputRef.current?.focus({ preventScroll: true });
     }, 0);
-    return () => window.clearTimeout(id);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(id);
+    };
   }, [focusNonce]);
 
   const categoryOptions = useMemo(() => {

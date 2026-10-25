@@ -59,9 +59,8 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
               account: { select: { currency: true } },
               category: { select: { id: true, name: true } },
             },
-          },
-            take: STATS_PERIOD_ROW_CAP + 1
-          },
+            take: STATS_PERIOD_ROW_CAP + 1,
+          }),
           prisma.cashTransfer.findMany({
             where: {
               occurredAt: { gte: start, lt: end },
@@ -71,9 +70,8 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
               fromAccount: { select: { currency: true } },
               category: { select: { id: true, name: true } },
             },
-          },
-            take: STATS_PERIOD_ROW_CAP + 1
-          },
+            take: STATS_PERIOD_ROW_CAP + 1,
+          }),
         ]);
         assertStatsRowCap(rows.length, "Cash transactions");
         assertStatsRowCap(transfers.length, "Transfers");
@@ -117,9 +115,8 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
             include: {
               account: { select: { currency: true } },
             },
-          },
-            take: STATS_PERIOD_ROW_CAP + 1
-          },
+            take: STATS_PERIOD_ROW_CAP + 1,
+          }),
           prisma.cashTransfer.findMany({
             where: {
               occurredAt: { gte: start, lt: end },
@@ -130,9 +127,8 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
               fromAccount: { select: { currency: true } },
               category: { select: { id: true, name: true } },
             },
-          },
-            take: STATS_PERIOD_ROW_CAP + 1
-          },
+            take: STATS_PERIOD_ROW_CAP + 1,
+          }),
         ]);
         assertStatsRowCap(rows.length, "Cash transactions");
         assertStatsRowCap(transfers.length, "Transfers");

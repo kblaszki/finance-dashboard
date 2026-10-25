@@ -390,7 +390,9 @@ describe("AccountDetailPage", () => {
 
   it("maps unknown CSV header via columns then description suggestions", async () => {
     vi.mocked(previewTransactionsImport).mockRejectedValue(
-      new Error('CSV header must be: id,type,amount,...'),
+      Object.assign(new Error("CSV header must be: id,type,amount,..."), {
+        code: "UNKNOWN_LEDGER_CSV_HEADER",
+      }),
     );
 
     renderLedger();
