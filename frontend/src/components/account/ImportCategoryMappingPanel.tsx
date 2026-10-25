@@ -3,12 +3,19 @@ import type { Category } from "../../api/categoriesApi";
 import type {
   ImportCategoryMapping,
   ImportCategoryPreview,
+  ImportDescriptionMapping,
+  ImportDescriptionSuggestion,
 } from "../../api/transactionsApi";
 
-type Decision =
+type PathDecision =
   | { kind: "undecided" }
   | { kind: "map"; categoryId: number }
   | { kind: "create" }
+  | { kind: "none" };
+
+type DescDecision =
+  | { kind: "undecided" }
+  | { kind: "map"; categoryId: number }
   | { kind: "none" };
 
 function categoryPathLabels(
@@ -49,10 +56,10 @@ function categoryPathLabels(
   return result;
 }
 
-function initialDecisions(
+function initialPathDecisions(
   categories: ImportCategoryPreview[],
-): Record<string, Decision> {
-  const out: Record<string, Decision> = {};
+): Record<string, PathDecision> {
+  const out: Record<string, PathDecision> = {};
   for (const cat of categories) {
     const key = `${cat.ledgerType}\0${cat.path}`;
     out[key] = cat.suggestedCategoryId
@@ -62,14 +69,33 @@ function initialDecisions(
   return out;
 }
 
-function decisionSelectValue(decision: Decision): string {
+function initialDescDecisions(
+  suggestions: ImportDescriptionSuggestion[],
+): Record<string, DescDecision> {
+  const out: Record<string, DescDecision> = {};
+  for (const s of suggestions) {
+    const key = `${s.ledgerType}\0${s.descriptionKey}`;
+    out[key] = s.suggestedCategoryId
+      ? { kind: "map", categoryId: s.suggestedCategoryId }
+      : { kind: "undecided" };
+  }
+  return out;
+}
+
+function pathSelectValue(decision: PathDecision): string {
   if (decision.kind === "map") return `map:${decision.categoryId}`;
   if (decision.kind === "create") return "create";
   if (decision.kind === "none") return "none";
   return "";
 }
 
-function parseSelectValue(value: string): Decision {
+function descSelectValue(decision: DescDecision): string {
+  if (decision.kind === "map") return `map:${decision.categoryId}`;
+  if (decision.kind === "none") return "none";
+  return "";
+}
+
+function parsePathSelectValue(value: string): PathDecision {
   if (value === "") return { kind: "undecided" };
   if (value === "create") return { kind: "create" };
   if (value === "none") return { kind: "none" };
@@ -82,18 +108,35 @@ function parseSelectValue(value: string): Decision {
   return { kind: "undecided" };
 }
 
+function parseDescSelectValue(value: string): DescDecision {
+  if (value === "") return { kind: "undecided" };
+  if (value === "none") return { kind: "none" };
+  if (value.startsWith("map:")) {
+    const id = Number(value.slice(4));
+    if (Number.isInteger(id) && id >= 1) {
+      return { kind: "map", categoryId: id };
+    }
+  }
+  return { kind: "undecided" };
+}
+
 type Props = {
   previewCategories: ImportCategoryPreview[];
+  descriptionSuggestions: ImportDescriptionSuggestion[];
   ownedCategories: Category[];
   rowCount: number;
   busy: boolean;
-  onConfirm: (mappings: ImportCategoryMapping[]) => void;
+  onConfirm: (
+    categoryMappings: ImportCategoryMapping[],
+    descriptionMappings: ImportDescriptionMapping[],
+  ) => void;
   onCancel: () => void;
 };
 
 export function ImportCategoryMappingPanel(props: Props) {
   const {
     previewCategories,
+    descriptionSuggestions,
     ownedCategories,
     rowCount,
     busy,
@@ -101,8 +144,11 @@ export function ImportCategoryMappingPanel(props: Props) {
     onCancel,
   } = props;
 
-  const [decisions, setDecisions] = useState(() =>
-    initialDecisions(previewCategories),
+  const [pathDecisions, setPathDecisions] = useState(() =>
+    initialPathDecisions(previewCategories),
+  );
+  const [descDecisions, setDescDecisions] = useState(() =>
+    initialDescDecisions(descriptionSuggestions),
   );
 
   const pathLabels = useMemo(
@@ -110,93 +156,206 @@ export function ImportCategoryMappingPanel(props: Props) {
     [ownedCategories],
   );
 
-  const allDecided = previewCategories.every((cat) => {
+  const pathsDecided = previewCategories.every((cat) => {
     const key = `${cat.ledgerType}\0${cat.path}`;
-    return decisions[key]?.kind !== "undecided" && decisions[key] != null;
+    return pathDecisions[key]?.kind !== "undecided" && pathDecisions[key] != null;
   });
+  const descsDecided = descriptionSuggestions.every((s) => {
+    const key = `${s.ledgerType}\0${s.descriptionKey}`;
+    return descDecisions[key]?.kind !== "undecided" && descDecisions[key] != null;
+  });
+  const allDecided = pathsDecided && descsDecided;
 
-  function setDecision(cat: ImportCategoryPreview, value: string) {
+  function setPathDecision(cat: ImportCategoryPreview, value: string) {
     const key = `${cat.ledgerType}\0${cat.path}`;
-    setDecisions((prev) => ({ ...prev, [key]: parseSelectValue(value) }));
+    setPathDecisions((prev) => ({
+      ...prev,
+      [key]: parsePathSelectValue(value),
+    }));
+  }
+
+  function setDescDecision(s: ImportDescriptionSuggestion, value: string) {
+    const key = `${s.ledgerType}\0${s.descriptionKey}`;
+    setDescDecisions((prev) => ({
+      ...prev,
+      [key]: parseDescSelectValue(value),
+    }));
   }
 
   function handleImport() {
     if (!allDecided) return;
-    const mappings: ImportCategoryMapping[] = previewCategories.map((cat) => {
-      const key = `${cat.ledgerType}\0${cat.path}`;
-      const decision = decisions[key]!;
-      if (decision.kind === "map") {
+    const categoryMappings: ImportCategoryMapping[] = previewCategories.map(
+      (cat) => {
+        const key = `${cat.ledgerType}\0${cat.path}`;
+        const decision = pathDecisions[key]!;
+        if (decision.kind === "map") {
+          return {
+            path: cat.path,
+            ledgerType: cat.ledgerType,
+            action: "map",
+            categoryId: decision.categoryId,
+          };
+        }
+        if (decision.kind === "create") {
+          return {
+            path: cat.path,
+            ledgerType: cat.ledgerType,
+            action: "create",
+          };
+        }
+        return { path: cat.path, ledgerType: cat.ledgerType, action: "none" };
+      },
+    );
+    const descriptionMappings: ImportDescriptionMapping[] =
+      descriptionSuggestions.map((s) => {
+        const key = `${s.ledgerType}\0${s.descriptionKey}`;
+        const decision = descDecisions[key]!;
+        if (decision.kind === "map") {
+          return {
+            descriptionKey: s.descriptionKey,
+            ledgerType: s.ledgerType,
+            action: "map",
+            categoryId: decision.categoryId,
+          };
+        }
         return {
-          path: cat.path,
-          ledgerType: cat.ledgerType,
-          action: "map",
-          categoryId: decision.categoryId,
+          descriptionKey: s.descriptionKey,
+          ledgerType: s.ledgerType,
+          action: "none",
         };
-      }
-      if (decision.kind === "create") {
-        return { path: cat.path, ledgerType: cat.ledgerType, action: "create" };
-      }
-      return { path: cat.path, ledgerType: cat.ledgerType, action: "none" };
-    });
-    onConfirm(mappings);
+      });
+    onConfirm(categoryMappings, descriptionMappings);
   }
 
   return (
     <section className="card form-section-gap" aria-label="Import category mapping">
-      <h2 className="section-title">Map import categories</h2>
+      <h2 className="section-title">Confirm import categories</h2>
       <p className="muted">
-        Review each category used in the CSV ({rowCount} row
-        {rowCount === 1 ? "" : "s"}). Choose an existing category, create the
-        path, or import without a category.
+        Review category paths and description suggestions ({rowCount} row
+        {rowCount === 1 ? "" : "s"}). Confirm each before importing.
       </p>
-      <div className="table-wrap">
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Path</th>
-              <th>Type</th>
-              <th className="num">Rows</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {previewCategories.map((cat) => {
-              const key = `${cat.ledgerType}\0${cat.path}`;
-              const decision = decisions[key] ?? { kind: "undecided" as const };
-              const options = ownedCategories.filter(
-                (c) => c.ledgerType === cat.ledgerType,
-              );
-              return (
-                <tr key={key}>
-                  <td>{cat.path}</td>
-                  <td>
-                    <span className="badge">{cat.ledgerType}</span>
-                  </td>
-                  <td className="num">{cat.rowCount}</td>
-                  <td>
-                    <select
-                      className="field-control"
-                      aria-label={`Mapping for ${cat.path}`}
-                      value={decisionSelectValue(decision)}
-                      onChange={(e) => setDecision(cat, e.target.value)}
-                      disabled={busy}
-                    >
-                      <option value="">Choose…</option>
-                      <option value="create">Create new path</option>
-                      <option value="none">No category</option>
-                      {options.map((opt) => (
-                        <option key={opt.id} value={`map:${opt.id}`}>
-                          Map to {pathLabels.get(opt.id) ?? opt.name}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
+
+      {previewCategories.length > 0 && (
+        <>
+          <h3 className="section-title">Category paths from CSV</h3>
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Path</th>
+                  <th>Type</th>
+                  <th className="num">Rows</th>
+                  <th>Action</th>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+              </thead>
+              <tbody>
+                {previewCategories.map((cat) => {
+                  const key = `${cat.ledgerType}\0${cat.path}`;
+                  const decision =
+                    pathDecisions[key] ?? { kind: "undecided" as const };
+                  const options = ownedCategories.filter(
+                    (c) => c.ledgerType === cat.ledgerType,
+                  );
+                  return (
+                    <tr key={key}>
+                      <td>{cat.path}</td>
+                      <td>
+                        <span className="badge">{cat.ledgerType}</span>
+                      </td>
+                      <td className="num">{cat.rowCount}</td>
+                      <td>
+                        <select
+                          className="field-control"
+                          aria-label={`Mapping for ${cat.path}`}
+                          value={pathSelectValue(decision)}
+                          onChange={(e) => setPathDecision(cat, e.target.value)}
+                          disabled={busy}
+                        >
+                          <option value="">Choose…</option>
+                          <option value="create">Create new path</option>
+                          <option value="none">No category</option>
+                          {options.map((opt) => (
+                            <option key={opt.id} value={`map:${opt.id}`}>
+                              Map to {pathLabels.get(opt.id) ?? opt.name}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
+      {descriptionSuggestions.length > 0 && (
+        <>
+          <h3 className="section-title">Descriptions without a path</h3>
+          <p className="muted">
+            Suggestions come from your rules (preferred) or past ledger
+            transactions. Mapping saves an exact description rule for next time.
+          </p>
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th>Type</th>
+                  <th className="num">Rows</th>
+                  <th>Source</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {descriptionSuggestions.map((s) => {
+                  const key = `${s.ledgerType}\0${s.descriptionKey}`;
+                  const decision =
+                    descDecisions[key] ?? { kind: "undecided" as const };
+                  const options = ownedCategories.filter(
+                    (c) => c.ledgerType === s.ledgerType,
+                  );
+                  return (
+                    <tr key={key}>
+                      <td>{s.description}</td>
+                      <td>
+                        <span className="badge">{s.ledgerType}</span>
+                      </td>
+                      <td className="num">{s.rowCount}</td>
+                      <td>
+                        {s.suggestionSource === "rule"
+                          ? "Rule"
+                          : s.suggestionSource === "history"
+                            ? "History"
+                            : "—"}
+                      </td>
+                      <td>
+                        <select
+                          className="field-control"
+                          aria-label={`Mapping for description ${s.description}`}
+                          value={descSelectValue(decision)}
+                          onChange={(e) => setDescDecision(s, e.target.value)}
+                          disabled={busy}
+                        >
+                          <option value="">Choose…</option>
+                          <option value="none">No category</option>
+                          {options.map((opt) => (
+                            <option key={opt.id} value={`map:${opt.id}`}>
+                              Map to {pathLabels.get(opt.id) ?? opt.name}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+
       <p className="form-section-gap">
         <button
           type="button"

@@ -19,12 +19,20 @@ vi.mock("../api/categoriesApi", async () => {
   };
 });
 
+vi.mock("../api/categoryDescriptionRulesApi", () => ({
+  fetchCategoryDescriptionRules: vi.fn(),
+  createCategoryDescriptionRule: vi.fn(),
+  deleteCategoryDescriptionRule: vi.fn(),
+  updateCategoryDescriptionRule: vi.fn(),
+}));
+
 import {
   exportCategoriesCsv,
   fetchCategories,
   importCategoriesCsv,
   previewCategoriesImport,
 } from "../api/categoriesApi";
+import { fetchCategoryDescriptionRules } from "../api/categoryDescriptionRulesApi";
 
 const categories = [
   {
@@ -58,6 +66,7 @@ describe("CategoriesPage CSV import/export", () => {
     cleanup();
     vi.clearAllMocks();
     vi.mocked(fetchCategories).mockResolvedValue(categories);
+    vi.mocked(fetchCategoryDescriptionRules).mockResolvedValue([]);
     vi.mocked(exportCategoriesCsv).mockResolvedValue(new Blob(["csv"]));
     vi.mocked(previewCategoriesImport).mockResolvedValue({
       rowCount: 2,

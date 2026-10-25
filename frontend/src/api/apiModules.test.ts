@@ -63,6 +63,12 @@ import {
   deleteTag,
 } from './tagsApi'
 import {
+  fetchCategoryDescriptionRules,
+  createCategoryDescriptionRule,
+  updateCategoryDescriptionRule,
+  deleteCategoryDescriptionRule,
+} from './categoryDescriptionRulesApi'
+import {
   fetchCategoryBreakdown,
   fetchPeriodSummary,
   fetchTagBreakdown,
@@ -216,7 +222,7 @@ describe('API modules', () => {
     await importTransactionsCsv(3, 'id,type\n', [])
     expect(apiClient.post).toHaveBeenCalledWith(
       '/api/accounts/3/transactions/import',
-      { csv: 'id,type\n', categoryMappings: [] },
+      { csv: 'id,type\n', categoryMappings: [], descriptionMappings: [] },
     )
 
     await previewImportColumns(3, 'Date,Amount\n')
@@ -239,7 +245,12 @@ describe('API modules', () => {
     await commitImportColumnMapping(3, 'Date,Amount\n', columnMapping, [])
     expect(apiClient.post).toHaveBeenCalledWith(
       '/api/accounts/3/transactions/import/columns/commit',
-      { csv: 'Date,Amount\n', columnMapping, categoryMappings: [] },
+      {
+        csv: 'Date,Amount\n',
+        columnMapping,
+        categoryMappings: [],
+        descriptionMappings: [],
+      },
     )
 
     await fetchImportPresets(3)
@@ -270,6 +281,34 @@ describe('API modules', () => {
     await deleteImportPreset(3, 9)
     expect(apiClient.delete).toHaveBeenCalledWith(
       '/api/accounts/3/import-presets/9',
+    )
+  })
+
+  it('categoryDescriptionRulesApi calls correct endpoints', async () => {
+    await fetchCategoryDescriptionRules()
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/category-description-rules',
+    )
+
+    await createCategoryDescriptionRule({
+      pattern: 'zabka',
+      ledgerType: 'EXPENSE',
+      categoryId: 2,
+    })
+    expect(apiClient.post).toHaveBeenCalledWith(
+      '/api/category-description-rules',
+      { pattern: 'zabka', ledgerType: 'EXPENSE', categoryId: 2 },
+    )
+
+    await updateCategoryDescriptionRule(5, { pattern: 'uber' })
+    expect(apiClient.patch).toHaveBeenCalledWith(
+      '/api/category-description-rules/5',
+      { pattern: 'uber' },
+    )
+
+    await deleteCategoryDescriptionRule(5)
+    expect(apiClient.delete).toHaveBeenCalledWith(
+      '/api/category-description-rules/5',
     )
   })
 

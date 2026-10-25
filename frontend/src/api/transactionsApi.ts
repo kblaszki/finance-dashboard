@@ -109,9 +109,19 @@ export type SkippedDuplicateRow = {
   message: string;
 };
 
+export type ImportDescriptionSuggestion = {
+  description: string;
+  descriptionKey: string;
+  ledgerType: CashTxType;
+  rowCount: number;
+  suggestedCategoryId: number | null;
+  suggestionSource: "rule" | "history" | null;
+};
+
 export type ImportPreviewResult = {
   rowCount: number;
   categories: ImportCategoryPreview[];
+  descriptionSuggestions: ImportDescriptionSuggestion[];
   skipped: number;
   skippedTransfers: SkippedTransferRow[];
   duplicateCount: number;
@@ -132,6 +142,19 @@ export type ImportCategoryMapping =
     }
   | {
       path: string;
+      ledgerType: CashTxType;
+      action: "none";
+    };
+
+export type ImportDescriptionMapping =
+  | {
+      descriptionKey: string;
+      ledgerType: CashTxType;
+      action: "map";
+      categoryId: number;
+    }
+  | {
+      descriptionKey: string;
       ledgerType: CashTxType;
       action: "none";
     };
@@ -159,10 +182,11 @@ export async function importTransactionsCsv(
   accountId: number,
   csv: string,
   categoryMappings: ImportCategoryMapping[],
+  descriptionMappings: ImportDescriptionMapping[] = [],
 ): Promise<ImportTransactionsResult> {
   return apiClient.post<ImportTransactionsResult>(
     `/api/accounts/${accountId}/transactions/import`,
-    { csv, categoryMappings },
+    { csv, categoryMappings, descriptionMappings },
   );
 }
 
@@ -284,9 +308,10 @@ export async function commitImportColumnMapping(
   csv: string,
   columnMapping: ColumnMapping,
   categoryMappings: ImportCategoryMapping[],
+  descriptionMappings: ImportDescriptionMapping[] = [],
 ): Promise<ImportTransactionsResult> {
   return apiClient.post<ImportTransactionsResult>(
     `/api/accounts/${accountId}/transactions/import/columns/commit`,
-    { csv, columnMapping, categoryMappings },
+    { csv, columnMapping, categoryMappings, descriptionMappings },
   );
 }

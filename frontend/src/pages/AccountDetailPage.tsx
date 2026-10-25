@@ -25,6 +25,8 @@ import {
   type ImportCategoryMapping,
   type ImportCategoryPreview,
   type ImportColumnsPreview,
+  type ImportDescriptionMapping,
+  type ImportDescriptionSuggestion,
   type SkippedDuplicateRow,
 } from "../api/transactionsApi";
 import { AccountBalanceChart } from "../components/account/AccountBalanceChart";
@@ -55,12 +57,22 @@ type PendingImport = {
   csv: string;
   rowCount: number;
   categories: ImportCategoryPreview[];
+  descriptionSuggestions: ImportDescriptionSuggestion[];
   skipped: number;
   duplicateCount: number;
   skippedDuplicates: SkippedDuplicateRow[];
   /** Present when rows came from flexible column mapping. */
   columnMapping?: ColumnMapping;
 };
+
+function needsImportConfirm(preview: {
+  categories: ImportCategoryPreview[];
+  descriptionSuggestions: ImportDescriptionSuggestion[];
+}): boolean {
+  return (
+    preview.categories.length > 0 || preview.descriptionSuggestions.length > 0
+  );
+}
 
 type PendingColumnMap = {
   csv: string;
@@ -241,6 +253,7 @@ export function AccountDetailPage() {
   async function runImport(
     csv: string,
     categoryMappings: ImportCategoryMapping[],
+    descriptionMappings: ImportDescriptionMapping[],
     columnMapping?: ColumnMapping,
   ) {
     setImportBusy(true);
@@ -253,8 +266,14 @@ export function AccountDetailPage() {
             csv,
             columnMapping,
             categoryMappings,
+            descriptionMappings,
           )
-        : await importTransactionsCsv(accountId, csv, categoryMappings);
+        : await importTransactionsCsv(
+            accountId,
+            csv,
+            categoryMappings,
+            descriptionMappings,
+          );
       setImportMsg(formatImportSuccessMessage(result));
       setPendingImport(null);
       setPendingColumnMap(null);
@@ -291,14 +310,15 @@ export function AccountDetailPage() {
         mapping,
       );
       setPendingColumnMap(null);
-      if (preview.categories.length === 0) {
-        await runImport(pendingColumnMap.csv, [], mapping);
+      if (!needsImportConfirm(preview)) {
+        await runImport(pendingColumnMap.csv, [], [], mapping);
         return;
       }
       setPendingImport({
         csv: pendingColumnMap.csv,
         rowCount: preview.rowCount,
         categories: preview.categories,
+        descriptionSuggestions: preview.descriptionSuggestions,
         skipped: preview.skipped,
         duplicateCount: preview.duplicateCount,
         skippedDuplicates: preview.skippedDuplicates,
@@ -323,8 +343,8 @@ export function AccountDetailPage() {
       const csv = await file.text();
       try {
         const preview = await previewTransactionsImport(accountId, csv);
-        if (preview.categories.length === 0) {
-          const result = await importTransactionsCsv(accountId, csv, []);
+        if (!needsImportConfirm(preview)) {
+          const result = await importTransactionsCsv(accountId, csv, [], []);
           setImportMsg(formatImportSuccessMessage(result));
           await refresh();
           return;
@@ -333,6 +353,7 @@ export function AccountDetailPage() {
           csv,
           rowCount: preview.rowCount,
           categories: preview.categories,
+          descriptionSuggestions: preview.descriptionSuggestions,
           skipped: preview.skipped,
           duplicateCount: preview.duplicateCount,
           skippedDuplicates: preview.skippedDuplicates,
@@ -527,15 +548,17 @@ export function AccountDetailPage() {
             </p>
           )}
           <ImportCategoryMappingPanel
-            key={`${pendingImport.rowCount}-${pendingImport.categories.map((c) => c.path).join("|")}`}
+            key={`${pendingImport.rowCount}-${pendingImport.categories.map((c) => c.path).join("|")}-${pendingImport.descriptionSuggestions.map((s) => s.descriptionKey).join("|")}`}
             previewCategories={pendingImport.categories}
+            descriptionSuggestions={pendingImport.descriptionSuggestions}
             ownedCategories={categories ?? []}
             rowCount={pendingImport.rowCount}
             busy={importBusy}
-            onConfirm={(mappings) => {
+            onConfirm={(categoryMappings, descriptionMappings) => {
               void runImport(
                 pendingImport.csv,
-                mappings,
+                categoryMappings,
+                descriptionMappings,
                 pendingImport.columnMapping,
               );
             }}

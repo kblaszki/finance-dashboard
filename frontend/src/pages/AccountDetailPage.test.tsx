@@ -136,14 +136,19 @@ describe("AccountDetailPage", () => {
     vi.mocked(previewTransactionsImport).mockResolvedValue({
       rowCount: 0,
       categories: [],
+      descriptionSuggestions: [],
       skipped: 0,
       skippedTransfers: [],
+      duplicateCount: 0,
+      skippedDuplicates: [],
     });
     vi.mocked(importTransactionsCsv).mockResolvedValue({
       created: 1,
       createdCategories: 0,
       skipped: 0,
       skippedTransfers: [],
+      duplicateCount: 0,
+      skippedDuplicates: [],
     });
     URL.createObjectURL = vi.fn(() => "blob:ledger");
     URL.revokeObjectURL = vi.fn();
@@ -207,7 +212,12 @@ describe("AccountDetailPage", () => {
     fireEvent.change(input, { target: { files: [file] } });
     await waitFor(() => {
       expect(previewTransactionsImport).toHaveBeenCalledWith(1, "header-only\n");
-      expect(importTransactionsCsv).toHaveBeenCalledWith(1, "header-only\n", []);
+      expect(importTransactionsCsv).toHaveBeenCalledWith(
+        1,
+        "header-only\n",
+        [],
+        [],
+      );
     });
     expect(await screen.findByText("Imported 1 transaction(s).")).toBeTruthy();
   });
@@ -229,6 +239,8 @@ describe("AccountDetailPage", () => {
           message: "Internal transfer — import via Transfers page",
         },
       ],
+      duplicateCount: 0,
+      skippedDuplicates: [],
     });
 
     renderLedger();
@@ -265,6 +277,7 @@ describe("AccountDetailPage", () => {
           suggestedCategoryId: null,
         },
       ],
+      descriptionSuggestions: [],
       skipped: 1,
       skippedTransfers: [
         {
@@ -273,6 +286,8 @@ describe("AccountDetailPage", () => {
           message: "Internal transfer — import via Transfers page",
         },
       ],
+      duplicateCount: 0,
+      skippedDuplicates: [],
     });
 
     renderLedger();
@@ -285,7 +300,7 @@ describe("AccountDetailPage", () => {
     });
     fireEvent.change(input, { target: { files: [file] } });
 
-    expect(await screen.findByText("Map import categories")).toBeTruthy();
+    expect(await screen.findByText("Confirm import categories")).toBeTruthy();
     expect(
       screen.getByText(
         "Skipping 1 internal transfer row(s) — manage transfers on the Transfers page.",
@@ -303,19 +318,24 @@ describe("AccountDetailPage", () => {
 
     fireEvent.click(importBtn);
     await waitFor(() => {
-      expect(importTransactionsCsv).toHaveBeenCalledWith(1, "csv-body", [
-        {
-          path: "Food",
-          ledgerType: "EXPENSE",
-          action: "map",
-          categoryId: 2,
-        },
-        {
-          path: "NewPath",
-          ledgerType: "EXPENSE",
-          action: "create",
-        },
-      ]);
+      expect(importTransactionsCsv).toHaveBeenCalledWith(
+        1,
+        "csv-body",
+        [
+          {
+            path: "Food",
+            ledgerType: "EXPENSE",
+            action: "map",
+            categoryId: 2,
+          },
+          {
+            path: "NewPath",
+            ledgerType: "EXPENSE",
+            action: "create",
+          },
+        ],
+        [],
+      );
     });
   });
 
