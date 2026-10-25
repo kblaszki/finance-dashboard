@@ -51,7 +51,7 @@ JWT auth, multi-type accounts, category tree + tags, cash ledger + transfers, CS
 | Create user CLI | `backend/src/scripts/createUser.ts` |
 | DB backup CLI | `backend/src/scripts/backupDb.ts` |
 | SQLite path helper | `backend/src/dbPath.ts` |
-| HTTP / schema tests | `backend/test/httpHarness.ts`, `auth.http.test.ts`, `app.http.test.ts`, `schema.integration.test.ts`, `migrateDeploy.test.ts` |
+| HTTP / schema tests | `backend/test/httpHarness.ts`, `auth.http.test.ts`, `accounts.http.test.ts` (+ `ledgerImport` / `categories` / `transfers` / `statistics` HTTP suites), `schema.integration.test.ts`, `migrateDeploy.test.ts` |
 | Test Prisma helper | `backend/test/prismaTestClient.ts`, `setupTestEnv.ts` |
 | SPA routes | `frontend/src/App.tsx` |
 | Auth state | `frontend/src/state/auth.tsx` |

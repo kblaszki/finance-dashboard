@@ -145,7 +145,7 @@ Step progress:
 | Change | Add |
 |--------|-----|
 | Domain module | `backend/src/<name>.test.ts` |
-| Route/workflow | `backend/test/app.http.test.ts` and/or integration tests |
+| Route/workflow | Matching `backend/test/*.http.test.ts` and/or integration tests |
 | New API client module | `frontend/src/api/apiModules.test.ts` |
 | New JSON response shape | `apiContracts.test.ts` + fixtures |
 

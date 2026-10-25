@@ -71,7 +71,7 @@ See [testing.md](../../../docs/reference/testing.md) for the full pyramid, cover
 
 - backend unit tests for pure helpers (`backend/src/*.test.ts`)
 - schema / migrate integration tests (`backend/test/schema.integration.test.ts`, `migrateDeploy.test.ts`)
-- HTTP tests for auth and health (`backend/test/app.http.test.ts`)
+- HTTP tests for auth and health (`backend/test/auth.http.test.ts`)
 - frontend API/client/hook tests (`apiModules.test.ts`, `client.test.ts`, `useAsyncData.test.tsx`, `apiContracts.test.ts`)
 - CI: `backend-test`, `frontend-checks`, and **`coverage`** jobs in `.github/workflows/ci.yml`
 - cross-user IDOR checks for user-owned resources when those resources exist

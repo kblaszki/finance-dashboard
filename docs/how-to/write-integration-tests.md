@@ -8,7 +8,7 @@ related_docs:
 related_code:
   - backend/test/httpHarness.ts
   - backend/test/auth.http.test.ts
-  - backend/test/app.http.test.ts
+  - backend/test/accounts.http.test.ts
   - backend/test/prismaTestClient.ts
 ---
 
@@ -25,7 +25,7 @@ Pyramid and thresholds: [testing.md](../reference/testing.md). Gate: [run-tests-
 | Pure helper / auth rule | `backend/src/**/*.test.ts` next to module |
 | Schema uniqueness / migrate | `backend/test/schema.integration.test.ts`, `migrateDeploy.test.ts` |
 | HTTP health / auth contract | `backend/test/auth.http.test.ts` (via `httpHarness.ts`) |
-| HTTP domain route contract + IDOR | `backend/test/app.http.test.ts` (via `httpHarness.ts`) |
+| HTTP domain route contract + IDOR | Domain suites via `httpHarness.ts`: `accounts.http.test.ts`, `ledgerImport.http.test.ts`, `categories.http.test.ts`, `transfers.http.test.ts`, `statistics.http.test.ts` |
 
 ## Integration test setup
 
