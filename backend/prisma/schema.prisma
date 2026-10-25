@@ -23,6 +23,7 @@ model User {
   cashTransfers CashTransfer[]
   csvImportPresets CsvImportPreset[]
   importBatches ImportBatch[]
+  categoryDescriptionRules CategoryDescriptionRule[]
 }
 
 model Category {
@@ -40,11 +41,32 @@ model Category {
   children  Category[] @relation("CategoryTree")
   cashTransactions CashTransaction[]
   cashTransfers CashTransfer[]
+  descriptionRules CategoryDescriptionRule[]
 
   @@unique([userId, nameKey])
   @@index([userId])
   @@index([parentId])
   @@index([userId, ledgerType])
+}
+
+/// User rule: if normalized description contains pattern → category (import suggest).
+model CategoryDescriptionRule {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  /// Normalized substring matched with contains.
+  pattern    String
+  patternKey String
+  /// INCOME | EXPENSE
+  ledgerType String
+  categoryId Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, ledgerType, patternKey])
+  @@index([userId, ledgerType])
+  @@index([categoryId])
 }
 
 model Account {

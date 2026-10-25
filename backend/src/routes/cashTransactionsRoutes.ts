@@ -28,6 +28,7 @@ import {
   parseCategoryMappings,
   resolveDraftsWithMappings,
   suggestCategoryMatches,
+  type ImportCategoryMapping,
 } from "../domain/cashLedgerImportCategories";
 import {
   normalizeMappedRows,
@@ -42,6 +43,14 @@ import {
   partitionDraftsByExisting,
   type SkippedDuplicateRow,
 } from "../domain/cashImportDedup";
+import {
+  applyDescriptionMappings,
+  buildDescriptionSuggestions,
+  collectUsedDescriptions,
+  parseDescriptionMappings,
+  upsertExactDescriptionRule,
+  type DescriptionMapping,
+} from "../domain/categoryDescriptionSuggest";
 import { expectedCategoryLedgerType } from "../domain/categories";
 import {
   cursorWhere,
@@ -162,6 +171,9 @@ async function buildCategoryImportPreview(
 ): Promise<{
   rowCount: number;
   categories: ReturnType<typeof suggestCategoryMatches>;
+  descriptionSuggestions: Awaited<
+    ReturnType<typeof buildDescriptionSuggestions>
+  >;
   skipped: number;
   skippedTransfers: SkippedTransferRow[];
   duplicateCount: number;
@@ -179,14 +191,104 @@ async function buildCategoryImportPreview(
   );
   const used = collectUsedCategories(toImport);
   const categories = suggestCategoryMatches(used, ownedCategories);
+  const descriptionSuggestions = await buildDescriptionSuggestions(
+    prisma,
+    userId,
+    toImport,
+    ownedCategories,
+  );
   return {
     rowCount: toImport.length,
     categories,
+    descriptionSuggestions,
     skipped: skippedTransfers.length,
     skippedTransfers,
     duplicateCount: skippedDuplicates.length,
     skippedDuplicates,
   };
+}
+
+async function assertDescriptionMapCategories(
+  prisma: PrismaClient,
+  userId: number,
+  mappings: DescriptionMapping[],
+): Promise<void> {
+  for (const m of mappings) {
+    if (m.action !== "map") continue;
+    await assertOwnedCategoryForTx(prisma, userId, m.categoryId, m.ledgerType);
+  }
+}
+
+async function persistMappedImport(
+  prisma: PrismaClient,
+  userId: number,
+  accountId: number,
+  toImport: CashLedgerImportDraft[],
+  skippedDuplicates: SkippedDuplicateRow[],
+  skippedTransferCount: number,
+  source: string,
+  categoryMappings: ImportCategoryMapping[],
+  descriptionMappings: DescriptionMapping[],
+  ownedCategories: Array<{
+    id: number;
+    name: string;
+    parentId: number | null;
+    ledgerType: string;
+  }>,
+  used: ReturnType<typeof collectUsedCategories>,
+): Promise<{ created: number; createdCategories: number }> {
+  return prisma.$transaction(async (tx) => {
+    const applied = await applyCategoryMappings(
+      tx,
+      userId,
+      categoryMappings,
+      used,
+      ownedCategories,
+    );
+    let resolved = resolveDraftsWithMappings(
+      toImport,
+      applied.resolvedIds,
+    );
+    resolved = applyDescriptionMappings(
+      resolved,
+      toImport,
+      descriptionMappings,
+    );
+    const createdCount = await postCashTransactionBatch(
+      tx,
+      accountId,
+      resolved.map((row) => ({
+        type: row.type,
+        amount: parsePositiveAmount(row.amount),
+        occurredAt: row.occurredAt,
+        description: row.description,
+        categoryId: row.categoryId,
+      })),
+    );
+    for (const m of descriptionMappings) {
+      if (m.action === "map") {
+        await upsertExactDescriptionRule(
+          tx,
+          userId,
+          m.descriptionKey,
+          m.ledgerType,
+          m.categoryId,
+        );
+      }
+    }
+    await createImportBatch(tx, {
+      userId,
+      accountId,
+      source,
+      createdCount,
+      skippedDuplicateCount: skippedDuplicates.length,
+      skippedTransferCount,
+    });
+    return {
+      created: createdCount,
+      createdCategories: applied.createdCategories,
+    };
+  });
 }
 
 export function createCashTransactionsRouter(deps: CashTxDeps): Router {
@@ -335,44 +437,36 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
           });
           return;
         }
+        const usedDesc = collectUsedDescriptions(toImport);
+        const descResult = parseDescriptionMappings(
+          req.body?.descriptionMappings,
+          usedDesc,
+        );
+        if (!descResult.ok) {
+          res.status(400).json({
+            error: formatImportErrors(descResult.errors),
+            details: descResult.errors,
+          });
+          return;
+        }
+        await assertDescriptionMapCategories(
+          prisma,
+          userId,
+          descResult.mappings,
+        );
 
-        const { created, createdCategories } = await prisma.$transaction(
-          async (tx) => {
-            const applied = await applyCategoryMappings(
-              tx,
-              userId,
-              mappingsResult.mappings,
-              used,
-              ownedCategories,
-            );
-            const resolved = resolveDraftsWithMappings(
-              toImport,
-              applied.resolvedIds,
-            );
-            const createdCount = await postCashTransactionBatch(
-              tx,
-              accountId,
-              resolved.map((row) => ({
-                type: row.type,
-                amount: parsePositiveAmount(row.amount),
-                occurredAt: row.occurredAt,
-                description: row.description,
-                categoryId: row.categoryId,
-              })),
-            );
-            await createImportBatch(tx, {
-              userId,
-              accountId,
-              source: "ledger_csv",
-              createdCount,
-              skippedDuplicateCount: skippedDuplicates.length,
-              skippedTransferCount: parsed.skippedTransfers.length,
-            });
-            return {
-              created: createdCount,
-              createdCategories: applied.createdCategories,
-            };
-          },
+        const { created, createdCategories } = await persistMappedImport(
+          prisma,
+          userId,
+          accountId,
+          toImport,
+          skippedDuplicates,
+          parsed.skippedTransfers.length,
+          "ledger_csv",
+          mappingsResult.mappings,
+          descResult.mappings,
+          ownedCategories,
+          used,
         );
 
         res.status(201).json({
@@ -512,44 +606,36 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
           });
           return;
         }
+        const usedDesc = collectUsedDescriptions(toImport);
+        const descResult = parseDescriptionMappings(
+          req.body?.descriptionMappings,
+          usedDesc,
+        );
+        if (!descResult.ok) {
+          res.status(400).json({
+            error: formatImportErrors(descResult.errors),
+            details: descResult.errors,
+          });
+          return;
+        }
+        await assertDescriptionMapCategories(
+          prisma,
+          userId,
+          descResult.mappings,
+        );
 
-        const { created, createdCategories } = await prisma.$transaction(
-          async (tx) => {
-            const applied = await applyCategoryMappings(
-              tx,
-              userId,
-              mappingsResult.mappings,
-              used,
-              ownedCategories,
-            );
-            const resolved = resolveDraftsWithMappings(
-              toImport,
-              applied.resolvedIds,
-            );
-            const createdCount = await postCashTransactionBatch(
-              tx,
-              accountId,
-              resolved.map((row) => ({
-                type: row.type,
-                amount: parsePositiveAmount(row.amount),
-                occurredAt: row.occurredAt,
-                description: row.description,
-                categoryId: row.categoryId,
-              })),
-            );
-            await createImportBatch(tx, {
-              userId,
-              accountId,
-              source: "columns_csv",
-              createdCount,
-              skippedDuplicateCount: skippedDuplicates.length,
-              skippedTransferCount: parsed.skippedTransfers.length,
-            });
-            return {
-              created: createdCount,
-              createdCategories: applied.createdCategories,
-            };
-          },
+        const { created, createdCategories } = await persistMappedImport(
+          prisma,
+          userId,
+          accountId,
+          toImport,
+          skippedDuplicates,
+          parsed.skippedTransfers.length,
+          "columns_csv",
+          mappingsResult.mappings,
+          descResult.mappings,
+          ownedCategories,
+          used,
         );
 
         res.status(201).json({
