@@ -30,10 +30,8 @@ import {
   pageResultFromRows,
   parseListPageQuery,
 } from "../domain/listPageQuery";
-import { CSV_EXPORT_ROW_CAP } from "../domain/rowCaps";
+import { CSV_EXPORT_ROW_CAP, MONTH_LIST_CAP } from "../domain/rowCaps";
 import { badRequest, handleRouteError, notFound, parseIdParam } from "./httpSupport";
-
-const MONTH_LIST_CAP = 2000;
 
 async function assertOwnedTransferCategory(
   prisma: PrismaClient,

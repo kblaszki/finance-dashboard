@@ -49,9 +49,7 @@ export function createCashImportRouter(deps: CashImportDeps): Router {
         const parsed = parseCashLedgerCsvImport(csv, account.currency);
         if (!parsed.ok) {
           const headerIssue = parsed.errors.some(
-            (e) =>
-              /CSV header must be:/i.test(e.message) ||
-              /CSV header required/i.test(e.message),
+            (e) => e.code === "UNKNOWN_LEDGER_CSV_HEADER",
           );
           res.status(400).json({
             error: formatImportErrors(parsed.errors),

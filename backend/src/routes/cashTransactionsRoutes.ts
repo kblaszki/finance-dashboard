@@ -27,7 +27,7 @@ import {
   setTransactionTags,
 } from "../domain/tags";
 import { findOwnedAccount, findOwnedAccountId } from "../domain/ownedAccount";
-import { CSV_EXPORT_ROW_CAP } from "../domain/rowCaps";
+import { CSV_EXPORT_ROW_CAP, MONTH_LIST_CAP } from "../domain/rowCaps";
 import {
   badRequest,
   handleRouteError,
@@ -189,7 +189,6 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
                 accountId,
                 ...cursorWhere(page.beforeOccurredAt, page.beforeId),
               };
-        const MONTH_LIST_CAP = 2000;
         const take =
           page.mode === "month" ? MONTH_LIST_CAP + 1 : page.limit + 1;
         const rows = await prisma.cashTransaction.findMany({

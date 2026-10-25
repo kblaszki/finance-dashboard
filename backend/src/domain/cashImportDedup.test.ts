@@ -4,6 +4,7 @@ import {
   cashImportFingerprint,
   fingerprintFromDraft,
   IMPORT_FINGERPRINT_SCAN_LIMIT,
+  loadAccountImportFingerprints,
   normalizeImportDescription,
   occurredAtWindowForDrafts,
   partitionDraftsByExisting,
@@ -94,4 +95,38 @@ test("occurredAtWindowForDrafts pads one UTC day around min/max", () => {
   assert.equal(window!.gte.toISOString(), "2026-01-09T12:00:00.000Z");
   assert.equal(window!.lte.toISOString(), "2026-01-21T12:00:00.000Z");
   assert.ok(IMPORT_FINGERPRINT_SCAN_LIMIT >= 10_000);
+});
+
+test("loadAccountImportFingerprints fails closed when scan overflows", async () => {
+  const stub = {
+    cashTransaction: {
+      findMany: async () =>
+        Array.from({ length: IMPORT_FINGERPRINT_SCAN_LIMIT + 1 }, () => ({
+          type: "EXPENSE",
+          amount: 100,
+          occurredAt: new Date("2024-01-01T00:00:00.000Z"),
+          description: null,
+        })),
+    },
+  };
+  await assert.rejects(
+    () =>
+      loadAccountImportFingerprints(
+        stub as never,
+        1,
+        {
+          drafts: [
+            {
+              row: 1,
+              type: "EXPENSE",
+              amount: 1,
+              occurredAt: new Date("2024-01-01T12:00:00.000Z"),
+              description: null,
+              categoryPath: null,
+            },
+          ],
+        },
+      ),
+    /Too many ledger rows/,
+  );
 });

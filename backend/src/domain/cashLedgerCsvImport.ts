@@ -8,9 +8,13 @@ import {
 const CURRENT_HEADER_COLUMNS = CASH_LEDGER_CSV_HEADER.split(",");
 const LEGACY_HEADER_COLUMNS = LEGACY_CASH_LEDGER_CSV_HEADER.split(",");
 
+export const UNKNOWN_LEDGER_CSV_HEADER = "UNKNOWN_LEDGER_CSV_HEADER";
+
 export type ImportRowError = {
   row: number;
   message: string;
+  /** Stable client code for known failure modes (e.g. unknown header). */
+  code?: string;
 };
 
 export type SkippedTransferRow = {
@@ -79,7 +83,16 @@ export function parseCashLedgerCsvImport(
   const text = stripBom(String(csv ?? "")).replace(/\r\n/g, "\n").replace(/\r/g, "\n");
   const lines = splitCsvRecords(text);
   if (lines.length === 0) {
-    return { ok: false, errors: [{ row: 0, message: "CSV header required" }] };
+    return {
+      ok: false,
+      errors: [
+        {
+          row: 0,
+          message: "CSV header required",
+          code: UNKNOWN_LEDGER_CSV_HEADER,
+        },
+      ],
+    };
   }
 
   const headerJoined = lines[0]!.join(",");
@@ -98,6 +111,7 @@ export function parseCashLedgerCsvImport(
         {
           row: 0,
           message: `CSV header must be: ${CASH_LEDGER_CSV_HEADER}`,
+          code: UNKNOWN_LEDGER_CSV_HEADER,
         },
       ],
     };

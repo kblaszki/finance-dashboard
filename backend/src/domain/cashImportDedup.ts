@@ -2,6 +2,7 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import type { CashLedgerImportDraft } from "./cashLedgerCsvImport";
 import { CASH_TX_TYPES, type CashTxType } from "./cashLedger";
 import { majorToMinor } from "./money";
+import { badRequest } from "../lib/errors";
 
 type Db = PrismaClient | Prisma.TransactionClient;
 
@@ -127,8 +128,13 @@ export async function loadAccountImportFingerprints(
       description: true,
     },
     orderBy: [{ occurredAt: "desc" }, { id: "desc" }],
-    take: IMPORT_FINGERPRINT_SCAN_LIMIT,
+    take: IMPORT_FINGERPRINT_SCAN_LIMIT + 1,
   });
+  if (rows.length > IMPORT_FINGERPRINT_SCAN_LIMIT) {
+    throw badRequest(
+      `Too many ledger rows in the import date window (max ${IMPORT_FINGERPRINT_SCAN_LIMIT}); narrow the CSV date range`,
+    );
+  }
   const set = new Set<string>();
   for (const row of rows) {
     set.add(

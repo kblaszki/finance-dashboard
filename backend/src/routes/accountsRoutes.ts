@@ -192,16 +192,7 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
         data.name = name;
       }
       if (body.currency !== undefined) {
-        const nextCurrency = normalizeCurrency(body.currency);
-        if (nextCurrency !== account.currency) {
-          const txCount = await prisma.cashTransaction.count({
-            where: { accountId: id },
-          });
-          if (txCount > 0) {
-            throw conflict("Cannot change currency while the account has transactions");
-          }
-        }
-        data.currency = nextCurrency;
+        data.currency = normalizeCurrency(body.currency);
       }
       if (body.description !== undefined) {
         data.description = parseOptionalDescription(body.description) ?? null;
@@ -211,9 +202,24 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
         throw badRequest("No updatable fields provided");
       }
 
-      const updated = await prisma.account.update({
-        where: { id },
-        data,
+      const updated = await prisma.$transaction(async (tx) => {
+        if (
+          data.currency !== undefined &&
+          String(data.currency) !== account.currency
+        ) {
+          const txCount = await tx.cashTransaction.count({
+            where: { accountId: id },
+          });
+          if (txCount > 0) {
+            throw conflict(
+              "Cannot change currency while the account has transactions",
+            );
+          }
+        }
+        return tx.account.update({
+          where: { id },
+          data,
+        });
       });
       res.json(accountPayload(updated));
     } catch (e: unknown) {
@@ -229,15 +235,19 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
     try {
       const id = parseIdParam(req.params.id);
       await findOwnedAccount(prisma, uid(req), id);
-      const transferCount = await prisma.cashTransfer.count({
-        where: {
-          OR: [{ fromAccountId: id }, { toAccountId: id }],
-        },
+      await prisma.$transaction(async (tx) => {
+        const transferCount = await tx.cashTransfer.count({
+          where: {
+            OR: [{ fromAccountId: id }, { toAccountId: id }],
+          },
+        });
+        if (transferCount > 0) {
+          throw conflict(
+            "Cannot delete account while it has transfers; delete transfers first",
+          );
+        }
+        await tx.account.delete({ where: { id } });
       });
-      if (transferCount > 0) {
-        throw conflict("Cannot delete account while it has transfers; delete transfers first");
-      }
-      await prisma.account.delete({ where: { id } });
       res.status(204).send();
     } catch (e: unknown) {
       handleRouteError(res, e, "Delete account failed");

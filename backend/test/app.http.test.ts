@@ -1986,6 +1986,11 @@ test("tags CRUD and cash transaction tagIds", async () => {
     .send({ name: "Hijack" });
   assert.equal(foreignPatch.status, 404);
 
+  const foreignDelete = await request(app)
+    .delete(`/api/tags/${tagId}`)
+    .set("Authorization", `Bearer ${otherToken}`);
+  assert.equal(foreignDelete.status, 404);
+
   const account = await request(app)
     .post("/api/accounts")
     .set("Authorization", `Bearer ${token}`)

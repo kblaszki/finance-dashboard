@@ -37,6 +37,8 @@ vi.mock("../api/transfersApi", async () => {
 import { fetchAccounts } from "../api/accountsApi";
 import { fetchCategories } from "../api/categoriesApi";
 import {
+  createTransfer,
+  deleteTransfer,
   exportTransfersCsv,
   fetchTransfers,
   importTransfersCsv,
@@ -85,6 +87,70 @@ function renderTransfers() {
     </CurrencyProvider>,
   );
 }
+
+const transferRow = {
+  id: 9,
+  fromAccountId: 1,
+  toAccountId: 2,
+  fromCurrency: "PLN",
+  toCurrency: "PLN",
+  amountFrom: 25,
+  amountTo: 25,
+  fxRate: null as number | null,
+  occurredAt: "2026-01-15T12:00:00.000Z",
+  description: "Move",
+  categoryId: null as number | null,
+  createdAt: "2026-01-15T12:00:00.000Z",
+};
+
+describe("TransfersPage CRUD", () => {
+  beforeEach(() => {
+    cleanup();
+    vi.clearAllMocks();
+    vi.mocked(fetchAccounts).mockResolvedValue(accounts);
+    vi.mocked(fetchCategories).mockResolvedValue([
+      {
+        id: 10,
+        name: "Internal transfer",
+        parentId: null,
+        ledgerType: "TRANSFER",
+        createdAt: "2026-01-01T00:00:00.000Z",
+      },
+    ]);
+    vi.mocked(fetchTransfers).mockResolvedValue({
+      items: [transferRow],
+      nextCursor: null,
+    });
+    vi.mocked(createTransfer).mockResolvedValue(transferRow);
+    vi.mocked(deleteTransfer).mockResolvedValue(undefined);
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+  });
+
+  it("creates a transfer from the create row and deletes an existing one", async () => {
+    renderTransfers();
+    expect(await screen.findByText("Move")).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText("New from account"), {
+      target: { value: "1" },
+    });
+    fireEvent.change(screen.getByLabelText("New to account"), {
+      target: { value: "2" },
+    });
+    fireEvent.change(screen.getByLabelText("New amount from"), {
+      target: { value: "25" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Add transfer" }));
+
+    await waitFor(() => {
+      expect(createTransfer).toHaveBeenCalled();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete transfer 9" }));
+    await waitFor(() => {
+      expect(deleteTransfer).toHaveBeenCalledWith(9);
+    });
+  });
+});
 
 describe("TransfersPage CSV import/export", () => {
   beforeEach(() => {

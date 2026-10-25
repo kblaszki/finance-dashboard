@@ -27,10 +27,13 @@ vi.mock("../api/categoryDescriptionRulesApi", () => ({
 }));
 
 import {
+  createCategory,
+  deleteCategory,
   exportCategoriesCsv,
   fetchCategories,
   importCategoriesCsv,
   previewCategoriesImport,
+  updateCategory,
 } from "../api/categoriesApi";
 import {
   createCategoryDescriptionRule,
@@ -144,6 +147,65 @@ describe("CategoriesPage CSV import/export", () => {
       await screen.findByText("All 1 category already exists."),
     ).toBeTruthy();
     expect(importCategoriesCsv).not.toHaveBeenCalled();
+  });
+});
+
+describe("CategoriesPage CRUD", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(fetchCategories).mockResolvedValue(categories);
+    vi.mocked(fetchCategoryDescriptionRules).mockResolvedValue([]);
+    vi.mocked(createCategory).mockResolvedValue({
+      id: 3,
+      name: "Groceries",
+      parentId: 1,
+      ledgerType: "EXPENSE",
+      createdAt: "2026-01-02T00:00:00.000Z",
+    });
+    vi.mocked(updateCategory).mockResolvedValue({
+      id: 1,
+      name: "Foods",
+      parentId: null,
+      ledgerType: "EXPENSE",
+      createdAt: "2026-01-01T00:00:00.000Z",
+    });
+    vi.mocked(deleteCategory).mockResolvedValue(undefined);
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+  });
+
+  it("creates, renames, and deletes a category", async () => {
+    renderCategories();
+    const deleteFood = await screen.findByRole("button", {
+      name: "Delete Food",
+    });
+
+    const nameInputs = screen.getAllByLabelText("New category name");
+    // Expense section create row is second (Income, Expense, Transfer).
+    fireEvent.change(nameInputs[1]!, { target: { value: "Groceries" } });
+    fireEvent.click(screen.getAllByRole("button", { name: "Add category" })[1]!);
+
+    await waitFor(() => {
+      expect(createCategory).toHaveBeenCalledWith({
+        name: "Groceries",
+        parentId: null,
+        ledgerType: "EXPENSE",
+      });
+    });
+
+    const foodCell = deleteFood.closest("tr")?.querySelector(".category-root");
+    expect(foodCell).toBeTruthy();
+    fireEvent.doubleClick(foodCell!);
+    const editName = screen.getByLabelText("Edit name");
+    fireEvent.change(editName, { target: { value: "Foods" } });
+    fireEvent.keyDown(editName, { key: "Enter" });
+    await waitFor(() => {
+      expect(updateCategory).toHaveBeenCalledWith(1, { name: "Foods" });
+    });
+
+    fireEvent.click(deleteFood);
+    await waitFor(() => {
+      expect(deleteCategory).toHaveBeenCalledWith(1);
+    });
   });
 });
 

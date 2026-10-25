@@ -30,7 +30,7 @@ Hub: [docs/README.md](../README.md). Checklist: [run-tests-and-coverage.md](../h
   - `auth.http.test.ts` — health + auth contract tests (split from the monolith).
   - `app.http.test.ts` — primary **contract + IDOR** suite (accounts, categories, tags, cash ledger import/export, CSV presets, description rules, transfers, statistics). New user-scoped resources should add foreign-user `404` cases.
   - `schema.integration.test.ts`, `migrateDeploy.test.ts`.
-- Soft row caps (`domain/rowCaps.ts`: export 50k, balance-history 100k, stats period 50k) plus month-list 2000 on cash/transfers; overflow → `400` (documented in [api.md](api.md)). SQL aggregation remains deferred until volume requires it.
+- Soft row caps (`domain/rowCaps.ts`: export 50k, balance-history 100k, stats period 50k, month-list 2000) plus import fingerprint scan limits (50k) that fail closed on overflow → `400` (documented in [api.md](api.md)). SQL aggregation and optional E2E remain deferred until volume or multi-page regressions justify them.
 - Ephemeral SQLite: `prismaTestClient.ts` + `setupTestEnv.ts`.
 
 ### Coverage (c8)

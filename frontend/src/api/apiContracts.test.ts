@@ -2,19 +2,24 @@ import { describe, expect, it } from "vitest";
 import {
   authConfigFixture,
   authUserFixture,
+  cashTransferFixture,
+  categoriesImportPreviewFixture,
   categoryDescriptionRuleFixture,
   importColumnsPreviewFixture,
   importPreviewFixture,
+  periodSummaryFixture,
   transferImportPreviewFixture,
   validateApiContractFixtures,
 } from "./fixtures/apiContracts";
 import type { AuthConfig, AuthUser } from "./authApi";
+import type { CategoriesImportPreview } from "./categoriesApi";
 import type { CategoryDescriptionRule } from "./categoryDescriptionRulesApi";
+import type { PeriodSummary } from "./statisticsApi";
 import type {
   ImportColumnsPreview,
   ImportPreviewResult,
 } from "./transactionsApi";
-import type { TransferImportPreview } from "./transfersApi";
+import type { CashTransfer, TransferImportPreview } from "./transfersApi";
 
 describe("API contract fixtures", () => {
   it("validates fixture shapes against frontend types", () => {
@@ -56,5 +61,23 @@ describe("API contract fixtures", () => {
     const preview: TransferImportPreview = transferImportPreviewFixture;
     expect(preview.rows.length).toBe(1);
     expect(preview.accounts[0]?.suggestedAccountId).toBe(1);
+  });
+
+  it("categories import preview fixture matches CategoriesImportPreview", () => {
+    const preview: CategoriesImportPreview = categoriesImportPreviewFixture;
+    expect(preview.toCreate).toBe(1);
+    expect(preview.rows[1]?.status).toBe("create");
+  });
+
+  it("cash transfer fixture matches CashTransfer", () => {
+    const transfer: CashTransfer = cashTransferFixture;
+    expect(transfer.fromCurrency).toBe("PLN");
+    expect(transfer.amountFrom).toBe(100);
+  });
+
+  it("period summary fixture matches PeriodSummary", () => {
+    const summary: PeriodSummary = periodSummaryFixture;
+    expect(summary.net).toBe(600);
+    expect(summary.transfers).toBe(50);
   });
 });

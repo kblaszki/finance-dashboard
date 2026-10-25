@@ -27,7 +27,7 @@ Hobby-scale guardrails in `backend/src/domain/rowCaps.ts` (and month-list caps o
 | `CSV_EXPORT_ROW_CAP` | 50_000 | `GET …/transactions/export`, `GET /api/transfers/export` |
 | `BALANCE_HISTORY_TX_CAP` | 100_000 | `GET /api/accounts/:id/balance-history` |
 | `STATS_PERIOD_ROW_CAP` | 50_000 | Statistics period loaders (`category-breakdown`, `period-summary`, `tag-breakdown`, `cashflow-history`, `cashflow-rolling-12m`) |
-| Month list | 2_000 | `GET …/transactions?month=…`, `GET /api/transfers?month=…` (omit `month` and use cursor pagination when over) |
+| `MONTH_LIST_CAP` | 2_000 | `GET …/transactions?month=…`, `GET /api/transfers?month=…` (omit `month` and use cursor pagination when over) |
 
 ## Health
 

@@ -1,10 +1,15 @@
 import type { AuthConfig, AuthUser } from "../authApi";
+import type { CategoriesImportPreview } from "../categoriesApi";
 import type { CategoryDescriptionRule } from "../categoryDescriptionRulesApi";
+import type { PeriodSummary } from "../statisticsApi";
 import type {
   ImportColumnsPreview,
   ImportPreviewResult,
 } from "../transactionsApi";
-import type { TransferImportPreview } from "../transfersApi";
+import type {
+  CashTransfer,
+  TransferImportPreview,
+} from "../transfersApi";
 
 export const authUserFixture: AuthUser = {
   id: 1,
@@ -64,6 +69,42 @@ export const categoryDescriptionRuleFixture: CategoryDescriptionRule = {
   categoryId: 2,
   createdAt: "2026-01-01T00:00:00.000Z",
   updatedAt: "2026-01-01T00:00:00.000Z",
+};
+
+export const categoriesImportPreviewFixture: CategoriesImportPreview = {
+  rowCount: 2,
+  existing: 1,
+  toCreate: 1,
+  rows: [
+    { path: "Food", ledgerType: "EXPENSE", status: "exists" },
+    { path: "Food/Groceries", ledgerType: "EXPENSE", status: "create" },
+  ],
+};
+
+export const cashTransferFixture: CashTransfer = {
+  id: 1,
+  fromAccountId: 1,
+  toAccountId: 2,
+  fromCurrency: "PLN",
+  toCurrency: "PLN",
+  amountFrom: 100,
+  amountTo: 100,
+  fxRate: null,
+  occurredAt: "2026-01-01T12:00:00.000Z",
+  description: "Move",
+  categoryId: null,
+  createdAt: "2026-01-01T12:00:00.000Z",
+};
+
+export const periodSummaryFixture: PeriodSummary = {
+  month: "2026-01",
+  period: "month",
+  label: "2026-01",
+  currency: "PLN",
+  income: 1000,
+  expense: 400,
+  net: 600,
+  transfers: 50,
 };
 
 export const transferImportPreviewFixture: TransferImportPreview = {
@@ -164,6 +205,37 @@ function assertTransferImportPreviewShape(value: TransferImportPreview): void {
   if (!Array.isArray(value.rows)) throw new Error("transfer.rows");
 }
 
+function assertCategoriesImportPreviewShape(
+  value: CategoriesImportPreview,
+): void {
+  if (typeof value.rowCount !== "number") throw new Error("catImport.rowCount");
+  if (typeof value.existing !== "number") throw new Error("catImport.existing");
+  if (typeof value.toCreate !== "number") throw new Error("catImport.toCreate");
+  if (!Array.isArray(value.rows)) throw new Error("catImport.rows");
+}
+
+function assertCashTransferShape(value: CashTransfer): void {
+  if (typeof value.id !== "number") throw new Error("transfer.id");
+  if (typeof value.fromAccountId !== "number") {
+    throw new Error("transfer.fromAccountId");
+  }
+  if (typeof value.amountFrom !== "number") {
+    throw new Error("transfer.amountFrom");
+  }
+  if (typeof value.occurredAt !== "string") {
+    throw new Error("transfer.occurredAt");
+  }
+}
+
+function assertPeriodSummaryShape(value: PeriodSummary): void {
+  if (typeof value.month !== "string") throw new Error("period.month");
+  if (typeof value.currency !== "string") throw new Error("period.currency");
+  if (typeof value.income !== "number") throw new Error("period.income");
+  if (typeof value.expense !== "number") throw new Error("period.expense");
+  if (typeof value.net !== "number") throw new Error("period.net");
+  if (typeof value.transfers !== "number") throw new Error("period.transfers");
+}
+
 export function validateApiContractFixtures(): void {
   assertAuthUserShape(authUserFixture);
   assertAuthConfigShape(authConfigFixture);
@@ -171,4 +243,7 @@ export function validateApiContractFixtures(): void {
   assertImportColumnsPreviewShape(importColumnsPreviewFixture);
   assertDescriptionRuleShape(categoryDescriptionRuleFixture);
   assertTransferImportPreviewShape(transferImportPreviewFixture);
+  assertCategoriesImportPreviewShape(categoriesImportPreviewFixture);
+  assertCashTransferShape(cashTransferFixture);
+  assertPeriodSummaryShape(periodSummaryFixture);
 }
