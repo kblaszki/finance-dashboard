@@ -58,6 +58,8 @@ sequenceDiagram
 
 Money and FX conversion live in `domain/fx*.ts` / `nbpClient.ts` — not in route handlers or the UI. Net-worth still sums per selected currency without FX (FR-038 planned). See [fullstack-practices.md](fullstack-practices.md).
 
+**Planned (not shipped):** holdings, lots, asset trades, and market-data sync — schema/domain sketch and tenancy rules in [holdings-market-architecture.md](holdings-market-architecture.md). Do not add Prisma models until an implementation plan follows that spike.
+
 ## Auth
 
 - Register/login return a JWT (`signToken`, HS256, 7-day expiry) that includes `userId` and `tokenVersion`.

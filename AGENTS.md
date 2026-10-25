@@ -62,6 +62,7 @@ Shipped FR map: [docs/reference/requirements.md](docs/reference/requirements.md)
 | Doc | Use when |
 |-----|----------|
 | [docs/explanation/architecture.md](docs/explanation/architecture.md) | Auth, request flow, modules |
+| [docs/explanation/holdings-market-architecture.md](docs/explanation/holdings-market-architecture.md) | Holdings / market-data architecture spike (pre-implementation) |
 | [docs/explanation/fullstack-practices.md](docs/explanation/fullstack-practices.md) | Fullstack practices rubric |
 
 ## Cursor rules

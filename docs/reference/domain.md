@@ -186,3 +186,7 @@ Global (not user-scoped) NBP table A mid for one foreign currency on one calenda
 | createdAt | DateTime | Default now |
 
 Unique `[rateDate, currency]`; index `[currency, rateDate]`. Domain: `backend/src/domain/fx.ts`, `fxRates.ts`, `nbpClient.ts`. Sync CLI: `npm run fx:sync`.
+
+## Planned: holdings and market data
+
+No Prisma models yet. Schema/domain sketch and tenancy rules: [holdings-market-architecture.md](../explanation/holdings-market-architecture.md). Until migrated, `Account.totalBalance` remains cash-only.

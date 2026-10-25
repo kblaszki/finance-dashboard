@@ -75,6 +75,7 @@ Never load all docs. Prefer reference for facts, how-to for tasks, explanation f
 | Doc | Use when |
 |-----|----------|
 | [architecture.md](explanation/architecture.md) | Auth and request flow |
+| [holdings-market-architecture.md](explanation/holdings-market-architecture.md) | Spike: holdings / lots / market-data layout (not shipped) |
 | [fullstack-practices.md](explanation/fullstack-practices.md) | Fullstack practices rubric |
 
 ## Meta

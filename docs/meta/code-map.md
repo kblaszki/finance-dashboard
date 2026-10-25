@@ -42,6 +42,7 @@ JWT auth, multi-type accounts, category tree + tags, cash ledger + transfers, CS
 | Net worth domain | `backend/src/domain/netWorth.ts` |
 | FX / NBP rates | `backend/src/domain/fx.ts`, `fxRates.ts`, `nbpClient.ts` |
 | FX sync CLI | `backend/src/scripts/syncFxRates.ts` |
+| Holdings / market (planned) | Spike only: [docs/explanation/holdings-market-architecture.md](../explanation/holdings-market-architecture.md) — no `domain/holdings*` yet |
 | Router mount | `backend/src/routes/mountRouters.ts` |
 | HTTP helpers / errors | `backend/src/routes/httpSupport.ts`, `backend/src/lib/errors.ts` |
 | Route uid helper | `backend/src/routes/routeSupport.ts` |
