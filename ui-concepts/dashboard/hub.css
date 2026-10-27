@@ -57,6 +57,13 @@
   text-decoration: none;
 }
 
+.hub-card--new {
+  background:
+    linear-gradient(145deg, rgba(213, 235, 227, 0.55), transparent 55%),
+    var(--bg-elevated);
+  border-color: rgba(47, 111, 94, 0.35);
+}
+
 .hub-card__num {
   font-family: var(--font-mono);
   font-size: 0.8rem;
