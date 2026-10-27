@@ -26,6 +26,12 @@ Static mock data (PLN). Not wired to the API. Use this matrix when picking a dir
 | 18 | [Quiet luxury](18-quiet-luxury/) | Jaki jest jeden sygnał? | Premium single number | Maximum calm and confidence | Very low |
 | 19 | [Milestone map](19-milestone-map/) | Jaki jest kolejny przystanek? | Visual journey map | Goal-oriented, visual users | Medium |
 | 20 | [Adaptive home](20-adaptive-home/) | Jaka jest najlepsza decyzja teraz? | Recommended monthly split | Personalized financial guidance | Medium |
+| 21 | [Emerald glass](21-emerald-glass/) | Executive 06 in glass style | Net-worth chart + core KPIs | Premium dark interface | Medium |
+| 22 | [Nordic light](22-nordic-light/) | Executive 06 in Nordic style | Net-worth chart + core KPIs | Maximum daytime readability | Low |
+| 23 | [Midnight aurora](23-midnight-aurora/) | Executive 06 in aurora style | Net-worth chart + core KPIs | Immersive dark-mode users | Medium |
+| 24 | [Warm editorial](24-warm-editorial/) | Executive 06 in editorial style | Net-worth chart + core KPIs | Human, less “software-like” finance | Low |
+| 25 | [Neo brutalist](25-neo-brutalist/) | Executive 06 in brutalist style | Net-worth chart + core KPIs | Bold, distinctive brand direction | High |
+| 26 | [Soft gradient](26-soft-gradient/) | Executive 06 in consumer style | Net-worth chart + core KPIs | Friendly mainstream product | Medium |
 
 ## Suggested discussion prompts
 
@@ -33,7 +39,8 @@ Static mock data (PLN). Not wired to the API. Use this matrix when picking a dir
 2. Strong mainstream candidates: **06** (structured executive) and **10** (friendly bento).
 3. Strong differentiated candidates: **07** (goals) and **08** (editorial).
 4. New hybrids closest to the brief: **11** (06+05), **13** (06+07), **20** (06+07+05).
-5. Do not implement React until one row (or hybrid) is chosen.
+5. CSS-only executive comparison: **21–26** share the same information architecture. This isolates visual-style preference from content preference.
+6. Do not implement React until one row (or hybrid) is chosen.
 
 ## Shared assets
 
