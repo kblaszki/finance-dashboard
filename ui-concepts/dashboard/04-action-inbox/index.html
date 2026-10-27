@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>04 — Action inbox</title>
+    <link rel="stylesheet" href="../_shared/tokens.css" />
+    <link rel="stylesheet" href="../_shared/base.css" />
+    <link rel="stylesheet" href="demo.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="sidebar__brand">Finance</div>
+        <nav class="sidebar__nav" aria-label="Main">
+          <a class="is-active" href="#">Dashboard</a>
+          <a href="#">Accounts</a>
+          <a href="#">Transfers</a>
+          <a href="#">Statistics</a>
+          <a href="#">Settings</a>
+        </nav>
+        <p class="sidebar__meta">Concept 04 · action inbox</p>
+      </aside>
+      <div class="main-column">
+        <header class="topbar">
+          <span class="topbar__title">Dashboard</span>
+          <div class="topbar__right">
+            <div class="mini-metrics" aria-label="Background KPIs">
+              <span>NW <strong class="mono">482 k</strong></span>
+              <span>Save <strong class="positive">24,6%</strong></span>
+            </div>
+            <span class="currency-pill">Currency <strong>PLN</strong></span>
+          </div>
+        </header>
+        <div class="content">
+          <div class="concept-banner">
+            <strong>04 · Action inbox</strong>
+            <span class="muted">First question: what needs me today?</span>
+            <a href="../index.html">← All demos</a>
+          </div>
+
+          <section class="alerts" aria-label="Alerts">
+            <article class="alert alert--warn">
+              <h2>Budget · Groceries</h2>
+              <p>112% of October limit (1&nbsp;680 / 1&nbsp;500 zł).</p>
+              <a href="#">Review expenses →</a>
+            </article>
+            <article class="alert alert--neg">
+              <h2>Credit card near limit</h2>
+              <p>mBank Visa debt −11&nbsp;200 zł · 89% of soft limit.</p>
+              <a href="#">Open account →</a>
+            </article>
+            <article class="alert">
+              <h2>Setup almost done</h2>
+              <p>Add one more income category to finish the checklist.</p>
+              <a href="#">Continue setup →</a>
+            </article>
+          </section>
+
+          <div class="inbox-grid">
+            <article class="panel">
+              <h2>Quick actions</h2>
+              <div class="cta-row">
+                <button type="button" class="cta cta--primary">Add expense</button>
+                <button type="button" class="cta">Import CSV</button>
+                <button type="button" class="cta">New transfer</button>
+              </div>
+            </article>
+
+            <article class="panel feed">
+              <h2>Recent activity</h2>
+              <ol>
+                <li>
+                  <span class="when">Today · 09:14</span>
+                  <strong>Transfer</strong> Checking → Brokerage · 2&nbsp;000 zł
+                </li>
+                <li>
+                  <span class="when">Yesterday</span>
+                  <strong>Import</strong> mBank CSV · 18 rows · 2 skipped
+                </li>
+                <li>
+                  <span class="when">Mon</span>
+                  <strong>Expense</strong> Żabka · 46,20 zł · Food
+                </li>
+                <li>
+                  <span class="when">Mon</span>
+                  <strong>Income</strong> Payroll · 12&nbsp;400 zł
+                </li>
+                <li>
+                  <span class="when">Sun</span>
+                  <strong>Expense</strong> Netflix · 43 zł · Subs
+                </li>
+              </ol>
+            </article>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

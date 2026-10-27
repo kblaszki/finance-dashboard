@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>01 — Wealth pulse</title>
+    <link rel="stylesheet" href="../_shared/tokens.css" />
+    <link rel="stylesheet" href="../_shared/base.css" />
+    <link rel="stylesheet" href="demo.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="sidebar__brand">Finance</div>
+        <nav class="sidebar__nav" aria-label="Main">
+          <a class="is-active" href="#">Dashboard</a>
+          <a href="#">Accounts</a>
+          <a href="#">Transfers</a>
+          <a href="#">Statistics</a>
+          <a href="#">Settings</a>
+        </nav>
+        <p class="sidebar__meta">Concept 01 · wealth pulse</p>
+      </aside>
+      <div class="main-column">
+        <header class="topbar">
+          <span class="topbar__title">Dashboard</span>
+          <div class="topbar__right">
+            <span class="currency-pill" title="Mock currency switcher">
+              Currency <strong>PLN</strong>
+            </span>
+          </div>
+        </header>
+        <div class="content">
+          <div class="concept-banner">
+            <strong>01 · Wealth pulse</strong>
+            <span class="muted">First question: how much do I have, and in what?</span>
+            <a href="../index.html">← All demos</a>
+          </div>
+
+          <section class="wealth-hero">
+            <p class="wealth-hero__label">Net worth · PLN</p>
+            <p class="wealth-hero__value mono">482&nbsp;340,00&nbsp;zł</p>
+            <p class="wealth-hero__delta positive">+12&nbsp;480 zł · +2,7% vs last month</p>
+            <svg class="wealth-hero__spark" viewBox="0 0 160 36" aria-hidden="true">
+              <polyline
+                fill="none"
+                stroke="var(--accent)"
+                stroke-width="2"
+                points="0,28 20,24 40,26 60,18 80,20 100,12 120,14 140,8 160,6"
+              />
+            </svg>
+          </section>
+
+          <section class="wealth-grid">
+            <article class="panel buckets">
+              <h2>Allocation</h2>
+              <div class="buckets__layout">
+                <div class="donut" aria-hidden="true">
+                  <svg viewBox="0 0 42 42">
+                    <circle cx="21" cy="21" r="15.9" fill="transparent" stroke="var(--border)" stroke-width="6" />
+                    <circle cx="21" cy="21" r="15.9" fill="transparent" stroke="var(--chart-1)" stroke-width="6"
+                      stroke-dasharray="40 60" stroke-dashoffset="25" />
+                    <circle cx="21" cy="21" r="15.9" fill="transparent" stroke="var(--chart-3)" stroke-width="6"
+                      stroke-dasharray="28 72" stroke-dashoffset="-15" />
+                    <circle cx="21" cy="21" r="15.9" fill="transparent" stroke="var(--chart-2)" stroke-width="6"
+                      stroke-dasharray="12 88" stroke-dashoffset="-43" />
+                    <circle cx="21" cy="21" r="15.9" fill="transparent" stroke="var(--chart-4)" stroke-width="6"
+                      stroke-dasharray="8 92" stroke-dashoffset="-55" />
+                  </svg>
+                </div>
+                <ul class="bucket-list">
+                  <li><span class="swatch" style="--c: var(--chart-1)"></span> Cash <em>186&nbsp;k</em></li>
+                  <li><span class="swatch" style="--c: var(--chart-3)"></span> Stock <em>210&nbsp;k</em></li>
+                  <li><span class="swatch" style="--c: var(--chart-2)"></span> Crypto <em>48&nbsp;k</em></li>
+                  <li><span class="swatch" style="--c: var(--chart-4)"></span> Metal <em>28&nbsp;k</em></li>
+                  <li><span class="swatch" style="--c: var(--chart-5)"></span> Other <em>22&nbsp;k</em></li>
+                </ul>
+              </div>
+              <div class="liabilities">
+                <span>Liabilities</span>
+                <div class="liabilities__bar"><i style="width: 18%"></i></div>
+                <strong class="negative">−12&nbsp;400 zł</strong>
+              </div>
+            </article>
+
+            <article class="panel top-accounts">
+              <h2>Largest accounts</h2>
+              <ul>
+                <li>
+                  <div>
+                    <strong>mBank Checking</strong>
+                    <span class="muted">BANK</span>
+                  </div>
+                  <span class="mono">94&nbsp;200 zł</span>
+                </li>
+                <li>
+                  <div>
+                    <strong>X-Trade Broker</strong>
+                    <span class="muted">BROKERAGE</span>
+                  </div>
+                  <span class="mono">168&nbsp;500 zł</span>
+                </li>
+                <li>
+                  <div>
+                    <strong>IKE PKO</strong>
+                    <span class="muted">IKE</span>
+                  </div>
+                  <span class="mono">41&nbsp;800 zł</span>
+                </li>
+              </ul>
+              <p class="panel__foot muted">Cashflow lives on Statistics — this screen stays wealth-first.</p>
+            </article>
+          </section>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

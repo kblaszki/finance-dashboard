@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>02 — Cashflow rhythm</title>
+    <link rel="stylesheet" href="../_shared/tokens.css" />
+    <link rel="stylesheet" href="../_shared/base.css" />
+    <link rel="stylesheet" href="demo.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="sidebar__brand">Finance</div>
+        <nav class="sidebar__nav" aria-label="Main">
+          <a class="is-active" href="#">Dashboard</a>
+          <a href="#">Accounts</a>
+          <a href="#">Transfers</a>
+          <a href="#">Statistics</a>
+          <a href="#">Settings</a>
+        </nav>
+        <p class="sidebar__meta">Concept 02 · cashflow rhythm</p>
+      </aside>
+      <div class="main-column">
+        <header class="topbar">
+          <span class="topbar__title">Dashboard</span>
+          <div class="topbar__right">
+            <span class="chip muted">Net worth 482 k zł</span>
+            <span class="currency-pill">Currency <strong>PLN</strong></span>
+          </div>
+        </header>
+        <div class="content content--wide">
+          <div class="concept-banner">
+            <strong>02 · Cashflow rhythm</strong>
+            <span class="muted">First question: can I afford this lifestyle?</span>
+            <a href="../index.html">← All demos</a>
+          </div>
+
+          <section class="cf-hero">
+            <div class="cf-hero__rate">
+              <p class="cf-hero__label">Savings rate · 12m avg</p>
+              <p class="cf-hero__big positive">24,6%</p>
+            </div>
+            <div class="cf-kpis">
+              <div>
+                <span class="muted">Avg income</span>
+                <strong class="mono positive">18&nbsp;420 zł</strong>
+              </div>
+              <div>
+                <span class="muted">Avg expense</span>
+                <strong class="mono negative">13&nbsp;890 zł</strong>
+              </div>
+              <div>
+                <span class="muted">Avg net</span>
+                <strong class="mono">4&nbsp;530 zł</strong>
+              </div>
+            </div>
+          </section>
+
+          <div class="cf-layout">
+            <article class="panel chart-panel">
+              <header class="chart-panel__head">
+                <h2>Cashflow · last 12 months</h2>
+                <span class="muted">Income / expense bars · net line</span>
+              </header>
+              <div class="bars" aria-hidden="true">
+                <div class="bars__col"><i class="inc" style="--h: 72%"></i><i class="exp" style="--h: 55%"></i><span>N</span></div>
+                <div class="bars__col"><i class="inc" style="--h: 68%"></i><i class="exp" style="--h: 60%"></i><span>D</span></div>
+                <div class="bars__col"><i class="inc" style="--h: 80%"></i><i class="exp" style="--h: 52%"></i><span>J</span></div>
+                <div class="bars__col"><i class="inc" style="--h: 70%"></i><i class="exp" style="--h: 58%"></i><span>F</span></div>
+                <div class="bars__col"><i class="inc" style="--h: 74%"></i><i class="exp" style="--h: 50%"></i><span>M</span></div>
+                <div class="bars__col"><i class="inc" style="--h: 90%"></i><i class="exp" style="--h: 62%"></i><span>A</span></div>
+                <div class="bars__col"><i class="inc" style="--h: 66%"></i><i class="exp" style="--h: 64%"></i><span>M</span></div>
+                <div class="bars__col"><i class="inc" style="--h: 78%"></i><i class="exp" style="--h: 48%"></i><span>J</span></div>
+                <div class="bars__col"><i class="inc" style="--h: 72%"></i><i class="exp" style="--h: 56%"></i><span>J</span></div>
+                <div class="bars__col"><i class="inc" style="--h: 84%"></i><i class="exp" style="--h: 54%"></i><span>A</span></div>
+                <div class="bars__col"><i class="inc" style="--h: 76%"></i><i class="exp" style="--h: 59%"></i><span>S</span></div>
+                <div class="bars__col"><i class="inc" style="--h: 88%"></i><i class="exp" style="--h: 51%"></i><span>O</span></div>
+              </div>
+              <svg class="net-line" viewBox="0 0 240 40" preserveAspectRatio="none" aria-hidden="true">
+                <polyline fill="none" stroke="var(--chart-4)" stroke-width="2"
+                  points="10,28 30,22 50,18 70,24 90,16 110,20 130,26 150,12 170,14 190,10 210,15 230,8" />
+              </svg>
+            </article>
+
+            <aside class="panel side-strip">
+              <h2>This month</h2>
+              <dl>
+                <div>
+                  <dt>Income vs prior</dt>
+                  <dd class="positive">+6,2%</dd>
+                </div>
+                <div>
+                  <dt>Expense vs prior</dt>
+                  <dd class="negative">+3,1%</dd>
+                </div>
+                <div>
+                  <dt>Net vs prior</dt>
+                  <dd class="positive">+11%</dd>
+                </div>
+              </dl>
+              <div class="runway">
+                <p class="cf-hero__label">Cash runway</p>
+                <p class="runway__value mono">13,4 <span>months</span></p>
+                <p class="muted">Cash buffer ÷ avg monthly expense</p>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

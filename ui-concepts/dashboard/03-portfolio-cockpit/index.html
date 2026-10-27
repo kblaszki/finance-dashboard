@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>03 — Portfolio cockpit</title>
+    <link rel="stylesheet" href="../_shared/tokens.css" />
+    <link rel="stylesheet" href="../_shared/base.css" />
+    <link rel="stylesheet" href="demo.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="sidebar__brand">Finance</div>
+        <nav class="sidebar__nav" aria-label="Main">
+          <a class="is-active" href="#">Dashboard</a>
+          <a href="#">Portfolio</a>
+          <a href="#">Accounts</a>
+          <a href="#">Statistics</a>
+          <a href="#">Settings</a>
+        </nav>
+        <p class="sidebar__meta">Concept 03 · portfolio cockpit</p>
+      </aside>
+      <div class="main-column">
+        <header class="topbar">
+          <span class="topbar__title">Dashboard · portfolio</span>
+          <div class="topbar__right">
+            <span class="currency-pill">Currency <strong>PLN</strong></span>
+          </div>
+        </header>
+        <div class="content content--wide">
+          <div class="concept-banner">
+            <strong>03 · Portfolio cockpit</strong>
+            <span class="muted">First question: what do my positions do today?</span>
+            <a href="../index.html">← All demos</a>
+          </div>
+
+          <section class="pf-hero">
+            <div>
+              <p class="label">Invested value</p>
+              <p class="pf-hero__value mono">296&nbsp;120,00&nbsp;zł</p>
+            </div>
+            <div>
+              <p class="label">Unrealized P&amp;L</p>
+              <p class="pf-hero__pnl positive mono">+38&nbsp;420 zł · +14,9%</p>
+            </div>
+            <div class="cash-buffer">
+              <p class="label">Cash buffer</p>
+              <p class="mono">186&nbsp;220 zł</p>
+              <p class="muted">Not in positions · liquid sleeve</p>
+            </div>
+          </section>
+
+          <div class="filters" role="group" aria-label="Bucket filter">
+            <button type="button" class="is-on">All</button>
+            <button type="button">Stock</button>
+            <button type="button">ETF</button>
+            <button type="button">Crypto</button>
+            <button type="button">Metal</button>
+          </div>
+
+          <div class="pf-grid">
+            <article class="panel">
+              <h2>Top positions</h2>
+              <table class="pos-table">
+                <thead>
+                  <tr>
+                    <th>Ticker</th>
+                    <th>Qty</th>
+                    <th class="num">Value</th>
+                    <th class="num">Day</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>CDR</strong> <span class="muted">CD Projekt</span></td>
+                    <td class="mono">120</td>
+                    <td class="num mono">42&nbsp;600</td>
+                    <td class="num positive">+1,4%</td>
+                  </tr>
+                  <tr>
+                    <td><strong>VWCE</strong> <span class="muted">Vanguard FTSE</span></td>
+                    <td class="mono">85</td>
+                    <td class="num mono">98&nbsp;200</td>
+                    <td class="num positive">+0,3%</td>
+                  </tr>
+                  <tr>
+                    <td><strong>BTC</strong> <span class="muted">Bitcoin</span></td>
+                    <td class="mono">0,42</td>
+                    <td class="num mono">48&nbsp;100</td>
+                    <td class="num negative">−2,1%</td>
+                  </tr>
+                  <tr>
+                    <td><strong>PKO</strong> <span class="muted">PKO BP</span></td>
+                    <td class="mono">400</td>
+                    <td class="num mono">26&nbsp;800</td>
+                    <td class="num positive">+0,8%</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Au</strong> <span class="muted">Gold bars</span></td>
+                    <td class="mono">180 g</td>
+                    <td class="num mono">28&nbsp;400</td>
+                    <td class="num">0,0%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </article>
+
+            <article class="panel alloc">
+              <h2>Allocation</h2>
+              <ul class="alloc-bars">
+                <li>
+                  <span>Equity</span>
+                  <div><i style="width: 48%; background: var(--chart-3)"></i></div>
+                  <em>48%</em>
+                </li>
+                <li>
+                  <span>ETF</span>
+                  <div><i style="width: 33%; background: var(--chart-1)"></i></div>
+                  <em>33%</em>
+                </li>
+                <li>
+                  <span>Crypto</span>
+                  <div><i style="width: 12%; background: var(--chart-2)"></i></div>
+                  <em>12%</em>
+                </li>
+                <li>
+                  <span>Metal</span>
+                  <div><i style="width: 7%; background: var(--chart-6)"></i></div>
+                  <em>7%</em>
+                </li>
+              </ul>
+              <p class="muted note">Ledger categories stay on Statistics. This home is investor-first (mock holdings).</p>
+            </article>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

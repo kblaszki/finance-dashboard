@@ -1,0 +1,130 @@
+.mini-metrics {
+  display: flex;
+  gap: var(--space-3);
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+}
+
+.mini-metrics strong {
+  color: var(--ink);
+  margin-left: 0.25rem;
+}
+
+.alerts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.alert {
+  padding: var(--space-4);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.alert--warn {
+  border-left-color: var(--warn);
+  background: #faf4e8;
+}
+
+.alert--neg {
+  border-left-color: var(--negative);
+  background: #f8ece9;
+}
+
+.alert h2 {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+}
+
+.alert p {
+  margin: 0 0 var(--space-3);
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+}
+
+.alert a {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.inbox-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: var(--space-4);
+}
+
+.panel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-5);
+  box-shadow: var(--shadow);
+}
+
+.panel h2 {
+  margin: 0 0 var(--space-4);
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+}
+
+.cta-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.cta {
+  border: 1px solid var(--border);
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  cursor: default;
+  font-weight: 600;
+}
+
+.cta--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--ink-inverse);
+}
+
+.feed ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.feed li {
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.92rem;
+}
+
+.feed li:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.when {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+  margin-bottom: 0.15rem;
+}
+
+@media (max-width: 900px) {
+  .alerts,
+  .inbox-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,167 @@
+.wealth-hero {
+  margin-bottom: var(--space-5);
+  padding: var(--space-6) var(--space-5);
+  background:
+    radial-gradient(ellipse at 10% 0%, var(--accent-soft), transparent 55%),
+    var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 4px);
+  box-shadow: var(--shadow);
+}
+
+.wealth-hero__label {
+  margin: 0 0 var(--space-2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+}
+
+.wealth-hero__value {
+  margin: 0;
+  font-size: clamp(2.4rem, 5vw, 3.4rem);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.wealth-hero__delta {
+  margin: var(--space-3) 0 0;
+  font-weight: 600;
+}
+
+.wealth-hero__spark {
+  display: block;
+  width: 10rem;
+  height: 2.25rem;
+  margin-top: var(--space-4);
+}
+
+.wealth-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: var(--space-4);
+}
+
+.panel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-5);
+  box-shadow: var(--shadow);
+}
+
+.panel h2 {
+  margin: 0 0 var(--space-4);
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+}
+
+.buckets__layout {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.donut {
+  width: 7.5rem;
+  flex-shrink: 0;
+}
+
+.donut svg {
+  width: 100%;
+  transform: rotate(-90deg);
+}
+
+.bucket-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: 0.92rem;
+}
+
+.bucket-list li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.bucket-list em {
+  margin-left: auto;
+  font-style: normal;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+.swatch {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 2px;
+  background: var(--c);
+}
+
+.liabilities {
+  margin-top: var(--space-5);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--space-3);
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.liabilities__bar {
+  height: 0.45rem;
+  background: rgba(179, 58, 43, 0.15);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.liabilities__bar i {
+  display: block;
+  height: 100%;
+  background: var(--negative);
+}
+
+.top-accounts ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.top-accounts li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.top-accounts li:last-of-type {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.top-accounts li span.muted {
+  display: block;
+  font-size: 0.75rem;
+  margin-top: 0.15rem;
+}
+
+.panel__foot {
+  margin: var(--space-5) 0 0;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 860px) {
+  .wealth-grid {
+    grid-template-columns: 1fr;
+  }
+}
