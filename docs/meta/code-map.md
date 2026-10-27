@@ -66,6 +66,7 @@ JWT auth, multi-type accounts, category tree + tags, cash ledger + transfers, CS
 | Statistics API client | `frontend/src/api/statisticsApi.ts` |
 | Shell / gates | `frontend/src/components/AppShell.tsx`, `AuthSwapShell.tsx`, `ProtectedRoute.tsx`, `ErrorBoundary.tsx` |
 | Shared UI | `frontend/src/components/ui/{PageHeader,KpiCard,ChartCard,StatusBlock,CurrencySelect}.tsx` |
+| Dashboard UI | `frontend/src/pages/DashboardPage.tsx`, `frontend/src/components/dashboard/`, `frontend/src/utils/dashboardIdeas.ts` |
 | Pages | `frontend/src/pages/{Landing,Login,Register,Dashboard,Accounts,AccountDetail,Categories,Tags,Transfers,Statistics,Settings}Page.tsx` |
 | Statistics UI | `frontend/src/components/statistics/`, `frontend/src/utils/statisticsPeriod.ts`, `statisticsRollup.ts` |
 | Cash ledger import hook | `frontend/src/hooks/useCashLedgerImport.ts` (AccountDetail CSV flow) |

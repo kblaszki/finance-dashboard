@@ -13,6 +13,7 @@ related_code:
   - backend/src/domain/netWorth.ts
   - backend/src/routes/statisticsRoutes.ts
   - frontend/src/pages/DashboardPage.tsx
+  - frontend/src/components/dashboard/
   - frontend/src/pages/StatisticsPage.tsx
   - frontend/src/state/currency.tsx
 ---
@@ -23,20 +24,26 @@ Hub: [docs/README.md](../README.md).
 
 This page covers shipped dashboard KPIs (`/dashboard`) and statistics (`/statistics`). Currency is chosen once in the shell topbar (persisted in `localStorage`).
 
-## Dashboard: net worth, rolling cashflow, account mix (FR-002 / FR-005)
+## Dashboard: executive overview (FR-002 / FR-005)
 
 1. Open **Dashboard** (or go to `/dashboard`). `/home` redirects here.
-2. Confirm the **currency** in the top bar (from your accounts).
-3. Review **KPI row**: net worth, avg income / expense / net over 12 months, plus savings rate (`avgNet / avgIncome`).
-4. Review **charts**: net-worth donut by account-type bucket, and a 12-month cashflow mini chart.
-5. Review **Account mix**: per-account rows (name, type badge, balance) for the selected currency.
+2. Confirm the **currency** in the top bar (from your accounts). Incomplete workspaces still show the **Setup checklist** first.
+3. Review **Wealth hero**: total net worth, cash / invested / debt chips, and a **monthly net** area chart from cashflow history (range chips `1M` / `6M` / `1Y` slice the fetched 12-month series client-side — this is not a net-worth time series).
+4. Review **period KPI strip** for the current UTC month: income, expense, savings ratio (`net / income`), and monthly net, each with % vs the previous month when available.
+5. Review the **executive grid**:
+   - **Portfolio allocation** — donut + legend by account-type bucket; link to Accounts.
+   - **Goals in motion** — empty placeholder until a goals feature exists.
+   - **Ideas** — heuristic educational tips from live surplus / savings ratio / liabilities (not advice).
+   - **Recent activity** — latest internal transfers (`GET /api/transfers?limit=8`).
 6. APIs:
    - `GET /api/statistics/net-worth?currency=XXX`
-   - `GET /api/statistics/cashflow-rolling-12m?currency=XXX`
    - `GET /api/statistics/cashflow-history?month=YYYY-MM&currency=XXX&months=12`
+   - `GET /api/statistics/period-summary?month=YYYY-MM&currency=XXX` (current + previous month)
+   - `GET /api/transfers?limit=8`
    - `GET /api/accounts` (shared via `CurrencyProvider`)
+   - `GET /api/categories` (setup checklist only)
 
-No FX conversion. Mapping: `BANK→cash`, `BROKERAGE|IKE|IKZE→stock`, `CRYPTO→crypto`, `PRECIOUS_METAL→metal`, `REAL_ESTATE→real_estate`, `OTHER|MANUAL|TREASURY_BONDS→other`. `CREDIT_CARD` debt (`cashBalance < 0`) adds to `liabilities` (shown when > 0); overpayment goes to `cash`. Mortgage-style liabilities (FR-029) are separate. Holdings valuations are not included. Rolling averages use the last 12 **complete** UTC months (excludes the current calendar month).
+No FX conversion. Mapping: `BANK→cash`, `BROKERAGE|IKE|IKZE→stock`, `CRYPTO→crypto`, `PRECIOUS_METAL→metal`, `REAL_ESTATE→real_estate`, `OTHER|MANUAL|TREASURY_BONDS→other`. `CREDIT_CARD` debt (`cashBalance < 0`) adds to `liabilities` (shown when > 0); overpayment goes to `cash`. Mortgage-style liabilities (FR-029) are separate. Holdings valuations are not included. Rolling 12-month averages remain on **Statistics**, not the dashboard hero strip.
 
 ## Period KPIs and cashflow chart (FR-003 / FR-004)
 
@@ -60,4 +67,4 @@ Bounds are UTC. `period` defaults to `month`. Quarter/year are calendar bounds c
    - `GET /api/statistics/category-breakdown?month=YYYY-MM&period=…` (+ `GET /api/categories` for the rollup join)
    - `GET /api/statistics/tag-breakdown?month=YYYY-MM&currency=XXX&period=…`
 
-**Tip:** Run `cd backend && npm run db:seed` for the demo user (deterministic ~24 months of ledger history). Open `/dashboard` (PLN in the top bar) for net worth + rolling averages, and `/statistics` for period KPIs/chart across seeded months.
+**Tip:** Run `cd backend && npm run db:seed` for the demo user (deterministic ~24 months of ledger history). Open `/dashboard` (PLN in the top bar) for the executive overview, and `/statistics` for rolling averages, period KPIs, and breakdown charts across seeded months.
