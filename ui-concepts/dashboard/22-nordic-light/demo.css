@@ -1,1 +1,150 @@
-:root{--font-ui:Inter,"Helvetica Neue",Arial,sans-serif;--bg:#f6f7f5;--ink:#1b1d1b;--muted:#7b807c;--rule:#e3e6e3;--side:#fbfcfb;--side-ink:#171a18;--side-muted:#808682;--side-active:#1c211e;--side-active-ink:#fff;--side-rule:#e5e8e5;--avatar:#1c211e;--avatar-ink:#fff;--top:#f9faf9;--card:#fff;--accent:#1f5b46;--accent-ink:#fff;--soft:#e9f0ec;--good:#237458;--bad:#bd604b;--hero:#fff;--hero-ink:#191c1a;--hero-muted:#7d827f;--positive:#26765a;--hero-chip:#f0f3f1;--chart-grid:#edf0ed;--chart-area:#e0eee7;--chart-line:#225b46;--hero-border:1px solid #e1e5e2;--hero-shadow:none;--card-border:1px solid #e1e5e2;--shadow:none;--track:#edf0ed;--c1:#1f5b46;--c2:#7e9e91;--c3:#c5a36b;--c4:#8290a6;--idea-bg:#f6f8f6;--idea-icon:#e5eeea;--activity-bg:#fafbfa;--activity-icon:#edf1ee;--radius:6px;--small-radius:4px;--inner-radius:5px;--gap:10px;--hero-radius:6px}.exec-brand{letter-spacing:-.07em}.exec-side nav a{border-radius:4px}.wealth-hero{position:relative}.wealth-hero:before{content:"";position:absolute;left:38%;top:28px;bottom:28px;width:1px;background:var(--rule)}.hero-copy h2{font-weight:500}.stat-head i{border:1px solid var(--rule);width:24px;height:24px;display:grid;place-items:center}.card-head{border-bottom:1px solid var(--rule);padding-bottom:12px}.ideas{gap:1px;background:var(--rule)}.idea{border-radius:0}.donut:after{background:#fff}.activity-item{border:1px solid var(--rule)}@media(max-width:1050px){.wealth-hero:before{display:none}}
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap");
+
+:root {
+  --font-ui: "IBM Plex Sans", system-ui, sans-serif;
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --bg: #e8eef3;
+  --ink: #1a222c;
+  --muted: #5a6570;
+  --rule: #c5ced6;
+  --side: #141b23;
+  --side-ink: #c7d1dc;
+  --side-muted: #8494a4;
+  --side-active: rgba(52, 211, 153, 0.14);
+  --side-active-ink: #34d399;
+  --side-rule: rgba(232, 238, 243, 0.1);
+  --avatar: rgba(52, 211, 153, 0.14);
+  --avatar-ink: #34d399;
+  --top: rgba(232, 238, 243, 0.92);
+  --card: #ffffff;
+  --accent: #047857;
+  --accent-ink: #ecfdf5;
+  --soft: rgba(4, 120, 87, 0.12);
+  --good: #047857;
+  --bad: #c0392b;
+  --hero: linear-gradient(145deg, #ffffff, #f4f7fa);
+  --hero-ink: #1a222c;
+  --hero-muted: #5a6570;
+  --positive: #047857;
+  --hero-chip: rgba(4, 120, 87, 0.12);
+  --chart-grid: #c5ced6;
+  --chart-area: rgba(4, 120, 87, 0.12);
+  --chart-line: #047857;
+  --hero-border: 1px solid #5c6770;
+  --hero-shadow: 0 1px 3px rgba(26, 34, 44, 0.08), 0 4px 12px rgba(26, 34, 44, 0.05);
+  --card-border: 1px solid #5c6770;
+  --shadow: 0 1px 3px rgba(26, 34, 44, 0.08), 0 4px 12px rgba(26, 34, 44, 0.05);
+  --track: #e8eef3;
+  --c1: #047857;
+  --c2: #0e7490;
+  --c3: #b45309;
+  --c4: #1d4e89;
+  --idea-bg: #f4f7fa;
+  --idea-icon: rgba(4, 120, 87, 0.12);
+  --activity-bg: #f4f7fa;
+  --activity-icon: rgba(4, 120, 87, 0.12);
+  --button-bg: #ffffff;
+  --button-border: 1px solid #5c6770;
+  --radius: 1rem;
+  --small-radius: 0.5rem;
+  --inner-radius: 0.75rem;
+  --hero-radius: 1rem;
+  --sidebar: 14.5rem;
+  --gap: 1rem;
+}
+
+.exec-side {
+  padding: 1.25rem 0.85rem;
+}
+
+.exec-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0 0.4rem;
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+}
+
+.exec-brand span {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.exec-side nav {
+  gap: 2px;
+  margin-top: 1.5rem;
+}
+
+.exec-side nav a {
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.exec-side nav a.active {
+  font-weight: 600;
+}
+
+.exec-top {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  min-height: 4.5rem;
+  backdrop-filter: blur(8px);
+}
+
+.exec-top h1 {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+}
+
+.wealth-hero {
+  min-height: 300px;
+}
+
+.hero-copy h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
+.stat strong,
+.donut b {
+  font-family: var(--font-display);
+}
+
+.stat-head i {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 0.5rem;
+  background: var(--soft);
+  color: var(--accent);
+}
+
+.card-head {
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.donut::after {
+  background: #ffffff;
+}
+
+.idea,
+.activity-item {
+  border: 1px solid var(--rule);
+}
+
+.inspiration,
+.activity {
+  min-height: 100%;
+}

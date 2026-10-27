@@ -27,7 +27,7 @@ Static mock data (PLN). Not wired to the API. Use this matrix when picking a dir
 | 19 | [Milestone map](19-milestone-map/) | Jaki jest kolejny przystanek? | Visual journey map | Goal-oriented, visual users | Medium |
 | 20 | [Adaptive home](20-adaptive-home/) | Jaka jest najlepsza decyzja teraz? | Recommended monthly split | Personalized financial guidance | Medium |
 | 21 | [Emerald glass](21-emerald-glass/) | Executive 06 in glass style | Net-worth chart + core KPIs | Premium dark interface | Medium |
-| 22 | [Nordic light](22-nordic-light/) | Executive 06 in Nordic style | Net-worth chart + core KPIs | Maximum daytime readability | Low |
+| 22 | [Finance Dashboard style](22-nordic-light/) | Executive 06 using current app tokens | Net-worth chart + core KPIs | Closest preview of implementation in this project | Low |
 | 23 | [Midnight aurora](23-midnight-aurora/) | Executive 06 in aurora style | Net-worth chart + core KPIs | Immersive dark-mode users | Medium |
 | 24 | [Warm editorial](24-warm-editorial/) | Executive 06 in editorial style | Net-worth chart + core KPIs | Human, less “software-like” finance | Low |
 | 25 | [Neo brutalist](25-neo-brutalist/) | Executive 06 in brutalist style | Net-worth chart + core KPIs | Bold, distinctive brand direction | High |
