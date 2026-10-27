@@ -10,4 +10,4 @@ Static HTML/CSS **concept demos** for information architecture discussion — no
 
 Current topics:
 
-- [dashboard/](dashboard/) — ten home-dashboard variants (01–05 foundational, 06–10 richer visual directions)
+- [dashboard/](dashboard/) — twenty home-dashboard variants (01–05 foundational, 06–10 richer directions, 11–20 hybrids based on 06/07/05)

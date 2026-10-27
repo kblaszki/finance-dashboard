@@ -64,6 +64,17 @@
   border-color: rgba(47, 111, 94, 0.35);
 }
 
+.hub-card--wave {
+  background:
+    linear-gradient(145deg, rgba(196, 168, 123, 0.16), transparent 48%),
+    var(--bg-elevated);
+  border-color: rgba(154, 123, 79, 0.35);
+}
+
+.hub-card--wave .hub-card__num {
+  color: #8a653e;
+}
+
 .hub-card__num {
   font-family: var(--font-mono);
   font-size: 0.8rem;
