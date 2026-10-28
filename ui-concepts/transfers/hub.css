@@ -1,0 +1,13 @@
+@import url("../_shared/tokens.css");
+@import url("../_shared/primitives.css");
+.hub { width:min(calc(100% - 2rem),70rem); margin:auto; padding:clamp(2rem,7vw,5rem) 0; }
+.hub__header { max-width:46rem; margin:var(--space-6) 0 var(--space-7); }
+.hub__header h1 { margin-bottom:var(--space-3); font-size:clamp(2.5rem,7vw,5rem); letter-spacing:-.06em; }
+.hub__lede { color:var(--ink-muted); font-size:1.12rem; }
+.hub__grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(18rem,1fr)); gap:var(--space-4); margin:0; padding:0; list-style:none; }
+.hub-card { min-height:15rem; display:flex; flex-direction:column; padding:var(--space-5); border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); color:var(--ink); text-decoration:none; box-shadow:var(--shadow-sm); }
+.hub-card:hover { transform:translateY(-3px); border-color:var(--accent); color:var(--ink); }
+.hub-card__num { color:var(--accent); font:600 .78rem var(--font-mono); }
+.hub-card h2 { margin:auto 0 var(--space-2); font-size:1.4rem; }
+.hub-card p { margin:0; color:var(--ink-muted); }
+.hub__foot { margin-top:var(--space-7); }

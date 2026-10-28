@@ -1,0 +1,5 @@
+@import url("../../_shared/tokens.css");
+@import url("../../_shared/primitives.css");
+.app-content { container-type:inline-size; }
+small { color:var(--ink-muted); }
+.timeline-layout{display:grid;grid-template-columns:minmax(0,1fr) 24rem;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--surface)}.timeline{padding:var(--space-5)}.day>time{display:block;margin:var(--space-5) 0 var(--space-3);color:var(--ink-muted);font-weight:700}.timeline-item{position:relative;display:grid;grid-template-columns:1rem 1fr auto;gap:var(--space-3);padding:var(--space-4);border-left:2px solid var(--border)}.timeline-item i{width:.75rem;height:.75rem;margin-left:-1.45rem;border:2px solid var(--surface);border-radius:50%;background:var(--accent)}.timeline-item h2{margin:.4rem 0;font-size:1.1rem}.timeline-item p{margin:0;color:var(--ink-muted)}.timeline-item.selected{border-radius:var(--radius);background:var(--accent-soft)}.inspector{display:grid;align-content:start;gap:var(--space-4)}@media(max-width:60rem){.timeline-layout{grid-template-columns:1fr}.inspector{border-left:0;border-top:1px solid var(--border)}}

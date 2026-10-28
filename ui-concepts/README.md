@@ -10,9 +10,9 @@ Static HTML/CSS concept demos for information-architecture discussion. They do n
 | [Landing](landing/) | Available · 5 concepts | Guest value proposition and product entry |
 | [Login](login/) | Available · 5 concepts | Returning-user authentication |
 | [Register](register/) | Available · 5 concepts | Account creation and empty-workspace expectations |
-| Accounts | Planned | Account collection, filtering and account creation |
-| Account detail | Planned | Balance history, ledger and CSV import |
-| Transfers | Planned | Internal movements and cross-currency flows |
+| [Accounts](accounts/) | Available · 5 concepts | Account collection, filtering and account creation |
+| [Account detail](account-detail/) | Available · 5 concepts | Balance history, ledger and CSV import |
+| [Transfers](transfers/) | Available · 5 concepts | Internal movements and cross-currency flows |
 | Categories | Planned | Income/expense trees and description rules |
 | Tags | Planned | Cross-cutting transaction labels |
 | Statistics | Planned | Period KPIs, cashflow and breakdowns |

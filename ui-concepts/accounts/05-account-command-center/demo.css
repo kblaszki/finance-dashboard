@@ -1,0 +1,5 @@
+@import url("../../_shared/tokens.css");
+@import url("../../_shared/primitives.css");
+.app-content { container-type:inline-size; }
+small { color:var(--ink-muted); }
+.console{display:grid;grid-template-columns:13rem minmax(0,1fr);margin:var(--space-5) 0;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}.rail{display:grid;align-content:start;gap:.35rem;padding:var(--space-4);background:var(--surface-subtle)}.rail button{display:flex;justify-content:space-between;padding:.7rem;border:0;border-radius:var(--radius-sm);background:transparent;text-align:left}.rail button.active{background:var(--surface);color:var(--accent);font-weight:700}.console .table-wrap{border:0;border-radius:0}.editing{background:var(--accent-soft)}.edit-strip{display:flex;flex-wrap:wrap;align-items:end;gap:var(--space-3)}.edit-strip label{display:grid;gap:.3rem}@media(max-width:60rem){.console{grid-template-columns:1fr}.rail{grid-template-columns:repeat(4,1fr)}.rail h2,.rail .field{grid-column:1/-1}}@media(max-width:40rem){.rail{grid-template-columns:1fr 1fr}}

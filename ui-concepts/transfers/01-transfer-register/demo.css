@@ -1,0 +1,5 @@
+@import url("../../_shared/tokens.css");
+@import url("../../_shared/primitives.css");
+.app-content { container-type:inline-size; }
+small { color:var(--ink-muted); }
+.card{padding:var(--space-4)}.toolbar{margin-bottom:var(--space-4)}.create-row{background:var(--accent-soft)}.create-row input,.create-row select{width:100%;min-width:8rem;padding:.45rem;border:1px solid var(--border-strong);border-radius:.3rem;background:var(--surface)}.transfer-table small{font-size:.75rem}

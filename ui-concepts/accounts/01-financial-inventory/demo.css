@@ -1,0 +1,5 @@
+@import url("../../_shared/tokens.css");
+@import url("../../_shared/primitives.css");
+.app-content { container-type:inline-size; }
+small { color:var(--ink-muted); }
+.inventory{display:grid;grid-template-columns:minmax(0,1fr) 22rem;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}.inventory .table-wrap{border:0;border-radius:0}.selected{background:var(--accent-soft)}.inspector{display:grid;gap:var(--space-4)}@media(max-width:70rem){.inventory{grid-template-columns:1fr}.inspector{border-left:0;border-top:1px solid var(--border)}}

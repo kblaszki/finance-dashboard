@@ -1,0 +1,5 @@
+@import url("../../_shared/tokens.css");
+@import url("../../_shared/primitives.css");
+.app-content { container-type:inline-size; }
+small { color:var(--ink-muted); }
+.story-hero{display:grid;grid-template-columns:.55fr 1.45fr;align-items:center;gap:var(--space-6);padding:var(--space-6);border-radius:var(--radius-lg);background:var(--surface-strong);color:var(--ink-inverse)}.story-hero .eyebrow,.story-hero h2{color:inherit}.story-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(16rem,.6fr);gap:var(--space-5);margin-top:var(--space-5)}.event{display:grid;grid-template-columns:5rem 1fr auto;gap:var(--space-4);padding:var(--space-4);border-left:4px solid var(--border);background:var(--surface);border-bottom:1px solid var(--border)}.event p{margin:0;color:var(--ink-muted)}.positive-edge{border-left-color:var(--positive)}.negative-edge{border-left-color:var(--negative)}.transfer-edge{border-left-color:var(--info)}@media(max-width:55rem){.story-hero,.story-grid{grid-template-columns:1fr}}@media(max-width:40rem){.event{grid-template-columns:1fr auto}.event time{grid-column:1/-1}}

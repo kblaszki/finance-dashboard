@@ -1,0 +1,5 @@
+@import url("../../_shared/tokens.css");
+@import url("../../_shared/primitives.css");
+.app-content { container-type:inline-size; }
+small { color:var(--ink-muted); }
+.balance-strip{display:grid;grid-template-columns:repeat(3,1fr);margin-bottom:var(--space-5);border:1px solid var(--border);border-radius:var(--radius);background:var(--surface)}.balance-strip div{padding:var(--space-4);border-right:1px solid var(--border)}.balance-strip div:last-child{border:0}.balance-strip span,.balance-strip strong{display:block}.balance-strip strong{font:600 1.4rem var(--font-mono)}.card{padding:var(--space-4)}.toolbar{margin-bottom:var(--space-4)}.create-row{background:var(--accent-soft)}.create-row input,.create-row select{width:100%;min-width:7rem;padding:.45rem;border:1px solid var(--border-strong);border-radius:.3rem;background:var(--surface)}@media(max-width:40rem){.balance-strip{grid-template-columns:1fr}.balance-strip div{border-right:0;border-bottom:1px solid var(--border)}}

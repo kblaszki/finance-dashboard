@@ -1,0 +1,5 @@
+@import url("../../_shared/tokens.css");
+@import url("../../_shared/primitives.css");
+.app-content { container-type:inline-size; }
+small { color:var(--ink-muted); }
+.card-layout{display:grid;grid-template-columns:minmax(0,1fr) 22rem;gap:var(--space-5)}.account-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-4)}.balance-card{min-height:13rem;padding:var(--space-5);border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface)}.balance-card.hero{grid-column:span 2;background:var(--surface-strong);color:var(--ink-inverse)}.hero h2{color:inherit}.balance-card.debt{border-color:color-mix(in srgb,var(--negative) 30%,var(--border))}.create{display:grid;align-content:start;gap:var(--space-4)}@media(max-width:60rem){.card-layout{grid-template-columns:1fr}}@media(max-width:40rem){.account-cards{grid-template-columns:1fr}.balance-card.hero{grid-column:auto}}
