@@ -13,10 +13,10 @@ Static HTML/CSS concept demos for information-architecture discussion. They do n
 | [Accounts](accounts/) | Available · 5 concepts | Account collection, filtering and account creation |
 | [Account detail](account-detail/) | Available · 5 concepts | Balance history, ledger and CSV import |
 | [Transfers](transfers/) | Available · 5 concepts | Internal movements and cross-currency flows |
-| Categories | Planned | Income/expense trees and description rules |
-| Tags | Planned | Cross-cutting transaction labels |
-| Statistics | Planned | Period KPIs, cashflow and breakdowns |
-| Settings | Planned | Profile, credentials and appearance |
+| [Categories](categories/) | Available · 5 concepts | Income/expense/transfer trees and description rules |
+| [Tags](tags/) | Available · 5 concepts | Cross-cutting optional transaction labels |
+| [Statistics](statistics/) | Available · 5 concepts | Period KPIs, cashflow and breakdowns |
+| [Settings](settings/) | Available · 5 concepts | Profile, credentials and appearance |
 
 ## Open locally
 
