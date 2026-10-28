@@ -15,7 +15,7 @@ Static HTML/CSS concept demos for information-architecture discussion. They do n
 | [Transfers](transfers/) | Available · 5 concepts | Internal movements and cross-currency flows |
 | [Categories](categories/) | Available · 5 concepts | Income/expense/transfer trees and description rules |
 | [Tags](tags/) | Available · 5 concepts | Cross-cutting optional transaction labels |
-| [Statistics](statistics/) | Available · 5 concepts | Period KPIs, cashflow and breakdowns |
+| [Statistics](statistics/) | Available · 15 concepts | Period KPIs, cashflow, planning proposals and data quality |
 | [Settings](settings/) | Available · 5 concepts | Profile, credentials and appearance |
 
 ## Open locally
