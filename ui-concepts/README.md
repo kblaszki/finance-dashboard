@@ -20,7 +20,8 @@ Static HTML/CSS concept demos for information-architecture discussion. They do n
 
 ## Open locally
 
-Open any topic `index.html` directly with `file://`, or run `npx serve ui-concepts` and visit the topic route.
+Open [`index.html`](index.html) directly with `file://`, or run
+`npx serve ui-concepts` and use the global topic hub at `/`.
 
 ## Shared visual system
 
