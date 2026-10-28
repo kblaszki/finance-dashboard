@@ -1,13 +1,29 @@
 # UI concepts
 
-Static HTML/CSS **concept demos** for information architecture discussion — not production UI.
+Static HTML/CSS concept demos for information-architecture discussion. They do not ship with the React application.
 
-| Rule | Detail |
-|------|--------|
-| Not product | Does not ship with Vite/React; ignore for `npm test` / coverage |
-| Open locally | Open `dashboard/index.html` via `file://`, or `npx serve ui-concepts` then visit `/dashboard/` |
-| Expand later | Add sibling folders (`portfolio/`, `account-detail/`, …) with the same hub + demos pattern |
+## Topic map
 
-Current topics:
+| Topic | Status | Focus |
+|---|---|---|
+| [Dashboard](dashboard/) | Available · 26 concepts | Home overview, priorities and visual-system studies |
+| [Landing](landing/) | Available · 5 concepts | Guest value proposition and product entry |
+| [Login](login/) | Available · 5 concepts | Returning-user authentication |
+| [Register](register/) | Available · 5 concepts | Account creation and empty-workspace expectations |
+| Accounts | Planned | Account collection, filtering and account creation |
+| Account detail | Planned | Balance history, ledger and CSV import |
+| Transfers | Planned | Internal movements and cross-currency flows |
+| Categories | Planned | Income/expense trees and description rules |
+| Tags | Planned | Cross-cutting transaction labels |
+| Statistics | Planned | Period KPIs, cashflow and breakdowns |
+| Settings | Planned | Profile, credentials and appearance |
 
-- [dashboard/](dashboard/) — twenty-six home-dashboard variants (01–20 IA directions, 21–26 CSS comparisons based on executive concept 06)
+## Open locally
+
+Open any topic `index.html` directly with `file://`, or run `npx serve ui-concepts` and visit the topic route.
+
+## Shared visual system
+
+New concepts use [`_shared/tokens.css`](_shared/tokens.css) and [`_shared/primitives.css`](_shared/primitives.css). The primitives cover guest and authenticated shells, headers, cards, forms, buttons, tables, badges, filters, charts, trees, inspector panels, feedback banners, dialogs and empty states at the project breakpoints (`40rem`, `64rem`, `80rem`).
+
+These artifacts are intentionally separate from `frontend/`; concept links and controls are illustrative.

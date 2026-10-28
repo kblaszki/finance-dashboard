@@ -1,0 +1,1 @@
+.form-pane,.visual-pane{padding:clamp(2rem,7vw,6rem);display:grid;align-content:center}.form-pane{gap:var(--space-7)}.visual-pane{background:var(--surface-strong);color:var(--ink-inverse)}.visual-note{text-align:center;color:#b6c4bd}.auth-switch{text-align:center}
