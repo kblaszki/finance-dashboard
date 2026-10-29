@@ -348,6 +348,32 @@ test("GET /api/accounts/:id/balance-history aggregates end-of-month cash balance
   assert.equal(byMonth.get("2026-01"), 130);
 });
 
+test("GET /api/accounts/:id/balance-history uses oldest tx when openingCashAsOf is unset", async () => {
+  const { token } = await createUserAndToken();
+  const account = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "OldestTxHist", openingBalance: 100 });
+  assert.equal(account.status, 201);
+  const accountId = account.body.id as number;
+
+  await request(app)
+    .post(`/api/accounts/${accountId}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "INCOME", amount: 50, occurredAt: "2025-12-10T00:00:00.000Z" });
+
+  const res = await request(app)
+    .get(`/api/accounts/${accountId}/balance-history?month=2026-01&months=6`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  const byMonth = new Map(
+    (res.body.series as { month: string; balance: number }[]).map((p) => [p.month, p.balance]),
+  );
+  assert.equal(byMonth.get("2025-11"), 0);
+  assert.equal(byMonth.get("2025-12"), 150);
+  assert.equal(byMonth.get("2026-01"), 150);
+});
+
 test("POST /api/accounts/:id/transactions updates cashBalance for INCOME and EXPENSE", async () => {
   const { token } = await createUserAndToken();
   const account = await request(app)

@@ -28,7 +28,7 @@ See one net-worth number and trend regardless of which account currencies you ho
 - [x] All owned PLN/EUR/USD accounts are included and converted via PLN pivot
 - [x] HTTP uses only persisted `FxRateDaily` rows (no live NBP)
 - [x] Missing required rates fail closed with an actionable error
-- [x] History points use month-end rates (today for the current month); opening uses `openingCashAsOf ?? createdAt`
+- [x] History points use month-end rates (today for the current month); opening uses `openingCashAsOf ?? oldest ledger occurredAt ?? createdAt`
 - [x] Account create/edit currency limited to PLN/EUR/USD
 - [x] Holdings valuations remain out of scope
 

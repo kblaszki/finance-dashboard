@@ -686,6 +686,39 @@ test("GET /api/statistics/net-worth-history returns monthly converted series", a
   assert.equal(twentyFour.body.monthCount, 24);
 });
 
+test("GET /api/statistics/net-worth-history uses oldest tx when openingCashAsOf is unset", async () => {
+  const token = await registerAndLogin("nwold@test.local", "nwold", "password123");
+  const account = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      name: "Old Ledger",
+      currency: "PLN",
+      accountType: "BANK",
+      openingBalance: 500,
+    });
+  assert.equal(account.status, 201);
+
+  await request(app)
+    .post(`/api/accounts/${account.body.id}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "INCOME", amount: 100, occurredAt: "2025-12-10T00:00:00.000Z" });
+
+  const res = await request(app)
+    .get("/api/statistics/net-worth-history?month=2026-01&currency=PLN&months=6")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  const byMonth = new Map(
+    (res.body.series as { month: string; netWorth: number }[]).map((p) => [
+      p.month,
+      p.netWorth,
+    ]),
+  );
+  assert.equal(byMonth.get("2025-11"), 0);
+  assert.equal(byMonth.get("2025-12"), 600);
+  assert.equal(byMonth.get("2026-01"), 600);
+});
+
 test("GET /api/statistics/net-worth fails when required FX mid is missing", async () => {
   const token = await registerAndLogin("nwmiss@test.local", "nwmiss", "password123");
   await request(app)

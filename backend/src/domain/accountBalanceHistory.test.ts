@@ -20,12 +20,30 @@ test("resolveBalanceHistoryMonth defaults to current UTC month", () => {
   assert.throws(() => resolveBalanceHistoryMonth("2026-13"), /month must be/);
 });
 
-test("resolveOpeningEffectiveAt prefers openingCashAsOf", () => {
+test("resolveOpeningEffectiveAt prefers openingCashAsOf, then oldest tx, then createdAt", () => {
   const createdAt = new Date("2026-01-10T12:00:00.000Z");
   const openingCashAsOf = new Date("2025-12-01T00:00:00.000Z");
+  const oldestTx = new Date("2024-11-15T00:00:00.000Z");
   assert.equal(
-    resolveOpeningEffectiveAt({ openingCashAsOf, createdAt }).toISOString(),
+    resolveOpeningEffectiveAt(
+      { openingCashAsOf, createdAt },
+      oldestTx,
+    ).toISOString(),
     openingCashAsOf.toISOString(),
+  );
+  assert.equal(
+    resolveOpeningEffectiveAt(
+      { openingCashAsOf: null, createdAt },
+      oldestTx,
+    ).toISOString(),
+    oldestTx.toISOString(),
+  );
+  assert.equal(
+    resolveOpeningEffectiveAt(
+      { openingCashAsOf: null, createdAt },
+      null,
+    ).toISOString(),
+    createdAt.toISOString(),
   );
   assert.equal(
     resolveOpeningEffectiveAt({ openingCashAsOf: null, createdAt }).toISOString(),

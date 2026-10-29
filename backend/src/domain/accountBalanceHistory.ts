@@ -43,12 +43,20 @@ export function resolveBalanceHistoryMonth(value: unknown): {
 
 export { listMonthsEndingAt, parseMonthsParam };
 
-/** Effective opening instant: openingCashAsOf when set, otherwise createdAt. */
-export function resolveOpeningEffectiveAt(account: {
-  openingCashAsOf: Date | null;
-  createdAt: Date;
-}): Date {
-  return account.openingCashAsOf ?? account.createdAt;
+/**
+ * Effective opening instant for balance / net-worth history:
+ * `openingCashAsOf ?? oldestOccurredAt ?? createdAt`.
+ */
+export function resolveOpeningEffectiveAt(
+  account: {
+    openingCashAsOf: Date | null;
+    createdAt: Date;
+  },
+  oldestOccurredAt?: Date | null,
+): Date {
+  if (account.openingCashAsOf) return account.openingCashAsOf;
+  if (oldestOccurredAt) return oldestOccurredAt;
+  return account.createdAt;
 }
 
 /**

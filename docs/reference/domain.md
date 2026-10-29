@@ -76,7 +76,7 @@ User-scoped financial account. Create accepts allow-listed types; `accountType` 
 | currency | String | FX whitelist only: `PLN`, `EUR`, or `USD` (stored uppercase). Create/PATCH reject other codes |
 | cashBalance | Int | Working cash in minor units (cents). API JSON uses major units |
 | openingBalance | Int | Opening cash seed in minor units (default 0) |
-| openingCashAsOf | DateTime? | Optional opening date; when absent, balance history / net-worth history treat `createdAt` as the effective opening instant (balance is 0 before that) |
+| openingCashAsOf | DateTime? | Optional opening date. Effective opening for balance / net-worth history: `openingCashAsOf ?? oldest ledger occurredAt ?? createdAt` (balance is 0 before that instant) |
 | description | String? | Optional note |
 | createdAt | DateTime | Default now |
 | updatedAt | DateTime | `@updatedAt` |

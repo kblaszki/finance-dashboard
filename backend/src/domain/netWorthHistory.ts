@@ -27,7 +27,7 @@ export type NetWorthHistoryAccount = {
   accountType: string;
   currency: string;
   openingBalanceMinor: number;
-  /** openingCashAsOf ?? createdAt — balance is 0 before this instant. */
+  /** openingCashAsOf ?? oldestOccurredAt ?? createdAt — balance is 0 before this instant. */
   openingEffectiveAt: Date;
   transactions: NetWorthHistoryTxRow[];
 };

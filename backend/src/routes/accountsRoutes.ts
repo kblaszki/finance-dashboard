@@ -169,6 +169,7 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
           take: BALANCE_HISTORY_TX_CAP + 1,
         });
         assertBalanceHistoryTxCap(rows.length);
+        const oldestOccurredAt = rows[0]?.occurredAt ?? null;
         res.json(
           aggregateAccountBalanceHistory(
             account.id,
@@ -176,7 +177,7 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
             months,
             account.openingBalance,
             rows,
-            resolveOpeningEffectiveAt(account),
+            resolveOpeningEffectiveAt(account, oldestOccurredAt),
           ),
         );
       } catch (e: unknown) {

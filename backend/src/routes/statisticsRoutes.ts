@@ -362,13 +362,20 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
             currency,
             months,
             asOfToday,
-            accounts: accounts.map((account) => ({
-              accountType: account.accountType,
-              currency: account.currency,
-              openingBalanceMinor: account.openingBalance,
-              openingEffectiveAt: resolveOpeningEffectiveAt(account),
-              transactions: txsByAccount.get(account.id) ?? [],
-            })),
+            accounts: accounts.map((account) => {
+              const transactions = txsByAccount.get(account.id) ?? [];
+              const oldestOccurredAt = transactions[0]?.occurredAt ?? null;
+              return {
+                accountType: account.accountType,
+                currency: account.currency,
+                openingBalanceMinor: account.openingBalance,
+                openingEffectiveAt: resolveOpeningEffectiveAt(
+                  account,
+                  oldestOccurredAt,
+                ),
+                transactions,
+              };
+            }),
             getMidRow: async (code, asOfDate) => {
               const row = await getMidRowOnOrBefore(prisma, code, asOfDate);
               return { mid: row.mid, rateDate: row.rateDate };
