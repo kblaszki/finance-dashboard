@@ -321,11 +321,21 @@ test("transfers are excluded from cashflow stats and included in balance-history
   const from = await request(app)
     .post("/api/accounts")
     .set("Authorization", `Bearer ${token}`)
-    .send({ name: "Stat From", currency: "PLN", openingBalance: 500 });
+    .send({
+      name: "Stat From",
+      currency: "PLN",
+      openingBalance: 500,
+      openingCashAsOf: "2026-01-01T00:00:00.000Z",
+    });
   const to = await request(app)
     .post("/api/accounts")
     .set("Authorization", `Bearer ${token}`)
-    .send({ name: "Stat To", currency: "PLN", openingBalance: 0 });
+    .send({
+      name: "Stat To",
+      currency: "PLN",
+      openingBalance: 0,
+      openingCashAsOf: "2026-01-01T00:00:00.000Z",
+    });
   const fromId = from.body.id as number;
   const toId = to.body.id as number;
 

@@ -4,6 +4,7 @@ import {
   aggregateAccountBalanceHistory,
   currentUtcMonthKey,
   resolveBalanceHistoryMonth,
+  resolveOpeningEffectiveAt,
 } from "./accountBalanceHistory";
 import { listMonthsEndingAt, parseMonthsParam } from "./cashflowStats";
 
@@ -19,52 +20,76 @@ test("resolveBalanceHistoryMonth defaults to current UTC month", () => {
   assert.throws(() => resolveBalanceHistoryMonth("2026-13"), /month must be/);
 });
 
-test("aggregateAccountBalanceHistory is flat at opening with no txs", () => {
-  const months = listMonthsEndingAt("2026-03", 3);
-  const result = aggregateAccountBalanceHistory(7, "PLN", months, 10_000, []);
-  assert.deepEqual(result, {
-    accountId: 7,
-    currency: "PLN",
-    monthCount: 3,
-    series: [
-      { month: "2026-01", balance: 100 },
-      { month: "2026-02", balance: 100 },
-      { month: "2026-03", balance: 100 },
-    ],
-  });
+test("resolveOpeningEffectiveAt prefers openingCashAsOf", () => {
+  const createdAt = new Date("2026-01-10T12:00:00.000Z");
+  const openingCashAsOf = new Date("2025-12-01T00:00:00.000Z");
+  assert.equal(
+    resolveOpeningEffectiveAt({ openingCashAsOf, createdAt }).toISOString(),
+    openingCashAsOf.toISOString(),
+  );
+  assert.equal(
+    resolveOpeningEffectiveAt({ openingCashAsOf: null, createdAt }).toISOString(),
+    createdAt.toISOString(),
+  );
 });
 
-test("aggregateAccountBalanceHistory accumulates end-of-month balances", () => {
+test("aggregateAccountBalanceHistory is zero before opening date", () => {
   const months = listMonthsEndingAt("2026-03", 3);
-  const result = aggregateAccountBalanceHistory(1, "USD", months, 50_00, [
-    {
-      type: "INCOME",
-      amount: 100_00,
-      occurredAt: new Date("2025-12-20T00:00:00.000Z"),
-    },
-    {
-      type: "INCOME",
-      amount: 25_00,
-      occurredAt: new Date("2026-01-15T00:00:00.000Z"),
-    },
-    {
-      type: "EXPENSE",
-      amount: 10_00,
-      occurredAt: new Date("2026-02-01T00:00:00.000Z"),
-    },
-    {
-      type: "EXPENSE",
-      amount: 5_00,
-      occurredAt: new Date("2026-03-31T23:59:59.000Z"),
-    },
-    {
-      type: "UNKNOWN",
-      amount: 999_00,
-      occurredAt: new Date("2026-02-15T00:00:00.000Z"),
-    },
+  const opening = new Date("2026-02-10T00:00:00.000Z");
+  const result = aggregateAccountBalanceHistory(
+    7,
+    "PLN",
+    months,
+    10_000,
+    [],
+    opening,
+  );
+  assert.deepEqual(result.series, [
+    { month: "2026-01", balance: 0 },
+    { month: "2026-02", balance: 100 },
+    { month: "2026-03", balance: 100 },
   ]);
+});
 
-  // opening 50 + pre-window 100 = 150 at end of Jan (+25) = 175
+test("aggregateAccountBalanceHistory accumulates end-of-month balances after opening", () => {
+  const months = listMonthsEndingAt("2026-03", 3);
+  const opening = new Date("2025-12-01T00:00:00.000Z");
+  const result = aggregateAccountBalanceHistory(
+    1,
+    "USD",
+    months,
+    50_00,
+    [
+      {
+        type: "INCOME",
+        amount: 100_00,
+        occurredAt: new Date("2025-12-20T00:00:00.000Z"),
+      },
+      {
+        type: "INCOME",
+        amount: 25_00,
+        occurredAt: new Date("2026-01-15T00:00:00.000Z"),
+      },
+      {
+        type: "EXPENSE",
+        amount: 10_00,
+        occurredAt: new Date("2026-02-01T00:00:00.000Z"),
+      },
+      {
+        type: "EXPENSE",
+        amount: 5_00,
+        occurredAt: new Date("2026-03-31T23:59:59.000Z"),
+      },
+      {
+        type: "UNKNOWN",
+        amount: 999_00,
+        occurredAt: new Date("2026-02-15T00:00:00.000Z"),
+      },
+    ],
+    opening,
+  );
+
+  // opening 50 + Dec 100 = 150 at end of Jan (+25) = 175
   // Feb −10 = 165; Mar −5 = 160
   assert.deepEqual(result.series, [
     { month: "2026-01", balance: 175 },
@@ -75,18 +100,26 @@ test("aggregateAccountBalanceHistory accumulates end-of-month balances", () => {
 
 test("aggregateAccountBalanceHistory includes TRANSFER_IN and TRANSFER_OUT", () => {
   const months = listMonthsEndingAt("2026-02", 2);
-  const result = aggregateAccountBalanceHistory(1, "PLN", months, 100_00, [
-    {
-      type: "TRANSFER_OUT",
-      amount: 40_00,
-      occurredAt: new Date("2026-01-10T00:00:00.000Z"),
-    },
-    {
-      type: "TRANSFER_IN",
-      amount: 15_00,
-      occurredAt: new Date("2026-02-05T00:00:00.000Z"),
-    },
-  ]);
+  const opening = new Date("2025-01-01T00:00:00.000Z");
+  const result = aggregateAccountBalanceHistory(
+    1,
+    "PLN",
+    months,
+    100_00,
+    [
+      {
+        type: "TRANSFER_OUT",
+        amount: 40_00,
+        occurredAt: new Date("2026-01-10T00:00:00.000Z"),
+      },
+      {
+        type: "TRANSFER_IN",
+        amount: 15_00,
+        occurredAt: new Date("2026-02-05T00:00:00.000Z"),
+      },
+    ],
+    opening,
+  );
   assert.deepEqual(result.series, [
     { month: "2026-01", balance: 60 },
     { month: "2026-02", balance: 75 },

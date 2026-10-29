@@ -50,13 +50,14 @@ sequenceDiagram
 | CSV import presets | `backend/src/routes/csvImportPresetsRoutes.ts` | Account-scoped column-map presets |
 | Description rules | `backend/src/routes/categoryDescriptionRulesRoutes.ts` | Import description → category rules |
 | Transfers routes | `backend/src/routes/transfersRoutes.ts` | Internal transfers CRUD + CSV import (month list capped at 2000; preview/commit in `domain/transfersImportService.ts` with commit-time re-dedup) |
-| Statistics routes | `backend/src/routes/statisticsRoutes.ts` | Category/tag breakdown, period summary, cashflow, net worth, rolling 12m (period loads soft-capped) |
+| Statistics routes | `backend/src/routes/statisticsRoutes.ts` | Category/tag breakdown, period summary, cashflow, FX net worth + history, rolling 12m (period loads soft-capped) |
 | Errors | `routes/httpSupport.ts`, `lib/errors.ts` | Typed HTTP errors (incl. 409 conflict) |
 | Scripts | `backend/src/scripts/` | `createUser` (empty user), `backupDb`, `syncFxRates` (NBP EUR/USD) |
 | Seed | `backend/prisma/seed.ts`, `domain/seedDemoPortfolio.ts` | Demo user + wipe/rebuild sample portfolio |
 | FX | `domain/fx.ts`, `fxRates.ts`, `nbpClient.ts` | NBP mids in `FxRateDaily`; `convertMajor` via PLN pivot |
+| Net worth | `domain/netWorth.ts`, `netWorthHistory.ts` | Current + monthly history; convert all owned PLN/EUR/USD accounts into the topbar reporting currency |
 
-Money and FX conversion live in `domain/fx*.ts` / `nbpClient.ts` — not in route handlers or the UI. Net-worth still sums per selected currency without FX (FR-038 planned). See [fullstack-practices.md](fullstack-practices.md).
+Money and FX conversion live in `domain/fx*.ts` / `nbpClient.ts` — not in route handlers or the UI. Net-worth HTTP handlers only read persisted `FxRateDaily` rows (valuation date = today for current; month-end or today for history). Missing required mids fail closed. See [fullstack-practices.md](fullstack-practices.md).
 
 **Planned (not shipped):** holdings, lots, asset trades, and market-data sync — schema/domain sketch and tenancy rules in [holdings-market-architecture.md](holdings-market-architecture.md). Do not add Prisma models until an implementation plan follows that spike.
 

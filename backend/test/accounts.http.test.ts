@@ -113,6 +113,16 @@ test("POST /api/accounts rejects unknown accountType", async () => {
   assert.match(res.body.error, /accountType/i);
 });
 
+test("POST /api/accounts rejects unsupported currency", async () => {
+  const { token } = await createUserAndToken();
+  const res = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "GBP Acct", currency: "GBP" });
+  assert.equal(res.status, 400);
+  assert.match(res.body.error, /FX currency must be/i);
+});
+
 test("POST /api/accounts rejects duplicate name for same user", async () => {
   const { token } = await createUserAndToken();
   const first = await request(app)
@@ -272,7 +282,11 @@ test("GET /api/accounts/:id/balance-history returns flat opening and scopes owne
   const account = await request(app)
     .post("/api/accounts")
     .set("Authorization", `Bearer ${token}`)
-    .send({ name: "BalHist", openingBalance: 250 });
+    .send({
+      name: "BalHist",
+      openingBalance: 250,
+      openingCashAsOf: "2025-01-01T00:00:00.000Z",
+    });
   assert.equal(account.status, 201);
   const accountId = account.body.id as number;
 
@@ -304,7 +318,11 @@ test("GET /api/accounts/:id/balance-history aggregates end-of-month cash balance
   const account = await request(app)
     .post("/api/accounts")
     .set("Authorization", `Bearer ${token}`)
-    .send({ name: "BalAgg", openingBalance: 100 });
+    .send({
+      name: "BalAgg",
+      openingBalance: 100,
+      openingCashAsOf: "2025-01-01T00:00:00.000Z",
+    });
   assert.equal(account.status, 201);
   const accountId = account.body.id as number;
 

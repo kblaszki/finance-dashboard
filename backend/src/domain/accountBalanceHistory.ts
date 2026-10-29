@@ -43,10 +43,19 @@ export function resolveBalanceHistoryMonth(value: unknown): {
 
 export { listMonthsEndingAt, parseMonthsParam };
 
+/** Effective opening instant: openingCashAsOf when set, otherwise createdAt. */
+export function resolveOpeningEffectiveAt(account: {
+  openingCashAsOf: Date | null;
+  createdAt: Date;
+}): Date {
+  return account.openingCashAsOf ?? account.createdAt;
+}
+
 /**
- * End-of-month cash balances: openingBalance + signed ledger deltas with
- * occurredAt before the start of the next month. Months with no activity stay flat.
- * Includes INCOME/EXPENSE and TRANSFER_IN/TRANSFER_OUT legs.
+ * End-of-month cash balances. Balance is 0 for months ending before
+ * `openingEffectiveAt`. Opening balance is introduced on that date, then
+ * ledger deltas with occurredAt >= openingEffectiveAt and < next month start
+ * are applied (includes TRANSFER_IN / TRANSFER_OUT).
  */
 export function aggregateAccountBalanceHistory(
   accountId: number,
@@ -54,6 +63,7 @@ export function aggregateAccountBalanceHistory(
   months: string[],
   openingBalanceMinor: number,
   rows: BalanceHistorySourceRow[],
+  openingEffectiveAt: Date,
 ): AccountBalanceHistoryResult {
   const sorted = rows
     .filter((row) => {
@@ -65,21 +75,35 @@ export function aggregateAccountBalanceHistory(
       amount: row.amount,
       occurredAt: row.occurredAt,
     }))
-    .sort((a, b) => {
-      const t = a.occurredAt.getTime() - b.occurredAt.getTime();
-      return t !== 0 ? t : 0;
-    });
+    .sort((a, b) => a.occurredAt.getTime() - b.occurredAt.getTime());
 
-  let running = openingBalanceMinor;
+  let running = 0;
+  let opened = false;
   let txIndex = 0;
   const series: AccountBalanceHistoryPoint[] = [];
 
   for (const month of months) {
     const { end } = parseMonthParam(month);
-    while (txIndex < sorted.length && sorted[txIndex]!.occurredAt < end) {
-      const tx = sorted[txIndex]!;
-      running += signedMinor(tx.type, tx.amount);
-      txIndex += 1;
+    if (!opened) {
+      if (openingEffectiveAt >= end) {
+        series.push({ month, balance: 0 });
+        continue;
+      }
+      running = openingBalanceMinor;
+      opened = true;
+      while (txIndex < sorted.length && sorted[txIndex]!.occurredAt < end) {
+        const tx = sorted[txIndex]!;
+        if (tx.occurredAt >= openingEffectiveAt) {
+          running += signedMinor(tx.type, tx.amount);
+        }
+        txIndex += 1;
+      }
+    } else {
+      while (txIndex < sorted.length && sorted[txIndex]!.occurredAt < end) {
+        const tx = sorted[txIndex]!;
+        running += signedMinor(tx.type, tx.amount);
+        txIndex += 1;
+      }
     }
     series.push({ month, balance: minorToMajor(running) });
   }

@@ -1,4 +1,14 @@
 import { Prisma } from "@prisma/client";
+import { badRequest } from "../lib/errors";
+import {
+  assertFxCurrency,
+  convertMajor,
+  formatYmdUtc,
+  type FxCurrency,
+  type FxNbpCurrency,
+  type GetMidFn,
+  isFxCurrency,
+} from "./fx";
 import { majorToDecimal } from "./money";
 
 export const NET_WORTH_BUCKETS = [
@@ -20,11 +30,19 @@ export type NetWorthAccountRow = {
   cashBalance: Prisma.Decimal | number;
 };
 
+export type NetWorthRateUsed = {
+  currency: FxNbpCurrency;
+  rateDate: string;
+  mid: number;
+};
+
 export type NetWorthResult = {
-  currency: string;
+  currency: FxCurrency;
+  asOf: string;
   byBucket: NetWorthByBucket;
   liabilities: number;
   netWorth: number;
+  ratesUsed: NetWorthRateUsed[];
 };
 
 const TYPE_TO_BUCKET: Record<string, NetWorthBucket> = {
@@ -60,41 +78,155 @@ function isCreditCard(accountType: string): boolean {
   return String(accountType).trim().toUpperCase() === "CREDIT_CARD";
 }
 
-export function aggregateNetWorth(
-  currency: string,
-  accounts: NetWorthAccountRow[],
-): NetWorthResult {
-  const byBucket = emptyBuckets();
-  let liabilities = new Prisma.Decimal(0);
+function roundMajor(value: Prisma.Decimal): number {
+  return value.toDecimalPlaces(2).toNumber();
+}
 
-  for (const account of accounts) {
-    if (account.currency !== currency) continue;
+function assertSupportedAccountCurrency(code: string): FxCurrency {
+  if (!isFxCurrency(code)) {
+    throw badRequest(
+      `Unsupported account currency ${code}; net worth supports only PLN, EUR, and USD`,
+    );
+  }
+  return code;
+}
+
+export type GetMidRowFn = (
+  currency: FxNbpCurrency,
+  asOf: Date,
+) => Promise<{ mid: Prisma.Decimal; rateDate: Date }>;
+
+/**
+ * Convert all owned account balances into the reporting currency via NBP mids.
+ * Missing required rates must fail through `getMid` / `getMidRow`.
+ */
+export async function aggregateNetWorth(input: {
+  currency: string;
+  asOf: Date;
+  accounts: NetWorthAccountRow[];
+  getMid: GetMidFn;
+  getMidRow?: GetMidRowFn;
+}): Promise<NetWorthResult> {
+  const reporting = assertFxCurrency(input.currency);
+  const asOfYmd = formatYmdUtc(input.asOf);
+  const byBucketDec: Record<NetWorthBucket, Prisma.Decimal> = {
+    cash: new Prisma.Decimal(0),
+    stock: new Prisma.Decimal(0),
+    crypto: new Prisma.Decimal(0),
+    metal: new Prisma.Decimal(0),
+    real_estate: new Prisma.Decimal(0),
+    other: new Prisma.Decimal(0),
+  };
+  let liabilities = new Prisma.Decimal(0);
+  const ratesUsed = new Map<FxNbpCurrency, NetWorthRateUsed>();
+
+  const midCache = new Map<FxNbpCurrency, Prisma.Decimal>();
+  const getMidCached: GetMidFn = async (currency, asOf) => {
+    const cached = midCache.get(currency);
+    if (cached) return cached;
+    if (input.getMidRow) {
+      const row = await input.getMidRow(currency, asOf);
+      midCache.set(currency, row.mid);
+      ratesUsed.set(currency, {
+        currency,
+        rateDate: formatYmdUtc(row.rateDate),
+        mid: row.mid.toNumber(),
+      });
+      return row.mid;
+    }
+    const mid = await input.getMid(currency, asOf);
+    midCache.set(currency, mid);
+    return mid;
+  };
+
+  for (const account of input.accounts) {
+    const accountCurrency = assertSupportedAccountCurrency(
+      String(account.currency).trim().toUpperCase(),
+    );
     const amount = majorToDecimal(account.cashBalance);
-    if (!amount) continue;
+    if (!amount || amount.isZero()) continue;
+
+    const converted = new Prisma.Decimal(
+      (
+        await convertMajor({
+          amount: amount.toNumber(),
+          from: accountCurrency,
+          to: reporting,
+          asOf: input.asOf,
+          getMid: getMidCached,
+        })
+      ).toString(),
+    );
 
     if (isCreditCard(account.accountType)) {
-      if (amount.isNegative()) {
-        liabilities = liabilities.add(amount.negated());
-      } else if (amount.isPositive()) {
-        byBucket.cash = new Prisma.Decimal(byBucket.cash).add(amount).toNumber();
+      if (converted.isNegative()) {
+        liabilities = liabilities.add(converted.negated());
+      } else if (converted.isPositive()) {
+        byBucketDec.cash = byBucketDec.cash.add(converted);
       }
       continue;
     }
 
     const bucket = accountTypeToBucket(account.accountType);
-    byBucket[bucket] = new Prisma.Decimal(byBucket[bucket]).add(amount).toNumber();
+    byBucketDec[bucket] = byBucketDec[bucket].add(converted);
   }
 
-  const liabilitiesMajor = liabilities.toNumber();
+  const byBucket = emptyBuckets();
+  for (const key of NET_WORTH_BUCKETS) {
+    byBucket[key] = roundMajor(byBucketDec[key]);
+  }
+  const liabilitiesMajor = roundMajor(liabilities);
   const bucketSum = NET_WORTH_BUCKETS.reduce(
     (sum, key) => sum + byBucket[key],
     0,
   );
 
   return {
-    currency,
+    currency: reporting,
+    asOf: asOfYmd,
     byBucket,
     liabilities: liabilitiesMajor,
-    netWorth: bucketSum - liabilitiesMajor,
+    netWorth: new Prisma.Decimal(bucketSum - liabilitiesMajor)
+      .toDecimalPlaces(2)
+      .toNumber(),
+    ratesUsed: [...ratesUsed.values()].sort((a, b) =>
+      a.currency.localeCompare(b.currency),
+    ),
   };
 }
+
+/** UTC midnight of the last calendar day of YYYY-MM, or today when month is current. */
+export function valuationDateForMonth(
+  month: string,
+  asOfToday: Date = new Date(),
+): Date {
+  const m = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(month.trim());
+  if (!m) throw badRequest("month must be YYYY-MM");
+  const year = Number(m[1]);
+  const monthIndex = Number(m[2]) - 1;
+  const currentYear = asOfToday.getUTCFullYear();
+  const currentMonth = asOfToday.getUTCMonth();
+  if (
+    year > currentYear ||
+    (year === currentYear && monthIndex > currentMonth)
+  ) {
+    throw badRequest("month cannot be in the future");
+  }
+  if (year === currentYear && monthIndex === currentMonth) {
+    return new Date(
+      Date.UTC(
+        asOfToday.getUTCFullYear(),
+        asOfToday.getUTCMonth(),
+        asOfToday.getUTCDate(),
+      ),
+    );
+  }
+  // Day 0 of next month = last day of this month
+  return new Date(Date.UTC(year, monthIndex + 1, 0));
+}
+
+export function parseReportingCurrencyParam(value: unknown): FxCurrency {
+  return assertFxCurrency(value);
+}
+
+export { isFxCurrency };

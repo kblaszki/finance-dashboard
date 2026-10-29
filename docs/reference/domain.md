@@ -73,10 +73,10 @@ User-scoped financial account. Create accepts allow-listed types; `accountType` 
 | userId | Int | FK → User |
 | accountType | String | `BANK`, `BROKERAGE`, `CRYPTO`, `PRECIOUS_METAL`, `REAL_ESTATE`, `CREDIT_CARD`, `IKE`, `IKZE`, `TREASURY_BONDS`, `OTHER`, `MANUAL` (omit/blank → `BANK`). `CREDIT_CARD` uses signed `cashBalance` (≤ 0 = debt). `IKE` / `IKZE` / `TREASURY_BONDS` are cash sleeves for now (holdings later). |
 | name | String | Unique per user (`@@unique([userId, name])`) |
-| currency | String | ISO-like 3-letter code (stored uppercase) |
+| currency | String | FX whitelist only: `PLN`, `EUR`, or `USD` (stored uppercase). Create/PATCH reject other codes |
 | cashBalance | Int | Working cash in minor units (cents). API JSON uses major units |
 | openingBalance | Int | Opening cash seed in minor units (default 0) |
-| openingCashAsOf | DateTime? | Optional opening date |
+| openingCashAsOf | DateTime? | Optional opening date; when absent, balance history / net-worth history treat `createdAt` as the effective opening instant (balance is 0 before that) |
 | description | String? | Optional note |
 | createdAt | DateTime | Default now |
 | updatedAt | DateTime | `@updatedAt` |
@@ -185,7 +185,7 @@ Global (not user-scoped) NBP table A mid for one foreign currency on one calenda
 | mid | Decimal | Major PLN per 1 foreign unit |
 | createdAt | DateTime | Default now |
 
-Unique `[rateDate, currency]`; index `[currency, rateDate]`. Domain: `backend/src/domain/fx.ts`, `fxRates.ts`, `nbpClient.ts`. Sync CLI: `npm run fx:sync`.
+Unique `[rateDate, currency]`; index `[currency, rateDate]`. Domain: `backend/src/domain/fx.ts`, `fxRates.ts`, `nbpClient.ts`. Sync CLI: `npm run fx:sync`. Net-worth and net-worth history read these rows only (latest mid on or before the valuation date via PLN pivot); they never call NBP over the network. Missing required rates fail closed.
 
 ## Planned: holdings and market data
 

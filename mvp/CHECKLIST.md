@@ -1,6 +1,6 @@
 # MVP feature checklist
 
-Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + category tree + cash ledger + ledger CSV export/import + internal cash transfers + statistics + dashboard KPIs** baseline (JWT auth, settings, health, private-deploy CLIs, prod auth rate limits, account CRUD, nested categories, INCOME/EXPENSE cash txs with optional `categoryId`, per-account cash ledger CSV export/import, `CashTransfer` / `/transfers`, month category breakdown, period KPIs, cashflow history chart, cash net-worth buckets, rolling 12m cashflow averages). Feature specs under `mvp/features/**` remain the backlog; do not treat `planned` rows as shipped code.
+Last review: 2026-10-29 — statuses aligned to **auth + multi-type accounts + category tree + cash ledger + ledger CSV export/import + internal cash transfers + statistics + FX-aware dashboard net worth/history** baseline (JWT auth, settings, health, private-deploy CLIs, prod auth rate limits, account CRUD, nested categories, INCOME/EXPENSE cash txs with optional `categoryId`, per-account cash ledger CSV export/import, `CashTransfer` / `/transfers`, month category breakdown, period KPIs, cashflow history chart, NBP-converted net-worth buckets + history, rolling 12m cashflow averages). Feature specs under `mvp/features/**` remain the backlog; do not treat `planned` rows as shipped code.
 
 ## Legend
 
@@ -33,7 +33,7 @@ Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + c
 | FR-008 | Cross-account portfolio with bucket filters | planned | [features/dashboard-stats/portfolio-bucket-filters.md](features/dashboard-stats/portfolio-bucket-filters.md) | /portfolio |
 | FR-016 | Category spend breakdown | done | [features/dashboard-stats/category-spend-breakdown.md](features/dashboard-stats/category-spend-breakdown.md) | /statistics |
 | FR-037 | Budget threshold alerts on dashboard | planned | [features/dashboard-stats/budget-alerts-banner.md](features/dashboard-stats/budget-alerts-banner.md) | BudgetAlertsBanner |
-| FR-038 | Dashboard PLN net-worth rollup | planned | [features/dashboard-stats/pln-net-worth-rollup.md](features/dashboard-stats/pln-net-worth-rollup.md) | NetWorthSection |
+| FR-038 | Dashboard reporting-currency net-worth rollup | done | [features/dashboard-stats/pln-net-worth-rollup.md](features/dashboard-stats/pln-net-worth-rollup.md) | /dashboard WealthHero |
 | FR-006 | Extended account types | done | [features/accounts/extended-account-types.md](features/accounts/extended-account-types.md) | /accounts create |
 | FR-012 | Accounts list with type filter | done | [features/accounts/accounts-list-filter.md](features/accounts/accounts-list-filter.md) | /accounts |
 | FR-032 | Precious metal grams on account | planned | [features/accounts/precious-metal-grams.md](features/accounts/precious-metal-grams.md) | PRECIOUS_METAL account detail |
@@ -153,7 +153,7 @@ Last review: 2026-10-10 — statuses aligned to **auth + multi-type accounts + c
 - **planned** [FR-008 Cross-account portfolio with bucket filters](features/dashboard-stats/portfolio-bucket-filters.md)
 - **done** [FR-016 Category spend breakdown](features/dashboard-stats/category-spend-breakdown.md)
 - **planned** [FR-037 Budget threshold alerts on dashboard](features/dashboard-stats/budget-alerts-banner.md)
-- **planned** [FR-038 Dashboard PLN net-worth rollup](features/dashboard-stats/pln-net-worth-rollup.md)
+- **done** [FR-038 Dashboard reporting-currency net-worth rollup](features/dashboard-stats/pln-net-worth-rollup.md)
 
 ### budgets-categories
 

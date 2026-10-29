@@ -43,6 +43,38 @@ export async function upsertFxRates(
   return count;
 }
 
+export type FxMidRow = {
+  currency: FxNbpCurrency;
+  rateDate: Date;
+  mid: Prisma.Decimal;
+};
+
+/**
+ * Latest NBP mid row for currency with rateDate <= asOf (UTC calendar).
+ * Throws notFound when no row exists.
+ */
+export async function getMidRowOnOrBefore(
+  db: Db,
+  currency: string,
+  asOf: Date,
+): Promise<FxMidRow> {
+  const code = assertFxNbpCurrency(currency);
+  const asOfDay = utcDateFromYmd(formatYmdUtc(asOf));
+  const row = await db.fxRateDaily.findFirst({
+    where: { currency: code, rateDate: { lte: asOfDay } },
+    orderBy: { rateDate: "desc" },
+    select: { mid: true, rateDate: true, currency: true },
+  });
+  if (!row) {
+    throw notFound(`No NBP FX rate for ${code} on or before ${formatYmdUtc(asOfDay)}`);
+  }
+  return {
+    currency: code,
+    rateDate: row.rateDate,
+    mid: row.mid,
+  };
+}
+
 /**
  * Latest NBP mid for currency with rateDate <= asOf (UTC calendar).
  * Throws notFound when no row exists.
@@ -52,16 +84,7 @@ export async function getMidOnOrBefore(
   currency: string,
   asOf: Date,
 ): Promise<Prisma.Decimal> {
-  const code = assertFxNbpCurrency(currency);
-  const asOfDay = utcDateFromYmd(formatYmdUtc(asOf));
-  const row = await db.fxRateDaily.findFirst({
-    where: { currency: code, rateDate: { lte: asOfDay } },
-    orderBy: { rateDate: "desc" },
-    select: { mid: true },
-  });
-  if (!row) {
-    throw notFound(`No NBP FX rate for ${code} on or before ${formatYmdUtc(asOfDay)}`);
-  }
+  const row = await getMidRowOnOrBefore(db, currency, asOf);
   return row.mid;
 }
 

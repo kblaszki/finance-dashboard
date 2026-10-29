@@ -20,7 +20,7 @@ Run from `backend/` unless noted.
 |--------|---------|---------|
 | Create user | `npm run create-user -- --email … --username … --password …` | Private deploy when registration is closed; creates an empty user (no default categories/tags). Requires `npm run build` first (runs `dist/scripts/…`). In Docker: `docker compose exec finance-dashboard node dist/scripts/createUser.js --email … --username … --password …` |
 | Demo user seed | `npm run db:seed` | Upsert `demo@finance.local` and wipe/rebuild sample portfolio (categories, 4 accounts, cash txs) |
-| NBP FX sync | `npm run fx:sync` | Upsert NBP table A mids for **EUR** and **USD** into `FxRateDaily`. Default last 30 UTC days; or `--days N` / `--from YYYY-MM-DD --to YYYY-MM-DD`. Requires `npm run build`. Optional `NBP_API_BASE` |
+| NBP FX sync | `npm run fx:sync` | Upsert NBP table A mids for **EUR** and **USD** into `FxRateDaily`. Default last 30 UTC days; or `--days N` / `--from YYYY-MM-DD --to YYYY-MM-DD`. For dashboard net-worth history (up to 24 months), run an initial backfill such as `npm run fx:sync -- --days 760`, then keep a short rolling window for daily sync. Requires `npm run build`. Optional `NBP_API_BASE`. Dashboard/net-worth HTTP never fetches NBP live |
 | DB backup | `npm run db:backup` | Copy SQLite file (optional `--gzip` / `BACKUP_GZIP`). Requires build; Docker writes under `BACKUP_DIR` (Compose: `/data/backups` → `./data/backups`) |
 | Migrate deploy | `npx prisma migrate deploy` | Apply migrations (CI / production) |
 | Migrate dev | `npx prisma migrate dev --name <description>` | Local schema change |

@@ -11,6 +11,7 @@ related_code:
   - backend/src/domain/statsPeriod.ts
   - backend/src/domain/tagBreakdown.ts
   - backend/src/domain/netWorth.ts
+  - backend/src/domain/netWorthHistory.ts
   - backend/src/routes/statisticsRoutes.ts
   - frontend/src/pages/DashboardPage.tsx
   - frontend/src/components/dashboard/
@@ -24,26 +25,26 @@ Hub: [docs/README.md](../README.md).
 
 This page covers shipped dashboard KPIs (`/dashboard`) and statistics (`/statistics`). Currency is chosen once in the shell topbar (persisted in `localStorage`).
 
-## Dashboard: executive overview (FR-002 / FR-005)
+## Dashboard: executive overview (FR-002 / FR-005 / FR-038)
 
 1. Open **Dashboard** (or go to `/dashboard`). `/home` redirects here.
-2. Confirm the **currency** in the top bar (from your accounts). Incomplete workspaces still show the **Setup checklist** first.
-3. Review **Wealth hero**: total net worth, cash / invested / debt chips, and a **monthly net** area chart from cashflow history (range chips `1M` / `6M` / `1Y` slice the fetched 12-month series client-side — this is not a net-worth time series).
-4. Review **period KPI strip** for the current UTC month: income, expense, savings ratio (`net / income`), and monthly net, each with % vs the previous month when available.
+2. Confirm the **reporting currency** in the top bar (`PLN` / `EUR` / `USD` from your accounts). Incomplete workspaces still show the **Setup checklist** first.
+3. Review **Wealth hero**: total net worth for **all** owned accounts converted into the topbar currency via stored NBP mids (valuation / rate dates shown), cash / invested / debt chips, and a **net-worth history** area chart. Range chips `6M` / `1Y` / `2Y` slice the fetched 24-month series client-side.
+4. Review **period KPI strip** for the current UTC month (scoped to the selected currency only — labeled with that currency): income, expense, savings ratio (`net / income`), and monthly net, each with % vs the previous month when available.
 5. Review the **executive grid**:
-   - **Portfolio allocation** — donut + legend by account-type bucket; link to Accounts.
+   - **Portfolio allocation** — donut + legend by account-type bucket (after FX); link to Accounts.
    - **Goals in motion** — empty placeholder until a goals feature exists.
    - **Ideas** — heuristic educational tips from live surplus / savings ratio / liabilities (not advice).
    - **Recent activity** — latest internal transfers (`GET /api/transfers?limit=8`).
 6. APIs:
    - `GET /api/statistics/net-worth?currency=XXX`
-   - `GET /api/statistics/cashflow-history?month=YYYY-MM&currency=XXX&months=12`
+   - `GET /api/statistics/net-worth-history?month=YYYY-MM&currency=XXX&months=24`
    - `GET /api/statistics/period-summary?month=YYYY-MM&currency=XXX` (current + previous month)
    - `GET /api/transfers?limit=8`
    - `GET /api/accounts` (shared via `CurrencyProvider`)
    - `GET /api/categories` (setup checklist only)
 
-No FX conversion. Mapping: `BANK→cash`, `BROKERAGE|IKE|IKZE→stock`, `CRYPTO→crypto`, `PRECIOUS_METAL→metal`, `REAL_ESTATE→real_estate`, `OTHER|MANUAL|TREASURY_BONDS→other`. `CREDIT_CARD` debt (`cashBalance < 0`) adds to `liabilities` (shown when > 0); overpayment goes to `cash`. Mortgage-style liabilities (FR-029) are separate. Holdings valuations are not included. Rolling 12-month averages remain on **Statistics**, not the dashboard hero strip.
+Net worth uses persisted NBP rates only (no live NBP during the request). Mapping after conversion: `BANK→cash`, `BROKERAGE|IKE|IKZE→stock`, `CRYPTO→crypto`, `PRECIOUS_METAL→metal`, `REAL_ESTATE→real_estate`, `OTHER|MANUAL|TREASURY_BONDS→other`. `CREDIT_CARD` debt adds to `liabilities`; overpayment goes to `cash`. Mortgage-style liabilities (FR-029) are separate. Holdings valuations are not included. Ensure FX history is synced before relying on long charts (`cd backend && npm run build && npm run fx:sync -- --days 760`). Rolling 12-month cashflow averages remain on **Statistics**.
 
 ## Period KPIs and cashflow chart (FR-003 / FR-004)
 

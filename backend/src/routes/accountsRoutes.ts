@@ -9,8 +9,12 @@ import {
   resolveBalanceHistoryMonth,
 } from "../domain/accountBalanceHistory";
 import { parseAccountType } from "../domain/accountTypes";
-import { decimalToMinor, minorToMajor, normalizeCurrencyCode, parseOpeningBalance } from "../domain/money";
+import { assertFxCurrency } from "../domain/fx";
+import { decimalToMinor, minorToMajor, parseOpeningBalance } from "../domain/money";
 import { findOwnedAccount } from "../domain/ownedAccount";
+import {
+  resolveOpeningEffectiveAt,
+} from "../domain/accountBalanceHistory";
 import {
   assertBalanceHistoryTxCap,
   BALANCE_HISTORY_TX_CAP,
@@ -29,8 +33,11 @@ type AccountsDeps = {
   uid: (req: AuthedRequest) => number;
 };
 
-function normalizeCurrency(value: unknown): string {
-  return normalizeCurrencyCode(value, { defaultCode: "PLN" });
+function normalizeAccountCurrency(value: unknown): string {
+  if (value === undefined || value === null || value === "") {
+    return "PLN";
+  }
+  return assertFxCurrency(value);
 }
 
 function parseOptionalDescription(value: unknown): string | null | undefined {
@@ -98,7 +105,7 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
 
       const name = parseRequiredString(body.name, "name");
       if (name.length > 100) throw badRequest("name must be at most 100 characters");
-      const currency = normalizeCurrency(body.currency);
+      const currency = normalizeAccountCurrency(body.currency);
       const openingBalance =
         body.openingBalance === undefined || body.openingBalance === null || body.openingBalance === ""
           ? 0
@@ -169,6 +176,7 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
             months,
             account.openingBalance,
             rows,
+            resolveOpeningEffectiveAt(account),
           ),
         );
       } catch (e: unknown) {
@@ -191,7 +199,7 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
         data.name = name;
       }
       if (body.currency !== undefined) {
-        data.currency = normalizeCurrency(body.currency);
+        data.currency = normalizeAccountCurrency(body.currency);
       }
       if (body.description !== undefined) {
         data.description = parseOptionalDescription(body.description) ?? null;

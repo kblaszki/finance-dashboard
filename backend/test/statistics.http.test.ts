@@ -518,9 +518,20 @@ test("GET /api/statistics/net-worth requires auth and valid currency", async () 
   assert.equal(bad.status, 400);
 });
 
-test("GET /api/statistics/net-worth aggregates cashBalance by bucket with tenancy", async () => {
+test("GET /api/statistics/net-worth aggregates all currencies with NBP FX and tenancy", async () => {
   const token = await registerAndLogin("nwagg@test.local", "nwagg", "password123");
   const otherToken = await registerAndLogin("nwother@test.local", "nwother", "password123");
+
+  const today = new Date();
+  const rateDate = new Date(
+    Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()),
+  );
+  await prisma.fxRateDaily.createMany({
+    data: [
+      { currency: "USD", rateDate, mid: 4 },
+      { currency: "EUR", rateDate, mid: 4 },
+    ],
+  });
 
   await request(app)
     .post("/api/accounts")
@@ -547,7 +558,7 @@ test("GET /api/statistics/net-worth aggregates cashBalance by bucket with tenanc
       name: "NW Crypto",
       currency: "USD",
       accountType: "CRYPTO",
-      openingBalance: 400,
+      openingBalance: 100,
     });
   await request(app)
     .post("/api/accounts")
@@ -563,19 +574,13 @@ test("GET /api/statistics/net-worth aggregates cashBalance by bucket with tenanc
     .get("/api/statistics/net-worth?currency=PLN")
     .set("Authorization", `Bearer ${token}`);
   assert.equal(res.status, 200);
-  assert.deepEqual(res.body, {
-    currency: "PLN",
-    byBucket: {
-      cash: 1000,
-      stock: 2500,
-      crypto: 0,
-      metal: 0,
-      real_estate: 0,
-      other: 0,
-    },
-    liabilities: 0,
-    netWorth: 3500,
-  });
+  assert.equal(res.body.currency, "PLN");
+  assert.equal(res.body.byBucket.cash, 1000);
+  assert.equal(res.body.byBucket.stock, 2500);
+  assert.equal(res.body.byBucket.crypto, 400);
+  assert.equal(res.body.liabilities, 0);
+  assert.equal(res.body.netWorth, 3900);
+  assert.ok(Array.isArray(res.body.ratesUsed));
 
   await request(app)
     .post("/api/accounts")
@@ -602,14 +607,102 @@ test("GET /api/statistics/net-worth aggregates cashBalance by bucket with tenanc
   assert.equal(withCard.status, 200);
   assert.equal(withCard.body.liabilities, 100);
   assert.equal(withCard.body.byBucket.stock, 2900);
-  assert.equal(withCard.body.netWorth, 3500 + 400 - 100);
+  assert.equal(withCard.body.netWorth, 3900 + 400 - 100);
 
-  const unknown = await request(app)
+  const inEur = await request(app)
     .get("/api/statistics/net-worth?currency=EUR")
     .set("Authorization", `Bearer ${token}`);
-  assert.equal(unknown.status, 200);
-  assert.equal(unknown.body.netWorth, 0);
-  assert.equal(unknown.body.liabilities, 0);
+  assert.equal(inEur.status, 200);
+  assert.equal(inEur.body.currency, "EUR");
+  assert.ok(inEur.body.netWorth > 0);
+});
+
+test("GET /api/statistics/net-worth-history returns monthly converted series", async () => {
+  const token = await registerAndLogin("nwhist@test.local", "nwhist", "password123");
+  const today = new Date();
+  const rateDate = new Date(
+    Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()),
+  );
+  await prisma.fxRateDaily.create({
+    data: { currency: "USD", rateDate, mid: 4 },
+  });
+
+  await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      name: "Hist PLN",
+      currency: "PLN",
+      accountType: "BANK",
+      openingBalance: 1000,
+    });
+  await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      name: "Hist USD",
+      currency: "USD",
+      accountType: "CRYPTO",
+      openingBalance: 50,
+    });
+
+  const noAuth = await request(app).get(
+    "/api/statistics/net-worth-history?currency=PLN&months=6",
+  );
+  assert.equal(noAuth.status, 401);
+
+  const badMonths = await request(app)
+    .get("/api/statistics/net-worth-history?currency=PLN&months=3")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(badMonths.status, 400);
+
+  const future = await request(app)
+    .get("/api/statistics/net-worth-history?currency=PLN&month=2099-01")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(future.status, 400);
+
+  const res = await request(app)
+    .get("/api/statistics/net-worth-history?currency=PLN&months=6")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  assert.equal(res.body.currency, "PLN");
+  assert.equal(res.body.monthCount, 6);
+  assert.equal(res.body.series.length, 6);
+  const last = res.body.series[5];
+  assert.equal(last.netWorth, 1000 + 200);
+  assert.ok(typeof last.month === "string");
+  assert.ok(typeof last.asOf === "string");
+
+  const twelve = await request(app)
+    .get("/api/statistics/net-worth-history?currency=PLN&months=12")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(twelve.status, 200);
+  assert.equal(twelve.body.monthCount, 12);
+
+  const twentyFour = await request(app)
+    .get("/api/statistics/net-worth-history?currency=PLN&months=24")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(twentyFour.status, 200);
+  assert.equal(twentyFour.body.monthCount, 24);
+});
+
+test("GET /api/statistics/net-worth fails when required FX mid is missing", async () => {
+  const token = await registerAndLogin("nwmiss@test.local", "nwmiss", "password123");
+  await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      name: "Need USD mid",
+      currency: "USD",
+      accountType: "BANK",
+      openingBalance: 10,
+    });
+
+  const res = await request(app)
+    .get("/api/statistics/net-worth?currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 404);
+  assert.match(res.body.error, /USD|rate|mid/i);
 });
 
 test("GET /api/statistics/cashflow-rolling-12m requires auth and valid currency", async () => {

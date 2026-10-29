@@ -11,7 +11,7 @@ related_docs:
 
 Hub: [docs/README.md](../README.md).
 
-**Shipped in code** = auth + multi-type accounts + category tree + tags + cash ledger (optional `categoryId`, CSV export/import) + internal cash transfers + statistics (category breakdown, period KPIs, cashflow history, cash net worth, rolling 12m averages) + NBP FX rate store/CLI below. Remaining backlog: [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) and `mvp/features/*`. Checklist: **27 done / 0 in_progress / 46 planned** (as of 2026-10-25; matches master table in CHECKLIST).
+**Shipped in code** = auth + multi-type accounts + category tree + tags + cash ledger (optional `categoryId`, CSV export/import) + internal cash transfers + statistics (category breakdown, period KPIs, cashflow history, FX-aware net worth + history, rolling 12m averages) + NBP FX rate store/CLI below. Remaining backlog: [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) and `mvp/features/*`. Checklist: **28 done / 0 in_progress / 45 planned** (as of 2026-10-29; matches master table in CHECKLIST).
 
 ## Shipped
 
@@ -35,15 +35,16 @@ Hub: [docs/README.md](../README.md).
 | FR-016 | Category spend breakdown | `GET /api/statistics/category-breakdown`; `/statistics` month Income/Expense lists (UTC, no FX) |
 | FR-003 | Statistics period cashflow summary | `GET /api/statistics/period-summary`; `/statistics` income/expense/net KPIs for one currency |
 | FR-004 | Cashflow history chart | `GET /api/statistics/cashflow-history`; `/statistics` Recharts series (`months` 6\|12\|24) |
-| FR-002 | Net worth (cash buckets) | `GET /api/statistics/net-worth`; `/dashboard` byBucket from `cashBalance`; `CREDIT_CARD` debt → `liabilities` (no holdings/FX) |
-| FR-005 | Rolling 12-month cashflow averages | `GET /api/statistics/cashflow-rolling-12m`; `/dashboard` avg income/expense/net |
+| FR-002 | Net worth (cash buckets) | `GET /api/statistics/net-worth`; `/dashboard` byBucket after FX; `CREDIT_CARD` debt → `liabilities` (no holdings) |
+| FR-005 | Rolling 12-month cashflow averages | `GET /api/statistics/cashflow-rolling-12m`; `/statistics` avg income/expense/net |
+| FR-038 | Reporting-currency net-worth rollup + history | `GET /api/statistics/net-worth` + `net-worth-history`; NBP mid via PLN pivot into topbar currency; `/dashboard` WealthHero 6M/1Y/2Y chart |
 | FR-011 | Internal cash transfers | `CashTransfer` + `TRANSFER_*` legs; `/api/transfers`; `/transfers`; [internal-transfers.md](../how-to/internal-transfers.md) |
 | MVP-015 | Transfers CSV export and mapped import | `GET/POST /api/transfers/export|import`; `/transfers` Download/Upload CSV |
 | MVP-016 | Categories CSV export and merge import | `GET/POST /api/categories/export|import`; `/categories` Download/Upload CSV |
 | MVP-017 | Transfer category group (`TRANSFER` ledgerType) | `Category.ledgerType`; `/categories` Transfers section; optional `categoryId` on transfers |
 | MVP-018 | Cash transaction tags | `Tag` + `CashTransactionTag`; `/tags`; ledger `tagIds`; `GET /api/statistics/tag-breakdown` |
 | FR-012 | Accounts list type filter | `/accounts` UI filter by `accountType` (`filterAccountsByType`) |
-| FR-010 | Historical NBP FX rates | `FxRateDaily`; `domain/fx.ts` + `fxRates.ts` + `nbpClient.ts`; `npm run fx:sync` (EUR/USD via PLN pivot). Net-worth FX rollup still FR-038 |
+| FR-010 | Historical NBP FX rates | `FxRateDaily`; `domain/fx.ts` + `fxRates.ts` + `nbpClient.ts`; `npm run fx:sync` (EUR/USD via PLN pivot); consumed by FR-038 |
 
 ## Planned / not in this codebase
 
@@ -51,6 +52,6 @@ Hub: [docs/README.md](../README.md).
 |------|----------------|
 | Password reset (MVP-003) | [mvp/features/auth/password-reset-api.md](../../mvp/features/auth/password-reset-api.md) |
 | JWT HttpOnly cookie (MVP-004) | [mvp/features/auth/jwt-httponly-cookie.md](../../mvp/features/auth/jwt-httponly-cookie.md) |
-| Holdings, tax, import, PLN net-worth FX rollup (FR-038), budgets, … | [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) |
+| Holdings, tax, import, budgets, … | [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) |
 
 Do not invent “implemented” rows for domain FRs until the feature ships and docs-sync updates this page.

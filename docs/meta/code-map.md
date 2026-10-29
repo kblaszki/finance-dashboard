@@ -39,7 +39,7 @@ JWT auth, multi-type accounts, category tree + tags, cash ledger + transfers, CS
 | Tag breakdown domain | `backend/src/domain/tagBreakdown.ts` |
 | Cashflow stats domain | `backend/src/domain/cashflowStats.ts` |
 | Account balance history domain | `backend/src/domain/accountBalanceHistory.ts` |
-| Net worth domain | `backend/src/domain/netWorth.ts` |
+| Net worth domain | `backend/src/domain/netWorth.ts`, `netWorthHistory.ts` |
 | FX / NBP rates | `backend/src/domain/fx.ts`, `fxRates.ts`, `nbpClient.ts` |
 | FX sync CLI | `backend/src/scripts/syncFxRates.ts` |
 | Holdings / market (planned) | Spike only: [docs/explanation/holdings-market-architecture.md](../explanation/holdings-market-architecture.md) — no `domain/holdings*` yet |
