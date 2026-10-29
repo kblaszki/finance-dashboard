@@ -74,12 +74,35 @@ export type NetWorthByBucket = {
   other: number;
 };
 
+export type NetWorthRateUsed = {
+  currency: string;
+  rateDate: string;
+  mid: number;
+};
+
 export type NetWorth = {
   currency: string;
+  asOf: string;
   byBucket: NetWorthByBucket;
   liabilities: number;
   netWorth: number;
+  ratesUsed: NetWorthRateUsed[];
 };
+
+export type NetWorthHistoryPoint = {
+  month: string;
+  asOf: string;
+  netWorth: number;
+};
+
+export type NetWorthHistory = {
+  currency: string;
+  monthCount: number;
+  series: NetWorthHistoryPoint[];
+  ratesUsed: NetWorthRateUsed[];
+};
+
+export type NetWorthHistoryMonths = 6 | 12 | 24;
 
 export type CashflowRolling12m = {
   currency: string;
@@ -153,6 +176,21 @@ export async function fetchNetWorth(currency: string): Promise<NetWorth> {
   const params = new URLSearchParams({ currency });
   return apiClient.get<NetWorth>(
     `/api/statistics/net-worth?${params.toString()}`,
+  );
+}
+
+export async function fetchNetWorthHistory(
+  currency: string,
+  months: NetWorthHistoryMonths,
+  month?: string,
+): Promise<NetWorthHistory> {
+  const params = new URLSearchParams({
+    currency,
+    months: String(months),
+  });
+  if (month) params.set("month", month);
+  return apiClient.get<NetWorthHistory>(
+    `/api/statistics/net-worth-history?${params.toString()}`,
   );
 }
 

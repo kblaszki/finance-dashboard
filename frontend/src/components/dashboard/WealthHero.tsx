@@ -8,15 +8,15 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { CashflowHistory, NetWorth } from "../../api/statisticsApi";
+import type { NetWorth, NetWorthHistory } from "../../api/statisticsApi";
 import { formatMoney } from "../../utils/format";
 
-type ChartRange = 1 | 6 | 12;
+export type ChartRange = 6 | 12 | 24;
 
 const RANGE_OPTIONS: { months: ChartRange; label: string }[] = [
-  { months: 1, label: "1M" },
   { months: 6, label: "6M" },
   { months: 12, label: "1Y" },
+  { months: 24, label: "2Y" },
 ];
 
 function investedTotal(data: NetWorth): number {
@@ -30,24 +30,35 @@ function shortMonth(month: string): string {
   return d.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
 }
 
+export function sliceNetWorthHistory(
+  history: NetWorthHistory | null,
+  range: ChartRange,
+): { month: string; asOf: string; netWorth: number; label: string }[] {
+  const points = history?.series ?? [];
+  return points.slice(-range).map((p) => ({
+    ...p,
+    label: shortMonth(p.month),
+  }));
+}
+
 export function WealthHero(props: {
   netWorth: NetWorth;
-  history: CashflowHistory | null;
+  history: NetWorthHistory | null;
   currency: string;
 }) {
   const { netWorth, history, currency } = props;
   const [range, setRange] = useState<ChartRange>(12);
 
-  const series = useMemo(() => {
-    const points = history?.series ?? [];
-    return points.slice(-range).map((p) => ({
-      ...p,
-      label: shortMonth(p.month),
-    }));
-  }, [history, range]);
+  const series = useMemo(
+    () => sliceNetWorthHistory(history, range),
+    [history, range],
+  );
 
   const cash = netWorth.byBucket.cash;
   const invested = investedTotal(netWorth);
+  const rateDates = (netWorth.ratesUsed ?? [])
+    .map((r) => `${r.currency} ${r.rateDate}`)
+    .join(", ");
 
   return (
     <section className="wealth-hero card">
@@ -57,8 +68,13 @@ export function WealthHero(props: {
           {formatMoney(netWorth.netWorth, currency)}
         </h2>
         <p className="muted wealth-hero-note">
-          Cash in the top-bar currency only. No FX, no holdings valuations.
+          {netWorth.asOf
+            ? `All accounts converted to ${currency} via NBP mid rates · as of ${netWorth.asOf}. Holdings valuations not included.`
+            : `All accounts converted to ${currency} via NBP mid rates. Holdings valuations not included.`}
         </p>
+        {rateDates ? (
+          <p className="muted wealth-hero-note">Rates: {rateDates}</p>
+        ) : null}
         <div className="wealth-hero-chips">
           <span>Cash {formatMoney(cash, currency)}</span>
           <span>Invested {formatMoney(invested, currency)}</span>
@@ -71,7 +87,7 @@ export function WealthHero(props: {
       </div>
       <div className="wealth-hero-chart">
         <div className="wealth-chart-head">
-          <span className="muted">Monthly net · last {range}m</span>
+          <span className="muted">Net worth · last {range}m</span>
           <div className="wealth-chart-range" role="group" aria-label="Chart range">
             {RANGE_OPTIONS.map((opt) => (
               <button
@@ -130,14 +146,19 @@ export function WealthHero(props: {
                     : String(value ?? "")
                 }
                 labelFormatter={(_, payload) => {
-                  const month = payload?.[0]?.payload?.month;
-                  return typeof month === "string" ? month : "";
+                  const point = payload?.[0]?.payload as
+                    | { month?: string; asOf?: string }
+                    | undefined;
+                  if (!point?.month) return "";
+                  return point.asOf
+                    ? `${point.month} · as of ${point.asOf}`
+                    : point.month;
                 }}
               />
               <Area
                 type="monotone"
-                dataKey="net"
-                name="Net"
+                dataKey="netWorth"
+                name="Net worth"
                 stroke="var(--chart-1)"
                 strokeWidth={2}
                 fill="url(#dashNetArea)"
@@ -146,7 +167,7 @@ export function WealthHero(props: {
             </AreaChart>
           </ResponsiveContainer>
         ) : (
-          <p className="empty-state">No monthly net history yet.</p>
+          <p className="empty-state">No net-worth history yet.</p>
         )}
       </div>
     </section>

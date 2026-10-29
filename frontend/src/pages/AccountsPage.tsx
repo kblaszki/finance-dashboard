@@ -8,12 +8,14 @@ import {
 } from "react";
 import { Link } from "react-router-dom";
 import {
+  ACCOUNT_CURRENCIES,
   ACCOUNT_TYPES,
   accountTypeLabel,
   createAccount,
   deleteAccount,
   updateAccount,
   type Account,
+  type AccountCurrency,
   type AccountType,
 } from "../api/accountsApi";
 import { fetchTransactions } from "../api/transactionsApi";
@@ -52,7 +54,7 @@ export function AccountsPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState("");
   const [accountType, setAccountType] = useState<AccountType>("BANK");
-  const [currency, setCurrency] = useState("PLN");
+  const [currency, setCurrency] = useState<AccountCurrency>("PLN");
   const [openingBalance, setOpeningBalance] = useState("0");
   const [description, setDescription] = useState("");
   const [createErr, setCreateErr] = useState<string | null>(null);
@@ -217,14 +219,19 @@ export function AccountsPage() {
             </label>
             <label>
               Currency
-              <input
-                type="text"
+              <select
                 required
-                minLength={3}
-                maxLength={3}
                 value={currency}
-                onChange={(e) => setCurrency(e.target.value.toUpperCase())}
-              />
+                onChange={(e) =>
+                  setCurrency(e.target.value as AccountCurrency)
+                }
+              >
+                {ACCOUNT_CURRENCIES.map((code) => (
+                  <option key={code} value={code}>
+                    {code}
+                  </option>
+                ))}
+              </select>
             </label>
             <label>
               Opening balance
@@ -390,18 +397,21 @@ export function AccountsPage() {
                             </label>
                             <label>
                               Currency
-                              <input
-                                type="text"
+                              <select
                                 required
-                                minLength={3}
-                                maxLength={3}
                                 value={editCurrency}
-                                readOnly={currencyLocked}
+                                disabled={currencyLocked}
                                 aria-invalid={editErr ? true : undefined}
                                 onChange={(e) =>
-                                  setEditCurrency(e.target.value.toUpperCase())
+                                  setEditCurrency(e.target.value)
                                 }
-                              />
+                              >
+                                {ACCOUNT_CURRENCIES.map((code) => (
+                                  <option key={code} value={code}>
+                                    {code}
+                                  </option>
+                                ))}
+                              </select>
                             </label>
                             {currencyLocked && (
                               <p className="muted">

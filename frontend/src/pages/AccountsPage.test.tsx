@@ -95,10 +95,20 @@ describe("AccountsPage create", () => {
     fireEvent.change(screen.getByLabelText(/^Name$/i), {
       target: { value: "Savings" },
     });
+    const currencySelect = screen.getByLabelText(/^Currency$/i);
+    expect(currencySelect.tagName).toBe("SELECT");
+    expect(
+      Array.from((currencySelect as HTMLSelectElement).options).map(
+        (o) => o.value,
+      ),
+    ).toEqual(["PLN", "EUR", "USD"]);
+    fireEvent.change(currencySelect, { target: { value: "EUR" } });
     fireEvent.click(screen.getByRole("button", { name: "Create account" }));
 
     await waitFor(() => {
-      expect(createAccount).toHaveBeenCalled();
+      expect(createAccount).toHaveBeenCalledWith(
+        expect.objectContaining({ name: "Savings", currency: "EUR" }),
+      );
     });
   });
 });

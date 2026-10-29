@@ -1,11 +1,11 @@
 import { useCallback, useMemo } from "react";
 import { fetchCategories } from "../api/categoriesApi";
 import {
-  fetchCashflowHistory,
   fetchNetWorth,
+  fetchNetWorthHistory,
   fetchPeriodSummary,
-  type CashflowHistory,
   type NetWorth,
+  type NetWorthHistory,
   type PeriodSummary,
 } from "../api/statisticsApi";
 import {
@@ -46,9 +46,9 @@ export function DashboardPage() {
     loading: netWorthLoading,
   } = useAsyncData(loadNetWorth);
 
-  const loadHistory = useCallback((): Promise<CashflowHistory | null> => {
+  const loadHistory = useCallback((): Promise<NetWorthHistory | null> => {
     if (!currency) return Promise.resolve(null);
-    return fetchCashflowHistory(month, currency, 12);
+    return fetchNetWorthHistory(currency, 24, month);
   }, [currency, month]);
   const {
     data: history,

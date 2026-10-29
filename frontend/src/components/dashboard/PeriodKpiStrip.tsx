@@ -21,7 +21,9 @@ export function PeriodKpiStrip(props: {
     <div className="dash-stat-strip">
       <article className="dash-stat card">
         <div className="dash-stat-head">
-          <span>Income · {label}</span>
+          <span>
+            Income · {label} · {currency}
+          </span>
         </div>
         <strong className="dash-stat-value positive">
           {formatMoney(summary.income, currency)}
@@ -34,7 +36,9 @@ export function PeriodKpiStrip(props: {
       </article>
       <article className="dash-stat card">
         <div className="dash-stat-head">
-          <span>Expense · {label}</span>
+          <span>
+            Expense · {label} · {currency}
+          </span>
         </div>
         <strong className="dash-stat-value negative">
           {formatMoney(summary.expense, currency)}
@@ -69,7 +73,7 @@ export function PeriodKpiStrip(props: {
       </article>
       <article className="dash-stat card">
         <div className="dash-stat-head">
-          <span>Monthly net</span>
+          <span>Monthly net · {currency}</span>
         </div>
         <strong
           className={

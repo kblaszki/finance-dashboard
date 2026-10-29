@@ -16,6 +16,7 @@ const summary = (overrides: Partial<PeriodSummary> = {}): PeriodSummary => ({
 
 const netWorth = (overrides: Partial<NetWorth> = {}): NetWorth => ({
   currency: "PLN",
+  asOf: "2026-10-28",
   byBucket: {
     cash: 100,
     stock: 50,
@@ -26,6 +27,7 @@ const netWorth = (overrides: Partial<NetWorth> = {}): NetWorth => ({
   },
   liabilities: 0,
   netWorth: 150,
+  ratesUsed: [],
   ...overrides,
 });
 

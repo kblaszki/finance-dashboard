@@ -74,6 +74,7 @@ import {
   fetchTagBreakdown,
   fetchCashflowHistory,
   fetchNetWorth,
+  fetchNetWorthHistory,
   fetchCashflowRolling12m,
 } from './statisticsApi'
 import {
@@ -388,6 +389,11 @@ describe('API modules', () => {
     await fetchNetWorth('PLN')
     expect(apiClient.get).toHaveBeenCalledWith(
       '/api/statistics/net-worth?currency=PLN',
+    )
+
+    await fetchNetWorthHistory('EUR', 24, '2026-10')
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/statistics/net-worth-history?currency=EUR&months=24&month=2026-10',
     )
 
     await fetchCashflowRolling12m('USD')

@@ -16,6 +16,10 @@ export const ACCOUNT_TYPES = [
 
 export type AccountType = (typeof ACCOUNT_TYPES)[number];
 
+/** Account currencies allowed by NBP FX whitelist (same as backend). */
+export const ACCOUNT_CURRENCIES = ["PLN", "EUR", "USD"] as const;
+export type AccountCurrency = (typeof ACCOUNT_CURRENCIES)[number];
+
 const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
   BANK: "Bank",
   BROKERAGE: "Brokerage",
