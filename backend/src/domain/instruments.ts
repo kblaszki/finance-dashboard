@@ -94,50 +94,74 @@ export function providerSymbolForCatalog(
   return exchange ? `${symbol}` : symbol;
 }
 
+const CATALOG_UPSERT_BATCH = 500;
+
+type CatalogWriteRow = {
+  symbol: string;
+  name: string;
+  exchange: string;
+  micCode: string | null;
+  country: string | null;
+  currency: string;
+  assetClass: InstrumentAssetClass;
+  provider: string;
+  providerSymbol: string;
+};
+
+function catalogWriteRows(
+  assetClass: InstrumentAssetClass,
+  rows: TwelveDataCatalogRow[],
+): CatalogWriteRow[] {
+  const out: CatalogWriteRow[] = [];
+  const seen = new Set<string>();
+  for (const row of rows) {
+    const symbol = row.symbol.trim().toUpperCase();
+    if (!symbol) continue;
+    const providerSymbol = providerSymbolForCatalog(row);
+    if (seen.has(providerSymbol)) continue;
+    seen.add(providerSymbol);
+    out.push({
+      symbol,
+      name: row.name.trim() || symbol,
+      exchange: row.exchange.trim(),
+      micCode: row.micCode,
+      country: row.country,
+      currency: (row.currency || "USD").trim().toUpperCase() || "USD",
+      assetClass,
+      provider: INSTRUMENT_PROVIDER_TWELVE_DATA,
+      providerSymbol,
+    });
+  }
+  return out;
+}
+
+/**
+ * Bulk-insert catalog rows in batches. Existing (provider, providerSymbol) rows
+ * are left unchanged (SQLite Prisma client has no createMany skipDuplicates).
+ * Prefer this over per-row upsert — full Twelve Data lists are huge.
+ */
 export async function upsertCatalogInstruments(
   db: Db,
   assetClass: InstrumentAssetClass,
   rows: TwelveDataCatalogRow[],
 ): Promise<number> {
-  let upserted = 0;
-  for (const row of rows) {
-    const symbol = row.symbol.trim().toUpperCase();
-    if (!symbol) continue;
-    const providerSymbol = providerSymbolForCatalog(row);
-    const name = row.name.trim() || symbol;
-    const exchange = row.exchange.trim();
-    const currency = (row.currency || "USD").trim().toUpperCase() || "USD";
-    await db.instrument.upsert({
-      where: {
-        provider_providerSymbol: {
-          provider: INSTRUMENT_PROVIDER_TWELVE_DATA,
-          providerSymbol,
-        },
-      },
-      create: {
-        symbol,
-        name,
-        exchange,
-        micCode: row.micCode,
-        country: row.country,
-        currency,
-        assetClass,
-        provider: INSTRUMENT_PROVIDER_TWELVE_DATA,
-        providerSymbol,
-      },
-      update: {
-        symbol,
-        name,
-        exchange,
-        micCode: row.micCode,
-        country: row.country,
-        currency,
-        assetClass,
-      },
-    });
-    upserted += 1;
+  const prepared = catalogWriteRows(assetClass, rows);
+  if (prepared.length === 0) return 0;
+
+  // Unique is (provider, providerSymbol) across STOCK/ETF — do not scope by assetClass.
+  const existing = await db.instrument.findMany({
+    where: { provider: INSTRUMENT_PROVIDER_TWELVE_DATA },
+    select: { providerSymbol: true },
+  });
+  const have = new Set(existing.map((r) => r.providerSymbol));
+  const toCreate = prepared.filter((r) => !have.has(r.providerSymbol));
+
+  for (let i = 0; i < toCreate.length; i += CATALOG_UPSERT_BATCH) {
+    const batch = toCreate.slice(i, i + CATALOG_UPSERT_BATCH);
+    await db.instrument.createMany({ data: batch });
   }
-  return upserted;
+
+  return prepared.length;
 }
 
 export async function searchInstruments(

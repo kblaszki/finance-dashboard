@@ -1,8 +1,9 @@
+import path from "node:path";
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import { syncWatchlistQuotes } from "../domain/marketData";
 
-dotenv.config();
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 function readArg(flag: string): string | undefined {
   const idx = process.argv.indexOf(flag);

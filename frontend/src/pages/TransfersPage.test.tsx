@@ -186,6 +186,7 @@ describe("TransfersPage CSV import/export", () => {
           suggestedAccountId: 2,
         },
       ],
+      rows: [],
     });
     vi.mocked(importTransfersCsv).mockResolvedValue({
       created: 1,

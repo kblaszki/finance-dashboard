@@ -32,7 +32,7 @@ export function CurrencyProvider(props: { children: React.ReactNode }) {
     reload: refreshAccounts,
   } = useAsyncData(loadAccounts);
 
-  const currencies = useMemo(() => {
+  const currencies = useMemo((): string[] => {
     if (!accounts || accounts.length === 0) return [];
     return [...FX_REPORTING_CURRENCIES];
   }, [accounts]);
