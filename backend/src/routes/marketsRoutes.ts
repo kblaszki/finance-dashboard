@@ -45,7 +45,11 @@ export function createMarketsRouter(deps: MarketsDeps): Router {
         const q = parseSearchQuery(req.query.q);
         const assetClass = parseOptionalAssetClass(req.query.assetClass);
         const limit = parseSearchLimit(req.query.limit);
-        const rows = await searchInstruments(prisma, { q, assetClass, limit });
+        const rows = await searchInstruments(prisma, {
+          q,
+          limit,
+          ...(assetClass != null ? { assetClass } : {}),
+        });
         res.json(rows.map(instrumentPayload));
       } catch (e: unknown) {
         handleRouteError(res, e, "Failed to search instruments");

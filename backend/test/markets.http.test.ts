@@ -103,6 +103,9 @@ test("GET /api/instruments searches local catalog", async () => {
 });
 
 test("watchlist add/list/remove with tenancy and missing price", async () => {
+  const prevKey = process.env.TWELVE_DATA_API_KEY;
+  delete process.env.TWELVE_DATA_API_KEY;
+
   const token = await registerAndLogin(
     "wluser@test.local",
     "wluser",
@@ -115,7 +118,8 @@ test("watchlist add/list/remove with tenancy and missing price", async () => {
   );
   const instrumentId = await seedInstrument();
 
-  // No TWELVE_DATA_API_KEY in tests → ensureInstrumentQuote fails softly; favorite kept.
+  try {
+  // Quote soft-fails without key; favorite is still created with null close.
   const created = await request(app)
     .post("/api/watchlist")
     .set("Authorization", `Bearer ${token}`)
@@ -157,6 +161,10 @@ test("watchlist add/list/remove with tenancy and missing price", async () => {
     .get("/api/watchlist")
     .set("Authorization", `Bearer ${token}`);
   assert.equal(empty.body.length, 0);
+  } finally {
+    if (prevKey !== undefined) process.env.TWELVE_DATA_API_KEY = prevKey;
+    else delete process.env.TWELVE_DATA_API_KEY;
+  }
 });
 
 test("POST /api/watchlist returns 404 for unknown instrument", async () => {

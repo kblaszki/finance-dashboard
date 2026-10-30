@@ -134,7 +134,7 @@ export function parseStoredMapping(json: string): NamedColumnMapping {
     description,
     type,
     categoryPath,
-    amountSignMode: type == null ? amountSignMode : undefined,
+    ...(type == null && amountSignMode != null ? { amountSignMode } : {}),
   };
 }
 

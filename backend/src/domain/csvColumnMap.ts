@@ -266,7 +266,7 @@ export function parseColumnMapping(
     description,
     type,
     categoryPath,
-    amountSignMode,
+    ...(amountSignMode != null ? { amountSignMode } : {}),
   };
 }
 

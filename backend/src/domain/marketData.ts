@@ -65,7 +65,7 @@ export async function syncWatchlistQuotes(
   const force = options.force === true;
 
   const watchRows = await prisma.watchlistItem.findMany({
-    where: options.userId != null ? { userId: options.userId } : undefined,
+    ...(options.userId != null ? { where: { userId: options.userId } } : {}),
     select: { instrumentId: true },
     distinct: ["instrumentId"],
   });

@@ -23,7 +23,10 @@ async function main(): Promise<void> {
 
   const prisma = new PrismaClient();
   try {
-    const result = await syncWatchlistQuotes(prisma, { userId, force });
+    const result = await syncWatchlistQuotes(prisma, {
+      force,
+      ...(userId != null ? { userId } : {}),
+    });
     // eslint-disable-next-line no-console
     console.log(JSON.stringify(result));
   } finally {
