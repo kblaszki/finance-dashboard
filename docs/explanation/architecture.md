@@ -56,8 +56,9 @@ sequenceDiagram
 | Seed | `backend/prisma/seed.ts`, `domain/seedDemoPortfolio.ts` | Demo user + wipe/rebuild sample portfolio |
 | FX | `domain/fx.ts`, `fxRates.ts`, `nbpClient.ts` | NBP mids in `FxRateDaily`; `convertMajor` via PLN pivot |
 | Net worth | `domain/netWorth.ts`, `netWorthHistory.ts` | Current + monthly history; convert all owned PLN/EUR/USD accounts into the topbar reporting currency |
+| Cashflow stats | `domain/cashflowStats.ts` | Period summary, history, rolling 12m; same reporting-currency FX model (mid on each `occurredAt` day) |
 
-Money and FX conversion live in `domain/fx*.ts` / `nbpClient.ts` — not in route handlers or the UI. Net-worth HTTP handlers only read persisted `FxRateDaily` rows (valuation date = today for current; month-end or today for history). Missing required mids fail closed. See [fullstack-practices.md](fullstack-practices.md).
+Money and FX conversion live in `domain/fx*.ts` / `nbpClient.ts` — not in route handlers or the UI. Net-worth and FX cashflow HTTP handlers only read persisted `FxRateDaily` rows (net worth: valuation date = today for current / month-end or today for history; cashflow: mid on or before each row’s `occurredAt` UTC day). Missing required mids fail closed. See [fullstack-practices.md](fullstack-practices.md).
 
 **Planned (not shipped):** holdings, lots, asset trades, and market-data sync — schema/domain sketch and tenancy rules in [holdings-market-architecture.md](holdings-market-architecture.md). Do not add Prisma models until an implementation plan follows that spike.
 

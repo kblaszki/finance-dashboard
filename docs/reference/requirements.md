@@ -33,10 +33,10 @@ Hub: [docs/README.md](../README.md).
 | FR-015 | Category tree CRUD | `Category`; `domain/categories.ts`; `/api/categories`; `/categories`; empty on register (user-defined) |
 | FR-018 | Transaction categories | Optional `CashTransaction.categoryId` on ledger create/list; multi-line splits deferred |
 | FR-016 | Category spend breakdown | `GET /api/statistics/category-breakdown`; `/statistics` month Income/Expense lists (UTC, no FX) |
-| FR-003 | Statistics period cashflow summary | `GET /api/statistics/period-summary`; `/statistics` income/expense/net KPIs for one currency |
-| FR-004 | Cashflow history chart | `GET /api/statistics/cashflow-history`; `/statistics` Recharts series (`months` 6\|12\|24) |
+| FR-003 | Statistics period cashflow summary | `GET /api/statistics/period-summary`; reporting-currency KPIs (all-account NBP FX); `/statistics` + `/dashboard` strip |
+| FR-004 | Cashflow history chart | `GET /api/statistics/cashflow-history`; reporting-currency series (`months` 6\|12\|24); `/statistics` Recharts |
 | FR-002 | Net worth (cash buckets) | `GET /api/statistics/net-worth`; `/dashboard` byBucket after FX; `CREDIT_CARD` debt → `liabilities` (no holdings) |
-| FR-005 | Rolling 12-month cashflow averages | `GET /api/statistics/cashflow-rolling-12m`; `/statistics` avg income/expense/net |
+| FR-005 | Rolling 12-month cashflow averages | `GET /api/statistics/cashflow-rolling-12m`; reporting-currency avgs; `/statistics` |
 | FR-038 | Reporting-currency net-worth rollup + history | `GET /api/statistics/net-worth` + `net-worth-history`; NBP mid via PLN pivot into topbar currency; `/dashboard` WealthHero 6M/1Y/2Y chart |
 | FR-011 | Internal cash transfers | `CashTransfer` + `TRANSFER_*` legs; `/api/transfers`; `/transfers`; [internal-transfers.md](../how-to/internal-transfers.md) |
 | MVP-015 | Transfers CSV export and mapped import | `GET/POST /api/transfers/export|import`; `/transfers` Download/Upload CSV |

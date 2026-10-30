@@ -240,9 +240,16 @@ test("GET /api/statistics/period-summary requires auth and valid params", async 
   assert.equal(badCurrency.status, 400);
 });
 
-test("GET /api/statistics/period-summary aggregates one currency with tenancy", async () => {
+test("GET /api/statistics/period-summary aggregates all currencies with NBP FX and tenancy", async () => {
   const token = await registerAndLogin("sumagg@test.local", "sumagg", "password123");
   const otherToken = await registerAndLogin("sumother@test.local", "sumother", "password123");
+
+  await prisma.fxRateDaily.createMany({
+    data: [
+      { currency: "EUR", rateDate: new Date("2026-08-11T00:00:00.000Z"), mid: 4 },
+      { currency: "USD", rateDate: new Date("2026-08-05T00:00:00.000Z"), mid: 4 },
+    ],
+  });
 
   const pln = await request(app)
     .post("/api/accounts")
@@ -288,25 +295,37 @@ test("GET /api/statistics/period-summary aggregates one currency with tenancy", 
     label: "2026-08",
     currency: "PLN",
     income: 3000,
-    expense: 400,
-    net: 2600,
+    expense: 600,
+    net: 2400,
     transfers: 0,
   });
 
-  const unknownCcy = await request(app)
+  const inUsd = await request(app)
     .get("/api/statistics/period-summary?month=2026-08&currency=USD")
     .set("Authorization", `Bearer ${token}`);
-  assert.equal(unknownCcy.status, 200);
-  assert.deepEqual(unknownCcy.body, {
-    month: "2026-08",
-    period: "month",
-    label: "2026-08",
-    currency: "USD",
-    income: 0,
-    expense: 0,
-    net: 0,
-    transfers: 0,
-  });
+  assert.equal(inUsd.status, 200);
+  assert.equal(inUsd.body.currency, "USD");
+  assert.equal(inUsd.body.income, 750);
+  assert.equal(inUsd.body.expense, 150);
+  assert.equal(inUsd.body.net, 600);
+});
+
+test("GET /api/statistics/period-summary fails when required FX mid is missing", async () => {
+  const token = await registerAndLogin("summiss@test.local", "summiss", "password123");
+  const eur = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Need EUR mid", currency: "EUR", openingBalance: 0 });
+  await request(app)
+    .post(`/api/accounts/${eur.body.id}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "INCOME", amount: 10, occurredAt: "2026-08-10T00:00:00.000Z" });
+
+  const res = await request(app)
+    .get("/api/statistics/period-summary?month=2026-08&currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 404);
+  assert.match(res.body.error, /EUR|rate|mid/i);
 });
 
 test("GET /api/statistics period=quarter expands bounds and rejects bad period", async () => {

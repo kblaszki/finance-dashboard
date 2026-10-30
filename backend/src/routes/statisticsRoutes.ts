@@ -4,7 +4,6 @@ import type { AuthedRequest } from "../auth";
 import {
   aggregateCategoryBreakdown,
   parseMonthParam,
-  sumTransferAmountFrom,
 } from "../domain/categoryBreakdown";
 import {
   aggregateCashflowHistory,
@@ -108,13 +107,13 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
       try {
         const statsPeriod = parseStatsPeriod(req.query.month, req.query.period);
         const { start, end, month, period, label } = statsPeriod;
-        const currency = parseCurrencyParam(req.query.currency);
+        const currency = parseReportingCurrencyParam(req.query.currency);
         const userId = uid(req);
         const [rows, transfers] = await Promise.all([
           prisma.cashTransaction.findMany({
             where: {
               occurredAt: { gte: start, lt: end },
-              account: { userId, currency },
+              account: { userId },
             },
             include: {
               account: { select: { currency: true } },
@@ -125,11 +124,9 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
             where: {
               occurredAt: { gte: start, lt: end },
               userId,
-              fromAccount: { currency },
             },
             include: {
               fromAccount: { select: { currency: true } },
-              category: { select: { id: true, name: true } },
             },
             take: STATS_PERIOD_ROW_CAP + 1,
           }),
@@ -137,22 +134,20 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
         assertStatsPeriodRowCap(rows.length, "Cash transactions");
         assertStatsPeriodRowCap(transfers.length, "Transfers");
         res.json(
-          aggregatePeriodSummary(
+          await aggregatePeriodSummary(
             month,
             currency,
             rows.map((row) => ({ ...row, amount: minorToDecimal(row.amount) })),
             {
               period,
               label,
-              transfers: sumTransferAmountFrom(
-                transfers.map((row) => ({
-                  amountFrom: minorToDecimal(row.amountFrom),
-                  categoryId: row.categoryId,
-                  fromAccount: row.fromAccount,
-                  category: row.category,
-                })),
-                currency,
-              ),
+              transferRows: transfers.map((row) => ({
+                amountFrom: minorToDecimal(row.amountFrom),
+                occurredAt: row.occurredAt,
+                fromAccount: row.fromAccount,
+              })),
+              getMid: (code, asOfDate) =>
+                getMidOnOrBefore(prisma, code, asOfDate),
             },
           ),
         );
@@ -209,7 +204,7 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
     async (req: AuthedRequest, res) => {
       try {
         const statsPeriod = parseStatsPeriod(req.query.month, req.query.period);
-        const currency = parseCurrencyParam(req.query.currency);
+        const currency = parseReportingCurrencyParam(req.query.currency);
         const monthCount = parseMonthsParam(req.query.months);
         const months = listMonthsEndingAt(statsPeriod.endMonth, monthCount);
         const { start } = parseMonthParam(months[0]!);
@@ -217,7 +212,7 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
         const rows = await prisma.cashTransaction.findMany({
           where: {
             occurredAt: { gte: start, lt: end },
-            account: { userId: uid(req), currency },
+            account: { userId: uid(req) },
           },
           include: {
             account: { select: { currency: true } },
@@ -226,10 +221,11 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
         });
         assertStatsPeriodRowCap(rows.length, "Cash transactions");
         res.json(
-          aggregateCashflowHistory(
+          await aggregateCashflowHistory(
             months,
             currency,
             rows.map((row) => ({ ...row, amount: minorToDecimal(row.amount) })),
+            (code, asOfDate) => getMidOnOrBefore(prisma, code, asOfDate),
           ),
         );
       } catch (e: unknown) {
@@ -393,7 +389,7 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
     requireAuth,
     async (req: AuthedRequest, res) => {
       try {
-        const currency = parseCurrencyParam(req.query.currency);
+        const currency = parseReportingCurrencyParam(req.query.currency);
         const asOf = new Date();
         const months = completeMonthsBefore(asOf, 12);
         const { start } = parseMonthParam(months[0]!);
@@ -403,7 +399,7 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
         const rows = await prisma.cashTransaction.findMany({
           where: {
             occurredAt: { gte: start, lt: currentStart },
-            account: { userId: uid(req), currency },
+            account: { userId: uid(req) },
           },
           include: {
             account: { select: { currency: true } },
@@ -412,9 +408,10 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
         });
         assertStatsPeriodRowCap(rows.length, "Cash transactions");
         res.json(
-          aggregateRollingCashflow12m(
+          await aggregateRollingCashflow12m(
             currency,
             rows.map((row) => ({ ...row, amount: minorToDecimal(row.amount) })),
+            (code, asOfDate) => getMidOnOrBefore(prisma, code, asOfDate),
             asOf,
           ),
         );

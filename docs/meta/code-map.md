@@ -37,7 +37,7 @@ JWT auth, multi-type accounts, category tree + tags, cash ledger + transfers, CS
 | Category breakdown domain | `backend/src/domain/categoryBreakdown.ts` |
 | Stats period (M/Q/Y) | `backend/src/domain/statsPeriod.ts` |
 | Tag breakdown domain | `backend/src/domain/tagBreakdown.ts` |
-| Cashflow stats domain | `backend/src/domain/cashflowStats.ts` |
+| Cashflow stats domain | `backend/src/domain/cashflowStats.ts` (reporting-currency FX period/history/rolling) |
 | Account balance history domain | `backend/src/domain/accountBalanceHistory.ts` |
 | Net worth domain | `backend/src/domain/netWorth.ts`, `netWorthHistory.ts` |
 | FX / NBP rates | `backend/src/domain/fx.ts`, `fxRates.ts`, `nbpClient.ts` |

@@ -18,78 +18,84 @@ export function PeriodKpiStrip(props: {
   const label = summary.label;
 
   return (
-    <div className="dash-stat-strip">
-      <article className="dash-stat card">
-        <div className="dash-stat-head">
-          <span>
-            Income · {label} · {currency}
-          </span>
-        </div>
-        <strong className="dash-stat-value positive">
-          {formatMoney(summary.income, currency)}
-        </strong>
-        <small className="dash-stat-sub">
-          {prevSummary
-            ? formatPeriodDelta(summary.income, prevSummary.income)
-            : "—"}
-        </small>
-      </article>
-      <article className="dash-stat card">
-        <div className="dash-stat-head">
-          <span>
-            Expense · {label} · {currency}
-          </span>
-        </div>
-        <strong className="dash-stat-value negative">
-          {formatMoney(summary.expense, currency)}
-        </strong>
-        <small className="dash-stat-sub">
-          {prevSummary
-            ? formatPeriodDelta(summary.expense, prevSummary.expense)
-            : "—"}
-        </small>
-      </article>
-      <article className="dash-stat card">
-        <div className="dash-stat-head">
-          <span>Savings ratio</span>
-        </div>
-        <strong className="dash-stat-value">
-          {formatPercent(savingsRate, { decimals: 1 })}
-        </strong>
-        <small
-          className={
-            savingsRate != null && prevRate != null && savingsRate >= prevRate
-              ? "dash-stat-sub positive"
-              : "dash-stat-sub"
-          }
-        >
-          {savingsRate != null && prevRate != null
-            ? `${formatPercent(savingsRate - prevRate, {
-                decimals: 1,
-                signed: true,
-              })} pp vs prev`
-            : "— vs prev"}
-        </small>
-      </article>
-      <article className="dash-stat card">
-        <div className="dash-stat-head">
-          <span>Monthly net · {currency}</span>
-        </div>
-        <strong
-          className={
-            summary.net >= 0
-              ? "dash-stat-value positive"
-              : "dash-stat-value negative"
-          }
-        >
-          {formatMoney(summary.net, currency)}
-        </strong>
-        <small className="dash-stat-sub">
-          {prevSummary
-            ? formatPeriodDelta(summary.net, prevSummary.net)
-            : "—"}
-        </small>
-      </article>
+    <div className="dash-period-kpis">
+      <div className="dash-stat-strip">
+        <article className="dash-stat card">
+          <div className="dash-stat-head">
+            <span>
+              Income · {label} · {currency}
+            </span>
+          </div>
+          <strong className="dash-stat-value positive">
+            {formatMoney(summary.income, currency)}
+          </strong>
+          <small className="dash-stat-sub">
+            {prevSummary
+              ? formatPeriodDelta(summary.income, prevSummary.income)
+              : "—"}
+          </small>
+        </article>
+        <article className="dash-stat card">
+          <div className="dash-stat-head">
+            <span>
+              Expense · {label} · {currency}
+            </span>
+          </div>
+          <strong className="dash-stat-value negative">
+            {formatMoney(summary.expense, currency)}
+          </strong>
+          <small className="dash-stat-sub">
+            {prevSummary
+              ? formatPeriodDelta(summary.expense, prevSummary.expense)
+              : "—"}
+          </small>
+        </article>
+        <article className="dash-stat card">
+          <div className="dash-stat-head">
+            <span>Savings ratio</span>
+          </div>
+          <strong className="dash-stat-value">
+            {formatPercent(savingsRate, { decimals: 1 })}
+          </strong>
+          <small
+            className={
+              savingsRate != null && prevRate != null && savingsRate >= prevRate
+                ? "dash-stat-sub positive"
+                : "dash-stat-sub"
+            }
+          >
+            {savingsRate != null && prevRate != null
+              ? `${formatPercent(savingsRate - prevRate, {
+                  decimals: 1,
+                  signed: true,
+                })} pp vs prev`
+              : "— vs prev"}
+          </small>
+        </article>
+        <article className="dash-stat card">
+          <div className="dash-stat-head">
+            <span>Monthly net · {currency}</span>
+          </div>
+          <strong
+            className={
+              summary.net >= 0
+                ? "dash-stat-value positive"
+                : "dash-stat-value negative"
+            }
+          >
+            {formatMoney(summary.net, currency)}
+          </strong>
+          <small className="dash-stat-sub">
+            {prevSummary
+              ? formatPeriodDelta(summary.net, prevSummary.net)
+              : "—"}
+          </small>
+        </article>
+      </div>
+      <p className="dash-period-fx-note">
+        All accounts converted to {currency} via NBP mid rates on each
+        transaction date.
+      </p>
     </div>
   );
 }

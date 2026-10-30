@@ -39,7 +39,7 @@ npm run db:seed
 | `/tags` | Cross-cutting trip/project tags (Italy trip 2026, Home renovation, Kids birthday, …) on matching cash expenses — one tag groups spend across many categories |
 | `/accounts/:id` | ~24 months of INCOME/EXPENSE rows (≥5 per month per account, including card purchases and light IKE fees/interest); categories + purpose tags on many expenses; read-only `TRANSFER IN/OUT` legs from seeded transfers (with TRANSFER categories) |
 | `/transfers` | Same-/cross-currency showcase rows, plus monthly Checking → Credit Card payments (450 PLN) and Checking → IKE contributions (500 PLN) for each ledger month — each transfer tagged with a TRANSFER category |
-| `/dashboard` | NBP-converted net-worth buckets + history chart (credit-card debt in liabilities), period KPIs for the selected currency (pick PLN/EUR/USD in top bar; run `fx:sync` if foreign accounts exist) |
+| `/dashboard` | NBP-converted net-worth buckets + history chart (credit-card debt in liabilities), period KPIs converted into the topbar reporting currency across all accounts (pick PLN/EUR/USD; run `fx:sync` if foreign accounts exist) |
 | `/statistics` | Period KPIs, cashflow chart, and category breakdown across the seeded history (transfer legs excluded). Donut rolls to **tree roots**; detail starts collapsed at roots — expand Food to see Groceries → Supermarket (rolled-up totals) |
 
 ## Notes

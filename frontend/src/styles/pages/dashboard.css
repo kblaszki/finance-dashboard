@@ -97,6 +97,18 @@
   color: var(--color-accent);
 }
 
+.dash-period-kpis {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.dash-period-fx-note {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
 .dash-stat-strip {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

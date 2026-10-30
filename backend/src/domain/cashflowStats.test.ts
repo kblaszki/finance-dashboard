@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { Prisma } from "@prisma/client";
 import {
   aggregateCashflowHistory,
   aggregatePeriodSummary,
@@ -9,6 +10,15 @@ import {
   parseCurrencyParam,
   parseMonthsParam,
 } from "./cashflowStats";
+import type { GetMidFn } from "./fx";
+
+function midMap(mids: Record<string, number>): GetMidFn {
+  return async (currency) => {
+    const mid = mids[currency];
+    if (mid == null) throw new Error(`missing mid ${currency}`);
+    return new Prisma.Decimal(mid);
+  };
+}
 
 test("parseCurrencyParam requires 3-letter uppercase code", () => {
   assert.equal(parseCurrencyParam("pln"), "PLN");
@@ -43,71 +53,172 @@ test("listMonthsEndingAt returns oldest-to-newest including year rollover", () =
   assert.equal(twelve[11], "2026-01");
 });
 
-test("aggregatePeriodSummary sums one currency and ignores others", () => {
-  const result = aggregatePeriodSummary("2026-08", "PLN", [
+test("aggregatePeriodSummary converts all FX currencies into reporting PLN", async () => {
+  const result = await aggregatePeriodSummary(
+    "2026-08",
+    "PLN",
+    [
+      {
+        type: "INCOME",
+        amount: 5000,
+        occurredAt: new Date("2026-08-10T12:00:00.000Z"),
+        account: { currency: "PLN" },
+      },
+      {
+        type: "EXPENSE",
+        amount: 200,
+        occurredAt: new Date("2026-08-11T12:00:00.000Z"),
+        account: { currency: "PLN" },
+      },
+      {
+        type: "EXPENSE",
+        amount: 50,
+        occurredAt: new Date("2026-08-11T12:00:00.000Z"),
+        account: { currency: "EUR" },
+      },
+      {
+        type: "TRANSFER_IN",
+        amount: 10,
+        occurredAt: new Date("2026-08-11T12:00:00.000Z"),
+        account: { currency: "PLN" },
+      },
+    ],
     {
-      type: "INCOME",
-      amount: 5000,
-      occurredAt: new Date("2026-08-10T12:00:00.000Z"),
-      account: { currency: "PLN" },
+      getMid: midMap({ EUR: 4, USD: 4 }),
+      transferRows: [
+        {
+          amountFrom: 100,
+          occurredAt: new Date("2026-08-12T12:00:00.000Z"),
+          fromAccount: { currency: "USD" },
+        },
+      ],
     },
-    {
-      type: "EXPENSE",
-      amount: 200,
-      occurredAt: new Date("2026-08-11T12:00:00.000Z"),
-      account: { currency: "PLN" },
-    },
-    {
-      type: "EXPENSE",
-      amount: 50,
-      occurredAt: new Date("2026-08-11T12:00:00.000Z"),
-      account: { currency: "EUR" },
-    },
-    {
-      type: "TRANSFER",
-      amount: 10,
-      occurredAt: new Date("2026-08-11T12:00:00.000Z"),
-      account: { currency: "PLN" },
-    },
-  ]);
+  );
   assert.deepEqual(result, {
     month: "2026-08",
     period: "month",
     label: "2026-08",
     currency: "PLN",
     income: 5000,
-    expense: 200,
-    net: 4800,
+    expense: 400,
+    net: 4600,
+    transfers: 400,
+  });
+});
+
+test("aggregatePeriodSummary can report in EUR via PLN pivot", async () => {
+  const result = await aggregatePeriodSummary(
+    "2026-08",
+    "EUR",
+    [
+      {
+        type: "INCOME",
+        amount: 400,
+        occurredAt: new Date("2026-08-10T12:00:00.000Z"),
+        account: { currency: "PLN" },
+      },
+      {
+        type: "EXPENSE",
+        amount: 25,
+        occurredAt: new Date("2026-08-11T12:00:00.000Z"),
+        account: { currency: "EUR" },
+      },
+    ],
+    { getMid: midMap({ EUR: 4, USD: 4 }) },
+  );
+  assert.equal(result.currency, "EUR");
+  assert.equal(result.income, 100);
+  assert.equal(result.expense, 25);
+  assert.equal(result.net, 75);
+});
+
+test("aggregatePeriodSummary fails when a required mid is missing", async () => {
+  await assert.rejects(
+    () =>
+      aggregatePeriodSummary(
+        "2026-08",
+        "PLN",
+        [
+          {
+            type: "INCOME",
+            amount: 10,
+            occurredAt: new Date("2026-08-10T12:00:00.000Z"),
+            account: { currency: "USD" },
+          },
+        ],
+        { getMid: midMap({ EUR: 4 }) },
+      ),
+    /missing mid USD/,
+  );
+});
+
+test("aggregatePeriodSummary rejects unsupported account currencies", async () => {
+  await assert.rejects(
+    () =>
+      aggregatePeriodSummary(
+        "2026-08",
+        "PLN",
+        [
+          {
+            type: "INCOME",
+            amount: 10,
+            occurredAt: new Date("2026-08-10T12:00:00.000Z"),
+            account: { currency: "GBP" },
+          },
+        ],
+        { getMid: midMap({ EUR: 4, USD: 4 }) },
+      ),
+    /Unsupported account currency GBP/,
+  );
+});
+
+test("aggregatePeriodSummary returns zeros for empty period", async () => {
+  const result = await aggregatePeriodSummary("2026-08", "PLN", [], {
+    getMid: midMap({ EUR: 4, USD: 4 }),
+  });
+  assert.deepEqual(result, {
+    month: "2026-08",
+    period: "month",
+    label: "2026-08",
+    currency: "PLN",
+    income: 0,
+    expense: 0,
+    net: 0,
     transfers: 0,
   });
 });
 
-test("aggregateCashflowHistory zero-fills and buckets by UTC month", () => {
+test("aggregateCashflowHistory converts and zero-fills by UTC month", async () => {
   const months = listMonthsEndingAt("2026-03", 3);
-  const result = aggregateCashflowHistory(months, "USD", [
-    {
-      type: "INCOME",
-      amount: 100,
-      occurredAt: new Date("2026-01-15T00:00:00.000Z"),
-      account: { currency: "USD" },
-    },
-    {
-      type: "EXPENSE",
-      amount: 40,
-      occurredAt: new Date("2026-03-01T00:00:00.000Z"),
-      account: { currency: "USD" },
-    },
-    {
-      type: "INCOME",
-      amount: 999,
-      occurredAt: new Date("2025-12-31T23:59:59.000Z"),
-      account: { currency: "USD" },
-    },
-  ]);
+  const result = await aggregateCashflowHistory(
+    months,
+    "PLN",
+    [
+      {
+        type: "INCOME",
+        amount: 100,
+        occurredAt: new Date("2026-01-15T00:00:00.000Z"),
+        account: { currency: "USD" },
+      },
+      {
+        type: "EXPENSE",
+        amount: 40,
+        occurredAt: new Date("2026-03-01T00:00:00.000Z"),
+        account: { currency: "PLN" },
+      },
+      {
+        type: "INCOME",
+        amount: 999,
+        occurredAt: new Date("2025-12-31T23:59:59.000Z"),
+        account: { currency: "USD" },
+      },
+    ],
+    midMap({ EUR: 4, USD: 4 }),
+  );
   assert.equal(result.monthCount, 3);
-  assert.equal(result.currency, "USD");
+  assert.equal(result.currency, "PLN");
   assert.deepEqual(result.series, [
-    { month: "2026-01", income: 100, expense: 0, net: 100 },
+    { month: "2026-01", income: 400, expense: 0, net: 400 },
     { month: "2026-02", income: 0, expense: 0, net: 0 },
     { month: "2026-03", income: 0, expense: 40, net: -40 },
   ]);
@@ -120,16 +231,16 @@ test("completeMonthsBefore excludes current UTC month and spans year boundary", 
   assert.equal(months[11], "2025-12");
 });
 
-test("aggregateRollingCashflow12m averages over 12 complete months and ignores current month", () => {
+test("aggregateRollingCashflow12m averages converted series over 12 complete months", async () => {
   const asOf = new Date("2026-08-10T00:00:00.000Z");
-  const result = aggregateRollingCashflow12m(
+  const result = await aggregateRollingCashflow12m(
     "PLN",
     [
       {
         type: "INCOME",
-        amount: 1200,
+        amount: 300,
         occurredAt: new Date("2026-07-05T00:00:00.000Z"),
-        account: { currency: "PLN" },
+        account: { currency: "USD" },
       },
       {
         type: "EXPENSE",
@@ -144,11 +255,13 @@ test("aggregateRollingCashflow12m averages over 12 complete months and ignores c
         account: { currency: "PLN" },
       },
     ],
+    midMap({ EUR: 4, USD: 4 }),
     asOf,
   );
   assert.equal(result.monthCount, 12);
   assert.equal(result.fromMonth, "2025-08");
   assert.equal(result.toMonth, "2026-07");
+  // July: income 300 USD * 4 = 1200, expense 240 → net 960; avg over 12 months
   assert.equal(result.avgIncome, 100);
   assert.equal(result.avgExpense, 20);
   assert.equal(result.avgNet, 80);

@@ -2,6 +2,14 @@ import { Prisma } from "@prisma/client";
 import { badRequest } from "../lib/errors";
 import { CASH_TX_TYPES, type CashTxType } from "./cashLedger";
 import { parseMonthParam } from "./categoryBreakdown";
+import {
+  assertFxCurrency,
+  convertMajor,
+  formatYmdUtc,
+  type FxCurrency,
+  type GetMidFn,
+  isFxCurrency,
+} from "./fx";
 import { majorToDecimal, normalizeCurrencyCode } from "./money";
 import type { StatsPeriodKind } from "./statsPeriod";
 
@@ -14,6 +22,12 @@ export type CashflowSourceRow = {
   account: { currency: string };
 };
 
+export type TransferFxSourceRow = {
+  amountFrom: Prisma.Decimal | number;
+  occurredAt: Date;
+  fromAccount: { currency: string };
+};
+
 export type PeriodSummaryResult = {
   month: string;
   period: StatsPeriodKind;
@@ -22,7 +36,7 @@ export type PeriodSummaryResult = {
   income: number;
   expense: number;
   net: number;
-  /** Sum of CashTransfer.amountFrom in this currency (not part of net). */
+  /** Sum of CashTransfer.amountFrom converted into reporting currency (not part of net). */
   transfers: number;
 };
 
@@ -98,81 +112,178 @@ function emptyPoint(month: string): CashflowHistoryPoint {
   return { month, income: 0, expense: 0, net: 0 };
 }
 
-export function aggregatePeriodSummary(
+function utcDay(date: Date): Date {
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+  );
+}
+
+function assertSupportedAccountCurrency(code: string): FxCurrency {
+  const normalized = String(code).trim().toUpperCase();
+  if (!isFxCurrency(normalized)) {
+    throw badRequest(
+      `Unsupported account currency ${normalized}; cashflow supports only PLN, EUR, and USD`,
+    );
+  }
+  return normalized;
+}
+
+function roundMajor(value: Prisma.Decimal): number {
+  return value.toDecimalPlaces(2).toNumber();
+}
+
+function createCachedGetMid(getMid: GetMidFn): GetMidFn {
+  const cache = new Map<string, Prisma.Decimal>();
+  return async (currency, asOf) => {
+    const key = `${currency}:${formatYmdUtc(asOf)}`;
+    const hit = cache.get(key);
+    if (hit) return hit;
+    const mid = await getMid(currency, asOf);
+    cache.set(key, mid);
+    return mid;
+  };
+}
+
+async function convertRowAmount(input: {
+  amount: Prisma.Decimal | number;
+  fromCurrency: string;
+  to: FxCurrency;
+  occurredAt: Date;
+  getMid: GetMidFn;
+}): Promise<Prisma.Decimal> {
+  const from = assertSupportedAccountCurrency(input.fromCurrency);
+  const amount = majorToDecimal(input.amount);
+  if (!amount || amount.isZero()) return new Prisma.Decimal(0);
+  const converted = await convertMajor({
+    amount: amount.toNumber(),
+    from,
+    to: input.to,
+    asOf: utcDay(input.occurredAt),
+    getMid: input.getMid,
+  });
+  return new Prisma.Decimal(converted.toString());
+}
+
+/**
+ * Sum INCOME/EXPENSE across all FX-whitelist accounts into the reporting currency.
+ * Each row uses the NBP mid on or before its occurredAt UTC calendar day.
+ */
+export async function aggregatePeriodSummary(
   month: string,
   currency: string,
   rows: CashflowSourceRow[],
   options: {
     period?: StatsPeriodKind;
     label?: string;
-    transfers?: number;
-  } = {},
-): PeriodSummaryResult {
+    transferRows?: TransferFxSourceRow[];
+    getMid: GetMidFn;
+  },
+): Promise<PeriodSummaryResult> {
+  const reporting = assertFxCurrency(currency);
+  const getMid = createCachedGetMid(options.getMid);
   let income = new Prisma.Decimal(0);
   let expense = new Prisma.Decimal(0);
 
   for (const row of rows) {
-    if (row.account.currency !== currency) continue;
     const type = String(row.type).trim().toUpperCase() as CashTxType;
     if (!(CASH_TX_TYPES as readonly string[]).includes(type)) continue;
-    const amount = majorToDecimal(row.amount);
-    if (!amount) continue;
-    if (type === "INCOME") income = income.add(amount);
-    else expense = expense.add(amount);
+    const converted = await convertRowAmount({
+      amount: row.amount,
+      fromCurrency: row.account.currency,
+      to: reporting,
+      occurredAt: row.occurredAt,
+      getMid,
+    });
+    if (converted.isZero()) continue;
+    if (type === "INCOME") income = income.add(converted);
+    else expense = expense.add(converted);
   }
 
-  const incomeNumber = income.toNumber();
-  const expenseNumber = expense.toNumber();
+  let transfers = new Prisma.Decimal(0);
+  for (const row of options.transferRows ?? []) {
+    const converted = await convertRowAmount({
+      amount: row.amountFrom,
+      fromCurrency: row.fromAccount.currency,
+      to: reporting,
+      occurredAt: row.occurredAt,
+      getMid,
+    });
+    transfers = transfers.add(converted);
+  }
+
+  const incomeNumber = roundMajor(income);
+  const expenseNumber = roundMajor(expense);
   return {
     month,
     period: options.period ?? "month",
     label: options.label ?? month,
-    currency,
+    currency: reporting,
     income: incomeNumber,
     expense: expenseNumber,
-    net: income.sub(expense).toNumber(),
-    transfers: options.transfers ?? 0,
+    net: new Prisma.Decimal(incomeNumber).sub(expenseNumber).toDecimalPlaces(2).toNumber(),
+    transfers: roundMajor(transfers),
   };
 }
 
-export function aggregateCashflowHistory(
+export async function aggregateCashflowHistory(
   months: string[],
   currency: string,
   rows: CashflowSourceRow[],
-): CashflowHistoryResult {
-  const byMonth = new Map<string, CashflowHistoryPoint>();
+  getMid: GetMidFn,
+): Promise<CashflowHistoryResult> {
+  const reporting = assertFxCurrency(currency);
+  const cachedGetMid = createCachedGetMid(getMid);
+  const byMonth = new Map<string, { income: Prisma.Decimal; expense: Prisma.Decimal }>();
   for (const month of months) {
-    byMonth.set(month, emptyPoint(month));
+    byMonth.set(month, {
+      income: new Prisma.Decimal(0),
+      expense: new Prisma.Decimal(0),
+    });
   }
 
   for (const row of rows) {
-    if (row.account.currency !== currency) continue;
     const type = String(row.type).trim().toUpperCase() as CashTxType;
     if (!(CASH_TX_TYPES as readonly string[]).includes(type)) continue;
     const key = monthKeyUtc(row.occurredAt);
-    const point = byMonth.get(key);
-    if (!point) continue;
-    const amount = majorToDecimal(row.amount);
-    if (!amount) continue;
-    if (type === "INCOME") point.income = new Prisma.Decimal(point.income).add(amount).toNumber();
-    else point.expense = new Prisma.Decimal(point.expense).add(amount).toNumber();
-    point.net = new Prisma.Decimal(point.income).sub(point.expense).toNumber();
+    const bucket = byMonth.get(key);
+    if (!bucket) continue;
+    const converted = await convertRowAmount({
+      amount: row.amount,
+      fromCurrency: row.account.currency,
+      to: reporting,
+      occurredAt: row.occurredAt,
+      getMid: cachedGetMid,
+    });
+    if (converted.isZero()) continue;
+    if (type === "INCOME") bucket.income = bucket.income.add(converted);
+    else bucket.expense = bucket.expense.add(converted);
   }
 
   return {
-    currency,
+    currency: reporting,
     monthCount: months.length,
-    series: months.map((m) => byMonth.get(m)!),
+    series: months.map((m) => {
+      const bucket = byMonth.get(m)!;
+      const income = roundMajor(bucket.income);
+      const expense = roundMajor(bucket.expense);
+      return {
+        month: m,
+        income,
+        expense,
+        net: new Prisma.Decimal(income).sub(expense).toDecimalPlaces(2).toNumber(),
+      };
+    }),
   };
 }
 
-export function aggregateRollingCashflow12m(
+export async function aggregateRollingCashflow12m(
   currency: string,
   rows: CashflowSourceRow[],
+  getMid: GetMidFn,
   asOf: Date = new Date(),
-): RollingCashflow12mResult {
+): Promise<RollingCashflow12mResult> {
   const months = completeMonthsBefore(asOf, 12);
-  const history = aggregateCashflowHistory(months, currency, rows);
+  const history = await aggregateCashflowHistory(months, currency, rows, getMid);
   const count = history.series.length;
   let incomeSum = new Prisma.Decimal(0);
   let expenseSum = new Prisma.Decimal(0);
@@ -184,12 +295,14 @@ export function aggregateRollingCashflow12m(
   }
   const divisor = new Prisma.Decimal(count);
   return {
-    currency,
+    currency: history.currency,
     monthCount: count,
     fromMonth: months[0]!,
     toMonth: months[count - 1]!,
-    avgIncome: incomeSum.div(divisor).toNumber(),
-    avgExpense: expenseSum.div(divisor).toNumber(),
-    avgNet: netSum.div(divisor).toNumber(),
+    avgIncome: incomeSum.div(divisor).toDecimalPlaces(2).toNumber(),
+    avgExpense: expenseSum.div(divisor).toDecimalPlaces(2).toNumber(),
+    avgNet: netSum.div(divisor).toDecimalPlaces(2).toNumber(),
   };
 }
+
+export { emptyPoint };
