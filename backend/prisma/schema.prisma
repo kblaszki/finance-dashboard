@@ -24,6 +24,7 @@ model User {
   csvImportPresets CsvImportPreset[]
   importBatches ImportBatch[]
   categoryDescriptionRules CategoryDescriptionRule[]
+  watchlistItems WatchlistItem[]
 }
 
 model Category {
@@ -217,4 +218,63 @@ model FxRateDaily {
 
   @@unique([rateDate, currency])
   @@index([currency, rateDate])
+}
+
+/// Shared market catalog row (Twelve Data stocks/ETFs). No userId.
+model Instrument {
+  id             Int       @id @default(autoincrement())
+  /// Display / search ticker (e.g. AAPL).
+  symbol         String
+  name           String
+  exchange       String    @default("")
+  micCode        String?
+  country        String?
+  /// Quote currency from provider (e.g. USD).
+  currency       String    @default("USD")
+  /// STOCK | ETF
+  assetClass     String
+  /// twelve_data
+  provider       String    @default("twelve_data")
+  /// Symbol string passed to Twelve Data APIs (may include exchange suffix).
+  providerSymbol String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  valuations     InstrumentValuation[]
+  watchlistItems WatchlistItem[]
+
+  @@unique([provider, providerSymbol])
+  @@index([symbol])
+  @@index([assetClass])
+  @@index([name])
+}
+
+/// EOD (or similar) close for one instrument on one UTC calendar day.
+model InstrumentValuation {
+  id           Int        @id @default(autoincrement())
+  instrumentId Int
+  /// UTC midnight of the valuation date.
+  asOfDate     DateTime
+  /// Major units in instrument.currency.
+  close        Decimal
+  /// twelve_data | manual
+  source       String     @default("twelve_data")
+  createdAt    DateTime   @default(now())
+  instrument   Instrument @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+
+  @@unique([instrumentId, asOfDate, source])
+  @@index([instrumentId, asOfDate])
+}
+
+/// User favorite instrument for the Markets watchlist.
+model WatchlistItem {
+  id           Int        @id @default(autoincrement())
+  userId       Int
+  instrumentId Int
+  createdAt    DateTime   @default(now())
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  instrument   Instrument @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, instrumentId])
+  @@index([userId])
+  @@index([instrumentId])
 }

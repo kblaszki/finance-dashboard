@@ -56,6 +56,9 @@ export async function resetDatabase(prisma: PrismaClient): Promise<void> {
   await prisma.category.updateMany({ data: { parentId: null } });
   await prisma.category.deleteMany();
   await prisma.tag.deleteMany();
+  await prisma.watchlistItem.deleteMany();
+  await prisma.instrumentValuation.deleteMany();
+  await prisma.instrument.deleteMany();
   await prisma.account.deleteMany();
   await prisma.user.deleteMany();
   await prisma.fxRateDaily.deleteMany();
