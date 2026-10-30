@@ -42,17 +42,18 @@ JWT auth, multi-type accounts, category tree + tags, cash ledger + transfers, CS
 | Net worth domain | `backend/src/domain/netWorth.ts`, `netWorthHistory.ts` |
 | FX / NBP rates | `backend/src/domain/fx.ts`, `fxRates.ts`, `nbpClient.ts` |
 | FX sync CLI | `backend/src/scripts/syncFxRates.ts` |
-| Holdings / market (planned) | Spike only: [docs/explanation/holdings-market-architecture.md](../explanation/holdings-market-architecture.md) — no `domain/holdings*` yet |
+| Markets catalog / watchlist | `backend/src/domain/{instruments,instrumentValuations,marketData,twelveDataClient,watchlist}.ts`; routes `marketsRoutes.ts`; CLIs `syncMarketCatalog.ts`, `syncMarketQuotes.ts` |
+| Holdings / lots (planned) | Spike: [docs/explanation/holdings-market-architecture.md](../explanation/holdings-market-architecture.md) — no `Holding`/`Lot` yet |
 | Router mount | `backend/src/routes/mountRouters.ts` |
 | HTTP helpers / errors | `backend/src/routes/httpSupport.ts`, `backend/src/lib/errors.ts` |
 | Route uid helper | `backend/src/routes/routeSupport.ts` |
-| Prisma schema | `backend/prisma/schema.prisma` (`User`, `Category`, `CategoryDescriptionRule`, `Tag`, `CashTransactionTag`, `Account`, `CashTransfer`, `CashTransaction`, `CsvImportPreset`, `ImportBatch`, `FxRateDaily`) |
+| Prisma schema | `backend/prisma/schema.prisma` (`User`, `Category`, `CategoryDescriptionRule`, `Tag`, `CashTransactionTag`, `Account`, `CashTransfer`, `CashTransaction`, `CsvImportPreset`, `ImportBatch`, `FxRateDaily`, `Instrument`, `InstrumentValuation`, `WatchlistItem`) |
 | Migrations | `backend/prisma/migrations/` |
 | Demo user seed | `backend/prisma/seed.ts`, `backend/src/domain/seedDemoPortfolio.ts` |
 | Create user CLI | `backend/src/scripts/createUser.ts` |
 | DB backup CLI | `backend/src/scripts/backupDb.ts` |
 | SQLite path helper | `backend/src/dbPath.ts` |
-| HTTP / schema tests | `backend/test/httpHarness.ts`, `auth.http.test.ts`, `accounts.http.test.ts` (+ `ledgerImport` / `categories` / `transfers` / `statistics` HTTP suites), `schema.integration.test.ts`, `migrateDeploy.test.ts` |
+| HTTP / schema tests | `backend/test/httpHarness.ts`, `auth.http.test.ts`, `accounts.http.test.ts` (+ `ledgerImport` / `categories` / `transfers` / `statistics` / `markets` HTTP suites), `schema.integration.test.ts`, `migrateDeploy.test.ts` |
 | Test Prisma helper | `backend/test/prismaTestClient.ts`, `setupTestEnv.ts` |
 | SPA routes | `frontend/src/App.tsx` |
 | Auth state | `frontend/src/state/auth.tsx` |
@@ -64,10 +65,11 @@ JWT auth, multi-type accounts, category tree + tags, cash ledger + transfers, CS
 | Tags API client | `frontend/src/api/tagsApi.ts` |
 | Transactions API client | `frontend/src/api/transactionsApi.ts` (incl. import presets + column map) |
 | Statistics API client | `frontend/src/api/statisticsApi.ts` |
+| Instruments / watchlist API | `frontend/src/api/instrumentsApi.ts`, `watchlistApi.ts` |
 | Shell / gates | `frontend/src/components/AppShell.tsx`, `AuthSwapShell.tsx`, `ProtectedRoute.tsx`, `ErrorBoundary.tsx` |
 | Shared UI | `frontend/src/components/ui/{PageHeader,KpiCard,ChartCard,StatusBlock,CurrencySelect}.tsx` |
 | Dashboard UI | `frontend/src/pages/DashboardPage.tsx`, `frontend/src/components/dashboard/`, `frontend/src/utils/dashboardIdeas.ts` |
-| Pages | `frontend/src/pages/{Landing,Login,Register,Dashboard,Accounts,AccountDetail,Categories,Tags,Transfers,Statistics,Settings}Page.tsx` |
+| Pages | `frontend/src/pages/{Landing,Login,Register,Dashboard,Accounts,AccountDetail,Categories,Tags,Transfers,Statistics,Markets,Settings}Page.tsx` |
 | Statistics UI | `frontend/src/components/statistics/`, `frontend/src/utils/statisticsPeriod.ts`, `statisticsRollup.ts` |
 | Cash ledger import hook | `frontend/src/hooks/useCashLedgerImport.ts` (AccountDetail CSV flow) |
 | Transfers import hook | `frontend/src/hooks/useTransferImport.ts`; `components/transfers/{TransferTable,TransferCreateRow,TransferImportPanel,TransferFilterBar}.tsx` |

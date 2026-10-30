@@ -45,6 +45,8 @@ Hub: [docs/README.md](../README.md).
 | MVP-018 | Cash transaction tags | `Tag` + `CashTransactionTag`; `/tags`; ledger `tagIds`; `GET /api/statistics/tag-breakdown` |
 | FR-012 | Accounts list type filter | `/accounts` UI filter by `accountType` (`filterAccountsByType`) |
 | FR-010 | Historical NBP FX rates | `FxRateDaily`; `domain/fx.ts` + `fxRates.ts` + `nbpClient.ts`; `npm run fx:sync` (EUR/USD via PLN pivot); consumed by FR-038 |
+| MVP-021 | STOCK/ETF catalog + EOD for watchlist | `Instrument` / `InstrumentValuation`; Twelve Data CLIs; on-add quote; no holdings |
+| FR-039 | Markets watchlist UI | `WatchlistItem`; `/api/instruments` + `/api/watchlist`; `/markets`; [markets-watchlist.md](../how-to/markets-watchlist.md) |
 
 ## Planned / not in this codebase
 

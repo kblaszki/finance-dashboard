@@ -28,6 +28,7 @@ Hub: [docs/README.md](../README.md).
 | csvImportPresets | CsvImportPreset[] | Saved CSV column maps (`onDelete: Cascade`) |
 | importBatches | ImportBatch[] | Cash CSV import audit rows (`onDelete: Cascade`) |
 | categoryDescriptionRules | CategoryDescriptionRule[] | Import description → category rules (`onDelete: Cascade`) |
+| watchlistItems | WatchlistItem[] | Markets favorites (`onDelete: Cascade`) |
 
 ## Category
 
@@ -187,6 +188,54 @@ Global (not user-scoped) NBP table A mid for one foreign currency on one calenda
 
 Unique `[rateDate, currency]`; index `[currency, rateDate]`. Domain: `backend/src/domain/fx.ts`, `fxRates.ts`, `nbpClient.ts`. Sync CLI: `npm run fx:sync`. Net-worth and net-worth history read these rows only (latest mid on or before the valuation date via PLN pivot); they never call NBP over the network. Missing required rates fail closed.
 
-## Planned: holdings and market data
+## Instrument
 
-No Prisma models yet. Schema/domain sketch and tenancy rules: [holdings-market-architecture.md](../explanation/holdings-market-architecture.md). Until migrated, `Account.totalBalance` remains cash-only.
+Global market catalog (no `userId`). Synced from Twelve Data `GET /stocks` + `GET /etfs` via `npm run market:sync-catalog`. Search is local only.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id | Int | PK |
+| symbol | String | Display ticker (uppercase) |
+| name | String | Issuer / fund name |
+| exchange | String | Exchange code from provider |
+| micCode | String? | Optional MIC |
+| country | String? | Optional country |
+| currency | String | Quote currency (e.g. `USD`) |
+| assetClass | String | `STOCK` \| `ETF` |
+| provider | String | Default `twelve_data` |
+| providerSymbol | String | Symbol passed to Twelve Data APIs |
+| createdAt / updatedAt | DateTime | |
+
+Unique `[provider, providerSymbol]`; indexes on `symbol`, `assetClass`, `name`. Domain: `backend/src/domain/instruments.ts`, `twelveDataClient.ts`, `marketData.ts`.
+
+## InstrumentValuation
+
+Global EOD close for one instrument on one UTC day (`source` typically `twelve_data`).
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id | Int | PK |
+| instrumentId | Int | FK → Instrument (`onDelete: Cascade`) |
+| asOfDate | DateTime | UTC midnight |
+| close | Decimal | Major units in instrument currency |
+| source | String | Default `twelve_data` |
+| createdAt | DateTime | |
+
+Unique `[instrumentId, asOfDate, source]`. Domain: `instrumentValuations.ts`. Watchlist quote sync: `npm run market:sync-quotes`.
+
+## WatchlistItem
+
+User favorite instrument for `/markets`.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id | Int | PK |
+| userId | Int | FK → User (`onDelete: Cascade`) |
+| instrumentId | Int | FK → Instrument (`onDelete: Cascade`) |
+| createdAt | DateTime | |
+
+Unique `[userId, instrumentId]`. Domain: `backend/src/domain/watchlist.ts`.
+
+## Planned: holdings (positions)
+
+`Holding` / `Lot` / `AssetTrade` still not shipped. Sketch: [holdings-market-architecture.md](../explanation/holdings-market-architecture.md). `Account.totalBalance` remains cash-only until holdings land.

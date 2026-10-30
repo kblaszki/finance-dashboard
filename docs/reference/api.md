@@ -159,3 +159,14 @@ Period bounds are **UTC** `[start, end)` on `occurredAt`. Query `month=YYYY-MM` 
 | GET | `/api/statistics/net-worth` | Bearer | Query: `currency=PLN\|EUR\|USD` (reporting). Loads **all** owned accounts, converts balances via NBP mid on or before today. Body: `{ currency, asOf, byBucket: { cash, stock, crypto, metal, real_estate, other }, liabilities, netWorth, ratesUsed: [{ currency, rateDate, mid }] }`. Buckets/liabilities after FX; amounts rounded to 2 dp. `CREDIT_CARD` debt → `liabilities`; overpayment → `cash`. `IKE`/`IKZE` → stock; `TREASURY_BONDS` → other. Holdings valuations and mortgage-style FR-029 liabilities still separate. |
 | GET | `/api/statistics/net-worth-history` | Bearer | Query: optional `month=YYYY-MM` (default current UTC month; future → `400`), `currency=PLN\|EUR\|USD`, `months` (`6`\|`12`\|`24`). Reconstructs per-account end-of-month balances from `openingCashAsOf ?? oldest ledger occurredAt ?? createdAt` + ledger, converts with month-end (or today for current month) NBP mids. Body: `{ currency, monthCount, series: [{ month, asOf, netWorth }], ratesUsed }`. Soft-capped at `NET_WORTH_HISTORY_TX_CAP` → `400`. |
 | GET | `/api/statistics/cashflow-rolling-12m` | Bearer | Query: `currency=PLN\|EUR\|USD` (reporting). Body: `{ currency, monthCount, fromMonth, toMonth, avgIncome, avgExpense, avgNet }` — all-account FX averages over last 12 complete UTC months (excludes current month) |
+
+## Markets (instruments + watchlist)
+
+Local catalog search and per-user favorites. Catalog and EOD closes come from Twelve Data **CLI sync** / on-add quote — `GET /api/watchlist` never calls the provider.
+
+| Method | Path | Auth | Notes |
+|--------|------|------|-------|
+| GET | `/api/instruments` | Bearer | Query: `q` (required, ≥1 char), optional `assetClass=STOCK\|ETF`, optional `limit` (1–50, default 25). Body: `Instrument[]` `{ id, symbol, name, exchange, micCode, country, currency, assetClass, provider, providerSymbol }` from SQLite only |
+| GET | `/api/watchlist` | Bearer | Owned favorites with latest `InstrumentValuation` join. Body: `{ instrumentId, createdAt, instrument, lastClose, asOf }[]` (`lastClose`/`asOf` null when no valuation) |
+| POST | `/api/watchlist` | Bearer | Body `{ instrumentId }`. Creates favorite; if valuation missing/stale, one Twelve Data EOD attempt (soft-fail → `lastClose: null`). `201`; duplicate → `409`; unknown instrument → `404` |
+| DELETE | `/api/watchlist/:instrumentId` | Bearer | `204`; other user's / missing → `404` |

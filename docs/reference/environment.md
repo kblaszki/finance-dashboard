@@ -33,6 +33,8 @@ Hub: [docs/README.md](../README.md).
 | `JSON_BODY_LIMIT` | Express JSON body limit (default `1mb`) |
 | `BACKUP_DIR` / `BACKUP_GZIP` | Used by `npm run db:backup` (Compose: `BACKUP_DIR=/data/backups`) |
 | `NBP_API_BASE` | Base URL for NBP FX sync (default `https://api.nbp.pl/api`); used by `npm run fx:sync` |
+| `TWELVE_DATA_API_KEY` | Twelve Data API key for `market:sync-catalog`, `market:sync-quotes`, and on-add watchlist quote fetch |
+| `TWELVE_DATA_API_BASE` | Optional override (default `https://api.twelvedata.com`) |
 | `TRUST_PROXY` | Express trust-proxy hops: unset → `1` in production / off otherwise; `false`/`0`/`no` disables; integer = hop count |
 | `STATIC_DIR` | Directory of the Vite build (`index.html`); Docker sets `/app/public` |
 | `DOCKER_NETWORK` | Compose only: existing Docker network name for the reverse proxy (default `proxy`). Set in `.env`; not an app secret |

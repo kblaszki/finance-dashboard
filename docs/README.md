@@ -16,7 +16,7 @@ Finance-dashboard docs follow [Diátaxis](https://diataxis.fr/): each page has o
 | Explanation | Understand why | [explanation/](explanation/) |
 | Meta | Agent maps (not a Diátaxis mode) | [meta/](meta/) |
 
-**Code baseline:** JWT auth, multi-type accounts, category tree + tags, cash ledger + transfers, CSV import (column map, presets, dedup, description suggest), statistics, NBP FX domain, demo user with sample portfolio. Product backlog: [mvp/CHECKLIST.md](../mvp/CHECKLIST.md) (do not treat checklist “done” as shipped code).
+**Code baseline:** JWT auth, multi-type accounts, category tree + tags, cash ledger + transfers, CSV import (column map, presets, dedup, description suggest), statistics, NBP FX domain, Markets watchlist (Twelve Data catalog + favorites), demo user with sample portfolio. Product backlog: [mvp/CHECKLIST.md](../mvp/CHECKLIST.md) (do not treat checklist “done” as shipped code).
 
 ## AI reading order
 
@@ -55,6 +55,7 @@ Never load all docs. Prefer reference for facts, how-to for tasks, explanation f
 | [internal-transfers.md](how-to/internal-transfers.md) | Move cash between owned accounts |
 | [import-csv-column-map.md](how-to/import-csv-column-map.md) | Map arbitrary CSV columns + description category suggest on account Upload |
 | [dashboard-and-statistics.md](how-to/dashboard-and-statistics.md) | Home net worth / rolling 12m; period KPIs, chart, category breakdown |
+| [markets-watchlist.md](how-to/markets-watchlist.md) | Twelve Data catalog sync + `/markets` favorites / last close |
 | [write-integration-tests.md](how-to/write-integration-tests.md) | HTTP / integration tests |
 | [private-deploy.md](how-to/private-deploy.md) | Private single-user deploy |
 
@@ -75,7 +76,7 @@ Never load all docs. Prefer reference for facts, how-to for tasks, explanation f
 | Doc | Use when |
 |-----|----------|
 | [architecture.md](explanation/architecture.md) | Auth and request flow |
-| [holdings-market-architecture.md](explanation/holdings-market-architecture.md) | Spike: holdings / lots / market-data layout (not shipped) |
+| [holdings-market-architecture.md](explanation/holdings-market-architecture.md) | Spike: holdings / lots; Instruments + watchlist already ship separately |
 | [fullstack-practices.md](explanation/fullstack-practices.md) | Fullstack practices rubric |
 
 ## Meta

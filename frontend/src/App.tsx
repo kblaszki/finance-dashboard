@@ -13,6 +13,7 @@ import { CategoriesPage } from "./pages/CategoriesPage";
 import { TagsPage } from "./pages/TagsPage";
 import { TransfersPage } from "./pages/TransfersPage";
 import { StatisticsPage } from "./pages/StatisticsPage";
+import { MarketsPage } from "./pages/MarketsPage";
 import { useAuth } from "./state/auth";
 
 function App() {
@@ -35,6 +36,7 @@ function App() {
           <Route path="/tags" element={<TagsPage />} />
           <Route path="/transfers" element={<TransfersPage />} />
           <Route path="/statistics" element={<StatisticsPage />} />
+          <Route path="/markets" element={<MarketsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Route>

@@ -1,6 +1,6 @@
 ---
 id: MVP-021
-status: planned
+status: done
 domain: market-fx
 title: STOCK/ETF market data sync
 ---
@@ -9,28 +9,31 @@ title: STOCK/ETF market data sync
 
 ## Summary
 
-Twelve Data EOD for mapped STOCK/ETF; status + cron CLI.
+Twelve Data catalog (`/stocks` + `/etfs`) upserted into `Instrument`; EOD closes into `InstrumentValuation` for watchlist symbols via CLI and soft-fail on-add fetch.
 
 ## User value
 
-Capability tracked in the product map for agents and humans; see linked docs for recipes.
+Search stocks/ETFs locally without burning credits per keystroke; favorites get last close when the plan covers the symbol.
 
 ## Surfaces
 
 | Kind | Location |
 |------|----------|
-| Primary | Market sync + CLI |
+| Domain | `backend/src/domain/{instruments,instrumentValuations,marketData,twelveDataClient}.ts` |
+| CLI | `npm run market:sync-catalog`, `npm run market:sync-quotes` |
+| How-to | [docs/how-to/markets-watchlist.md](../../../docs/how-to/markets-watchlist.md) |
 
 ## Acceptance
 
-- [ ] Sync upserts InstrumentValuation source twelve_data
+- [x] Sync upserts Instrument from Twelve Data lists
+- [x] Sync upserts InstrumentValuation source `twelve_data` for watchlisted symbols
+- [x] HTTP list watchlist does not call Twelve Data
 
 ## Implementation notes
 
-- Docs: docs/how-to/market-data-sync.md
-- Traceability: [docs/reference/requirements.md](../../../docs/reference/requirements.md) (when FR/NFR)
-- Code map: [docs/meta/code-map.md](../../../docs/meta/code-map.md)
+- Env: `TWELVE_DATA_API_KEY` (optional base URL)
+- Holdings / lots / net-worth from positions remain out of scope (see FR-039 for UI favorites)
 
 ## Out of scope / follow-ups
 
-- See related planned/stub rows in [CHECKLIST.md](../../CHECKLIST.md)
+- Holdings, quantity, crypto EOD (FR-031), live quotes

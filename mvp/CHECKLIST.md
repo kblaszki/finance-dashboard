@@ -57,7 +57,8 @@ Last review: 2026-10-29 — statuses aligned to **auth + multi-type accounts + c
 | MVP-025 | Import category suggest from description | done | [features/import/category-suggest-from-description.md](features/import/category-suggest-from-description.md) | /accounts/:id + /categories rules |
 | FR-010 | Historical NBP FX rates | done | [features/market-fx/nbp-fx-history.md](features/market-fx/nbp-fx-history.md) | FxRateDaily + `npm run fx:sync` + `domain/fx.ts` |
 | FR-031 | Crypto EOD sync on CRYPTO accounts | planned | [features/market-fx/crypto-eod-sync.md](features/market-fx/crypto-eod-sync.md) | MarketPricesStatus |
-| MVP-021 | STOCK/ETF market data sync | planned | [features/market-fx/stock-etf-market-sync.md](features/market-fx/stock-etf-market-sync.md) | Market sync + CLI |
+| MVP-021 | STOCK/ETF market data sync | done | [features/market-fx/stock-etf-market-sync.md](features/market-fx/stock-etf-market-sync.md) | Catalog + EOD for watchlist (not holdings) |
+| FR-039 | Markets watchlist | done | [features/market-fx/markets-watchlist.md](features/market-fx/markets-watchlist.md) | `/markets` favorites |
 | FR-015 | Category tree CRUD | done | [features/budgets-categories/category-tree.md](features/budgets-categories/category-tree.md) | /categories |
 | MVP-016 | Categories CSV export and merge import | done | [features/budgets-categories/categories-csv-export-import.md](features/budgets-categories/categories-csv-export-import.md) | /categories Download/Upload CSV |
 | MVP-017 | Transfer category group (TRANSFER ledgerType) | done | [features/budgets-categories/transfer-categories.md](features/budgets-categories/transfer-categories.md) | /categories Transfers + /transfers category |
@@ -141,7 +142,8 @@ Last review: 2026-10-29 — statuses aligned to **auth + multi-type accounts + c
 
 - **done** [FR-010 Historical NBP FX rates](features/market-fx/nbp-fx-history.md)
 - **planned** [FR-031 Crypto EOD sync on CRYPTO accounts](features/market-fx/crypto-eod-sync.md)
-- **planned** [MVP-021 STOCK/ETF market data sync](features/market-fx/stock-etf-market-sync.md)
+- **done** [MVP-021 STOCK/ETF market data sync](features/market-fx/stock-etf-market-sync.md) (watchlist EOD; holdings later)
+- **done** [FR-039 Markets watchlist](features/market-fx/markets-watchlist.md)
 
 ### dashboard-stats
 

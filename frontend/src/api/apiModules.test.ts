@@ -86,6 +86,12 @@ import {
   previewTransfersImport,
   importTransfersCsv,
 } from './transfersApi'
+import { searchInstruments } from './instrumentsApi'
+import {
+  fetchWatchlist,
+  addToWatchlist,
+  removeFromWatchlist,
+} from './watchlistApi'
 
 describe('API modules', () => {
   beforeEach(() => {
@@ -458,5 +464,23 @@ describe('API modules', () => {
       accountMappings: [{ name: 'A', currency: 'PLN', accountId: 1 }],
       skipRows: [2],
     })
+  })
+
+  it('instrumentsApi and watchlistApi call correct endpoints', async () => {
+    await searchInstruments({ q: 'AAPL', assetClass: 'STOCK', limit: 10 })
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/instruments?q=AAPL&assetClass=STOCK&limit=10',
+    )
+
+    await fetchWatchlist()
+    expect(apiClient.get).toHaveBeenCalledWith('/api/watchlist')
+
+    await addToWatchlist(42)
+    expect(apiClient.post).toHaveBeenCalledWith('/api/watchlist', {
+      instrumentId: 42,
+    })
+
+    await removeFromWatchlist(42)
+    expect(apiClient.delete).toHaveBeenCalledWith('/api/watchlist/42')
   })
 })
