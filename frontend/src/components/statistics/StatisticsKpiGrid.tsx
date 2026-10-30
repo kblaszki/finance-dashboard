@@ -12,46 +12,52 @@ export function StatisticsKpiGrid(props: {
   const { summary, prevSummary, periodLabel, currency } = props;
 
   return (
-    <div className="kpi-grid">
-      <KpiCard
-        label={`Income · ${periodLabel}`}
-        value={formatMoney(summary.income, currency)}
-        tone="positive"
-        sub={
-          prevSummary
-            ? formatPeriodDelta(summary.income, prevSummary.income)
-            : undefined
-        }
-      />
-      <KpiCard
-        label={`Expense · ${periodLabel}`}
-        value={formatMoney(summary.expense, currency)}
-        tone="negative"
-        sub={
-          prevSummary
-            ? formatPeriodDelta(summary.expense, prevSummary.expense)
-            : undefined
-        }
-      />
-      <KpiCard
-        label={`Net · ${periodLabel}`}
-        value={formatMoney(summary.net, currency)}
-        tone={summary.net >= 0 ? "positive" : "negative"}
-        sub={
-          prevSummary
-            ? formatPeriodDelta(summary.net, prevSummary.net)
-            : undefined
-        }
-      />
-      <KpiCard
-        label={`Transfers · ${periodLabel}`}
-        value={formatMoney(summary.transfers, currency)}
-        sub={
-          prevSummary
-            ? formatPeriodDelta(summary.transfers, prevSummary.transfers)
-            : undefined
-        }
-      />
+    <div className="stats-kpi-block">
+      <div className="kpi-grid">
+        <KpiCard
+          label={`Income · ${periodLabel}`}
+          value={formatMoney(summary.income, currency)}
+          tone="positive"
+          sub={
+            prevSummary
+              ? formatPeriodDelta(summary.income, prevSummary.income)
+              : undefined
+          }
+        />
+        <KpiCard
+          label={`Expense · ${periodLabel}`}
+          value={formatMoney(summary.expense, currency)}
+          tone="negative"
+          sub={
+            prevSummary
+              ? formatPeriodDelta(summary.expense, prevSummary.expense)
+              : undefined
+          }
+        />
+        <KpiCard
+          label={`Net · ${periodLabel}`}
+          value={formatMoney(summary.net, currency)}
+          tone={summary.net >= 0 ? "positive" : "negative"}
+          sub={
+            prevSummary
+              ? formatPeriodDelta(summary.net, prevSummary.net)
+              : undefined
+          }
+        />
+        <KpiCard
+          label={`Transfers · ${periodLabel}`}
+          value={formatMoney(summary.transfers, currency)}
+          sub={
+            prevSummary
+              ? formatPeriodDelta(summary.transfers, prevSummary.transfers)
+              : undefined
+          }
+        />
+      </div>
+      <p className="muted stats-fx-note">
+        All accounts converted to {currency} via NBP mid rates on each
+        transaction date.
+      </p>
     </div>
   );
 }

@@ -125,19 +125,21 @@ export function StatisticsAnalysisSection(props: {
                   ? "negative"
                   : "neutral"
             }
-            emptyLabel={`No ${categoryFacet} in ${periodLabel} for the selected currency.`}
-            subtitle={`Root category rollup · ${periodLabel} · ${currency}`}
+            emptyLabel={`No ${categoryFacet} in ${periodLabel} for ${currency} accounts (unconverted; other currencies omitted).`}
+            subtitle={`Root category rollup · ${periodLabel} · ${currency} accounts only`}
           />
           <DetailTable
             title={`${categoryFacet === "transfer" ? "Transfer" : categoryFacet === "income" ? "Income" : "Expense"} detail`}
             rows={categoryDetailRows}
             currency={currency}
           />
-          {categoryDetailRows.length > 0 && (
-            <p className="muted stats-detail-hint">
-              Totals include nested subcategories.
-            </p>
-          )}
+          <p className="muted stats-detail-hint">
+            Category totals use {currency} ledger rows only — they are not
+            NBP-converted across accounts.
+            {categoryDetailRows.length > 0
+              ? " Totals include nested subcategories."
+              : ""}
+          </p>
         </>
       )}
 
@@ -175,10 +177,14 @@ export function StatisticsAnalysisSection(props: {
             rows={tagFacetRows}
             currency={currency}
             tone={tagFacet === "income" ? "positive" : "negative"}
-            emptyLabel={`No tagged ${tagFacet} in ${periodLabel} for the selected currency.`}
-            subtitle={`By tag · ${periodLabel} · ${currency}`}
+            emptyLabel={`No tagged ${tagFacet} in ${periodLabel} for ${currency} accounts (unconverted; other currencies omitted).`}
+            subtitle={`By tag · ${periodLabel} · ${currency} accounts only`}
             byLabel="tag"
           />
+          <p className="muted stats-detail-hint">
+            Tag and category totals use {currency} ledger rows only — they are
+            not NBP-converted across accounts.
+          </p>
           <TagDetailTable
             title={`${tagFacet === "income" ? "Income" : "Expense"} by tag`}
             rows={

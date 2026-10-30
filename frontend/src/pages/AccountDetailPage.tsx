@@ -116,10 +116,11 @@ export function AccountDetailPage() {
 
   const {
     data: categories,
+    error: categoriesError,
     reload: reloadCategories,
   } = useAsyncData(loadCategories);
 
-  const { data: tags } = useAsyncData(loadTags);
+  const { data: tags, error: tagsError } = useAsyncData(loadTags);
 
   const categoryNameById = useMemo(() => {
     const map = new Map<number, string>();
@@ -256,7 +257,7 @@ export function AccountDetailPage() {
 
       <StatusBlock
         loading={accountLoading && !account}
-        error={accountError}
+        error={accountError || categoriesError || tagsError}
         loadingMessage="Loading account…"
       />
 

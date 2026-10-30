@@ -1,10 +1,12 @@
 import { Component, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 
-type Props = { children: ReactNode };
+type Props = {
+  children: ReactNode;
+};
 type State = { error: Error | null };
 
-/** Keeps a shell mounted when a nested route throws. */
+/** Keeps a shell mounted when a nested route throws. Remount via `key` to clear. */
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { error: null };
 

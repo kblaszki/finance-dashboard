@@ -17,12 +17,14 @@ vi.mock("../api/statisticsApi", () => ({
   fetchPeriodSummary: vi.fn(),
   fetchTagBreakdown: vi.fn(),
   fetchCashflowHistory: vi.fn(),
+  fetchCashflowRolling12m: vi.fn(),
 }));
 
 import { fetchAccounts } from "../api/accountsApi";
 import { fetchCategories } from "../api/categoriesApi";
 import {
   fetchCashflowHistory,
+  fetchCashflowRolling12m,
   fetchCategoryBreakdown,
   fetchPeriodSummary,
   fetchTagBreakdown,
@@ -133,12 +135,25 @@ describe("StatisticsPage period and analysis views", () => {
         { month: "2026-08", income: 3000, expense: 400, net: 2600 },
       ],
     });
+    vi.mocked(fetchCashflowRolling12m).mockResolvedValue({
+      currency: "PLN",
+      monthCount: 12,
+      fromMonth: "2025-08",
+      toMonth: "2026-07",
+      avgIncome: 2800,
+      avgExpense: 900,
+      avgNet: 1900,
+    });
   });
 
   it("shows KPIs including transfers and switches period to quarter", async () => {
     renderStats();
     expect(await screen.findByText(/Transfers ·/)).toBeTruthy();
     expect(screen.getAllByText(/PLN\s*150\.00/).length).toBeGreaterThan(0);
+    expect(screen.getByText("Rolling 12-month averages")).toBeTruthy();
+    expect(
+      screen.getByText(/All accounts converted to PLN via NBP mid rates/),
+    ).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Quarter" }));
     await waitFor(() => {

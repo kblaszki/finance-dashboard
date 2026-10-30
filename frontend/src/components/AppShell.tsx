@@ -305,7 +305,7 @@ export function AppShell() {
             </div>
           </header>
           <main className="shell-content" id="main-content" ref={contentRef}>
-            <ErrorBoundary>
+            <ErrorBoundary key={pathname}>
               <Outlet />
             </ErrorBoundary>
           </main>

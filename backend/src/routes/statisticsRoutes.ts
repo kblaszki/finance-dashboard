@@ -1,6 +1,7 @@
 import { Router } from "express";
 import type { PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
+import { CASH_TX_TYPES } from "../domain/cashLedger";
 import {
   aggregateCategoryBreakdown,
   parseMonthParam,
@@ -55,6 +56,7 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
         const [rows, transfers] = await Promise.all([
           prisma.cashTransaction.findMany({
             where: {
+              type: { in: [...CASH_TX_TYPES] },
               occurredAt: { gte: start, lt: end },
               account: { userId },
             },
@@ -112,6 +114,7 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
         const [rows, transfers] = await Promise.all([
           prisma.cashTransaction.findMany({
             where: {
+              type: { in: [...CASH_TX_TYPES] },
               occurredAt: { gte: start, lt: end },
               account: { userId },
             },
@@ -167,6 +170,7 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
         const currency = parseCurrencyParam(req.query.currency);
         const rows = await prisma.cashTransaction.findMany({
           where: {
+            type: { in: [...CASH_TX_TYPES] },
             occurredAt: { gte: start, lt: end },
             account: { userId: uid(req), currency },
           },
@@ -211,6 +215,7 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
         const { end } = parseMonthParam(statsPeriod.endMonth);
         const rows = await prisma.cashTransaction.findMany({
           where: {
+            type: { in: [...CASH_TX_TYPES] },
             occurredAt: { gte: start, lt: end },
             account: { userId: uid(req) },
           },
@@ -398,6 +403,7 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
         );
         const rows = await prisma.cashTransaction.findMany({
           where: {
+            type: { in: [...CASH_TX_TYPES] },
             occurredAt: { gte: start, lt: currentStart },
             account: { userId: uid(req) },
           },

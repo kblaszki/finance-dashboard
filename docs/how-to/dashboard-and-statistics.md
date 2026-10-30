@@ -28,7 +28,7 @@ This page covers shipped dashboard KPIs (`/dashboard`) and statistics (`/statist
 ## Dashboard: executive overview (FR-002 / FR-005 / FR-038)
 
 1. Open **Dashboard** (or go to `/dashboard`). `/home` redirects here.
-2. Confirm the **reporting currency** in the top bar (`PLN` / `EUR` / `USD` from your accounts). Incomplete workspaces still show the **Setup checklist** first.
+2. Confirm the **reporting currency** in the top bar (`PLN` / `EUR` / `USD` — available once you have any account, even if you only hold one of them). Incomplete workspaces still show the **Setup checklist** first.
 3. Review **Wealth hero**: total net worth for **all** owned accounts converted into the topbar currency via stored NBP mids (valuation / rate dates shown), cash / invested / debt chips, and a **net-worth history** area chart. Range chips `6M` / `1Y` / `2Y` slice the fetched 24-month series client-side.
 4. Review **period KPI strip** for the current UTC month (labeled with the topbar **reporting** currency): income, expense, savings ratio (`net / income`), and monthly net from **all** owned accounts, converted via NBP mids on each transaction date, each with % vs the previous month when available.
 5. Review the **executive grid**:
@@ -51,9 +51,11 @@ Net worth uses persisted NBP rates only (no live NBP during the request). Mappin
 1. Open **Statistics** in the AppShell (or go to `/statistics`).
 2. Choose **Month**, **Quarter**, or **Year**, then pick the anchor (month input, quarter + year, or year). Currency comes from the top bar. Optionally set history range (6 / 12 / 24 months).
 3. Review **Period summary**: income, expense, net, and **transfers** — all owned `PLN`/`EUR`/`USD` accounts converted into the topbar reporting currency (NBP mid on each row’s date). Transfers are the converted sum of outgoing `amountFrom` and do **not** change income/expense/net. Each KPI shows **% vs previous** period (prior month / quarter / year); when the previous total is zero the subtitle is `— vs prev`.
-4. Review **Cashflow history**: monthly income/expense bars, net line, and savings-rate line (`net / income` per month) on a second axis (same all-account FX model). The series ends at the last month of the selected period.
-5. APIs:
+4. Review **Rolling 12-month averages** (avg income/expense/net over the last 12 complete UTC months, excluding the current month) — same reporting-currency FX model.
+5. Review **Cashflow history**: monthly income/expense bars, net line, and savings-rate line (`net / income` per month) on a second axis (same all-account FX model). The series ends at the last month of the selected period.
+6. APIs:
    - `GET /api/statistics/period-summary?month=YYYY-MM&currency=XXX&period=month|quarter|year`
+   - `GET /api/statistics/cashflow-rolling-12m?currency=XXX`
    - `GET /api/statistics/cashflow-history?month=YYYY-MM&currency=XXX&months=12&period=…`
 
 Bounds are UTC. `period` defaults to `month`. Quarter/year are calendar bounds containing the anchor month. History series is oldest → newest and zero-fills empty months. Category/tag breakdowns remain unconverted (single-currency filter on tags). Ensure FX history is synced before relying on multi-currency cashflow (`npm run fx:sync`).

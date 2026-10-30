@@ -12,7 +12,7 @@ export function AuthSwapShell() {
         <ThemeToggle />
       </div>
       <section className="auth-swap-form">
-        <ErrorBoundary>
+        <ErrorBoundary key={pathname}>
           <Outlet />
         </ErrorBoundary>
       </section>

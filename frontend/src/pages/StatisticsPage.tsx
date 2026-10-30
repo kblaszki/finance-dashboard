@@ -2,14 +2,17 @@ import { useCallback, useMemo, useState } from "react";
 import { fetchCategories } from "../api/categoriesApi";
 import {
   fetchCashflowHistory,
+  fetchCashflowRolling12m,
   fetchCategoryBreakdown,
   fetchPeriodSummary,
   fetchTagBreakdown,
+  type CashflowRolling12m,
   type PeriodSummary,
   type StatsPeriod,
   type TagBreakdown,
 } from "../api/statisticsApi";
 import { CashflowHistoryChart } from "../components/statistics/CashflowHistoryChart";
+import { RollingCashflowStrip } from "../components/statistics/RollingCashflowStrip";
 import {
   StatisticsAnalysisSection,
   type AnalysisView,
@@ -43,7 +46,10 @@ export function StatisticsPage() {
   const [tagFacet, setTagFacet] = useState<TagFacet>("expense");
 
   const loadCategories = useCallback(() => fetchCategories(), []);
-  const { data: categories } = useAsyncData(loadCategories);
+  const {
+    data: categories,
+    error: categoriesError,
+  } = useAsyncData(loadCategories);
 
   const loadBreakdown = useCallback(
     () => fetchCategoryBreakdown(month, period),
@@ -73,7 +79,10 @@ export function StatisticsPage() {
     if (!currency) return Promise.resolve(null);
     return fetchPeriodSummary(prevMonth, currency, period);
   }, [prevMonth, currency, period]);
-  const { data: prevSummary } = useAsyncData(loadPrevSummary);
+  const {
+    data: prevSummary,
+    error: prevSummaryError,
+  } = useAsyncData(loadPrevSummary);
 
   const loadTags = useCallback((): Promise<TagBreakdown | null> => {
     if (!currency) return Promise.resolve(null);
@@ -96,6 +105,16 @@ export function StatisticsPage() {
     error: historyError,
     loading: historyLoading,
   } = useAsyncData(loadHistory);
+
+  const loadRolling = useCallback((): Promise<CashflowRolling12m | null> => {
+    if (!currency) return Promise.resolve(null);
+    return fetchCashflowRolling12m(currency);
+  }, [currency]);
+  const {
+    data: rolling,
+    error: rollingError,
+    loading: rollingLoading,
+  } = useAsyncData(loadRolling);
 
   const periodLabel = summary?.label ?? breakdown?.label ?? month;
 
@@ -143,8 +162,19 @@ export function StatisticsPage() {
 
   const loading =
     !!currency &&
-    (summaryLoading || historyLoading || breakdownLoading || tagLoading);
-  const error = summaryError || historyError || breakdownError || tagError;
+    (summaryLoading ||
+      historyLoading ||
+      breakdownLoading ||
+      tagLoading ||
+      rollingLoading);
+  const error =
+    summaryError ||
+    historyError ||
+    breakdownError ||
+    tagError ||
+    rollingError ||
+    categoriesError ||
+    prevSummaryError;
 
   const categoryFacetRows =
     categoryFacet === "income"
@@ -195,6 +225,10 @@ export function StatisticsPage() {
           periodLabel={periodLabel}
           currency={currency}
         />
+      )}
+
+      {!loading && !error && currency && rolling && (
+        <RollingCashflowStrip rolling={rolling} currency={currency} />
       )}
 
       {!loading && !error && currency && history && (

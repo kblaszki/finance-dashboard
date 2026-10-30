@@ -520,6 +520,59 @@ test("GET /api/statistics/cashflow-history aggregates series with year span and 
   assert.deepEqual(jan, { month: "2026-01", income: 0, expense: 200, net: -200 });
 });
 
+test("GET /api/statistics/cashflow-history converts multi-currency series via NBP FX", async () => {
+  const token = await registerAndLogin("histfx@test.local", "histfx", "password123");
+  await prisma.fxRateDaily.createMany({
+    data: [
+      { currency: "EUR", rateDate: new Date("2026-01-05T00:00:00.000Z"), mid: 4 },
+      { currency: "USD", rateDate: new Date("2026-01-05T00:00:00.000Z"), mid: 4 },
+    ],
+  });
+
+  const pln = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Hist FX PLN", currency: "PLN", openingBalance: 0 });
+  const eur = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Hist FX EUR", currency: "EUR", openingBalance: 0 });
+
+  await request(app)
+    .post(`/api/accounts/${pln.body.id}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "INCOME", amount: 400, occurredAt: "2026-01-10T00:00:00.000Z" });
+  await request(app)
+    .post(`/api/accounts/${eur.body.id}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "INCOME", amount: 100, occurredAt: "2026-01-12T00:00:00.000Z" });
+
+  const res = await request(app)
+    .get("/api/statistics/cashflow-history?month=2026-01&currency=PLN&months=6")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  const jan = res.body.series.find((p: { month: string }) => p.month === "2026-01");
+  assert.deepEqual(jan, { month: "2026-01", income: 800, expense: 0, net: 800 });
+});
+
+test("GET /api/statistics/cashflow-history fails when required FX mid is missing", async () => {
+  const token = await registerAndLogin("histmiss@test.local", "histmiss", "password123");
+  const eur = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Hist need EUR mid", currency: "EUR", openingBalance: 0 });
+  await request(app)
+    .post(`/api/accounts/${eur.body.id}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "INCOME", amount: 10, occurredAt: "2026-01-10T00:00:00.000Z" });
+
+  const res = await request(app)
+    .get("/api/statistics/cashflow-history?month=2026-01&currency=PLN&months=6")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 404);
+  assert.match(res.body.error, /EUR|rate|mid/i);
+});
+
 test("GET /api/statistics/net-worth requires auth and valid currency", async () => {
   const noAuth = await request(app).get("/api/statistics/net-worth?currency=PLN");
   assert.equal(noAuth.status, 401);
@@ -757,6 +810,26 @@ test("GET /api/statistics/net-worth fails when required FX mid is missing", asyn
   assert.match(res.body.error, /USD|rate|mid/i);
 });
 
+test("GET /api/statistics/net-worth-history fails when required FX mid is missing", async () => {
+  const token = await registerAndLogin("nwhmiss@test.local", "nwhmiss", "password123");
+  await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      name: "Hist need USD mid",
+      currency: "USD",
+      accountType: "BANK",
+      openingBalance: 10,
+      openingCashAsOf: "2025-12-01",
+    });
+
+  const res = await request(app)
+    .get("/api/statistics/net-worth-history?month=2026-01&currency=PLN&months=6")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 404);
+  assert.match(res.body.error, /USD|rate|mid/i);
+});
+
 test("GET /api/statistics/cashflow-rolling-12m requires auth and valid currency", async () => {
   const noAuth = await request(app).get(
     "/api/statistics/cashflow-rolling-12m?currency=PLN",
@@ -786,4 +859,27 @@ test("GET /api/statistics/cashflow-rolling-12m requires auth and valid currency"
   assert.equal(empty.body.avgIncome, 0);
   assert.equal(empty.body.avgExpense, 0);
   assert.equal(empty.body.avgNet, 0);
+});
+
+test("GET /api/statistics/cashflow-rolling-12m fails when required FX mid is missing", async () => {
+  const token = await registerAndLogin("rollmiss@test.local", "rollmiss", "password123");
+  const eur = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({ name: "Roll need EUR mid", currency: "EUR", openingBalance: 0 });
+  // Mid of previous UTC month is always inside the rolling 12 complete months.
+  const now = new Date();
+  const inWindow = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 15),
+  );
+  await request(app)
+    .post(`/api/accounts/${eur.body.id}/transactions`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({ type: "INCOME", amount: 25, occurredAt: inWindow.toISOString() });
+
+  const res = await request(app)
+    .get("/api/statistics/cashflow-rolling-12m?currency=PLN")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 404);
+  assert.match(res.body.error, /EUR|rate|mid/i);
 });
