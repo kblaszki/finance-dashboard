@@ -37,7 +37,7 @@ Hub: [docs/README.md](../README.md).
 | `/statistics` | Protected | `StatisticsPage` orchestration (period/KPIs/rolling-12m/cashflow/analysis composed from `components/statistics/` — `StatisticsPeriodFilter`, `StatisticsKpiGrid`, `RollingCashflowStrip`, `CashflowHistoryChart`, `StatisticsAnalysisSection`, plus existing panels); KPIs/history/rolling use reporting-currency NBP FX; category/tag stay single-currency; period/rollup helpers in `utils/statisticsPeriod.ts` / `statisticsRollup.ts`; category detail uses expandable tree via `buildCategoryTreeRows` / `visibleCategoryTreeRows` |
 | `/markets` | Protected | `MarketsPage` — allowlist search + catalog “Add to markets” + watchlist; clients `instrumentsApi` / `watchlistApi`; seed via `market:seed-universe` |
 | `/markets/:instrumentId` | Protected | `InstrumentDetailPage` — EOD close chart (`fetchInstrumentHistory`); linked from watchlist symbols |
-| `/settings` | Protected | `SettingsPage` |
+| `/settings` | Protected | `SettingsPage` — profile/email/password, appearance, **marketLiveApi** toggle (`appConfigApi`) |
 
 Shell: `AppShell` — fixed sidebar (brand, icon nav, user + logout, theme toggle) + topbar (one page `h1`, global `CurrencySelect`; when no accounts/currencies, a “Create an account” link to `/accounts` instead of an empty select) + content. A skip link targets `#main-content`. The sidebar becomes an off-canvas drawer (`.shell--drawer-mode`) when the viewport cannot fit the sticky sidebar beside the widest table’s readable minimum (`shellDrawerMode.ts`); pages without tables fall back to ≤900px. Open from the topbar menu button (backdrop / Escape / route change close it). Gate: `ProtectedRoute`. `ErrorBoundary` wraps the shell outlet and the guest auth outlet. Page titles inside the shell are `h2`.
 
@@ -84,6 +84,7 @@ Production Docker serves `frontend/dist` from Express (`STATIC_DIR`); deep links
 | `frontend/src/api/transfersApi.ts` | list/create/patch/delete + CSV export/preview/import → `/api/transfers` (`categoryId` on transfer DTOs; `exportTransfersCsv`, `previewTransfersImport`, `importTransfersCsv`) |
 | `frontend/src/api/statisticsApi.ts` | `fetchCategoryBreakdown`, `fetchPeriodSummary`, `fetchTagBreakdown`, `fetchCashflowHistory`, `fetchNetWorth`, `fetchNetWorthHistory`, `fetchCashflowRolling12m` → `/api/statistics/*` (optional `period`; net-worth responses include `asOf` / `ratesUsed`) |
 | `frontend/src/api/instrumentsApi.ts` | `searchInstruments`, `addInstrumentToAllowlist`, `fetchInstrumentHistory` → `/api/instruments` |
+| `frontend/src/api/appConfigApi.ts` | `fetchAppConfig`, `updateAppConfig` → `/api/app-config` |
 | `frontend/src/api/watchlistApi.ts` | `fetchWatchlist`, `addToWatchlist`, `removeFromWatchlist` → `/api/watchlist` |
 
 New domain clients follow `frontend/src/api/*Api.ts` and must be covered in `apiModules.test.ts` when added.

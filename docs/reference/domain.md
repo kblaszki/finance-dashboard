@@ -188,6 +188,10 @@ Global (not user-scoped) NBP table A mid for one foreign currency on one calenda
 
 Unique `[rateDate, currency]`; index `[currency, rateDate]`. Domain: `backend/src/domain/fx.ts`, `fxRates.ts`, `nbpClient.ts`. Sync CLI: `npm run fx:sync`. Net-worth and net-worth history read these rows only (latest mid on or before the valuation date via PLN pivot); they never call NBP over the network. Missing required rates fail closed.
 
+## AppConfig
+
+Global key/value settings (no `userId`). Key `marketLiveApi` value `"true"`|`"false"`; missing ⇒ live HTTP market fetches off. Domain: `backend/src/domain/appConfig.ts`.
+
 ## Instrument
 
 Global market catalog (no `userId`). Full table from Twelve Data via `market:sync-catalog`. Curated subset marked `allowlisted` via `market:seed-universe` / `POST /api/instruments/allowlist`. Default Markets search filters `allowlisted=true`.

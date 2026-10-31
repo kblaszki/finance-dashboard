@@ -91,6 +91,7 @@ import {
   addInstrumentToAllowlist,
   fetchInstrumentHistory,
 } from './instrumentsApi'
+import { fetchAppConfig, updateAppConfig } from './appConfigApi'
 import {
   fetchWatchlist,
   addToWatchlist,
@@ -467,6 +468,16 @@ describe('API modules', () => {
       csv: 'csv-body',
       accountMappings: [{ name: 'A', currency: 'PLN', accountId: 1 }],
       skipRows: [2],
+    })
+  })
+
+  it('appConfigApi calls correct endpoints', async () => {
+    await fetchAppConfig()
+    expect(apiClient.get).toHaveBeenCalledWith('/api/app-config')
+
+    await updateAppConfig({ marketLiveApi: true })
+    expect(apiClient.patch).toHaveBeenCalledWith('/api/app-config', {
+      marketLiveApi: true,
     })
   })
 

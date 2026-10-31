@@ -11,6 +11,10 @@ import {
 } from "../../test/prismaTestClient";
 import { canonicalUsernameKey, hashPassword } from "../auth";
 import { INSTRUMENT_PROVIDER_TWELVE_DATA } from "./instruments";
+import {
+  upsertInstrumentClose,
+  VALUATION_SOURCE_YAHOO,
+} from "./instrumentValuations";
 import { serializeHistoryNdjsonRow } from "./marketHistoryIo";
 import { seedDemoMarkets } from "./seedDemoMarkets";
 
@@ -34,7 +38,7 @@ test("seedDemoMarkets adds watchlist and valuations from fixture", async () => {
       passwordHash: await hashPassword("password123"),
     },
   });
-  await prisma.instrument.create({
+  const instrument = await prisma.instrument.create({
     data: {
       symbol: "AAPL",
       name: "Apple",
@@ -45,6 +49,18 @@ test("seedDemoMarkets adds watchlist and valuations from fixture", async () => {
       providerSymbol: "AAPL",
       allowlisted: true,
     },
+  });
+  await upsertInstrumentClose(prisma, {
+    instrumentId: instrument.id,
+    asOfYmd: "2026-10-01",
+    close: 999,
+    source: VALUATION_SOURCE_YAHOO,
+  });
+  await upsertInstrumentClose(prisma, {
+    instrumentId: instrument.id,
+    asOfYmd: "2026-10-02",
+    close: 998,
+    source: VALUATION_SOURCE_YAHOO,
   });
 
   const tmp = path.join(os.tmpdir(), `demo-eod-${process.pid}.ndjson`);
@@ -83,8 +99,13 @@ test("seedDemoMarkets adds watchlist and valuations from fixture", async () => {
 
     const wl = await prisma.watchlistItem.count({ where: { userId: user.id } });
     assert.equal(wl, 1);
-    const vals = await prisma.instrumentValuation.count();
-    assert.equal(vals, 2);
+    const vals = await prisma.instrumentValuation.findMany({
+      where: { instrumentId: instrument.id },
+      orderBy: { asOfDate: "asc" },
+    });
+    assert.equal(vals.length, 2);
+    assert.equal(Number(vals[0]!.close), 200);
+    assert.equal(Number(vals[1]!.close), 210);
   } finally {
     fs.unlinkSync(tmp);
   }

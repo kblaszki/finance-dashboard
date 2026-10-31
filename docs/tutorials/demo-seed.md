@@ -20,23 +20,24 @@ Goal: upsert the demo login and load a **sample portfolio** that showcases shipp
 
 ## Steps
 
-1. Ensure migrations are applied (`cd backend && npx prisma migrate dev` if needed).
-2. **Optional Markets demo** (watchlist + charts without API calls on seed):
+### Full local DB wipe (test database)
 
 ```bash
 cd backend
+npm run db:reset          # migrate reset --force (wipe + migrate + seed cash demo)
 npm run build
 npm run market:sync-catalog
 npm run market:seed-universe
+npm run db:seed           # re-attach markets fixture onto demo watchlist
 ```
 
-3. Run:
+`seedDemoMarkets` **deletes** prior valuations for fixture tickers, then imports sparse monthly closes from `demo-eod.ndjson`.
 
-```bash
-cd backend
-npm run db:seed
-```
+### Incremental re-seed (keep catalog)
 
+1. Ensure migrations are applied (`cd backend && npx prisma migrate deploy` if needed).
+2. Optional Markets: catalog + universe already present.
+3. `npm run db:seed`
 4. Log in: `demo@finance.local` / `demo12345` (username: `demo`).
 
 ## What you get

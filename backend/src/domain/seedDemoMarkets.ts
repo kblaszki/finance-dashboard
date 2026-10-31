@@ -68,6 +68,14 @@ export async function seedDemoMarkets(
     watchlistAdded += 1;
   }
 
+  // Drop any prior dense EOD (Yahoo/TD/etc.) so demo charts match the sparse fixture.
+  const fixtureInstrumentIds = [...instrumentBySymbol.values()];
+  if (fixtureInstrumentIds.length > 0) {
+    await db.instrumentValuation.deleteMany({
+      where: { instrumentId: { in: fixtureInstrumentIds } },
+    });
+  }
+
   for (const row of rows) {
     const instrumentId = instrumentBySymbol.get(row.providerSymbol);
     if (instrumentId == null) continue;

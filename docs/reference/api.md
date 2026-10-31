@@ -38,6 +38,15 @@ Hobby-scale guardrails in `backend/src/domain/rowCaps.ts` (and month-list caps o
 |--------|------|------|-------|
 | GET | `/api/health` | No | `{ ok, db }` — DB ping |
 
+## App config
+
+Global instance settings (not per-user).
+
+| Method | Path | Auth | Notes |
+|--------|------|------|-------|
+| GET | `/api/app-config` | Bearer | Body `{ marketLiveApi: boolean }`. Missing DB row ⇒ `marketLiveApi: false` |
+| PATCH | `/api/app-config` | Bearer | Body `{ marketLiveApi: boolean }`. Enables/disables HTTP soft fetches (quotes on add, history backfill). CLI sync unaffected |
+
 ## Auth
 
 | Method | Path | Auth | Notes |
@@ -162,7 +171,7 @@ Period bounds are **UTC** `[start, end)` on `occurredAt`. Query `month=YYYY-MM` 
 
 ## Markets (instruments + watchlist)
 
-Default search is the **global allowlist** (seeded curated universe + user “Add to markets”). Full Twelve Data catalog is available via `scope=catalog`. Quotes: Twelve Data (non-GPW) or Oanor (GPW) on allowlist/watchlist add and `market:sync-quotes` (allowlisted by default). History: `market:sync-history` (TD + Stooq). `GET /api/watchlist` never calls providers.
+Default search is the **global allowlist** (seeded curated universe + user “Add to markets”). Full Twelve Data catalog is available via `scope=catalog`. Soft quote/history fetches from HTTP run only when `marketLiveApi` is true (Settings / `AppConfig`; default off). CLI `market:sync-*` always may call providers. `GET /api/watchlist` never calls providers.
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|

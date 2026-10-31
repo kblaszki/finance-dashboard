@@ -1,6 +1,11 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import {
+  fetchAppConfig,
+  updateAppConfig,
+} from "../api/appConfigApi";
 import { updateEmail, updatePassword, updateProfile } from "../api/authApi";
 import { PageHeader } from "../components/ui/PageHeader";
+import { useAsyncData } from "../hooks/useAsyncData";
 import { useAuth } from "../state/auth";
 import { useTheme, type Theme } from "../state/theme";
 
@@ -12,6 +17,16 @@ const APPEARANCE_OPTIONS: { value: Theme; label: string }[] = [
 export function SettingsPage() {
   const { user, refreshUser } = useAuth();
   const { theme, setTheme } = useTheme();
+
+  const loadConfig = useCallback(() => fetchAppConfig(), []);
+  const {
+    data: appConfig,
+    error: configError,
+    loading: configLoading,
+    reload: reloadConfig,
+  } = useAsyncData(loadConfig);
+  const [marketBusy, setMarketBusy] = useState(false);
+  const [marketErr, setMarketErr] = useState<string | null>(null);
 
   const [username, setUsername] = useState("");
   const [profileMsg, setProfileMsg] = useState<string | null>(null);
@@ -87,12 +102,57 @@ export function SettingsPage() {
     }
   }
 
+  async function handleMarketLiveToggle(next: boolean) {
+    setMarketErr(null);
+    setMarketBusy(true);
+    try {
+      await updateAppConfig({ marketLiveApi: next });
+      reloadConfig();
+    } catch (err) {
+      setMarketErr(
+        err instanceof Error ? err.message : "Could not update market API setting",
+      );
+    } finally {
+      setMarketBusy(false);
+    }
+  }
+
   return (
     <>
       <PageHeader
         title="Account settings"
-        subtitle="Profile, email, password, and appearance for this instance."
+        subtitle="Profile, email, password, appearance, and market data for this instance."
       />
+
+      <section className="card form-section-gap">
+        <h2 className="section-title">Market data</h2>
+        <p className="muted">
+          When off, watchlist quotes and chart history use the database only
+          (no Twelve Data / Oanor / Yahoo from the app). CLI sync scripts still
+          work.
+        </p>
+        {configLoading && !appConfig && (
+          <p className="muted" role="status">
+            Loading…
+          </p>
+        )}
+        {(configError || marketErr) && (
+          <p className="error-banner" role="alert">
+            {marketErr ?? configError}
+          </p>
+        )}
+        {appConfig && (
+          <label className="appearance-option">
+            <input
+              type="checkbox"
+              checked={appConfig.marketLiveApi}
+              disabled={marketBusy}
+              onChange={(e) => void handleMarketLiveToggle(e.target.checked)}
+            />
+            Allow live market API fetches
+          </label>
+        )}
+      </section>
 
       <section className="card form-section-gap">
         <h2 className="section-title">Appearance</h2>

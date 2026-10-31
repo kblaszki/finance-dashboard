@@ -8,6 +8,7 @@
     "build": "tsc",
     "start": "node dist/app.js",
     "db:seed": "prisma db seed",
+    "db:reset": "prisma migrate reset --force",
     "db:backup": "node dist/scripts/backupDb.js",
     "fx:sync": "node dist/scripts/syncFxRates.js",
     "market:sync-catalog": "node dist/scripts/syncMarketCatalog.js",

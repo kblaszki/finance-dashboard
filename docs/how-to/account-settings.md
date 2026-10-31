@@ -17,9 +17,10 @@ Hub: [docs/README.md](../README.md).
 
 ## Profile (`/settings`)
 
-1. **Username** — `authApi.updateProfile` → `PATCH /api/auth/profile`; refresh session after success.
-2. **Email** — requires current password (`updateEmail` → `PATCH /api/auth/email`).
-3. **Password** — current + new (`updatePassword` → `PATCH /api/auth/password`); min length 8.
+1. **Market data** — toggle **Allow live market API fetches** (`GET`/`PATCH /api/app-config` `marketLiveApi`). Default off: watchlist/chart soft fetches stay in DB; CLI sync still works.
+2. **Username** — `authApi.updateProfile` → `PATCH /api/auth/profile`; refresh session after success.
+3. **Email** — requires current password (`updateEmail` → `PATCH /api/auth/email`).
+4. **Password** — current + new (`updatePassword` → `PATCH /api/auth/password`); min length 8.
 
 ## Auth config
 
