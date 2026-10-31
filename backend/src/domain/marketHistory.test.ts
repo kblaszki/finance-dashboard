@@ -6,6 +6,7 @@ import {
   disconnectTestPrisma,
   resetDatabase,
 } from "../../test/prismaTestClient";
+import { setMarketLiveApi } from "./appConfig";
 import { INSTRUMENT_PROVIDER_TWELVE_DATA } from "./instruments";
 import {
   upsertInstrumentClose,
@@ -26,8 +27,37 @@ after(async () => {
   await disconnectTestPrisma(prisma);
 });
 
+test("ensureInstrumentHistory skips live fetch when marketLiveApi is off", async () => {
+  await resetDatabase(prisma);
+  await setMarketLiveApi(prisma, false);
+  const instrument = await prisma.instrument.create({
+    data: {
+      symbol: "OFF",
+      name: "Off Co",
+      exchange: "NASDAQ",
+      currency: "USD",
+      assetClass: "STOCK",
+      provider: INSTRUMENT_PROVIDER_TWELVE_DATA,
+      providerSymbol: "OFF",
+      allowlisted: true,
+    },
+  });
+  let fetchCalls = 0;
+  const result = await ensureInstrumentHistory(prisma, instrument.id, {
+    now: new Date(Date.UTC(2026, 9, 31)),
+    fetchImpl: async () => {
+      fetchCalls += 1;
+      return new Response("{}", { status: 200 });
+    },
+    apiKey: "test-key",
+  });
+  assert.equal(result.backfilled, false);
+  assert.equal(fetchCalls, 0);
+});
+
 test("ensureInstrumentHistory skips when series is dense", async () => {
   await resetDatabase(prisma);
+  await setMarketLiveApi(prisma, true);
   const instrument = await prisma.instrument.create({
     data: {
       symbol: "DENSE",
@@ -69,6 +99,7 @@ test("ensureInstrumentHistory skips when series is dense", async () => {
 
 test("ensureInstrumentHistory soft-fails when provider errors", async () => {
   await resetDatabase(prisma);
+  await setMarketLiveApi(prisma, true);
   const instrument = await prisma.instrument.create({
     data: {
       symbol: "SPARSE",
@@ -95,6 +126,7 @@ test("ensureInstrumentHistory soft-fails when provider errors", async () => {
 
 test("ensureInstrumentHistory backfills via Twelve Data time_series", async () => {
   await resetDatabase(prisma);
+  await setMarketLiveApi(prisma, true);
   const instrument = await prisma.instrument.create({
     data: {
       symbol: "FILL",

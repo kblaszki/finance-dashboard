@@ -6,6 +6,7 @@ import {
   disconnectTestPrisma,
   resetDatabase,
 } from "../../test/prismaTestClient";
+import { setMarketLiveApi } from "./appConfig";
 import { syncInstrumentCatalog, ensureInstrumentQuote } from "./marketData";
 import { INSTRUMENT_PROVIDER_TWELVE_DATA } from "./instruments";
 import { VALUATION_SOURCE_OANOR_GPW } from "./instrumentValuations";
@@ -59,6 +60,7 @@ test("syncInstrumentCatalog upserts stocks and etfs from mocked fetch", async ()
 
 test("ensureInstrumentQuote fetches and stores close when missing", async () => {
   await resetDatabase(prisma);
+  await setMarketLiveApi(prisma, true);
   const instrument = await prisma.instrument.create({
     data: {
       symbol: "MSFT",
@@ -108,6 +110,7 @@ test("ensureInstrumentQuote fetches and stores close when missing", async () => 
 
 test("ensureInstrumentQuote uses Oanor for GPW instruments", async () => {
   await resetDatabase(prisma);
+  await setMarketLiveApi(prisma, true);
   const instrument = await prisma.instrument.create({
     data: {
       symbol: "ETFBW20TR",

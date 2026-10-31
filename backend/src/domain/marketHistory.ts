@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { getMarketLiveApi } from "./appConfig";
 import { isGpwListed } from "./instruments";
 import {
   countDistinctClosesInWindow,
@@ -195,6 +196,10 @@ export async function ensureInstrumentHistory(
     sparseThreshold?: number;
   } = {},
 ): Promise<EnsureInstrumentHistoryResult> {
+  if (!(await getMarketLiveApi(prisma))) {
+    return { backfilled: false };
+  }
+
   const now = options.now ?? new Date();
   const threshold = options.sparseThreshold ?? HISTORY_SPARSE_THRESHOLD;
   const window = historyWindowFromMonths(12, now);

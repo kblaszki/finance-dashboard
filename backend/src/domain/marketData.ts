@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { getMarketLiveApi } from "./appConfig";
 import {
   isGpwListed,
   upsertCatalogInstruments,
@@ -300,6 +301,15 @@ export async function ensureInstrumentQuote(
   apiKey?: string,
   oanorApiKey?: string,
 ): Promise<{ fetched: boolean; asOfYmd: string | null; close: number | null }> {
+  if (!(await getMarketLiveApi(prisma))) {
+    const latestOffline = await getLatestValuation(prisma, instrumentId);
+    return {
+      fetched: false,
+      asOfYmd: latestOffline ? formatYmdUtc(latestOffline.asOfDate) : null,
+      close: latestOffline ? Number(latestOffline.close) : null,
+    };
+  }
+
   const instrument = await prisma.instrument.findUnique({
     where: { id: instrumentId },
   });

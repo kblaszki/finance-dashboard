@@ -282,3 +282,9 @@ model WatchlistItem {
   @@index([userId])
   @@index([instrumentId])
 }
+
+/// Global key/value app settings (e.g. marketLiveApi).
+model AppConfig {
+  key   String @id
+  value String
+}

@@ -23,6 +23,7 @@ import { createTagsRouter } from "./tagsRoutes";
 import { createCsvImportPresetsRouter } from "./csvImportPresetsRoutes";
 import { createCategoryDescriptionRulesRouter } from "./categoryDescriptionRulesRoutes";
 import { createMarketsRouter } from "./marketsRoutes";
+import { createAppConfigRouter } from "./appConfigRoutes";
 
 export function mountApiRouters(app: Express, prisma: PrismaClient): void {
   const requireAuth = createRequireAuth(prisma);
@@ -38,6 +39,12 @@ export function mountApiRouters(app: Express, prisma: PrismaClient): void {
       hashPassword,
       verifyPassword,
       signToken,
+    }),
+  );
+  app.use(
+    createAppConfigRouter({
+      prisma,
+      requireAuth,
     }),
   );
   app.use(

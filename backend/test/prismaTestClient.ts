@@ -62,6 +62,7 @@ export async function resetDatabase(prisma: PrismaClient): Promise<void> {
   await prisma.account.deleteMany();
   await prisma.user.deleteMany();
   await prisma.fxRateDaily.deleteMany();
+  await prisma.appConfig.deleteMany();
 }
 
 export async function disconnectTestPrisma(prisma: PrismaClient): Promise<void> {
