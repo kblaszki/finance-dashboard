@@ -16,6 +16,7 @@ const SOURCE_PRIORITY: Record<string, number> = {
 };
 
 const HISTORY_MONTHS = new Set([3, 6, 12]);
+const HISTORY_YEAR_MIN = 1990;
 
 type Db = PrismaClient | Prisma.TransactionClient;
 
@@ -111,6 +112,27 @@ export function parseInstrumentHistoryMonths(value: unknown): number {
   return n;
 }
 
+/**
+ * Optional calendar year for chart paging. Empty → null (use months window).
+ * Accepts 1990 … current UTC year.
+ */
+export function parseInstrumentHistoryYear(
+  value: unknown,
+  now: Date = new Date(),
+): number | null {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+  const n = Number(value);
+  const maxYear = now.getUTCFullYear();
+  if (!Number.isInteger(n) || n < HISTORY_YEAR_MIN || n > maxYear) {
+    throw badRequest(
+      `year must be an integer from ${HISTORY_YEAR_MIN} to ${maxYear}`,
+    );
+  }
+  return n;
+}
+
 /** UTC window ending at `now` (inclusive toYmd = today UTC). */
 export function historyWindowFromMonths(
   months: number,
@@ -123,6 +145,22 @@ export function historyWindowFromMonths(
     Date.UTC(to.getUTCFullYear(), to.getUTCMonth() - months, to.getUTCDate()),
   );
   return { fromYmd: formatYmdUtc(from), toYmd: formatYmdUtc(to) };
+}
+
+/** Inclusive UTC calendar year; current year ends today. */
+export function historyWindowForYear(
+  year: number,
+  now: Date = new Date(),
+): { fromYmd: string; toYmd: string } {
+  const fromYmd = `${year}-01-01`;
+  const currentYear = now.getUTCFullYear();
+  if (year < currentYear) {
+    return { fromYmd, toYmd: `${year}-12-31` };
+  }
+  const to = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
+  return { fromYmd, toYmd: formatYmdUtc(to) };
 }
 
 export function sourcePriority(source: string): number {
@@ -178,4 +216,27 @@ export async function countDistinctClosesInWindow(
 ): Promise<number> {
   const points = await listInstrumentCloses(db, instrumentId, range);
   return points.length;
+}
+
+/** UTC years spanning stored closes (any source) for chart year paging. */
+export async function instrumentCloseYearBounds(
+  db: Db,
+  instrumentId: number,
+): Promise<{ oldestYear: number | null; newestYear: number | null }> {
+  const [oldest, newest] = await Promise.all([
+    db.instrumentValuation.findFirst({
+      where: { instrumentId },
+      orderBy: { asOfDate: "asc" },
+      select: { asOfDate: true },
+    }),
+    db.instrumentValuation.findFirst({
+      where: { instrumentId },
+      orderBy: { asOfDate: "desc" },
+      select: { asOfDate: true },
+    }),
+  ]);
+  return {
+    oldestYear: oldest ? oldest.asOfDate.getUTCFullYear() : null,
+    newestYear: newest ? newest.asOfDate.getUTCFullYear() : null,
+  };
 }

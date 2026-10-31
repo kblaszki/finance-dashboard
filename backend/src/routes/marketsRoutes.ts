@@ -11,9 +11,12 @@ import {
   searchInstruments,
 } from "../domain/instruments";
 import {
+  historyWindowForYear,
   historyWindowFromMonths,
+  instrumentCloseYearBounds,
   listInstrumentCloses,
   parseInstrumentHistoryMonths,
+  parseInstrumentHistoryYear,
 } from "../domain/instrumentValuations";
 import { ensureInstrumentQuote } from "../domain/marketData";
 import { ensureInstrumentHistory } from "../domain/marketHistory";
@@ -96,7 +99,9 @@ export function createMarketsRouter(deps: MarketsDeps): Router {
     async (req: AuthedRequest, res) => {
       try {
         const instrumentId = parseIdParam(req.params.instrumentId);
-        const months = parseInstrumentHistoryMonths(req.query.months);
+        const year = parseInstrumentHistoryYear(req.query.year);
+        const months =
+          year == null ? parseInstrumentHistoryMonths(req.query.months) : null;
         const instrument = await prisma.instrument.findUnique({
           where: { id: instrumentId },
         });
@@ -105,13 +110,22 @@ export function createMarketsRouter(deps: MarketsDeps): Router {
         }
 
         const ensure = await ensureInstrumentHistory(prisma, instrumentId);
-        const range = historyWindowFromMonths(months);
-        const series = await listInstrumentCloses(prisma, instrumentId, range);
+        const range =
+          year != null
+            ? historyWindowForYear(year)
+            : historyWindowFromMonths(months!);
+        const [series, yearBounds] = await Promise.all([
+          listInstrumentCloses(prisma, instrumentId, range),
+          instrumentCloseYearBounds(prisma, instrumentId),
+        ]);
 
         res.json({
           instrument: instrumentPayload(instrument),
           currency: instrument.currency,
           months,
+          year,
+          oldestYear: yearBounds.oldestYear,
+          newestYear: yearBounds.newestYear,
           from: range.fromYmd,
           to: range.toYmd,
           series,

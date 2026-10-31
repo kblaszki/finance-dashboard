@@ -502,6 +502,11 @@ describe('API modules', () => {
       '/api/instruments/7/history?months=6',
     )
 
+    await fetchInstrumentHistory(7, { year: 2020 })
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/instruments/7/history?year=2020',
+    )
+
     await fetchWatchlist()
     expect(apiClient.get).toHaveBeenCalledWith('/api/watchlist')
 

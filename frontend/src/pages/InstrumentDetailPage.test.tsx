@@ -25,6 +25,9 @@ const historyPayload = {
   },
   currency: "USD",
   months: 12,
+  year: null,
+  oldestYear: 2016,
+  newestYear: 2026,
   from: "2025-10-31",
   to: "2026-10-31",
   series: [
@@ -69,6 +72,21 @@ describe("InstrumentDetailPage", () => {
     });
     await waitFor(() => {
       expect(fetchInstrumentHistory).toHaveBeenCalledWith(7, { months: 3 });
+    });
+  });
+
+  it("pages calendar years", async () => {
+    renderDetail();
+    await screen.findByRole("heading", { name: "AAPL" });
+    fireEvent.change(screen.getByLabelText("Price history range"), {
+      target: { value: "year" },
+    });
+    await waitFor(() => {
+      expect(fetchInstrumentHistory).toHaveBeenCalledWith(7, { year: 2026 });
+    });
+    fireEvent.click(screen.getByLabelText("Previous year"));
+    await waitFor(() => {
+      expect(fetchInstrumentHistory).toHaveBeenCalledWith(7, { year: 2025 });
     });
   });
 });

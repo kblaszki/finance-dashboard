@@ -10,9 +10,12 @@ import { INSTRUMENT_PROVIDER_TWELVE_DATA } from "./instruments";
 import {
   collapseClosesByDay,
   countDistinctClosesInWindow,
+  historyWindowForYear,
   historyWindowFromMonths,
+  instrumentCloseYearBounds,
   listInstrumentCloses,
   parseInstrumentHistoryMonths,
+  parseInstrumentHistoryYear,
   upsertInstrumentClose,
   VALUATION_SOURCE_OANOR_GPW,
   VALUATION_SOURCE_STOOQ,
@@ -37,11 +40,31 @@ test("parseInstrumentHistoryMonths defaults and validates", () => {
   assert.throws(() => parseInstrumentHistoryMonths("24"), /3, 6, or 12/);
 });
 
+test("parseInstrumentHistoryYear defaults and validates", () => {
+  const now = new Date(Date.UTC(2026, 9, 31));
+  assert.equal(parseInstrumentHistoryYear(undefined, now), null);
+  assert.equal(parseInstrumentHistoryYear("2020", now), 2020);
+  assert.throws(() => parseInstrumentHistoryYear("1989", now), /1990/);
+  assert.throws(() => parseInstrumentHistoryYear("2027", now), /2026/);
+});
+
 test("historyWindowFromMonths spans months ending today UTC", () => {
   const now = new Date(Date.UTC(2026, 9, 31));
   const w = historyWindowFromMonths(3, now);
   assert.equal(w.toYmd, "2026-10-31");
   assert.equal(w.fromYmd, "2026-07-31");
+});
+
+test("historyWindowForYear uses full year or today for current", () => {
+  const now = new Date(Date.UTC(2026, 9, 31));
+  assert.deepEqual(historyWindowForYear(2024, now), {
+    fromYmd: "2024-01-01",
+    toYmd: "2024-12-31",
+  });
+  assert.deepEqual(historyWindowForYear(2026, now), {
+    fromYmd: "2026-01-01",
+    toYmd: "2026-10-31",
+  });
 });
 
 test("collapseClosesByDay prefers twelve_data over stooq over oanor", () => {
@@ -107,4 +130,7 @@ test("listInstrumentCloses collapses and sorts ascending", async () => {
     toYmd: "2026-10-31",
   });
   assert.equal(n, 2);
+
+  const bounds = await instrumentCloseYearBounds(prisma, instrument.id);
+  assert.deepEqual(bounds, { oldestYear: 2026, newestYear: 2026 });
 });

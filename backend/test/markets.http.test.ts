@@ -286,6 +286,9 @@ test("GET /api/instruments/:id/history returns series and soft-fails backfill", 
       .set("Authorization", `Bearer ${token}`);
     assert.equal(res.status, 200);
     assert.equal(res.body.months, 3);
+    assert.equal(res.body.year, null);
+    assert.equal(res.body.oldestYear, 2026);
+    assert.equal(res.body.newestYear, 2026);
     assert.equal(res.body.instrument.symbol, "MSFT");
     assert.equal(res.body.currency, "USD");
     assert.ok(Array.isArray(res.body.series));
@@ -293,6 +296,15 @@ test("GET /api/instruments/:id/history returns series and soft-fails backfill", 
     assert.equal(typeof res.body.backfilled, "boolean");
     // Without API key, soft backfill should not 500.
     assert.equal(res.status, 200);
+
+    const byYear = await request(app)
+      .get(`/api/instruments/${id}/history?year=2026`)
+      .set("Authorization", `Bearer ${token}`);
+    assert.equal(byYear.status, 200);
+    assert.equal(byYear.body.year, 2026);
+    assert.equal(byYear.body.months, null);
+    assert.equal(byYear.body.from, "2026-01-01");
+    assert.ok(byYear.body.series.length >= 2);
   } finally {
     if (prevKey !== undefined) process.env.TWELVE_DATA_API_KEY = prevKey;
     else delete process.env.TWELVE_DATA_API_KEY;

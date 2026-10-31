@@ -43,7 +43,7 @@ Universe JSON lives in `backend/data/market-universe/`.
 | Twelve Data | Catalog; `/time_series` history; `/quote` for non-GPW |
 | Oanor GPW | Live quote for GPW/WSE/Poland (no history API) |
 | Stooq CSV | GPW / WIG history backfill |
-| Yahoo chart | Optional ~1y history fallback (`market:sync-history-yahoo`); maps SPX→`^GSPC`, NDX→`^NDX`, GPW→`.WA` |
+| Yahoo chart | Optional history fallback (`market:sync-history-yahoo --range=1y\|10y`); maps SPX→`^GSPC`, NDX→`^NDX`, GPW→`.WA` |
 
 `GET /api/watchlist` never calls providers.
 
@@ -51,7 +51,7 @@ Universe JSON lives in `backend/data/market-universe/`.
 
 1. **Search markets** — allowlisted only (`scope=allowlist`).
 2. **Add instrument** — full catalog (`scope=catalog`) → **Add to markets** (`POST /api/instruments/allowlist`, global).
-3. **Watchlist** — favorites with last close; click symbol/name → `/markets/:instrumentId` chart (`GET …/history`, soft ~1y backfill if sparse).
+3. **Watchlist** — favorites with last close; click symbol/name → `/markets/:instrumentId` chart (`GET …/history` with `months` or `year`; soft ~1y backfill if sparse). Chart supports rolling 3/6/12 months or paging calendar years when multi-year closes are stored (e.g. after `market:sync-history-yahoo --range=10y --force`).
 
 ## CLI flags
 

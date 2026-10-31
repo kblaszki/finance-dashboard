@@ -1,23 +1,35 @@
 import { useCallback, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { fetchInstrumentHistory } from "../api/instrumentsApi";
-import { InstrumentHistoryChart } from "../components/markets/InstrumentHistoryChart";
+import {
+  InstrumentHistoryChart,
+  type HistoryViewMode,
+} from "../components/markets/InstrumentHistoryChart";
 import { PageHeader } from "../components/ui/PageHeader";
 import { StatusBlock } from "../components/ui/StatusBlock";
 import { useAsyncData } from "../hooks/useAsyncData";
 import { formatMoney } from "../utils/format";
 
+function currentUtcYear(): number {
+  return new Date().getUTCFullYear();
+}
+
 export function InstrumentDetailPage() {
   const { instrumentId: idParam } = useParams();
   const instrumentId = Number(idParam);
+  const [mode, setMode] = useState<HistoryViewMode>("months");
   const [months, setMonths] = useState(12);
+  const [year, setYear] = useState(currentUtcYear);
 
   const loadHistory = useCallback(() => {
     if (!Number.isFinite(instrumentId) || instrumentId < 1) {
       return Promise.reject(new Error("Invalid instrument"));
     }
+    if (mode === "year") {
+      return fetchInstrumentHistory(instrumentId, { year });
+    }
     return fetchInstrumentHistory(instrumentId, { months });
-  }, [instrumentId, months]);
+  }, [instrumentId, mode, months, year]);
 
   const {
     data: history,
@@ -71,8 +83,19 @@ export function InstrumentDetailPage() {
             history={history}
             loading={loading}
             error={error}
+            mode={mode}
             months={months}
+            year={year}
+            onModeChange={(next) => {
+              setMode(next);
+              if (next === "year") {
+                const anchor =
+                  history.newestYear ?? history.oldestYear ?? currentUtcYear();
+                setYear(anchor);
+              }
+            }}
             onMonthsChange={setMonths}
+            onYearChange={setYear}
           />
         </>
       )}

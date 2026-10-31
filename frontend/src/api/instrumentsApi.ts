@@ -52,7 +52,12 @@ export type InstrumentHistoryPoint = {
 export type InstrumentHistory = {
   instrument: Instrument;
   currency: string;
-  months: number;
+  /** Rolling window length; null when `year` is set. */
+  months: number | null;
+  /** Calendar year window when set. */
+  year: number | null;
+  oldestYear: number | null;
+  newestYear: number | null;
   from: string;
   to: string;
   series: InstrumentHistoryPoint[];
@@ -60,12 +65,21 @@ export type InstrumentHistory = {
   backfillMessage?: string;
 };
 
+export type FetchInstrumentHistoryParams = {
+  months?: number;
+  year?: number;
+};
+
 export async function fetchInstrumentHistory(
   instrumentId: number,
-  params?: { months?: number },
+  params?: FetchInstrumentHistoryParams,
 ): Promise<InstrumentHistory> {
   const qs = new URLSearchParams();
-  if (params?.months != null) qs.set("months", String(params.months));
+  if (params?.year != null) {
+    qs.set("year", String(params.year));
+  } else if (params?.months != null) {
+    qs.set("months", String(params.months));
+  }
   const suffix = qs.toString() ? `?${qs.toString()}` : "";
   return apiClient.get<InstrumentHistory>(
     `/api/instruments/${instrumentId}/history${suffix}`,
