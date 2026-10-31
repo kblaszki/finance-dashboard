@@ -5,10 +5,12 @@ import { formatYmdUtc, utcDateFromYmd } from "./fx";
 export const VALUATION_SOURCE_TWELVE_DATA = "twelve_data";
 export const VALUATION_SOURCE_OANOR_GPW = "oanor_gpw";
 export const VALUATION_SOURCE_STOOQ = "stooq";
+export const VALUATION_SOURCE_YAHOO = "yahoo";
 
 /** Higher = preferred when collapsing multiple sources for one calendar day. */
 const SOURCE_PRIORITY: Record<string, number> = {
-  [VALUATION_SOURCE_TWELVE_DATA]: 3,
+  [VALUATION_SOURCE_TWELVE_DATA]: 4,
+  [VALUATION_SOURCE_YAHOO]: 3,
   [VALUATION_SOURCE_STOOQ]: 2,
   [VALUATION_SOURCE_OANOR_GPW]: 1,
 };

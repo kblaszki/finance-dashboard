@@ -21,6 +21,8 @@ import {
   fetchTwelveDataTimeSeries,
   type TwelveDataFetch,
 } from "./twelveDataClient";
+import { syncYahooHistory } from "./yahooHistory";
+import type { YahooFetch } from "./yahooFinanceClient";
 
 /** Distinct closes below this in ~260 calendar days → soft backfill on GET. */
 export const HISTORY_SPARSE_THRESHOLD = 20;
@@ -187,7 +189,7 @@ export async function ensureInstrumentHistory(
   prisma: PrismaClient,
   instrumentId: number,
   options: {
-    fetchImpl?: TwelveDataFetch & StooqFetch;
+    fetchImpl?: TwelveDataFetch & StooqFetch & YahooFetch;
     apiKey?: string;
     now?: Date;
     sparseThreshold?: number;
@@ -196,7 +198,7 @@ export async function ensureInstrumentHistory(
   const now = options.now ?? new Date();
   const threshold = options.sparseThreshold ?? HISTORY_SPARSE_THRESHOLD;
   const window = historyWindowFromMonths(12, now);
-  const existing = await countDistinctClosesInWindow(
+  let existing = await countDistinctClosesInWindow(
     prisma,
     instrumentId,
     window,
@@ -204,6 +206,9 @@ export async function ensureInstrumentHistory(
   if (existing >= threshold) {
     return { backfilled: false };
   }
+
+  let backfilled = false;
+  let lastMessage: string | undefined;
 
   try {
     const result = await syncAllowlistHistory(prisma, {
@@ -213,24 +218,42 @@ export async function ensureInstrumentHistory(
       ...(options.apiKey !== undefined ? { apiKey: options.apiKey } : {}),
       stooqDelayMs: 0,
     });
-    if (result.failed > 0 && result.updatedInstruments === 0) {
-      const msg = result.errors[0]?.message ?? "History backfill failed";
-      return { backfilled: false, backfillMessage: msg };
-    }
     if (result.updatedInstruments > 0 || result.barsUpserted > 0) {
+      backfilled = true;
+    } else if (result.failed > 0) {
+      lastMessage = result.errors[0]?.message ?? "History backfill failed";
+    }
+  } catch (e: unknown) {
+    lastMessage = e instanceof Error ? e.message : String(e);
+  }
+
+  existing = await countDistinctClosesInWindow(prisma, instrumentId, window);
+  if (existing >= threshold) {
+    return { backfilled };
+  }
+
+  // Yahoo fallback when TD/Stooq left the series sparse (indexes, mismatched listings).
+  try {
+    const yahoo = await syncYahooHistory(prisma, {
+      instrumentId,
+      force: true,
+      delayMs: 0,
+      ...(options.fetchImpl != null ? { fetchImpl: options.fetchImpl } : {}),
+    });
+    if (yahoo.updatedInstruments > 0 || yahoo.barsUpserted > 0) {
       return { backfilled: true };
     }
-    if (result.skipped > 0) {
-      return { backfilled: false };
+    if (yahoo.failed > 0) {
+      lastMessage =
+        yahoo.errors[0]?.message ?? lastMessage ?? "Yahoo history backfill failed";
     }
-    return {
-      backfilled: false,
-      backfillMessage: "No history bars available from provider",
-    };
   } catch (e: unknown) {
-    return {
-      backfilled: false,
-      backfillMessage: e instanceof Error ? e.message : String(e),
-    };
+    lastMessage = e instanceof Error ? e.message : String(e);
   }
+
+  if (backfilled) return { backfilled: true };
+  return {
+    backfilled: false,
+    ...(lastMessage != null ? { backfillMessage: lastMessage } : {}),
+  };
 }

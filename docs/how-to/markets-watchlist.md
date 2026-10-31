@@ -43,6 +43,7 @@ Universe JSON lives in `backend/data/market-universe/`.
 | Twelve Data | Catalog; `/time_series` history; `/quote` for non-GPW |
 | Oanor GPW | Live quote for GPW/WSE/Poland (no history API) |
 | Stooq CSV | GPW / WIG history backfill |
+| Yahoo chart | Optional ~1y history fallback (`market:sync-history-yahoo`); maps SPX→`^GSPC`, NDX→`^NDX`, GPW→`.WA` |
 
 `GET /api/watchlist` never calls providers.
 
@@ -57,3 +58,4 @@ Universe JSON lives in `backend/data/market-universe/`.
 - `market:sync-quotes --watchlist-only` — old behavior (watchlist only)
 - `market:sync-quotes --userId=N` — implies watchlist-only for that user
 - `market:sync-history --force` / `--instrumentId=N`
+- `market:sync-history-yahoo --watchlist-only` / `--userId=N` / `--force` — Yahoo chart backfill (hobby; unofficial API)
