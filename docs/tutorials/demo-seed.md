@@ -21,14 +21,23 @@ Goal: upsert the demo login and load a **sample portfolio** that showcases shipp
 ## Steps
 
 1. Ensure migrations are applied (`cd backend && npx prisma migrate dev` if needed).
-2. Run:
+2. **Optional Markets demo** (watchlist + charts without API calls on seed):
+
+```bash
+cd backend
+npm run build
+npm run market:sync-catalog
+npm run market:seed-universe
+```
+
+3. Run:
 
 ```bash
 cd backend
 npm run db:seed
 ```
 
-3. Log in: `demo@finance.local` / `demo12345` (username: `demo`).
+4. Log in: `demo@finance.local` / `demo12345` (username: `demo`).
 
 ## What you get
 
@@ -41,11 +50,13 @@ npm run db:seed
 | `/transfers` | Same-/cross-currency showcase rows, plus monthly Checking → Credit Card payments (450 PLN) and Checking → IKE contributions (500 PLN) for each ledger month — each transfer tagged with a TRANSFER category |
 | `/dashboard` | NBP-converted net-worth buckets + history chart (credit-card debt in liabilities), period KPIs converted into the topbar reporting currency across all accounts (pick PLN/EUR/USD; run `fx:sync` if foreign accounts exist) |
 | `/statistics` | Period KPIs, cashflow chart, and category breakdown across the seeded history (transfer legs excluded). Donut rolls to **tree roots**; detail starts collapsed at roots — expand Food to see Groceries → Supermarket (rolled-up totals) |
+| `/markets` | When catalog + universe are present: demo watchlist (AAPL, VOO, SPX, XTB, ETFBW20TR) with sparse EOD from committed `demo-eod.ndjson` (~1y, one close/month) — no Yahoo/TD on seed |
 
 ## Notes
 
-- Implementation: [`backend/prisma/seed.ts`](../../backend/prisma/seed.ts) + [`seedDemoPortfolio.ts`](../../backend/src/domain/seedDemoPortfolio.ts).
+- Implementation: [`backend/prisma/seed.ts`](../../backend/prisma/seed.ts) + [`seedDemoPortfolio.ts`](../../backend/src/domain/seedDemoPortfolio.ts) + [`seedDemoMarkets.ts`](../../backend/src/domain/seedDemoMarkets.ts).
 - Ledger is **deterministic** (PRNG seed `demo-portfolio-v2`): same amounts on every run. Transfers (`buildDemoTransfers`) include showcase rows plus one card payment and one IKE contribution per month. Each account `cashBalance` is opening + signed ledger deltas including transfer legs.
+- Markets fixture is deterministic offline data; missing instruments are skipped with a console warning (cash portfolio still seeds).
 - Password hash is reset to the known demo password on every run.
 - Other users in the same database are not modified.
 - Hub: [docs/README.md](../README.md).

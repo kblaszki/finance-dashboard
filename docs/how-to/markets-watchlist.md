@@ -58,4 +58,6 @@ Universe JSON lives in `backend/data/market-universe/`.
 - `market:sync-quotes --watchlist-only` — old behavior (watchlist only)
 - `market:sync-quotes --userId=N` — implies watchlist-only for that user
 - `market:sync-history --force` / `--instrumentId=N`
-- `market:sync-history-yahoo --watchlist-only` / `--userId=N` / `--force` — Yahoo chart backfill (hobby; unofficial API)
+- `market:sync-history-yahoo --watchlist-only` / `--userId=N` / `--force` / `--range=10y` — Yahoo chart backfill (hobby; unofficial API)
+- `market:export-history` / `market:import-history` — NDJSON(`.gz`) dump of allowlist valuations (local `allowlist-eod.ndjson.gz`, gitignored). `--months=12 --monthly` builds sparse exports for fixtures.
+- Demo seed loads committed `backend/data/market-history/demo-eod.ndjson` (5 tickers × ~12 monthly closes) onto the demo watchlist when those instruments exist in the catalog.
