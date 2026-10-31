@@ -1,6 +1,8 @@
 import type { PrismaClient } from "@prisma/client";
 import { isGpwListed } from "./instruments";
 import {
+  countDistinctClosesInWindow,
+  historyWindowFromMonths,
   upsertInstrumentClose,
   VALUATION_SOURCE_STOOQ,
   VALUATION_SOURCE_TWELVE_DATA,
@@ -19,6 +21,9 @@ import {
   fetchTwelveDataTimeSeries,
   type TwelveDataFetch,
 } from "./twelveDataClient";
+
+/** Distinct closes below this in ~260 calendar days → soft backfill on GET. */
+export const HISTORY_SPARSE_THRESHOLD = 20;
 
 export type SyncHistoryResult = {
   attempted: number;
@@ -39,6 +44,11 @@ export type SyncHistoryOptions = {
   universeDir?: string;
   /** Delay between Stooq calls (ms). */
   stooqDelayMs?: number;
+};
+
+export type EnsureInstrumentHistoryResult = {
+  backfilled: boolean;
+  backfillMessage?: string;
 };
 
 function sleep(ms: number): Promise<void> {
@@ -72,13 +82,12 @@ export async function syncAllowlistHistory(
   );
   const seedMap = universeByProviderSymbol(seedRows);
 
+  // Explicit instrumentId: sync that row even if not allowlisted (HTTP soft backfill).
   const instruments = await prisma.instrument.findMany({
-    where: {
-      allowlisted: true,
-      ...(options.instrumentId != null
+    where:
+      options.instrumentId != null
         ? { id: options.instrumentId }
-        : {}),
-    },
+        : { allowlisted: true },
     orderBy: { symbol: "asc" },
   });
 
@@ -168,4 +177,60 @@ export async function syncAllowlistHistory(
     failed,
     errors,
   };
+}
+
+/**
+ * Soft backfill ~1y history when the series is sparse. Never throws — callers
+ * still return whatever is already in InstrumentValuation.
+ */
+export async function ensureInstrumentHistory(
+  prisma: PrismaClient,
+  instrumentId: number,
+  options: {
+    fetchImpl?: TwelveDataFetch & StooqFetch;
+    apiKey?: string;
+    now?: Date;
+    sparseThreshold?: number;
+  } = {},
+): Promise<EnsureInstrumentHistoryResult> {
+  const now = options.now ?? new Date();
+  const threshold = options.sparseThreshold ?? HISTORY_SPARSE_THRESHOLD;
+  const window = historyWindowFromMonths(12, now);
+  const existing = await countDistinctClosesInWindow(
+    prisma,
+    instrumentId,
+    window,
+  );
+  if (existing >= threshold) {
+    return { backfilled: false };
+  }
+
+  try {
+    const result = await syncAllowlistHistory(prisma, {
+      instrumentId,
+      force: false,
+      ...(options.fetchImpl != null ? { fetchImpl: options.fetchImpl } : {}),
+      ...(options.apiKey !== undefined ? { apiKey: options.apiKey } : {}),
+      stooqDelayMs: 0,
+    });
+    if (result.failed > 0 && result.updatedInstruments === 0) {
+      const msg = result.errors[0]?.message ?? "History backfill failed";
+      return { backfilled: false, backfillMessage: msg };
+    }
+    if (result.updatedInstruments > 0 || result.barsUpserted > 0) {
+      return { backfilled: true };
+    }
+    if (result.skipped > 0) {
+      return { backfilled: false };
+    }
+    return {
+      backfilled: false,
+      backfillMessage: "No history bars available from provider",
+    };
+  } catch (e: unknown) {
+    return {
+      backfilled: false,
+      backfillMessage: e instanceof Error ? e.message : String(e),
+    };
+  }
 }

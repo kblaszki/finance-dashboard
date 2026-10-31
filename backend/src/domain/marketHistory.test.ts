@@ -1,0 +1,134 @@
+import assert from "node:assert/strict";
+import { after, before, test } from "node:test";
+import type { PrismaClient } from "@prisma/client";
+import {
+  createTestPrisma,
+  disconnectTestPrisma,
+  resetDatabase,
+} from "../../test/prismaTestClient";
+import { INSTRUMENT_PROVIDER_TWELVE_DATA } from "./instruments";
+import {
+  upsertInstrumentClose,
+  VALUATION_SOURCE_TWELVE_DATA,
+} from "./instrumentValuations";
+import {
+  ensureInstrumentHistory,
+  HISTORY_SPARSE_THRESHOLD,
+} from "./marketHistory";
+
+let prisma: PrismaClient;
+
+before(async () => {
+  prisma = await createTestPrisma();
+});
+
+after(async () => {
+  await disconnectTestPrisma(prisma);
+});
+
+test("ensureInstrumentHistory skips when series is dense", async () => {
+  await resetDatabase(prisma);
+  const instrument = await prisma.instrument.create({
+    data: {
+      symbol: "DENSE",
+      name: "Dense Co",
+      exchange: "NASDAQ",
+      currency: "USD",
+      assetClass: "STOCK",
+      provider: INSTRUMENT_PROVIDER_TWELVE_DATA,
+      providerSymbol: "DENSE",
+      allowlisted: true,
+    },
+  });
+  const now = new Date(Date.UTC(2026, 9, 31));
+  for (let i = 0; i < HISTORY_SPARSE_THRESHOLD; i += 1) {
+    const d = new Date(Date.UTC(2026, 9, 31 - i));
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(d.getUTCDate()).padStart(2, "0");
+    await upsertInstrumentClose(prisma, {
+      instrumentId: instrument.id,
+      asOfYmd: `${y}-${m}-${day}`,
+      close: 100 + i,
+      source: VALUATION_SOURCE_TWELVE_DATA,
+    });
+  }
+
+  let fetchCalls = 0;
+  const result = await ensureInstrumentHistory(prisma, instrument.id, {
+    now,
+    fetchImpl: async () => {
+      fetchCalls += 1;
+      return new Response("{}", { status: 200 });
+    },
+    apiKey: "test-key",
+  });
+  assert.equal(result.backfilled, false);
+  assert.equal(fetchCalls, 0);
+});
+
+test("ensureInstrumentHistory soft-fails when provider errors", async () => {
+  await resetDatabase(prisma);
+  const instrument = await prisma.instrument.create({
+    data: {
+      symbol: "SPARSE",
+      name: "Sparse Co",
+      exchange: "NASDAQ",
+      currency: "USD",
+      assetClass: "STOCK",
+      provider: INSTRUMENT_PROVIDER_TWELVE_DATA,
+      providerSymbol: "SPARSE",
+      allowlisted: true,
+    },
+  });
+
+  const result = await ensureInstrumentHistory(prisma, instrument.id, {
+    now: new Date(Date.UTC(2026, 9, 31)),
+    fetchImpl: async () => {
+      throw new Error("provider down");
+    },
+    apiKey: "test-key",
+  });
+  assert.equal(result.backfilled, false);
+  assert.match(String(result.backfillMessage), /provider down|history/i);
+});
+
+test("ensureInstrumentHistory backfills via Twelve Data time_series", async () => {
+  await resetDatabase(prisma);
+  const instrument = await prisma.instrument.create({
+    data: {
+      symbol: "FILL",
+      name: "Fill Co",
+      exchange: "NASDAQ",
+      currency: "USD",
+      assetClass: "STOCK",
+      provider: INSTRUMENT_PROVIDER_TWELVE_DATA,
+      providerSymbol: "FILL",
+      allowlisted: true,
+    },
+  });
+
+  const result = await ensureInstrumentHistory(prisma, instrument.id, {
+    now: new Date(Date.UTC(2026, 9, 31)),
+    fetchImpl: async (input) => {
+      const url = String(input);
+      assert.match(url, /time_series/);
+      return new Response(
+        JSON.stringify({
+          values: [
+            { datetime: "2026-10-30", close: "12.5" },
+            { datetime: "2026-10-29", close: "12.0" },
+          ],
+        }),
+        { status: 200 },
+      );
+    },
+    apiKey: "test-key",
+  });
+  assert.equal(result.backfilled, true);
+
+  const count = await prisma.instrumentValuation.count({
+    where: { instrumentId: instrument.id },
+  });
+  assert.equal(count, 2);
+});

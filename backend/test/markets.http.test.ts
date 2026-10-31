@@ -239,6 +239,66 @@ test("POST /api/watchlist returns 404 for unknown instrument", async () => {
   assert.equal(res.status, 404);
 });
 
+test("GET /api/instruments/:id/history requires auth and 404s unknown", async () => {
+  const noAuth = await request(app).get("/api/instruments/1/history");
+  assert.equal(noAuth.status, 401);
+
+  const token = await registerAndLogin(
+    "histauth@test.local",
+    "histauth",
+    "password123",
+  );
+  const missing = await request(app)
+    .get("/api/instruments/999999/history")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(missing.status, 404);
+});
+
+test("GET /api/instruments/:id/history returns series and soft-fails backfill", async () => {
+  const prevKey = process.env.TWELVE_DATA_API_KEY;
+  delete process.env.TWELVE_DATA_API_KEY;
+  try {
+    const token = await registerAndLogin(
+      "hist@test.local",
+      "histuser",
+      "password123",
+    );
+    const id = await seedInstrument({ symbol: "MSFT", name: "Microsoft" });
+    await prisma.instrumentValuation.create({
+      data: {
+        instrumentId: id,
+        asOfDate: new Date(Date.UTC(2026, 9, 15)),
+        close: 420.5,
+        source: "twelve_data",
+      },
+    });
+    await prisma.instrumentValuation.create({
+      data: {
+        instrumentId: id,
+        asOfDate: new Date(Date.UTC(2026, 9, 16)),
+        close: 421.25,
+        source: "twelve_data",
+      },
+    });
+
+    const res = await request(app)
+      .get(`/api/instruments/${id}/history?months=3`)
+      .set("Authorization", `Bearer ${token}`);
+    assert.equal(res.status, 200);
+    assert.equal(res.body.months, 3);
+    assert.equal(res.body.instrument.symbol, "MSFT");
+    assert.equal(res.body.currency, "USD");
+    assert.ok(Array.isArray(res.body.series));
+    assert.ok(res.body.series.length >= 2);
+    assert.equal(typeof res.body.backfilled, "boolean");
+    // Without API key, soft backfill should not 500.
+    assert.equal(res.status, 200);
+  } finally {
+    if (prevKey !== undefined) process.env.TWELVE_DATA_API_KEY = prevKey;
+    else delete process.env.TWELVE_DATA_API_KEY;
+  }
+});
+
 test("POST /api/watchlist soft-fails GPW quote without OANOR_API_KEY", async () => {
   const prevOanor = process.env.OANOR_API_KEY;
   delete process.env.OANOR_API_KEY;

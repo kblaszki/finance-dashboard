@@ -10,12 +10,19 @@ import {
   parseSearchScope,
   searchInstruments,
 } from "../domain/instruments";
+import {
+  historyWindowFromMonths,
+  listInstrumentCloses,
+  parseInstrumentHistoryMonths,
+} from "../domain/instrumentValuations";
 import { ensureInstrumentQuote } from "../domain/marketData";
+import { ensureInstrumentHistory } from "../domain/marketHistory";
 import {
   addToWatchlist,
   listWatchlist,
   removeFromWatchlist,
 } from "../domain/watchlist";
+import { notFound } from "../lib/errors";
 import {
   badRequest,
   handleRouteError,
@@ -79,6 +86,42 @@ export function createMarketsRouter(deps: MarketsDeps): Router {
         res.status(200).json(instrumentPayload(row));
       } catch (e: unknown) {
         handleRouteError(res, e, "Add to allowlist failed");
+      }
+    },
+  );
+
+  router.get(
+    "/api/instruments/:instrumentId/history",
+    requireAuth,
+    async (req: AuthedRequest, res) => {
+      try {
+        const instrumentId = parseIdParam(req.params.instrumentId);
+        const months = parseInstrumentHistoryMonths(req.query.months);
+        const instrument = await prisma.instrument.findUnique({
+          where: { id: instrumentId },
+        });
+        if (!instrument) {
+          throw notFound("Instrument not found");
+        }
+
+        const ensure = await ensureInstrumentHistory(prisma, instrumentId);
+        const range = historyWindowFromMonths(months);
+        const series = await listInstrumentCloses(prisma, instrumentId, range);
+
+        res.json({
+          instrument: instrumentPayload(instrument),
+          currency: instrument.currency,
+          months,
+          from: range.fromYmd,
+          to: range.toYmd,
+          series,
+          backfilled: ensure.backfilled,
+          ...(ensure.backfillMessage != null
+            ? { backfillMessage: ensure.backfillMessage }
+            : {}),
+        });
+      } catch (e: unknown) {
+        handleRouteError(res, e, "Failed to load instrument history");
       }
     },
   );
