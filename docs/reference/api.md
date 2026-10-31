@@ -162,11 +162,11 @@ Period bounds are **UTC** `[start, end)` on `occurredAt`. Query `month=YYYY-MM` 
 
 ## Markets (instruments + watchlist)
 
-Local catalog search and per-user favorites. Catalog and EOD closes come from Twelve Data **CLI sync** / on-add quote — `GET /api/watchlist` never calls the provider.
+Local catalog search and per-user favorites. Catalog from Twelve Data CLI; quotes from Twelve Data (non-GPW) or Oanor (GPW/WSE/Poland) on add / `market:sync-quotes`. `GET /api/watchlist` never calls providers.
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
 | GET | `/api/instruments` | Bearer | Query: `q` (required, ≥1 char), optional `assetClass=STOCK\|ETF`, optional `limit` (1–50, default 25). Body: `Instrument[]` `{ id, symbol, name, exchange, micCode, country, currency, assetClass, provider, providerSymbol }` from SQLite only |
-| GET | `/api/watchlist` | Bearer | Owned favorites with latest `InstrumentValuation` join. Body: `{ instrumentId, createdAt, instrument, lastClose, asOf }[]` (`lastClose`/`asOf` null when no valuation) |
-| POST | `/api/watchlist` | Bearer | Body `{ instrumentId }`. Creates favorite; if valuation missing/stale, one Twelve Data EOD attempt (soft-fail → `lastClose: null`). `201`; duplicate → `409`; unknown instrument → `404` |
+| GET | `/api/watchlist` | Bearer | Owned favorites with latest `InstrumentValuation` (any `source`). Body: `{ instrumentId, createdAt, instrument, lastClose, asOf }[]` (`lastClose`/`asOf` null when no valuation) |
+| POST | `/api/watchlist` | Bearer | Body `{ instrumentId }`. Creates favorite; if valuation missing/stale, one quote attempt (Oanor for GPW else Twelve Data; soft-fail → `lastClose: null`). `201`; duplicate → `409`; unknown instrument → `404` |
 | DELETE | `/api/watchlist/:instrumentId` | Bearer | `204`; other user's / missing → `404` |

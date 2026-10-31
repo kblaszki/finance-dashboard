@@ -15,6 +15,26 @@ import { formatMoney } from "../utils/format";
 
 const SEARCH_DEBOUNCE_MS = 300;
 
+function missingCloseHint(item: WatchlistItem): string {
+  const exchange = String(item.instrument.exchange ?? "")
+    .trim()
+    .toUpperCase();
+  const country = String(item.instrument.country ?? "")
+    .trim()
+    .toLowerCase();
+  const gpw =
+    exchange === "GPW" ||
+    exchange === "WSE" ||
+    country === "poland";
+  const us =
+    ["NASDAQ", "NYSE", "AMEX", "BATS", "ARCA"].includes(exchange) ||
+    country.includes("united states");
+  if (gpw || us) {
+    return "No close yet — run market:sync-quotes or re-add";
+  }
+  return "No close yet — quote may be unavailable on the free plan for this exchange";
+}
+
 export function MarketsPage() {
   const [query, setQuery] = useState("");
   const [debouncedQuery, setDebouncedQuery] = useState("");
@@ -229,10 +249,7 @@ export function MarketsPage() {
                           )
                         : "—"}
                       {item.lastClose == null && (
-                        <span className="muted">
-                          {" "}
-                          No close yet — run market:sync-quotes or re-add
-                        </span>
+                        <span className="muted"> {missingCloseHint(item)}</span>
                       )}
                     </td>
                     <td>{item.asOf ?? "—"}</td>

@@ -210,7 +210,7 @@ Unique `[provider, providerSymbol]`; indexes on `symbol`, `assetClass`, `name`. 
 
 ## InstrumentValuation
 
-Global EOD close for one instrument on one UTC day (`source` typically `twelve_data`).
+Global close / last price for one instrument on one UTC day. `source` is `twelve_data` (non-GPW EOD) or `oanor_gpw` (GPW/WSE/Poland live last price stored as `close`). Watchlist reads the latest row **across sources**.
 
 | Field | Type | Notes |
 |-------|------|-------|
@@ -218,10 +218,10 @@ Global EOD close for one instrument on one UTC day (`source` typically `twelve_d
 | instrumentId | Int | FK → Instrument (`onDelete: Cascade`) |
 | asOfDate | DateTime | UTC midnight |
 | close | Decimal | Major units in instrument currency |
-| source | String | Default `twelve_data` |
+| source | String | `twelve_data` or `oanor_gpw` (default `twelve_data`) |
 | createdAt | DateTime | |
 
-Unique `[instrumentId, asOfDate, source]`. Domain: `instrumentValuations.ts`. Watchlist quote sync: `npm run market:sync-quotes`.
+Unique `[instrumentId, asOfDate, source]`. Domain: `instrumentValuations.ts`, `oanorGpwClient.ts`. Watchlist quote sync: `npm run market:sync-quotes`.
 
 ## WatchlistItem
 

@@ -56,7 +56,7 @@ sequenceDiagram
 | Scripts | `backend/src/scripts/` | `createUser` (empty user), `backupDb`, `syncFxRates` (NBP EUR/USD), `syncMarketCatalog` / `syncMarketQuotes` (Twelve Data) |
 | Seed | `backend/prisma/seed.ts`, `domain/seedDemoPortfolio.ts` | Demo user + wipe/rebuild sample portfolio |
 | FX | `domain/fx.ts`, `fxRates.ts`, `nbpClient.ts` | NBP mids in `FxRateDaily`; `convertMajor` via PLN pivot |
-| Markets | `domain/instruments.ts`, `instrumentValuations.ts`, `marketData.ts`, `twelveDataClient.ts`, `watchlist.ts` | Global catalog + EOD valuations; user `WatchlistItem`; CLI sync + soft-fail on-add quote |
+| Markets | `domain/instruments.ts`, `instrumentValuations.ts`, `marketData.ts`, `twelveDataClient.ts`, `oanorGpwClient.ts`, `watchlist.ts` | Global TD catalog; valuations from Twelve Data or Oanor GPW (route by exchange/country); user `WatchlistItem`; CLI sync + soft-fail on-add quote |
 | Net worth | `domain/netWorth.ts`, `netWorthHistory.ts` | Current + monthly history; convert all owned PLN/EUR/USD accounts into the topbar reporting currency |
 | Cashflow stats | `domain/cashflowStats.ts` | Period summary, history, rolling 12m; same reporting-currency FX model (mid on each `occurredAt` day) |
 

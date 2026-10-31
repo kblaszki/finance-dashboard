@@ -179,3 +179,37 @@ test("POST /api/watchlist returns 404 for unknown instrument", async () => {
     .send({ instrumentId: 999999 });
   assert.equal(res.status, 404);
 });
+
+test("POST /api/watchlist soft-fails GPW quote without OANOR_API_KEY", async () => {
+  const prevOanor = process.env.OANOR_API_KEY;
+  delete process.env.OANOR_API_KEY;
+  try {
+    const token = await registerAndLogin(
+      "wlgpw@test.local",
+      "wlgpw",
+      "password123",
+    );
+    const row = await prisma.instrument.create({
+      data: {
+        symbol: "ETFBW20TR",
+        name: "Beta ETF WIG20TR",
+        exchange: "GPW",
+        country: "Poland",
+        currency: "PLN",
+        assetClass: "ETF",
+        provider: INSTRUMENT_PROVIDER_TWELVE_DATA,
+        providerSymbol: "ETFBW20TR",
+      },
+    });
+    const created = await request(app)
+      .post("/api/watchlist")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ instrumentId: row.id });
+    assert.equal(created.status, 201);
+    assert.equal(created.body.lastClose, null);
+    assert.equal(created.body.instrument.symbol, "ETFBW20TR");
+  } finally {
+    if (prevOanor !== undefined) process.env.OANOR_API_KEY = prevOanor;
+    else delete process.env.OANOR_API_KEY;
+  }
+});
