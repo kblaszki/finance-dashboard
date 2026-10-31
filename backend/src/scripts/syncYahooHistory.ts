@@ -16,6 +16,7 @@ async function main(): Promise<void> {
   const watchlistOnly = process.argv.includes("--watchlist-only");
   const instrumentIdRaw = readArg("--instrumentId");
   const userIdRaw = readArg("--userId");
+  const range = readArg("--range") ?? "1y";
 
   let instrumentId: number | undefined;
   if (instrumentIdRaw != null) {
@@ -57,6 +58,7 @@ async function main(): Promise<void> {
     const result = await syncYahooHistory(prisma, {
       force,
       delayMs: 250,
+      range,
       ...(instrumentId != null ? { instrumentId } : {}),
       ...(userId != null ? { userId } : {}),
     });

@@ -39,7 +39,8 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
- * Backfill ~1y daily closes from Yahoo chart API into InstrumentValuation.
+ * Backfill daily closes from Yahoo chart API into InstrumentValuation.
+ * Default range `1y`; use `range: "10y"` for a full allowlist dump.
  */
 export async function syncYahooHistory(
   prisma: PrismaClient,
@@ -50,6 +51,7 @@ export async function syncYahooHistory(
   const delayMs = options.delayMs ?? 200;
   const range = options.range ?? "1y";
   const threshold = options.sparseThreshold ?? 20;
+  // Sparse check uses ~12m window even when fetching 10y (skip if already dense recently).
   const window = historyWindowFromMonths(12);
 
   let instruments: Array<{

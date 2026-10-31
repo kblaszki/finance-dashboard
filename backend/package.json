@@ -15,6 +15,8 @@
     "market:sync-quotes": "node dist/scripts/syncMarketQuotes.js",
     "market:sync-history": "node dist/scripts/syncMarketHistory.js",
     "market:sync-history-yahoo": "node dist/scripts/syncYahooHistory.js",
+    "market:export-history": "node dist/scripts/exportMarketHistory.js",
+    "market:import-history": "node dist/scripts/importMarketHistory.js",
     "create-user": "node dist/scripts/createUser.js",
     "test": "tsx --import ./test/setupTestEnv.ts --test --test-concurrency=1 \"src/**/*.test.ts\" \"test/**/*.test.ts\"",
     "test:coverage": "c8 tsx --import ./test/setupTestEnv.ts --test --test-concurrency=1 \"src/**/*.test.ts\" \"test/**/*.test.ts\""
