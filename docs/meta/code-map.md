@@ -42,7 +42,7 @@ JWT auth, multi-type accounts, category tree + tags, cash ledger + transfers, CS
 | Net worth domain | `backend/src/domain/netWorth.ts`, `netWorthHistory.ts` |
 | FX / NBP rates | `backend/src/domain/fx.ts`, `fxRates.ts`, `nbpClient.ts` |
 | FX sync CLI | `backend/src/scripts/syncFxRates.ts` |
-| Markets catalog / watchlist | `backend/src/domain/{instruments,instrumentValuations,marketData,twelveDataClient,oanorGpwClient,watchlist}.ts`; routes `marketsRoutes.ts`; CLIs `syncMarketCatalog.ts`, `syncMarketQuotes.ts` (GPW quotes via Oanor) |
+| Markets catalog / allowlist / watchlist | `backend/src/domain/{instruments,instrumentValuations,marketData,marketHistory,marketUniverse,twelveDataClient,oanorGpwClient,stooqClient,watchlist}.ts`; routes `marketsRoutes.ts`; CLIs `syncMarketCatalog`, `seedMarketUniverse`, `syncMarketQuotes`, `syncMarketHistory`; data `backend/data/market-universe/` |
 | Holdings / lots (planned) | Spike: [docs/explanation/holdings-market-architecture.md](../explanation/holdings-market-architecture.md) — no `Holding`/`Lot` yet |
 | Router mount | `backend/src/routes/mountRouters.ts` |
 | HTTP helpers / errors | `backend/src/routes/httpSupport.ts`, `backend/src/lib/errors.ts` |

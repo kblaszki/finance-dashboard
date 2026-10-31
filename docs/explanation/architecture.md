@@ -52,11 +52,11 @@ sequenceDiagram
 | Transfers routes | `backend/src/routes/transfersRoutes.ts` | Internal transfers CRUD + CSV import (month list capped at 2000; preview/commit in `domain/transfersImportService.ts` with commit-time re-dedup) |
 | Statistics routes | `backend/src/routes/statisticsRoutes.ts` | Category/tag breakdown, period summary, cashflow, FX net worth + history, rolling 12m (period loads soft-capped) |
 | Errors | `routes/httpSupport.ts`, `lib/errors.ts` | Typed HTTP errors (incl. 409 conflict) |
-| Markets routes | `backend/src/routes/marketsRoutes.ts` | Local instrument search + watchlist CRUD (quotes from DB; one TD fetch on add when stale) |
+| Markets routes | `backend/src/routes/marketsRoutes.ts` | Allowlist/catalog search, POST allowlist, watchlist CRUD (soft quote on add) |
 | Scripts | `backend/src/scripts/` | `createUser` (empty user), `backupDb`, `syncFxRates` (NBP EUR/USD), `syncMarketCatalog` / `syncMarketQuotes` (Twelve Data) |
 | Seed | `backend/prisma/seed.ts`, `domain/seedDemoPortfolio.ts` | Demo user + wipe/rebuild sample portfolio |
 | FX | `domain/fx.ts`, `fxRates.ts`, `nbpClient.ts` | NBP mids in `FxRateDaily`; `convertMajor` via PLN pivot |
-| Markets | `domain/instruments.ts`, `instrumentValuations.ts`, `marketData.ts`, `twelveDataClient.ts`, `oanorGpwClient.ts`, `watchlist.ts` | Global TD catalog; valuations from Twelve Data or Oanor GPW (route by exchange/country); user `WatchlistItem`; CLI sync + soft-fail on-add quote |
+| Markets | `domain/instruments.ts`, `instrumentValuations.ts`, `marketData.ts`, `marketHistory.ts`, `marketUniverse.ts`, `twelveDataClient.ts`, `oanorGpwClient.ts`, `stooqClient.ts`, `watchlist.ts` | Global TD catalog + curated allowlist; valuations TD / Oanor / Stooq; user watchlist; CLIs for catalog, seed, quotes, history |
 | Net worth | `domain/netWorth.ts`, `netWorthHistory.ts` | Current + monthly history; convert all owned PLN/EUR/USD accounts into the topbar reporting currency |
 | Cashflow stats | `domain/cashflowStats.ts` | Period summary, history, rolling 12m; same reporting-currency FX model (mid on each `occurredAt` day) |
 

@@ -5,6 +5,7 @@ import { MarketsPage } from "./MarketsPage";
 
 vi.mock("../api/instrumentsApi", () => ({
   searchInstruments: vi.fn(),
+  addInstrumentToAllowlist: vi.fn(),
 }));
 
 vi.mock("../api/watchlistApi", () => ({
@@ -13,7 +14,10 @@ vi.mock("../api/watchlistApi", () => ({
   removeFromWatchlist: vi.fn(),
 }));
 
-import { searchInstruments } from "../api/instrumentsApi";
+import {
+  addInstrumentToAllowlist,
+  searchInstruments,
+} from "../api/instrumentsApi";
 import {
   addToWatchlist,
   fetchWatchlist,
@@ -31,6 +35,21 @@ const instrument = {
   assetClass: "STOCK",
   provider: "twelve_data",
   providerSymbol: "AAPL",
+  allowlisted: true,
+};
+
+const catalogInstrument = {
+  id: 2,
+  symbol: "TSLA",
+  name: "Tesla Inc",
+  exchange: "NASDAQ",
+  micCode: "XNAS",
+  country: "United States",
+  currency: "USD",
+  assetClass: "STOCK",
+  provider: "twelve_data",
+  providerSymbol: "TSLA",
+  allowlisted: false,
 };
 
 function renderMarkets() {
@@ -48,7 +67,14 @@ describe("MarketsPage", () => {
     cleanup();
     vi.clearAllMocks();
     vi.mocked(fetchWatchlist).mockResolvedValue([]);
-    vi.mocked(searchInstruments).mockResolvedValue([instrument]);
+    vi.mocked(searchInstruments).mockImplementation(async (params) => {
+      if (params.scope === "catalog") return [catalogInstrument];
+      return [instrument];
+    });
+    vi.mocked(addInstrumentToAllowlist).mockResolvedValue({
+      ...catalogInstrument,
+      allowlisted: true,
+    });
     vi.mocked(addToWatchlist).mockResolvedValue({
       instrumentId: 1,
       createdAt: "2026-10-30T00:00:00.000Z",
@@ -59,7 +85,7 @@ describe("MarketsPage", () => {
     vi.mocked(removeFromWatchlist).mockResolvedValue(undefined);
   });
 
-  it("searches catalog and adds to watchlist", async () => {
+  it("searches allowlist and adds to watchlist", async () => {
     renderMarkets();
     expect(
       await screen.findByText(/No favorites yet/),
@@ -72,6 +98,7 @@ describe("MarketsPage", () => {
       expect(searchInstruments).toHaveBeenCalledWith({
         q: "AAPL",
         limit: 25,
+        scope: "allowlist",
       });
     });
     expect(await screen.findByText("Apple Inc")).toBeTruthy();
@@ -82,6 +109,27 @@ describe("MarketsPage", () => {
     });
     await waitFor(() => {
       expect(fetchWatchlist).toHaveBeenCalled();
+    });
+  });
+
+  it("searches catalog and adds to allowlist", async () => {
+    renderMarkets();
+
+    fireEvent.change(screen.getByLabelText("Catalog search"), {
+      target: { value: "TSLA" },
+    });
+    await waitFor(() => {
+      expect(searchInstruments).toHaveBeenCalledWith({
+        q: "TSLA",
+        limit: 25,
+        scope: "catalog",
+      });
+    });
+    expect(await screen.findByText("Tesla Inc")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Add to markets" }));
+    await waitFor(() => {
+      expect(addInstrumentToAllowlist).toHaveBeenCalledWith(2);
     });
   });
 

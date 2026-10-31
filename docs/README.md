@@ -55,7 +55,7 @@ Never load all docs. Prefer reference for facts, how-to for tasks, explanation f
 | [internal-transfers.md](how-to/internal-transfers.md) | Move cash between owned accounts |
 | [import-csv-column-map.md](how-to/import-csv-column-map.md) | Map arbitrary CSV columns + description category suggest on account Upload |
 | [dashboard-and-statistics.md](how-to/dashboard-and-statistics.md) | Home net worth / rolling 12m; period KPIs, chart, category breakdown |
-| [markets-watchlist.md](how-to/markets-watchlist.md) | Twelve Data catalog sync + `/markets` favorites / last close |
+| [markets-watchlist.md](how-to/markets-watchlist.md) | Allowlist seed, history/quotes sync, `/markets` catalog add + watchlist |
 | [write-integration-tests.md](how-to/write-integration-tests.md) | HTTP / integration tests |
 | [private-deploy.md](how-to/private-deploy.md) | Private single-user deploy |
 

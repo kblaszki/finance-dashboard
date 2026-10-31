@@ -162,11 +162,12 @@ Period bounds are **UTC** `[start, end)` on `occurredAt`. Query `month=YYYY-MM` 
 
 ## Markets (instruments + watchlist)
 
-Local catalog search and per-user favorites. Catalog from Twelve Data CLI; quotes from Twelve Data (non-GPW) or Oanor (GPW/WSE/Poland) on add / `market:sync-quotes`. `GET /api/watchlist` never calls providers.
+Default search is the **global allowlist** (seeded curated universe + user “Add to markets”). Full Twelve Data catalog is available via `scope=catalog`. Quotes: Twelve Data (non-GPW) or Oanor (GPW) on allowlist/watchlist add and `market:sync-quotes` (allowlisted by default). History: `market:sync-history` (TD + Stooq). `GET /api/watchlist` never calls providers.
 
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
-| GET | `/api/instruments` | Bearer | Query: `q` (required, ≥1 char), optional `assetClass=STOCK\|ETF`, optional `limit` (1–50, default 25). Body: `Instrument[]` `{ id, symbol, name, exchange, micCode, country, currency, assetClass, provider, providerSymbol }` from SQLite only |
-| GET | `/api/watchlist` | Bearer | Owned favorites with latest `InstrumentValuation` (any `source`). Body: `{ instrumentId, createdAt, instrument, lastClose, asOf }[]` (`lastClose`/`asOf` null when no valuation) |
-| POST | `/api/watchlist` | Bearer | Body `{ instrumentId }`. Creates favorite; if valuation missing/stale, one quote attempt (Oanor for GPW else Twelve Data; soft-fail → `lastClose: null`). `201`; duplicate → `409`; unknown instrument → `404` |
+| GET | `/api/instruments` | Bearer | Query: `q` (≥1 char), optional `assetClass=STOCK\|ETF\|INDEX`, `limit` (1–50, default 25), `scope=allowlist` (default) \| `catalog`. Body: `Instrument[]` including `allowlisted` |
+| POST | `/api/instruments/allowlist` | Bearer | Body `{ instrumentId }`. Sets global `allowlisted=true` (idempotent `200`); soft quote fetch; unknown → `404`. History backfill is CLI-only |
+| GET | `/api/watchlist` | Bearer | Owned favorites with latest `InstrumentValuation` (any `source`). Body: `{ instrumentId, createdAt, instrument, lastClose, asOf }[]` |
+| POST | `/api/watchlist` | Bearer | Body `{ instrumentId }`. Creates favorite; soft quote if stale. `201`; duplicate → `409`; unknown → `404` |
 | DELETE | `/api/watchlist/:instrumentId` | Bearer | `204`; other user's / missing → `404` |

@@ -190,7 +190,7 @@ Unique `[rateDate, currency]`; index `[currency, rateDate]`. Domain: `backend/sr
 
 ## Instrument
 
-Global market catalog (no `userId`). Synced from Twelve Data `GET /stocks` + `GET /etfs` via `npm run market:sync-catalog`. Search is local only.
+Global market catalog (no `userId`). Full table from Twelve Data via `market:sync-catalog`. Curated subset marked `allowlisted` via `market:seed-universe` / `POST /api/instruments/allowlist`. Default Markets search filters `allowlisted=true`.
 
 | Field | Type | Notes |
 |-------|------|-------|
@@ -201,16 +201,17 @@ Global market catalog (no `userId`). Synced from Twelve Data `GET /stocks` + `GE
 | micCode | String? | Optional MIC |
 | country | String? | Optional country |
 | currency | String | Quote currency (e.g. `USD`) |
-| assetClass | String | `STOCK` \| `ETF` |
+| assetClass | String | `STOCK` \| `ETF` \| `INDEX` |
 | provider | String | Default `twelve_data` |
 | providerSymbol | String | Symbol passed to Twelve Data APIs |
+| allowlisted | Boolean | Default `false`; Markets search + quote/history universe |
 | createdAt / updatedAt | DateTime | |
 
-Unique `[provider, providerSymbol]`; indexes on `symbol`, `assetClass`, `name`. Domain: `backend/src/domain/instruments.ts`, `twelveDataClient.ts`, `marketData.ts`.
+Unique `[provider, providerSymbol]`; indexes on `symbol`, `assetClass`, `name`, `[allowlisted, symbol]`, `[allowlisted, name]`. Domain: `instruments.ts`, `marketUniverse.ts`, `twelveDataClient.ts`, `marketData.ts`.
 
 ## InstrumentValuation
 
-Global close / last price for one instrument on one UTC day. `source` is `twelve_data` (non-GPW EOD) or `oanor_gpw` (GPW/WSE/Poland live last price stored as `close`). Watchlist reads the latest row **across sources**.
+Global close for one instrument on one UTC day. Sources: `twelve_data` (quote / time_series), `oanor_gpw` (live GPW last), `stooq` (GPW/index history CSV). Watchlist reads the latest row **across sources**.
 
 | Field | Type | Notes |
 |-------|------|-------|
@@ -218,10 +219,10 @@ Global close / last price for one instrument on one UTC day. `source` is `twelve
 | instrumentId | Int | FK → Instrument (`onDelete: Cascade`) |
 | asOfDate | DateTime | UTC midnight |
 | close | Decimal | Major units in instrument currency |
-| source | String | `twelve_data` or `oanor_gpw` (default `twelve_data`) |
+| source | String | `twelve_data` \| `oanor_gpw` \| `stooq` |
 | createdAt | DateTime | |
 
-Unique `[instrumentId, asOfDate, source]`. Domain: `instrumentValuations.ts`, `oanorGpwClient.ts`. Watchlist quote sync: `npm run market:sync-quotes`.
+Unique `[instrumentId, asOfDate, source]`. Domain: `instrumentValuations.ts`, `marketHistory.ts`, `stooqClient.ts`, `oanorGpwClient.ts`. CLIs: `market:sync-quotes`, `market:sync-history`.
 
 ## WatchlistItem
 

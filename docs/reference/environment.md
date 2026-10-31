@@ -33,7 +33,7 @@ Hub: [docs/README.md](../README.md).
 | `JSON_BODY_LIMIT` | Express JSON body limit (default `1mb`) |
 | `BACKUP_DIR` / `BACKUP_GZIP` | Used by `npm run db:backup` (Compose: `BACKUP_DIR=/data/backups`) |
 | `NBP_API_BASE` | Base URL for NBP FX sync (default `https://api.nbp.pl/api`); used by `npm run fx:sync` |
-| `TWELVE_DATA_API_KEY` | Twelve Data API key for `market:sync-catalog`, non-GPW `market:sync-quotes`, and on-add quote fetch |
+| `TWELVE_DATA_API_KEY` | Twelve Data for catalog, non-GPW quotes, and `market:sync-history` time_series |
 | `TWELVE_DATA_API_BASE` | Optional override (default `https://api.twelvedata.com`) |
 | `OANOR_API_KEY` | Oanor key (`x-oanor-key`) for GPW / WSE / Poland watchlist quotes |
 | `OANOR_GPW_API_BASE` | Optional override (default `https://api.oanor.com/gpw-api`) |

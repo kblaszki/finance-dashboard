@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  addInstrumentToAllowlist,
   searchInstruments,
   type Instrument,
 } from "../api/instrumentsApi";
@@ -41,6 +42,13 @@ export function MarketsPage() {
   const [searchBusy, setSearchBusy] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [results, setResults] = useState<Instrument[]>([]);
+
+  const [catalogQuery, setCatalogQuery] = useState("");
+  const [debouncedCatalogQuery, setDebouncedCatalogQuery] = useState("");
+  const [catalogBusy, setCatalogBusy] = useState(false);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
+  const [catalogResults, setCatalogResults] = useState<Instrument[]>([]);
+
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionBusyId, setActionBusyId] = useState<number | null>(null);
 
@@ -50,6 +58,13 @@ export function MarketsPage() {
     }, SEARCH_DEBOUNCE_MS);
     return () => window.clearTimeout(t);
   }, [query]);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      setDebouncedCatalogQuery(catalogQuery.trim());
+    }, SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(t);
+  }, [catalogQuery]);
 
   const loadWatchlist = useCallback(() => fetchWatchlist(), []);
   const {
@@ -69,7 +84,11 @@ export function MarketsPage() {
     let cancelled = false;
     setSearchBusy(true);
     setSearchError(null);
-    void searchInstruments({ q: debouncedQuery, limit: 25 })
+    void searchInstruments({
+      q: debouncedQuery,
+      limit: 25,
+      scope: "allowlist",
+    })
       .then((rows) => {
         if (!cancelled) setResults(rows);
       })
@@ -89,6 +108,40 @@ export function MarketsPage() {
     };
   }, [debouncedQuery]);
 
+  useEffect(() => {
+    if (debouncedCatalogQuery.length < 1) {
+      setCatalogResults([]);
+      setCatalogError(null);
+      setCatalogBusy(false);
+      return;
+    }
+    let cancelled = false;
+    setCatalogBusy(true);
+    setCatalogError(null);
+    void searchInstruments({
+      q: debouncedCatalogQuery,
+      limit: 25,
+      scope: "catalog",
+    })
+      .then((rows) => {
+        if (!cancelled) setCatalogResults(rows);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setCatalogResults([]);
+          setCatalogError(
+            err instanceof Error ? err.message : "Catalog search failed",
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setCatalogBusy(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedCatalogQuery]);
+
   const favoritedIds = useMemo(() => {
     const set = new Set<number>();
     for (const item of watchlist ?? []) set.add(item.instrumentId);
@@ -104,6 +157,33 @@ export function MarketsPage() {
     } catch (err: unknown) {
       setActionError(
         err instanceof Error ? err.message : "Could not add to watchlist",
+      );
+    } finally {
+      setActionBusyId(null);
+    }
+  }
+
+  async function handleAllowlist(instrument: Instrument) {
+    setActionError(null);
+    setActionBusyId(instrument.id);
+    try {
+      await addInstrumentToAllowlist(instrument.id);
+      setCatalogResults((rows) =>
+        rows.map((r) =>
+          r.id === instrument.id ? { ...r, allowlisted: true } : r,
+        ),
+      );
+      if (debouncedQuery.length >= 1) {
+        const rows = await searchInstruments({
+          q: debouncedQuery,
+          limit: 25,
+          scope: "allowlist",
+        });
+        setResults(rows);
+      }
+    } catch (err: unknown) {
+      setActionError(
+        err instanceof Error ? err.message : "Could not add to markets",
       );
     } finally {
       setActionBusyId(null);
@@ -128,12 +208,11 @@ export function MarketsPage() {
   return (
     <div className="page-stack markets-page">
       <section className="card form-section-gap">
-        <h2 className="section-title">Search stocks &amp; ETFs</h2>
+        <h2 className="section-title">Search markets</h2>
         <p className="muted">
-          Search the local catalog (synced from Twelve Data). Add favorites to
-          track last close prices. Run{" "}
-          <code>npm run market:sync-catalog</code> in <code>backend/</code>{" "}
-          after build if the catalog is empty.
+          Curated allowlist (S&amp;P 500, GPW core, indexes, popular ETFs). Seed
+          with <code>npm run market:seed-universe</code> after catalog sync.
+          Add favorites to track last close.
         </p>
         <label>
           Search
@@ -141,7 +220,7 @@ export function MarketsPage() {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Symbol or name (e.g. AAPL, Vanguard)"
+            placeholder="Symbol or name (e.g. AAPL, PKN)"
             autoComplete="off"
           />
         </label>
@@ -157,7 +236,8 @@ export function MarketsPage() {
         )}
         {!searchBusy && debouncedQuery && results.length === 0 && !searchError && (
           <p className="empty-state muted" role="status">
-            No instruments match “{debouncedQuery}”.
+            No allowlisted instruments match “{debouncedQuery}”. Use Add
+            instrument below to extend the global list.
           </p>
         )}
         {results.length > 0 && (
@@ -202,6 +282,75 @@ export function MarketsPage() {
         )}
       </section>
 
+      <section className="card form-section-gap">
+        <h2 className="section-title">Add instrument</h2>
+        <p className="muted">
+          Search the full Twelve Data catalog and add a ticker to the{" "}
+          <strong>global</strong> markets allowlist (visible to all users).
+          Requires <code>npm run market:sync-catalog</code> first.
+        </p>
+        <label>
+          Catalog search
+          <input
+            type="search"
+            value={catalogQuery}
+            onChange={(e) => setCatalogQuery(e.target.value)}
+            placeholder="Full catalog (e.g. TSLA)"
+            autoComplete="off"
+          />
+        </label>
+        {catalogBusy && (
+          <p className="muted" role="status">
+            Searching catalog…
+          </p>
+        )}
+        {catalogError && (
+          <p className="error-banner" role="alert">
+            {catalogError}
+          </p>
+        )}
+        {catalogResults.length > 0 && (
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Symbol</th>
+                  <th>Name</th>
+                  <th>Exchange</th>
+                  <th>Class</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {catalogResults.map((row) => {
+                  const onAllowlist = row.allowlisted === true;
+                  return (
+                    <tr key={`cat-${row.id}`}>
+                      <td>
+                        <strong>{row.symbol}</strong>
+                      </td>
+                      <td>{row.name}</td>
+                      <td>{row.exchange || "—"}</td>
+                      <td>{row.assetClass}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className="btn-secondary"
+                          disabled={onAllowlist || actionBusyId === row.id}
+                          onClick={() => void handleAllowlist(row)}
+                        >
+                          {onAllowlist ? "On markets list" : "Add to markets"}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
       {actionError && (
         <p className="error-banner" role="alert">
           {actionError}
@@ -211,16 +360,17 @@ export function MarketsPage() {
       <section className="card form-section-gap">
         <h2 className="section-title">Watchlist</h2>
         <p className="muted">
-          Last close from stored Twelve Data valuations. Refresh prices with{" "}
-          <code>npm run market:sync-quotes</code> (after <code>npm run build</code>{" "}
-          in backend).
+          Last close from stored valuations (Twelve Data / Oanor / Stooq
+          history). Refresh with <code>npm run market:sync-quotes</code> or{" "}
+          <code>market:sync-history</code> (after <code>npm run build</code> in
+          backend).
         </p>
         <StatusBlock
           loading={watchlistLoading && !watchlist}
           error={watchlistError}
           empty={!!watchlist && watchlist.length === 0}
           loadingMessage="Loading watchlist…"
-          emptyMessage="No favorites yet. Search above and add an instrument."
+          emptyMessage="No favorites yet. Search the allowlist above and add an instrument."
         />
         {watchlist && watchlist.length > 0 && (
           <div className="table-wrap">

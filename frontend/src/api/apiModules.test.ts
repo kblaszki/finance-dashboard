@@ -86,7 +86,10 @@ import {
   previewTransfersImport,
   importTransfersCsv,
 } from './transfersApi'
-import { searchInstruments } from './instrumentsApi'
+import {
+  searchInstruments,
+  addInstrumentToAllowlist,
+} from './instrumentsApi'
 import {
   fetchWatchlist,
   addToWatchlist,
@@ -471,6 +474,16 @@ describe('API modules', () => {
     expect(apiClient.get).toHaveBeenCalledWith(
       '/api/instruments?q=AAPL&assetClass=STOCK&limit=10',
     )
+
+    await searchInstruments({ q: 'TSLA', scope: 'catalog', limit: 5 })
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/instruments?q=TSLA&limit=5&scope=catalog',
+    )
+
+    await addInstrumentToAllowlist(7)
+    expect(apiClient.post).toHaveBeenCalledWith('/api/instruments/allowlist', {
+      instrumentId: 7,
+    })
 
     await fetchWatchlist()
     expect(apiClient.get).toHaveBeenCalledWith('/api/watchlist')
