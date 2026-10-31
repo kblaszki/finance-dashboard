@@ -31,7 +31,7 @@ npm run market:seed-universe
 npm run db:seed           # re-attach markets fixture onto demo watchlist
 ```
 
-`seedDemoMarkets` **deletes** prior valuations for fixture tickers, then imports sparse monthly closes from `demo-eod.ndjson`.
+`seedDemoMarkets` prefers `data/market-history/exports/allowlist-eod.ndjson.gz` when present (full local dump); otherwise committed `demo-eod.ndjson`. It **deletes** prior valuations for symbols in that file, then imports. Demo watchlist uses the curated 5 favorites when loading a full export.
 
 ### Incremental re-seed (keep catalog)
 

@@ -39,6 +39,8 @@ backend/data/*
 backend/data/market-history/*
 !backend/data/market-history/README.md
 !backend/data/market-history/demo-eod.ndjson
+# Local full dumps stay ignored (exports/)
+backend/data/market-history/exports/
 
 ## OS / IDE
 .DS_Store

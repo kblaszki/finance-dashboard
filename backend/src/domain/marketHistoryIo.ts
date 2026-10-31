@@ -47,16 +47,58 @@ export function marketHistoryDataDir(
   return fromDir;
 }
 
+/** Local full allowlist dump (gitignored). */
+export const DEFAULT_ALLOWLIST_EXPORT_NAME = "allowlist-eod.ndjson.gz";
+
+/** Favorites attached to the demo user when seeding Markets. */
+export const DEMO_MARKET_WATCHLIST_SYMBOLS = [
+  "AAPL",
+  "VOO",
+  "SPX",
+  "XTB",
+  "ETFBW20TR",
+] as const;
+
+export function marketHistoryExportsDir(
+  dir: string = marketHistoryDataDir(),
+): string {
+  return path.join(dir, "exports");
+}
+
 export function defaultAllowlistHistoryPath(
   dir: string = marketHistoryDataDir(),
 ): string {
-  return path.join(dir, "allowlist-eod.ndjson.gz");
+  return path.join(marketHistoryExportsDir(dir), DEFAULT_ALLOWLIST_EXPORT_NAME);
 }
 
 export function demoHistoryFixturePath(
   dir: string = marketHistoryDataDir(),
 ): string {
   return path.join(dir, "demo-eod.ndjson");
+}
+
+export type DemoHistorySourceKind = "local-export" | "committed-fixture" | "missing";
+
+export type DemoHistorySource = {
+  path: string;
+  kind: DemoHistorySourceKind;
+};
+
+/**
+ * Prefer local exports/allowlist-eod.ndjson.gz when present; else committed demo-eod.ndjson.
+ */
+export function resolveDemoHistorySource(
+  dir: string = marketHistoryDataDir(),
+): DemoHistorySource {
+  const localExport = defaultAllowlistHistoryPath(dir);
+  if (fs.existsSync(localExport)) {
+    return { path: localExport, kind: "local-export" };
+  }
+  const fixture = demoHistoryFixturePath(dir);
+  if (fs.existsSync(fixture)) {
+    return { path: fixture, kind: "committed-fixture" };
+  }
+  return { path: fixture, kind: "missing" };
 }
 
 export function serializeHistoryNdjsonRow(row: HistoryNdjsonRow): string {

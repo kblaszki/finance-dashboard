@@ -92,10 +92,13 @@ test("seedDemoMarkets adds watchlist and valuations from fixture", async () => {
   );
 
   try {
-    const result = await seedDemoMarkets(prisma, user.id, tmp);
+    const result = await seedDemoMarkets(prisma, user.id, {
+      historyFile: tmp,
+    });
     assert.equal(result.watchlistAdded, 1);
     assert.equal(result.valuationsUpserted, 2);
     assert.deepEqual(result.skippedMissingInstruments, ["MISSING"]);
+    assert.equal(result.sourceKind, "committed-fixture");
 
     const wl = await prisma.watchlistItem.count({ where: { userId: user.id } });
     assert.equal(wl, 1);
