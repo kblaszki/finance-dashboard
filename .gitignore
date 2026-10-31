@@ -30,6 +30,11 @@ backend/backups/
 
 ## Private deployment data
 data/
+# Curated markets seed (committed)
+!backend/data/
+backend/data/*
+!backend/data/market-universe/
+!backend/data/market-universe/**
 
 ## OS / IDE
 .DS_Store

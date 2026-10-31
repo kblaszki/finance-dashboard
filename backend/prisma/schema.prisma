@@ -220,7 +220,7 @@ model FxRateDaily {
   @@index([currency, rateDate])
 }
 
-/// Shared market catalog row (Twelve Data stocks/ETFs). No userId.
+/// Shared market catalog row (Twelve Data stocks/ETFs/indexes). No userId.
 model Instrument {
   id             Int       @id @default(autoincrement())
   /// Display / search ticker (e.g. AAPL).
@@ -231,12 +231,14 @@ model Instrument {
   country        String?
   /// Quote currency from provider (e.g. USD).
   currency       String    @default("USD")
-  /// STOCK | ETF
+  /// STOCK | ETF | INDEX
   assetClass     String
   /// twelve_data
   provider       String    @default("twelve_data")
   /// Symbol string passed to Twelve Data APIs (may include exchange suffix).
   providerSymbol String
+  /// When true, visible in default Markets search and included in history/quote universe sync.
+  allowlisted    Boolean   @default(false)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   valuations     InstrumentValuation[]
@@ -246,6 +248,8 @@ model Instrument {
   @@index([symbol])
   @@index([assetClass])
   @@index([name])
+  @@index([allowlisted, symbol])
+  @@index([allowlisted, name])
 }
 
 /// EOD (or similar) close for one instrument on one UTC calendar day.

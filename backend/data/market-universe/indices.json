@@ -1,0 +1,66 @@
+[
+  {
+    "symbol": "SPX",
+    "name": "S&P 500 Index",
+    "assetClass": "INDEX",
+    "exchange": "",
+    "country": "United States",
+    "currency": "USD",
+    "providerSymbol": "SPX",
+    "historySource": "twelve_data"
+  },
+  {
+    "symbol": "NDX",
+    "name": "Nasdaq-100 Index",
+    "assetClass": "INDEX",
+    "exchange": "",
+    "country": "United States",
+    "currency": "USD",
+    "providerSymbol": "NDX",
+    "historySource": "twelve_data"
+  },
+  {
+    "symbol": "ACWI",
+    "name": "MSCI ACWI (via iShares ACWI ETF proxy for quotes)",
+    "assetClass": "ETF",
+    "exchange": "NASDAQ",
+    "country": "United States",
+    "currency": "USD",
+    "providerSymbol": "ACWI",
+    "historySource": "twelve_data",
+    "note": "All-World exposure via liquid US-listed ETF (true ACWI index ticker coverage varies by plan)"
+  },
+  {
+    "symbol": "WIG20",
+    "name": "WIG20 Index",
+    "assetClass": "INDEX",
+    "exchange": "GPW",
+    "country": "Poland",
+    "currency": "PLN",
+    "providerSymbol": "WIG20",
+    "stooqSymbol": "^wig20",
+    "historySource": "stooq"
+  },
+  {
+    "symbol": "MWIG40",
+    "name": "mWIG40 Index",
+    "assetClass": "INDEX",
+    "exchange": "GPW",
+    "country": "Poland",
+    "currency": "PLN",
+    "providerSymbol": "MWIG40",
+    "stooqSymbol": "^mwig40",
+    "historySource": "stooq"
+  },
+  {
+    "symbol": "WIG",
+    "name": "WIG Index",
+    "assetClass": "INDEX",
+    "exchange": "GPW",
+    "country": "Poland",
+    "currency": "PLN",
+    "providerSymbol": "WIG",
+    "stooqSymbol": "^wig",
+    "historySource": "stooq"
+  }
+]

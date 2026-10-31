@@ -1,0 +1,4529 @@
+[
+  {
+    "symbol": "MMM",
+    "name": "3M",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MMM"
+  },
+  {
+    "symbol": "AOS",
+    "name": "A. O. Smith",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "AOS"
+  },
+  {
+    "symbol": "ABT",
+    "name": "Abbott Laboratories",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ABT"
+  },
+  {
+    "symbol": "ABBV",
+    "name": "AbbVie",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ABBV"
+  },
+  {
+    "symbol": "ACN",
+    "name": "Accenture",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ACN"
+  },
+  {
+    "symbol": "ADBE",
+    "name": "Adobe Inc.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ADBE"
+  },
+  {
+    "symbol": "AMD",
+    "name": "Advanced Micro Devices",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "AMD"
+  },
+  {
+    "symbol": "AES",
+    "name": "AES Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "AES"
+  },
+  {
+    "symbol": "AFL",
+    "name": "Aflac",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "AFL"
+  },
+  {
+    "symbol": "A",
+    "name": "Agilent Technologies",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "A"
+  },
+  {
+    "symbol": "APD",
+    "name": "Air Products",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "APD"
+  },
+  {
+    "symbol": "ABNB",
+    "name": "Airbnb",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ABNB"
+  },
+  {
+    "symbol": "AKAM",
+    "name": "Akamai Technologies",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "AKAM"
+  },
+  {
+    "symbol": "ALB",
+    "name": "Albemarle Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ALB"
+  },
+  {
+    "symbol": "ARE",
+    "name": "Alexandria Real Estate Equities",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ARE"
+  },
+  {
+    "symbol": "ALGN",
+    "name": "Align Technology",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ALGN"
+  },
+  {
+    "symbol": "ALLE",
+    "name": "Allegion",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ALLE"
+  },
+  {
+    "symbol": "LNT",
+    "name": "Alliant Energy",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "LNT"
+  },
+  {
+    "symbol": "ALL",
+    "name": "Allstate",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ALL"
+  },
+  {
+    "symbol": "GOOGL",
+    "name": "Alphabet Inc. (Class A)",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "GOOGL"
+  },
+  {
+    "symbol": "GOOG",
+    "name": "Alphabet Inc. (Class C)",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "GOOG"
+  },
+  {
+    "symbol": "MO",
+    "name": "Altria",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MO"
+  },
+  {
+    "symbol": "AMZN",
+    "name": "Amazon",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "AMZN"
+  },
+  {
+    "symbol": "AMCR",
+    "name": "Amcor",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "AMCR"
+  },
+  {
+    "symbol": "AEE",
+    "name": "Ameren",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "AEE"
+  },
+  {
+    "symbol": "AEP",
+    "name": "American Electric Power",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "AEP"
+  },
+  {
+    "symbol": "AXP",
+    "name": "American Express",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "AXP"
+  },
+  {
+    "symbol": "AIG",
+    "name": "American International Group",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "AIG"
+  },
+  {
+    "symbol": "AMT",
+    "name": "American Tower",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "AMT"
+  },
+  {
+    "symbol": "AWK",
+    "name": "American Water Works",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "AWK"
+  },
+  {
+    "symbol": "AMP",
+    "name": "Ameriprise Financial",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "AMP"
+  },
+  {
+    "symbol": "AME",
+    "name": "Ametek",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "AME"
+  },
+  {
+    "symbol": "AMGN",
+    "name": "Amgen",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "AMGN"
+  },
+  {
+    "symbol": "APH",
+    "name": "Amphenol",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "APH"
+  },
+  {
+    "symbol": "ADI",
+    "name": "Analog Devices",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ADI"
+  },
+  {
+    "symbol": "AON",
+    "name": "Aon plc",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "AON"
+  },
+  {
+    "symbol": "APA",
+    "name": "APA Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "APA"
+  },
+  {
+    "symbol": "APO",
+    "name": "Apollo Global Management",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "APO"
+  },
+  {
+    "symbol": "AAPL",
+    "name": "Apple Inc.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "AAPL"
+  },
+  {
+    "symbol": "AMAT",
+    "name": "Applied Materials",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "AMAT"
+  },
+  {
+    "symbol": "APP",
+    "name": "AppLovin",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "APP"
+  },
+  {
+    "symbol": "APTV",
+    "name": "Aptiv",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "APTV"
+  },
+  {
+    "symbol": "ACGL",
+    "name": "Arch Capital Group",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ACGL"
+  },
+  {
+    "symbol": "ADM",
+    "name": "Archer Daniels Midland",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ADM"
+  },
+  {
+    "symbol": "ARES",
+    "name": "Ares Management",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ARES"
+  },
+  {
+    "symbol": "ANET",
+    "name": "Arista Networks",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ANET"
+  },
+  {
+    "symbol": "AJG",
+    "name": "Arthur J. Gallagher & Co.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "AJG"
+  },
+  {
+    "symbol": "AIZ",
+    "name": "Assurant",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "AIZ"
+  },
+  {
+    "symbol": "T",
+    "name": "AT&T",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "T"
+  },
+  {
+    "symbol": "ATO",
+    "name": "Atmos Energy",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ATO"
+  },
+  {
+    "symbol": "ADSK",
+    "name": "Autodesk",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ADSK"
+  },
+  {
+    "symbol": "ADP",
+    "name": "Automatic Data Processing",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ADP"
+  },
+  {
+    "symbol": "AZO",
+    "name": "AutoZone",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "AZO"
+  },
+  {
+    "symbol": "AVY",
+    "name": "Avery Dennison",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "AVY"
+  },
+  {
+    "symbol": "AXON",
+    "name": "Axon Enterprise",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "AXON"
+  },
+  {
+    "symbol": "BKR",
+    "name": "Baker Hughes",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "BKR"
+  },
+  {
+    "symbol": "BALL",
+    "name": "Ball Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "BALL"
+  },
+  {
+    "symbol": "BAC",
+    "name": "Bank of America",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "BAC"
+  },
+  {
+    "symbol": "BAX",
+    "name": "Baxter International",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "BAX"
+  },
+  {
+    "symbol": "BDX",
+    "name": "Becton Dickinson",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "BDX"
+  },
+  {
+    "symbol": "BRK.B",
+    "name": "Berkshire Hathaway",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "BRK-B"
+  },
+  {
+    "symbol": "BBY",
+    "name": "Best Buy",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "BBY"
+  },
+  {
+    "symbol": "TECH",
+    "name": "Bio-Techne",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "TECH"
+  },
+  {
+    "symbol": "BIIB",
+    "name": "Biogen",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "BIIB"
+  },
+  {
+    "symbol": "BLK",
+    "name": "BlackRock",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "BLK"
+  },
+  {
+    "symbol": "BX",
+    "name": "Blackstone Inc.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "BX"
+  },
+  {
+    "symbol": "XYZ",
+    "name": "Block, Inc.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "XYZ"
+  },
+  {
+    "symbol": "BE",
+    "name": "Bloom Energy",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "BE"
+  },
+  {
+    "symbol": "BNY",
+    "name": "BNY Mellon",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "BNY"
+  },
+  {
+    "symbol": "BA",
+    "name": "Boeing",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "BA"
+  },
+  {
+    "symbol": "BKNG",
+    "name": "Booking Holdings",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "BKNG"
+  },
+  {
+    "symbol": "BSX",
+    "name": "Boston Scientific",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "BSX"
+  },
+  {
+    "symbol": "BMY",
+    "name": "Bristol Myers Squibb",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "BMY"
+  },
+  {
+    "symbol": "AVGO",
+    "name": "Broadcom",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "AVGO"
+  },
+  {
+    "symbol": "BR",
+    "name": "Broadridge Financial Solutions",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "BR"
+  },
+  {
+    "symbol": "BRO",
+    "name": "Brown & Brown",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "BRO"
+  },
+  {
+    "symbol": "BF.B",
+    "name": "Brown\u2013Forman",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "BF-B"
+  },
+  {
+    "symbol": "BG",
+    "name": "Bunge Global",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "BG"
+  },
+  {
+    "symbol": "BXP",
+    "name": "BXP, Inc.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "BXP"
+  },
+  {
+    "symbol": "CHRW",
+    "name": "C.H. Robinson",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CHRW"
+  },
+  {
+    "symbol": "CDNS",
+    "name": "Cadence Design Systems",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CDNS"
+  },
+  {
+    "symbol": "CPT",
+    "name": "Camden Property Trust",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CPT"
+  },
+  {
+    "symbol": "COF",
+    "name": "Capital One",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "COF"
+  },
+  {
+    "symbol": "CAH",
+    "name": "Cardinal Health",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CAH"
+  },
+  {
+    "symbol": "CCL",
+    "name": "Carnival Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CCL"
+  },
+  {
+    "symbol": "CARR",
+    "name": "Carrier Global",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CARR"
+  },
+  {
+    "symbol": "CVNA",
+    "name": "Carvana",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CVNA"
+  },
+  {
+    "symbol": "CASY",
+    "name": "Casey's",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CASY"
+  },
+  {
+    "symbol": "CAT",
+    "name": "Caterpillar Inc.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CAT"
+  },
+  {
+    "symbol": "CBOE",
+    "name": "Cboe Global Markets",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CBOE"
+  },
+  {
+    "symbol": "CBRE",
+    "name": "CBRE Group",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CBRE"
+  },
+  {
+    "symbol": "CDW",
+    "name": "CDW Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CDW"
+  },
+  {
+    "symbol": "COR",
+    "name": "Cencora",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "COR"
+  },
+  {
+    "symbol": "CNC",
+    "name": "Centene Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CNC"
+  },
+  {
+    "symbol": "CNP",
+    "name": "CenterPoint Energy",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CNP"
+  },
+  {
+    "symbol": "CF",
+    "name": "CF Industries",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CF"
+  },
+  {
+    "symbol": "CRL",
+    "name": "Charles River Laboratories",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CRL"
+  },
+  {
+    "symbol": "SCHW",
+    "name": "Charles Schwab Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "SCHW"
+  },
+  {
+    "symbol": "CHTR",
+    "name": "Charter Communications",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CHTR"
+  },
+  {
+    "symbol": "CVX",
+    "name": "Chevron Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CVX"
+  },
+  {
+    "symbol": "CMG",
+    "name": "Chipotle Mexican Grill",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CMG"
+  },
+  {
+    "symbol": "CB",
+    "name": "Chubb Limited",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CB"
+  },
+  {
+    "symbol": "CHD",
+    "name": "Church & Dwight",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CHD"
+  },
+  {
+    "symbol": "CIEN",
+    "name": "Ciena",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CIEN"
+  },
+  {
+    "symbol": "CI",
+    "name": "Cigna",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CI"
+  },
+  {
+    "symbol": "CINF",
+    "name": "Cincinnati Financial",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CINF"
+  },
+  {
+    "symbol": "CTAS",
+    "name": "Cintas",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CTAS"
+  },
+  {
+    "symbol": "CSCO",
+    "name": "Cisco",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CSCO"
+  },
+  {
+    "symbol": "C",
+    "name": "Citigroup",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "C"
+  },
+  {
+    "symbol": "CFG",
+    "name": "Citizens Financial Group",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CFG"
+  },
+  {
+    "symbol": "CLX",
+    "name": "Clorox",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CLX"
+  },
+  {
+    "symbol": "CME",
+    "name": "CME Group",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CME"
+  },
+  {
+    "symbol": "CMS",
+    "name": "CMS Energy",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CMS"
+  },
+  {
+    "symbol": "KO",
+    "name": "Coca-Cola Company (The)",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "KO"
+  },
+  {
+    "symbol": "CTSH",
+    "name": "Cognizant",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CTSH"
+  },
+  {
+    "symbol": "COHR",
+    "name": "Coherent Corp.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "COHR"
+  },
+  {
+    "symbol": "COIN",
+    "name": "Coinbase",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "COIN"
+  },
+  {
+    "symbol": "CL",
+    "name": "Colgate-Palmolive",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CL"
+  },
+  {
+    "symbol": "CMCSA",
+    "name": "Comcast",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CMCSA"
+  },
+  {
+    "symbol": "FIX",
+    "name": "Comfort Systems USA",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "FIX"
+  },
+  {
+    "symbol": "COP",
+    "name": "ConocoPhillips",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "COP"
+  },
+  {
+    "symbol": "ED",
+    "name": "Consolidated Edison",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ED"
+  },
+  {
+    "symbol": "STZ",
+    "name": "Constellation Brands",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "STZ"
+  },
+  {
+    "symbol": "CEG",
+    "name": "Constellation Energy",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CEG"
+  },
+  {
+    "symbol": "COO",
+    "name": "Cooper Companies (The)",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "COO"
+  },
+  {
+    "symbol": "CPRT",
+    "name": "Copart",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CPRT"
+  },
+  {
+    "symbol": "GLW",
+    "name": "Corning Inc.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "GLW"
+  },
+  {
+    "symbol": "CPAY",
+    "name": "Corpay",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CPAY"
+  },
+  {
+    "symbol": "CSGP",
+    "name": "CoStar Group",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CSGP"
+  },
+  {
+    "symbol": "COST",
+    "name": "Costco",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "COST"
+  },
+  {
+    "symbol": "CRH",
+    "name": "CRH plc",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CRH"
+  },
+  {
+    "symbol": "CRWD",
+    "name": "CrowdStrike",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CRWD"
+  },
+  {
+    "symbol": "CCI",
+    "name": "Crown Castle",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CCI"
+  },
+  {
+    "symbol": "CSX",
+    "name": "CSX Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CSX"
+  },
+  {
+    "symbol": "CMI",
+    "name": "Cummins",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CMI"
+  },
+  {
+    "symbol": "CVS",
+    "name": "CVS Health",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CVS"
+  },
+  {
+    "symbol": "DHR",
+    "name": "Danaher Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "DHR"
+  },
+  {
+    "symbol": "DRI",
+    "name": "Darden Restaurants",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "DRI"
+  },
+  {
+    "symbol": "DDOG",
+    "name": "Datadog",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "DDOG"
+  },
+  {
+    "symbol": "DVA",
+    "name": "DaVita",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "DVA"
+  },
+  {
+    "symbol": "DECK",
+    "name": "Deckers Brands",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "DECK"
+  },
+  {
+    "symbol": "DE",
+    "name": "Deere & Company",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "DE"
+  },
+  {
+    "symbol": "DELL",
+    "name": "Dell Technologies",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "DELL"
+  },
+  {
+    "symbol": "DAL",
+    "name": "Delta Air Lines",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "DAL"
+  },
+  {
+    "symbol": "DVN",
+    "name": "Devon Energy",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "DVN"
+  },
+  {
+    "symbol": "DXCM",
+    "name": "Dexcom",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "DXCM"
+  },
+  {
+    "symbol": "FANG",
+    "name": "Diamondback Energy",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "FANG"
+  },
+  {
+    "symbol": "DLR",
+    "name": "Digital Realty",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "DLR"
+  },
+  {
+    "symbol": "DG",
+    "name": "Dollar General",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "DG"
+  },
+  {
+    "symbol": "DLTR",
+    "name": "Dollar Tree",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "DLTR"
+  },
+  {
+    "symbol": "D",
+    "name": "Dominion Energy",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "D"
+  },
+  {
+    "symbol": "DPZ",
+    "name": "Domino's",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "DPZ"
+  },
+  {
+    "symbol": "DASH",
+    "name": "DoorDash",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "DASH"
+  },
+  {
+    "symbol": "DOV",
+    "name": "Dover Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "DOV"
+  },
+  {
+    "symbol": "DOW",
+    "name": "Dow Inc.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "DOW"
+  },
+  {
+    "symbol": "DHI",
+    "name": "D. R. Horton",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "DHI"
+  },
+  {
+    "symbol": "DTE",
+    "name": "DTE Energy",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "DTE"
+  },
+  {
+    "symbol": "DUK",
+    "name": "Duke Energy",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "DUK"
+  },
+  {
+    "symbol": "DD",
+    "name": "DuPont",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "DD"
+  },
+  {
+    "symbol": "ETN",
+    "name": "Eaton Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ETN"
+  },
+  {
+    "symbol": "EBAY",
+    "name": "eBay Inc.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "EBAY"
+  },
+  {
+    "symbol": "ECHO",
+    "name": "EchoStar",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ECHO"
+  },
+  {
+    "symbol": "ECL",
+    "name": "Ecolab",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ECL"
+  },
+  {
+    "symbol": "EIX",
+    "name": "Edison International",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "EIX"
+  },
+  {
+    "symbol": "EW",
+    "name": "Edwards Lifesciences",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "EW"
+  },
+  {
+    "symbol": "ELV",
+    "name": "Elevance Health",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ELV"
+  },
+  {
+    "symbol": "EME",
+    "name": "Emcor",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "EME"
+  },
+  {
+    "symbol": "EMR",
+    "name": "Emerson Electric",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "EMR"
+  },
+  {
+    "symbol": "ETR",
+    "name": "Entergy",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ETR"
+  },
+  {
+    "symbol": "EOG",
+    "name": "EOG Resources",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "EOG"
+  },
+  {
+    "symbol": "EQT",
+    "name": "EQT Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "EQT"
+  },
+  {
+    "symbol": "EFX",
+    "name": "Equifax",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "EFX"
+  },
+  {
+    "symbol": "EQIX",
+    "name": "Equinix",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "EQIX"
+  },
+  {
+    "symbol": "ERIE",
+    "name": "Erie Indemnity",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ERIE"
+  },
+  {
+    "symbol": "ESS",
+    "name": "Essex Property Trust",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ESS"
+  },
+  {
+    "symbol": "EL",
+    "name": "Est\u00e9e Lauder Companies (The)",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "EL"
+  },
+  {
+    "symbol": "EG",
+    "name": "Everest Group",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "EG"
+  },
+  {
+    "symbol": "EVRG",
+    "name": "Evergy",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "EVRG"
+  },
+  {
+    "symbol": "P",
+    "name": "Everpure",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "P"
+  },
+  {
+    "symbol": "ES",
+    "name": "Eversource Energy",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ES"
+  },
+  {
+    "symbol": "EXC",
+    "name": "Exelon",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "EXC"
+  },
+  {
+    "symbol": "EXE",
+    "name": "Expand Energy",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "EXE"
+  },
+  {
+    "symbol": "EXPE",
+    "name": "Expedia Group",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "EXPE"
+  },
+  {
+    "symbol": "EXPD",
+    "name": "Expeditors International",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "EXPD"
+  },
+  {
+    "symbol": "EXR",
+    "name": "Extra Space Storage",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "EXR"
+  },
+  {
+    "symbol": "XOM",
+    "name": "ExxonMobil",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "XOM"
+  },
+  {
+    "symbol": "FFIV",
+    "name": "F5, Inc.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "FFIV"
+  },
+  {
+    "symbol": "FDS",
+    "name": "FactSet",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "FDS"
+  },
+  {
+    "symbol": "FICO",
+    "name": "Fair Isaac",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "FICO"
+  },
+  {
+    "symbol": "FAST",
+    "name": "Fastenal",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "FAST"
+  },
+  {
+    "symbol": "FRT",
+    "name": "Federal Realty Investment Trust",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "FRT"
+  },
+  {
+    "symbol": "FDX",
+    "name": "FedEx",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "FDX"
+  },
+  {
+    "symbol": "FDXF",
+    "name": "FedEx Freight",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "FDXF"
+  },
+  {
+    "symbol": "FERG",
+    "name": "Ferguson Enterprises",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "FERG"
+  },
+  {
+    "symbol": "FIS",
+    "name": "Fidelity National Information Services",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "FIS"
+  },
+  {
+    "symbol": "FITB",
+    "name": "Fifth Third Bancorp",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "FITB"
+  },
+  {
+    "symbol": "FSLR",
+    "name": "First Solar",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "FSLR"
+  },
+  {
+    "symbol": "FE",
+    "name": "FirstEnergy",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "FE"
+  },
+  {
+    "symbol": "FISV",
+    "name": "Fiserv",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "FISV"
+  },
+  {
+    "symbol": "FLEX",
+    "name": "Flex Ltd.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "FLEX"
+  },
+  {
+    "symbol": "F",
+    "name": "Ford Motor Company",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "F"
+  },
+  {
+    "symbol": "FTNT",
+    "name": "Fortinet",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "FTNT"
+  },
+  {
+    "symbol": "FTV",
+    "name": "Fortive",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "FTV"
+  },
+  {
+    "symbol": "FOXA",
+    "name": "Fox Corporation (Class A)",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "FOXA"
+  },
+  {
+    "symbol": "FOX",
+    "name": "Fox Corporation (Class B)",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "FOX"
+  },
+  {
+    "symbol": "BEN",
+    "name": "Franklin Resources",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "BEN"
+  },
+  {
+    "symbol": "FCX",
+    "name": "Freeport-McMoRan",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "FCX"
+  },
+  {
+    "symbol": "GRMN",
+    "name": "Garmin",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "GRMN"
+  },
+  {
+    "symbol": "IT",
+    "name": "Gartner",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "IT"
+  },
+  {
+    "symbol": "GE",
+    "name": "GE Aerospace",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "GE"
+  },
+  {
+    "symbol": "GEHC",
+    "name": "GE HealthCare",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "GEHC"
+  },
+  {
+    "symbol": "GEV",
+    "name": "GE Vernova",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "GEV"
+  },
+  {
+    "symbol": "GEN",
+    "name": "Gen Digital",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "GEN"
+  },
+  {
+    "symbol": "GNRC",
+    "name": "Generac",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "GNRC"
+  },
+  {
+    "symbol": "GD",
+    "name": "General Dynamics",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "GD"
+  },
+  {
+    "symbol": "GIS",
+    "name": "General Mills",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "GIS"
+  },
+  {
+    "symbol": "GM",
+    "name": "General Motors",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "GM"
+  },
+  {
+    "symbol": "GPC",
+    "name": "Genuine Parts Company",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "GPC"
+  },
+  {
+    "symbol": "GILD",
+    "name": "Gilead Sciences",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "GILD"
+  },
+  {
+    "symbol": "GPN",
+    "name": "Global Payments",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "GPN"
+  },
+  {
+    "symbol": "GL",
+    "name": "Globe Life",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "GL"
+  },
+  {
+    "symbol": "GDDY",
+    "name": "GoDaddy",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "GDDY"
+  },
+  {
+    "symbol": "GS",
+    "name": "Goldman Sachs",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "GS"
+  },
+  {
+    "symbol": "HAL",
+    "name": "Halliburton",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "HAL"
+  },
+  {
+    "symbol": "HIG",
+    "name": "Hartford (The)",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "HIG"
+  },
+  {
+    "symbol": "HAS",
+    "name": "Hasbro",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "HAS"
+  },
+  {
+    "symbol": "HCA",
+    "name": "HCA Healthcare",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "HCA"
+  },
+  {
+    "symbol": "DOC",
+    "name": "Healthpeak Properties",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "DOC"
+  },
+  {
+    "symbol": "HSIC",
+    "name": "Henry Schein",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "HSIC"
+  },
+  {
+    "symbol": "HSY",
+    "name": "Hershey Company (The)",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "HSY"
+  },
+  {
+    "symbol": "HPE",
+    "name": "Hewlett Packard Enterprise",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "HPE"
+  },
+  {
+    "symbol": "HLT",
+    "name": "Hilton Worldwide",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "HLT"
+  },
+  {
+    "symbol": "HD",
+    "name": "Home Depot (The)",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "HD"
+  },
+  {
+    "symbol": "HONA",
+    "name": "Honeywell Aerospace",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "HONA"
+  },
+  {
+    "symbol": "HON",
+    "name": "Honeywell Technologies",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "HON"
+  },
+  {
+    "symbol": "HRL",
+    "name": "Hormel Foods",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "HRL"
+  },
+  {
+    "symbol": "HST",
+    "name": "Host Hotels & Resorts",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "HST"
+  },
+  {
+    "symbol": "HWM",
+    "name": "Howmet Aerospace",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "HWM"
+  },
+  {
+    "symbol": "HPQ",
+    "name": "HP Inc.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "HPQ"
+  },
+  {
+    "symbol": "HUBB",
+    "name": "Hubbell Incorporated",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "HUBB"
+  },
+  {
+    "symbol": "HUM",
+    "name": "Humana",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "HUM"
+  },
+  {
+    "symbol": "HBAN",
+    "name": "Huntington Bancshares",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "HBAN"
+  },
+  {
+    "symbol": "HII",
+    "name": "Huntington Ingalls Industries",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "HII"
+  },
+  {
+    "symbol": "IBM",
+    "name": "IBM",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "IBM"
+  },
+  {
+    "symbol": "IEX",
+    "name": "IDEX Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "IEX"
+  },
+  {
+    "symbol": "IDXX",
+    "name": "Idexx Laboratories",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "IDXX"
+  },
+  {
+    "symbol": "ITW",
+    "name": "Illinois Tool Works",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ITW"
+  },
+  {
+    "symbol": "ILMN",
+    "name": "Illumina, Inc.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ILMN"
+  },
+  {
+    "symbol": "INCY",
+    "name": "Incyte",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "INCY"
+  },
+  {
+    "symbol": "IR",
+    "name": "Ingersoll Rand",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "IR"
+  },
+  {
+    "symbol": "PODD",
+    "name": "Insulet Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "PODD"
+  },
+  {
+    "symbol": "INTC",
+    "name": "Intel",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "INTC"
+  },
+  {
+    "symbol": "IBKR",
+    "name": "Interactive Brokers",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "IBKR"
+  },
+  {
+    "symbol": "ICE",
+    "name": "Intercontinental Exchange",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ICE"
+  },
+  {
+    "symbol": "IFF",
+    "name": "International Flavors & Fragrances",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "IFF"
+  },
+  {
+    "symbol": "IP",
+    "name": "International Paper",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "IP"
+  },
+  {
+    "symbol": "INTU",
+    "name": "Intuit",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "INTU"
+  },
+  {
+    "symbol": "ISRG",
+    "name": "Intuitive Surgical",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ISRG"
+  },
+  {
+    "symbol": "IVZ",
+    "name": "Invesco",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "IVZ"
+  },
+  {
+    "symbol": "INVH",
+    "name": "Invitation Homes",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "INVH"
+  },
+  {
+    "symbol": "IQV",
+    "name": "IQVIA",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "IQV"
+  },
+  {
+    "symbol": "IRM",
+    "name": "Iron Mountain",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "IRM"
+  },
+  {
+    "symbol": "JBHT",
+    "name": "J.B. Hunt",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "JBHT"
+  },
+  {
+    "symbol": "JBL",
+    "name": "Jabil",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "JBL"
+  },
+  {
+    "symbol": "JKHY",
+    "name": "Jack Henry & Associates",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "JKHY"
+  },
+  {
+    "symbol": "J",
+    "name": "Jacobs Solutions",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "J"
+  },
+  {
+    "symbol": "JNJ",
+    "name": "Johnson & Johnson",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "JNJ"
+  },
+  {
+    "symbol": "JCI",
+    "name": "Johnson Controls",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "JCI"
+  },
+  {
+    "symbol": "JPM",
+    "name": "JPMorgan Chase",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "JPM"
+  },
+  {
+    "symbol": "KVUE",
+    "name": "Kenvue",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "KVUE"
+  },
+  {
+    "symbol": "KDP",
+    "name": "Keurig Dr Pepper",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "KDP"
+  },
+  {
+    "symbol": "KEY",
+    "name": "KeyCorp",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "KEY"
+  },
+  {
+    "symbol": "KEYS",
+    "name": "Keysight Technologies",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "KEYS"
+  },
+  {
+    "symbol": "KMB",
+    "name": "Kimberly-Clark",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "KMB"
+  },
+  {
+    "symbol": "KIM",
+    "name": "Kimco Realty",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "KIM"
+  },
+  {
+    "symbol": "KMI",
+    "name": "Kinder Morgan",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "KMI"
+  },
+  {
+    "symbol": "KKR",
+    "name": "KKR & Co.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "KKR"
+  },
+  {
+    "symbol": "KLAC",
+    "name": "KLA Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "KLAC"
+  },
+  {
+    "symbol": "KHC",
+    "name": "Kraft Heinz",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "KHC"
+  },
+  {
+    "symbol": "KR",
+    "name": "Kroger",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "KR"
+  },
+  {
+    "symbol": "LHX",
+    "name": "L3Harris",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "LHX"
+  },
+  {
+    "symbol": "LH",
+    "name": "Labcorp",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "LH"
+  },
+  {
+    "symbol": "LRCX",
+    "name": "Lam Research",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "LRCX"
+  },
+  {
+    "symbol": "LVS",
+    "name": "Las Vegas Sands",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "LVS"
+  },
+  {
+    "symbol": "LDOS",
+    "name": "Leidos",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "LDOS"
+  },
+  {
+    "symbol": "LEN",
+    "name": "Lennar",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "LEN"
+  },
+  {
+    "symbol": "LII",
+    "name": "Lennox International",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "LII"
+  },
+  {
+    "symbol": "LLY",
+    "name": "Lilly (Eli)",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "LLY"
+  },
+  {
+    "symbol": "LIN",
+    "name": "Linde plc",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "LIN"
+  },
+  {
+    "symbol": "LYV",
+    "name": "Live Nation Entertainment",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "LYV"
+  },
+  {
+    "symbol": "LMT",
+    "name": "Lockheed Martin",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "LMT"
+  },
+  {
+    "symbol": "L",
+    "name": "Loews Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "L"
+  },
+  {
+    "symbol": "LOW",
+    "name": "Lowe's",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "LOW"
+  },
+  {
+    "symbol": "LULU",
+    "name": "Lululemon Athletica",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "LULU"
+  },
+  {
+    "symbol": "LITE",
+    "name": "Lumentum",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "LITE"
+  },
+  {
+    "symbol": "LYB",
+    "name": "LyondellBasell",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "LYB"
+  },
+  {
+    "symbol": "MTB",
+    "name": "M&T Bank",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MTB"
+  },
+  {
+    "symbol": "MPC",
+    "name": "Marathon Petroleum",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MPC"
+  },
+  {
+    "symbol": "MAR",
+    "name": "Marriott International",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MAR"
+  },
+  {
+    "symbol": "MRSH",
+    "name": "Marsh McLennan",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MRSH"
+  },
+  {
+    "symbol": "MLM",
+    "name": "Martin Marietta Materials",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MLM"
+  },
+  {
+    "symbol": "MRVL",
+    "name": "Marvell Technology",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MRVL"
+  },
+  {
+    "symbol": "MAS",
+    "name": "Masco",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MAS"
+  },
+  {
+    "symbol": "MA",
+    "name": "Mastercard",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MA"
+  },
+  {
+    "symbol": "MKC",
+    "name": "McCormick & Company",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MKC"
+  },
+  {
+    "symbol": "MCD",
+    "name": "McDonald's",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MCD"
+  },
+  {
+    "symbol": "MCK",
+    "name": "McKesson",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MCK"
+  },
+  {
+    "symbol": "MDT",
+    "name": "Medtronic",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MDT"
+  },
+  {
+    "symbol": "MRK",
+    "name": "Merck & Co.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MRK"
+  },
+  {
+    "symbol": "META",
+    "name": "Meta Platforms",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "META"
+  },
+  {
+    "symbol": "MET",
+    "name": "MetLife",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MET"
+  },
+  {
+    "symbol": "MTD",
+    "name": "Mettler Toledo",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MTD"
+  },
+  {
+    "symbol": "MGM",
+    "name": "MGM Resorts",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MGM"
+  },
+  {
+    "symbol": "MCHP",
+    "name": "Microchip Technology",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MCHP"
+  },
+  {
+    "symbol": "MU",
+    "name": "Micron Technology",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MU"
+  },
+  {
+    "symbol": "MSFT",
+    "name": "Microsoft",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MSFT"
+  },
+  {
+    "symbol": "MAA",
+    "name": "Mid-America Apartment Communities",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MAA"
+  },
+  {
+    "symbol": "MRNA",
+    "name": "Moderna",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MRNA"
+  },
+  {
+    "symbol": "MDLZ",
+    "name": "Mondelez International",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MDLZ"
+  },
+  {
+    "symbol": "MPWR",
+    "name": "Monolithic Power Systems",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MPWR"
+  },
+  {
+    "symbol": "MNST",
+    "name": "Monster Beverage",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MNST"
+  },
+  {
+    "symbol": "MCO",
+    "name": "Moody's Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MCO"
+  },
+  {
+    "symbol": "MS",
+    "name": "Morgan Stanley",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MS"
+  },
+  {
+    "symbol": "MOS",
+    "name": "Mosaic Company (The)",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MOS"
+  },
+  {
+    "symbol": "MSI",
+    "name": "Motorola Solutions",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MSI"
+  },
+  {
+    "symbol": "MSCI",
+    "name": "MSCI",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "MSCI"
+  },
+  {
+    "symbol": "NDAQ",
+    "name": "Nasdaq, Inc.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "NDAQ"
+  },
+  {
+    "symbol": "NTAP",
+    "name": "NetApp",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "NTAP"
+  },
+  {
+    "symbol": "NFLX",
+    "name": "Netflix",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "NFLX"
+  },
+  {
+    "symbol": "NEM",
+    "name": "Newmont",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "NEM"
+  },
+  {
+    "symbol": "NWSA",
+    "name": "News Corp (Class A)",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "NWSA"
+  },
+  {
+    "symbol": "NWS",
+    "name": "News Corp (Class B)",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "NWS"
+  },
+  {
+    "symbol": "NEE",
+    "name": "NextEra Energy",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "NEE"
+  },
+  {
+    "symbol": "NKE",
+    "name": "Nike, Inc.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "NKE"
+  },
+  {
+    "symbol": "NI",
+    "name": "NiSource",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "NI"
+  },
+  {
+    "symbol": "NDSN",
+    "name": "Nordson Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "NDSN"
+  },
+  {
+    "symbol": "NSC",
+    "name": "Norfolk Southern",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "NSC"
+  },
+  {
+    "symbol": "NTRS",
+    "name": "Northern Trust",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "NTRS"
+  },
+  {
+    "symbol": "NOC",
+    "name": "Northrop Grumman",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "NOC"
+  },
+  {
+    "symbol": "NCLH",
+    "name": "Norwegian Cruise Line Holdings",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "NCLH"
+  },
+  {
+    "symbol": "NRG",
+    "name": "NRG Energy",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "NRG"
+  },
+  {
+    "symbol": "NUE",
+    "name": "Nucor",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "NUE"
+  },
+  {
+    "symbol": "NVDA",
+    "name": "Nvidia",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "NVDA"
+  },
+  {
+    "symbol": "NVR",
+    "name": "NVR, Inc.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "NVR"
+  },
+  {
+    "symbol": "NXPI",
+    "name": "NXP Semiconductors",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "NXPI"
+  },
+  {
+    "symbol": "ORLY",
+    "name": "O'Reilly Automotive",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ORLY"
+  },
+  {
+    "symbol": "OXY",
+    "name": "Occidental Petroleum",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "OXY"
+  },
+  {
+    "symbol": "ODFL",
+    "name": "Old Dominion",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ODFL"
+  },
+  {
+    "symbol": "OMC",
+    "name": "Omnicom Group",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "OMC"
+  },
+  {
+    "symbol": "ON",
+    "name": "ON Semiconductor",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ON"
+  },
+  {
+    "symbol": "OKE",
+    "name": "Oneok",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "OKE"
+  },
+  {
+    "symbol": "ORCL",
+    "name": "Oracle Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ORCL"
+  },
+  {
+    "symbol": "OTIS",
+    "name": "Otis Worldwide",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "OTIS"
+  },
+  {
+    "symbol": "PCAR",
+    "name": "Paccar",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "PCAR"
+  },
+  {
+    "symbol": "PKG",
+    "name": "Packaging Corporation of America",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "PKG"
+  },
+  {
+    "symbol": "PLTR",
+    "name": "Palantir Technologies",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "PLTR"
+  },
+  {
+    "symbol": "PANW",
+    "name": "Palo Alto Networks",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "PANW"
+  },
+  {
+    "symbol": "PH",
+    "name": "Parker Hannifin",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "PH"
+  },
+  {
+    "symbol": "PAYX",
+    "name": "Paychex",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "PAYX"
+  },
+  {
+    "symbol": "PYPL",
+    "name": "PayPal",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "PYPL"
+  },
+  {
+    "symbol": "PNR",
+    "name": "Pentair",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "PNR"
+  },
+  {
+    "symbol": "PEP",
+    "name": "PepsiCo",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "PEP"
+  },
+  {
+    "symbol": "PFE",
+    "name": "Pfizer",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "PFE"
+  },
+  {
+    "symbol": "PCG",
+    "name": "PG&E Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "PCG"
+  },
+  {
+    "symbol": "PM",
+    "name": "Philip Morris International",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "PM"
+  },
+  {
+    "symbol": "PSX",
+    "name": "Phillips 66",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "PSX"
+  },
+  {
+    "symbol": "PNW",
+    "name": "Pinnacle West Capital",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "PNW"
+  },
+  {
+    "symbol": "PNC",
+    "name": "PNC Financial Services",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "PNC"
+  },
+  {
+    "symbol": "PPG",
+    "name": "PPG Industries",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "PPG"
+  },
+  {
+    "symbol": "PPL",
+    "name": "PPL Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "PPL"
+  },
+  {
+    "symbol": "PFG",
+    "name": "Principal Financial Group",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "PFG"
+  },
+  {
+    "symbol": "PG",
+    "name": "Procter & Gamble",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "PG"
+  },
+  {
+    "symbol": "PGR",
+    "name": "Progressive Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "PGR"
+  },
+  {
+    "symbol": "PLD",
+    "name": "Prologis",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "PLD"
+  },
+  {
+    "symbol": "PRU",
+    "name": "Prudential Financial",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "PRU"
+  },
+  {
+    "symbol": "PTC",
+    "name": "PTC Inc.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "PTC"
+  },
+  {
+    "symbol": "PEG",
+    "name": "Public Service Enterprise Group",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "PEG"
+  },
+  {
+    "symbol": "PSA",
+    "name": "Public Storage",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "PSA"
+  },
+  {
+    "symbol": "PHM",
+    "name": "PulteGroup",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "PHM"
+  },
+  {
+    "symbol": "Q",
+    "name": "Qnity Electronics",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "Q"
+  },
+  {
+    "symbol": "QCOM",
+    "name": "Qualcomm",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "QCOM"
+  },
+  {
+    "symbol": "PWR",
+    "name": "Quanta Services",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "PWR"
+  },
+  {
+    "symbol": "DGX",
+    "name": "Quest Diagnostics",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "DGX"
+  },
+  {
+    "symbol": "RL",
+    "name": "Ralph Lauren Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "RL"
+  },
+  {
+    "symbol": "RJF",
+    "name": "Raymond James Financial",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "RJF"
+  },
+  {
+    "symbol": "RDDT",
+    "name": "Reddit",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "RDDT"
+  },
+  {
+    "symbol": "O",
+    "name": "Realty Income",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "O"
+  },
+  {
+    "symbol": "REG",
+    "name": "Regency Centers",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "REG"
+  },
+  {
+    "symbol": "REGN",
+    "name": "Regeneron Pharmaceuticals",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "REGN"
+  },
+  {
+    "symbol": "RF",
+    "name": "Regions Financial Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "RF"
+  },
+  {
+    "symbol": "RSG",
+    "name": "Republic Services",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "RSG"
+  },
+  {
+    "symbol": "RMD",
+    "name": "ResMed",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "RMD"
+  },
+  {
+    "symbol": "RVTY",
+    "name": "Revvity",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "RVTY"
+  },
+  {
+    "symbol": "HOOD",
+    "name": "Robinhood Markets",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "HOOD"
+  },
+  {
+    "symbol": "ROK",
+    "name": "Rockwell Automation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ROK"
+  },
+  {
+    "symbol": "ROL",
+    "name": "Rollins, Inc.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ROL"
+  },
+  {
+    "symbol": "ROP",
+    "name": "Roper Technologies",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ROP"
+  },
+  {
+    "symbol": "ROST",
+    "name": "Ross Stores",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ROST"
+  },
+  {
+    "symbol": "RCL",
+    "name": "Royal Caribbean Group",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "RCL"
+  },
+  {
+    "symbol": "RTX",
+    "name": "RTX Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "RTX"
+  },
+  {
+    "symbol": "SPGI",
+    "name": "S&P Global",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "SPGI"
+  },
+  {
+    "symbol": "CRM",
+    "name": "Salesforce",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "CRM"
+  },
+  {
+    "symbol": "SNDK",
+    "name": "Sandisk",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "SNDK"
+  },
+  {
+    "symbol": "SBAC",
+    "name": "SBA Communications",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "SBAC"
+  },
+  {
+    "symbol": "SLB",
+    "name": "Schlumberger",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "SLB"
+  },
+  {
+    "symbol": "STX",
+    "name": "Seagate Technology",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "STX"
+  },
+  {
+    "symbol": "SRE",
+    "name": "Sempra",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "SRE"
+  },
+  {
+    "symbol": "NOW",
+    "name": "ServiceNow",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "NOW"
+  },
+  {
+    "symbol": "SHW",
+    "name": "Sherwin-Williams",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "SHW"
+  },
+  {
+    "symbol": "SPG",
+    "name": "Simon Property Group",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "SPG"
+  },
+  {
+    "symbol": "SKYD",
+    "name": "Skydance",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "SKYD"
+  },
+  {
+    "symbol": "SWKS",
+    "name": "Skyworks Solutions",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "SWKS"
+  },
+  {
+    "symbol": "SJM",
+    "name": "J.M. Smucker Company (The)",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "SJM"
+  },
+  {
+    "symbol": "SW",
+    "name": "Smurfit Westrock",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "SW"
+  },
+  {
+    "symbol": "SNA",
+    "name": "Snap-on",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "SNA"
+  },
+  {
+    "symbol": "SOLV",
+    "name": "Solventum",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "SOLV"
+  },
+  {
+    "symbol": "SO",
+    "name": "Southern Company",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "SO"
+  },
+  {
+    "symbol": "LUV",
+    "name": "Southwest Airlines",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "LUV"
+  },
+  {
+    "symbol": "SWK",
+    "name": "Stanley Black & Decker",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "SWK"
+  },
+  {
+    "symbol": "SBUX",
+    "name": "Starbucks",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "SBUX"
+  },
+  {
+    "symbol": "STT",
+    "name": "State Street Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "STT"
+  },
+  {
+    "symbol": "STLD",
+    "name": "Steel Dynamics",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "STLD"
+  },
+  {
+    "symbol": "STE",
+    "name": "Steris",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "STE"
+  },
+  {
+    "symbol": "SYK",
+    "name": "Stryker Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "SYK"
+  },
+  {
+    "symbol": "SMCI",
+    "name": "Supermicro",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "SMCI"
+  },
+  {
+    "symbol": "SYF",
+    "name": "Synchrony Financial",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "SYF"
+  },
+  {
+    "symbol": "SNPS",
+    "name": "Synopsys",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "SNPS"
+  },
+  {
+    "symbol": "SYY",
+    "name": "Sysco",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "SYY"
+  },
+  {
+    "symbol": "TMUS",
+    "name": "T-Mobile US",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "TMUS"
+  },
+  {
+    "symbol": "TROW",
+    "name": "T. Rowe Price",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "TROW"
+  },
+  {
+    "symbol": "TTWO",
+    "name": "Take-Two Interactive",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "TTWO"
+  },
+  {
+    "symbol": "TPR",
+    "name": "Tapestry, Inc.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "TPR"
+  },
+  {
+    "symbol": "TRGP",
+    "name": "Targa Resources",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "TRGP"
+  },
+  {
+    "symbol": "TGT",
+    "name": "Target Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "TGT"
+  },
+  {
+    "symbol": "TEL",
+    "name": "TE Connectivity",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "TEL"
+  },
+  {
+    "symbol": "TDY",
+    "name": "Teledyne Technologies",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "TDY"
+  },
+  {
+    "symbol": "TER",
+    "name": "Teradyne",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "TER"
+  },
+  {
+    "symbol": "TSLA",
+    "name": "Tesla, Inc.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "TSLA"
+  },
+  {
+    "symbol": "TXN",
+    "name": "Texas Instruments",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "TXN"
+  },
+  {
+    "symbol": "TPL",
+    "name": "Texas Pacific Land Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "TPL"
+  },
+  {
+    "symbol": "TXT",
+    "name": "Textron",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "TXT"
+  },
+  {
+    "symbol": "TMO",
+    "name": "Thermo Fisher Scientific",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "TMO"
+  },
+  {
+    "symbol": "TJX",
+    "name": "TJX Companies",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "TJX"
+  },
+  {
+    "symbol": "TKO",
+    "name": "TKO Group Holdings",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "TKO"
+  },
+  {
+    "symbol": "TSCO",
+    "name": "Tractor Supply",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "TSCO"
+  },
+  {
+    "symbol": "TT",
+    "name": "Trane Technologies",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "TT"
+  },
+  {
+    "symbol": "TDG",
+    "name": "TransDigm Group",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "TDG"
+  },
+  {
+    "symbol": "TRV",
+    "name": "Travelers Companies (The)",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "TRV"
+  },
+  {
+    "symbol": "TRMB",
+    "name": "Trimble Inc.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "TRMB"
+  },
+  {
+    "symbol": "TFC",
+    "name": "Truist Financial",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "TFC"
+  },
+  {
+    "symbol": "TWLO",
+    "name": "Twilio",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "TWLO"
+  },
+  {
+    "symbol": "TYL",
+    "name": "Tyler Technologies",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "TYL"
+  },
+  {
+    "symbol": "TSN",
+    "name": "Tyson Foods",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "TSN"
+  },
+  {
+    "symbol": "USB",
+    "name": "U.S. Bancorp",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "USB"
+  },
+  {
+    "symbol": "UBER",
+    "name": "Uber",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "UBER"
+  },
+  {
+    "symbol": "UDR",
+    "name": "UDR, Inc.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "UDR"
+  },
+  {
+    "symbol": "ULTA",
+    "name": "Ulta Beauty",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ULTA"
+  },
+  {
+    "symbol": "UNP",
+    "name": "Union Pacific Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "UNP"
+  },
+  {
+    "symbol": "UAL",
+    "name": "United Airlines Holdings",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "UAL"
+  },
+  {
+    "symbol": "UPS",
+    "name": "United Parcel Service",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "UPS"
+  },
+  {
+    "symbol": "URI",
+    "name": "United Rentals",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "URI"
+  },
+  {
+    "symbol": "UNH",
+    "name": "UnitedHealth Group",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "UNH"
+  },
+  {
+    "symbol": "UHS",
+    "name": "Universal Health Services",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "UHS"
+  },
+  {
+    "symbol": "VLO",
+    "name": "Valero Energy",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "VLO"
+  },
+  {
+    "symbol": "VEEV",
+    "name": "Veeva Systems",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "VEEV"
+  },
+  {
+    "symbol": "VTR",
+    "name": "Ventas",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "VTR"
+  },
+  {
+    "symbol": "VLTO",
+    "name": "Veralto",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "VLTO"
+  },
+  {
+    "symbol": "VRSN",
+    "name": "Verisign",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "VRSN"
+  },
+  {
+    "symbol": "VRSK",
+    "name": "Verisk Analytics",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "VRSK"
+  },
+  {
+    "symbol": "VZ",
+    "name": "Verizon",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "VZ"
+  },
+  {
+    "symbol": "VRTX",
+    "name": "Vertex Pharmaceuticals",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "VRTX"
+  },
+  {
+    "symbol": "VRT",
+    "name": "Vertiv",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "VRT"
+  },
+  {
+    "symbol": "VTRS",
+    "name": "Viatris",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "VTRS"
+  },
+  {
+    "symbol": "VICI",
+    "name": "Vici Properties",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "VICI"
+  },
+  {
+    "symbol": "V",
+    "name": "Visa Inc.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "V"
+  },
+  {
+    "symbol": "VST",
+    "name": "Vistra Corp.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "VST"
+  },
+  {
+    "symbol": "VMRK",
+    "name": "Vivmark Residential",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "VMRK"
+  },
+  {
+    "symbol": "VMC",
+    "name": "Vulcan Materials Company",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "VMC"
+  },
+  {
+    "symbol": "VYLR",
+    "name": "Vylor",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "VYLR"
+  },
+  {
+    "symbol": "WRB",
+    "name": "W. R. Berkley Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "WRB"
+  },
+  {
+    "symbol": "GWW",
+    "name": "W. W. Grainger",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "GWW"
+  },
+  {
+    "symbol": "WAB",
+    "name": "Wabtec",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "WAB"
+  },
+  {
+    "symbol": "WMT",
+    "name": "Walmart",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "WMT"
+  },
+  {
+    "symbol": "DIS",
+    "name": "Walt Disney Company (The)",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "DIS"
+  },
+  {
+    "symbol": "WM",
+    "name": "Waste Management",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "WM"
+  },
+  {
+    "symbol": "WAT",
+    "name": "Waters Corporation",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "WAT"
+  },
+  {
+    "symbol": "WEC",
+    "name": "WEC Energy Group",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "WEC"
+  },
+  {
+    "symbol": "WFC",
+    "name": "Wells Fargo",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "WFC"
+  },
+  {
+    "symbol": "WELL",
+    "name": "Welltower",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "WELL"
+  },
+  {
+    "symbol": "WST",
+    "name": "West Pharmaceutical Services",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "WST"
+  },
+  {
+    "symbol": "WDC",
+    "name": "Western Digital",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "WDC"
+  },
+  {
+    "symbol": "WY",
+    "name": "Weyerhaeuser",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "WY"
+  },
+  {
+    "symbol": "WSM",
+    "name": "Williams-Sonoma, Inc.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "WSM"
+  },
+  {
+    "symbol": "WMB",
+    "name": "Williams Companies",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "WMB"
+  },
+  {
+    "symbol": "WTW",
+    "name": "Willis Towers Watson",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "WTW"
+  },
+  {
+    "symbol": "WDAY",
+    "name": "Workday, Inc.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "WDAY"
+  },
+  {
+    "symbol": "WYNN",
+    "name": "Wynn Resorts",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "WYNN"
+  },
+  {
+    "symbol": "XEL",
+    "name": "Xcel Energy",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "XEL"
+  },
+  {
+    "symbol": "XYL",
+    "name": "Xylem Inc.",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "XYL"
+  },
+  {
+    "symbol": "YUM",
+    "name": "Yum! Brands",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "YUM"
+  },
+  {
+    "symbol": "ZBRA",
+    "name": "Zebra Technologies",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ZBRA"
+  },
+  {
+    "symbol": "ZBH",
+    "name": "Zimmer Biomet",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ZBH"
+  },
+  {
+    "symbol": "ZTS",
+    "name": "Zoetis",
+    "assetClass": "STOCK",
+    "currency": "USD",
+    "country": "United States",
+    "exchange": "",
+    "providerSymbol": "ZTS"
+  }
+]

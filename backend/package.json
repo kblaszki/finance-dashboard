@@ -11,7 +11,9 @@
     "db:backup": "node dist/scripts/backupDb.js",
     "fx:sync": "node dist/scripts/syncFxRates.js",
     "market:sync-catalog": "node dist/scripts/syncMarketCatalog.js",
+    "market:seed-universe": "node dist/scripts/seedMarketUniverse.js",
     "market:sync-quotes": "node dist/scripts/syncMarketQuotes.js",
+    "market:sync-history": "node dist/scripts/syncMarketHistory.js",
     "create-user": "node dist/scripts/createUser.js",
     "test": "tsx --import ./test/setupTestEnv.ts --test --test-concurrency=1 \"src/**/*.test.ts\" \"test/**/*.test.ts\"",
     "test:coverage": "c8 tsx --import ./test/setupTestEnv.ts --test --test-concurrency=1 \"src/**/*.test.ts\" \"test/**/*.test.ts\""
