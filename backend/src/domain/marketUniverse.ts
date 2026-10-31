@@ -72,8 +72,12 @@ export function loadUniverseSeedRows(
         warnings.push(`${file}: skip ${symbol} bad assetClass=${assetClass}`);
         continue;
       }
-      rows.push({
-        ...row,
+      const stooqSymbol = row.stooqSymbol
+        ? String(row.stooqSymbol).trim().toLowerCase()
+        : undefined;
+      const historySource =
+        row.historySource !== undefined ? row.historySource : undefined;
+      const seeded: UniverseSeedRow = {
         symbol,
         name: String(row.name ?? symbol).trim() || symbol,
         assetClass,
@@ -83,11 +87,10 @@ export function loadUniverseSeedRows(
         exchange: String(row.exchange ?? "").trim(),
         country: row.country == null ? null : String(row.country).trim(),
         currency: String(row.currency ?? "USD").trim().toUpperCase() || "USD",
-        stooqSymbol: row.stooqSymbol
-          ? String(row.stooqSymbol).trim().toLowerCase()
-          : undefined,
-        historySource: row.historySource,
-      });
+      };
+      if (stooqSymbol !== undefined) seeded.stooqSymbol = stooqSymbol;
+      if (historySource !== undefined) seeded.historySource = historySource;
+      rows.push(seeded);
     }
   }
   return { rows, files, warnings };

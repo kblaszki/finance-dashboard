@@ -126,7 +126,7 @@ export async function syncAllowlistHistory(
         bars = await fetchTwelveDataTimeSeries(instrument.providerSymbol, {
           outputsize,
           fetchImpl,
-          apiKey: options.apiKey,
+          ...(options.apiKey !== undefined ? { apiKey: options.apiKey } : {}),
         });
       }
 
