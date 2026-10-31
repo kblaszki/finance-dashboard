@@ -44,6 +44,23 @@ export function instrumentPayload(row: InstrumentRow) {
   };
 }
 
+const GPW_EXCHANGES = new Set(["GPW", "WSE"]);
+
+/** True when quotes should use Oanor GPW (not Twelve Data). */
+export function isGpwListed(instrument: {
+  exchange?: string | null;
+  country?: string | null;
+}): boolean {
+  const exchange = String(instrument.exchange ?? "")
+    .trim()
+    .toUpperCase();
+  if (GPW_EXCHANGES.has(exchange)) return true;
+  const country = String(instrument.country ?? "")
+    .trim()
+    .toLowerCase();
+  return country === "poland";
+}
+
 export function assertAssetClass(value: unknown): InstrumentAssetClass {
   const code = String(value ?? "")
     .trim()

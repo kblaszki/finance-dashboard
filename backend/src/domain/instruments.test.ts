@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   assertAssetClass,
+  isGpwListed,
   parseSearchLimit,
   parseSearchQuery,
   providerSymbolForCatalog,
@@ -33,6 +34,20 @@ test("providerSymbolForCatalog uppercases symbol", () => {
       currency: "USD",
     }),
     "AAPL",
+  );
+});
+
+test("isGpwListed matches GPW/WSE exchange or Poland country", () => {
+  assert.equal(isGpwListed({ exchange: "GPW", country: null }), true);
+  assert.equal(isGpwListed({ exchange: "wse", country: null }), true);
+  assert.equal(isGpwListed({ exchange: "NASDAQ", country: "Poland" }), true);
+  assert.equal(
+    isGpwListed({ exchange: "LSE", country: "United Kingdom" }),
+    false,
+  );
+  assert.equal(
+    isGpwListed({ exchange: "NASDAQ", country: "United States" }),
+    false,
   );
 });
 

@@ -2,6 +2,7 @@ import { Prisma, type PrismaClient } from "@prisma/client";
 import { formatYmdUtc, utcDateFromYmd } from "./fx";
 
 export const VALUATION_SOURCE_TWELVE_DATA = "twelve_data";
+export const VALUATION_SOURCE_OANOR_GPW = "oanor_gpw";
 
 type Db = PrismaClient | Prisma.TransactionClient;
 
@@ -30,13 +31,20 @@ export function isValuationFresh(
   return ymd === today || ymd === yesterday;
 }
 
+/**
+ * Latest valuation for an instrument. When `source` is omitted, returns the
+ * newest row across providers (Twelve Data, Oanor GPW, …).
+ */
 export async function getLatestValuation(
   db: Db,
   instrumentId: number,
-  source: string = VALUATION_SOURCE_TWELVE_DATA,
+  source?: string,
 ): Promise<InstrumentValuationRow | null> {
   return db.instrumentValuation.findFirst({
-    where: { instrumentId, source },
+    where: {
+      instrumentId,
+      ...(source != null ? { source } : {}),
+    },
     orderBy: { asOfDate: "desc" },
   });
 }

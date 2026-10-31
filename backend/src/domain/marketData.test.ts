@@ -8,6 +8,7 @@ import {
 } from "../../test/prismaTestClient";
 import { syncInstrumentCatalog, ensureInstrumentQuote } from "./marketData";
 import { INSTRUMENT_PROVIDER_TWELVE_DATA } from "./instruments";
+import { VALUATION_SOURCE_OANOR_GPW } from "./instrumentValuations";
 
 let prisma: PrismaClient;
 
@@ -103,4 +104,89 @@ test("ensureInstrumentQuote fetches and stores close when missing", async () => 
   );
   assert.equal(second.fetched, false);
   assert.equal(second.close, 420.5);
+});
+
+test("ensureInstrumentQuote uses Oanor for GPW instruments", async () => {
+  await resetDatabase(prisma);
+  const instrument = await prisma.instrument.create({
+    data: {
+      symbol: "ETFBW20TR",
+      name: "Beta ETF WIG20TR",
+      exchange: "GPW",
+      country: "Poland",
+      currency: "PLN",
+      assetClass: "ETF",
+      provider: INSTRUMENT_PROVIDER_TWELVE_DATA,
+      providerSymbol: "ETFBW20TR",
+    },
+  });
+
+  const fetchImpl = async (url: string) => {
+    assert.match(url, /gpw-api\/v1\/quote/);
+    return new Response(
+      JSON.stringify({
+        success: true,
+        status: "ok",
+        data: {
+          quotes: [
+            { ticker: "ETFBW20TR", price: 53.45, currency: "PLN" },
+          ],
+        },
+        meta: { timestamp: "2026-10-30T14:00:00.000Z" },
+      }),
+      { status: 200 },
+    );
+  };
+
+  const result = await ensureInstrumentQuote(
+    prisma,
+    instrument.id,
+    fetchImpl,
+    new Date(Date.UTC(2026, 9, 30)),
+    undefined,
+    "oanor-test-key",
+  );
+  assert.equal(result.fetched, true);
+  assert.equal(result.close, 53.45);
+  assert.equal(result.asOfYmd, "2026-10-30");
+
+  const valuation = await prisma.instrumentValuation.findFirst({
+    where: { instrumentId: instrument.id },
+  });
+  assert.ok(valuation);
+  assert.equal(valuation!.source, VALUATION_SOURCE_OANOR_GPW);
+});
+
+test("getLatestValuation returns newest across sources", async () => {
+  await resetDatabase(prisma);
+  const instrument = await prisma.instrument.create({
+    data: {
+      symbol: "X",
+      name: "X",
+      exchange: "GPW",
+      currency: "PLN",
+      assetClass: "STOCK",
+      provider: INSTRUMENT_PROVIDER_TWELVE_DATA,
+      providerSymbol: "X",
+    },
+  });
+  const { upsertInstrumentClose, getLatestValuation } = await import(
+    "./instrumentValuations"
+  );
+  await upsertInstrumentClose(prisma, {
+    instrumentId: instrument.id,
+    asOfYmd: "2026-10-28",
+    close: 10,
+    source: "twelve_data",
+  });
+  await upsertInstrumentClose(prisma, {
+    instrumentId: instrument.id,
+    asOfYmd: "2026-10-30",
+    close: 12,
+    source: VALUATION_SOURCE_OANOR_GPW,
+  });
+  const latest = await getLatestValuation(prisma, instrument.id);
+  assert.ok(latest);
+  assert.equal(Number(latest!.close), 12);
+  assert.equal(latest!.source, VALUATION_SOURCE_OANOR_GPW);
 });
