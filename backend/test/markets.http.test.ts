@@ -42,17 +42,22 @@ async function seedInstrument(input?: {
   symbol?: string;
   name?: string;
   assetClass?: string;
+  allowlisted?: boolean;
+  exchange?: string;
+  country?: string;
 }): Promise<number> {
   const symbol = input?.symbol ?? "AAPL";
   const row = await prisma.instrument.create({
     data: {
       symbol,
       name: input?.name ?? "Apple Inc",
-      exchange: "NASDAQ",
+      exchange: input?.exchange ?? "NASDAQ",
+      country: input?.country ?? null,
       currency: "USD",
       assetClass: input?.assetClass ?? "STOCK",
       provider: INSTRUMENT_PROVIDER_TWELVE_DATA,
       providerSymbol: symbol,
+      allowlisted: input?.allowlisted ?? true,
     },
   });
   return row.id;
@@ -73,18 +78,23 @@ test("GET /api/instruments requires auth and q", async () => {
   assert.equal(missingQ.status, 400);
 });
 
-test("GET /api/instruments searches local catalog", async () => {
+test("GET /api/instruments searches allowlist by default; catalog sees all", async () => {
   const token = await registerAndLogin(
     "instsearch@test.local",
     "instsearch",
     "password123",
   );
-  await seedInstrument({ symbol: "AAPL", name: "Apple Inc" });
-  await seedInstrument({ symbol: "MSFT", name: "Microsoft" });
+  await seedInstrument({ symbol: "AAPL", name: "Apple Inc", allowlisted: true });
+  await seedInstrument({
+    symbol: "MSFT",
+    name: "Microsoft",
+    allowlisted: false,
+  });
   await seedInstrument({
     symbol: "VOO",
     name: "Vanguard S&P 500",
     assetClass: "ETF",
+    allowlisted: true,
   });
 
   const res = await request(app)
@@ -94,12 +104,61 @@ test("GET /api/instruments searches local catalog", async () => {
   assert.equal(res.body.length, 1);
   assert.equal(res.body[0].symbol, "AAPL");
 
+  const hidden = await request(app)
+    .get("/api/instruments?q=msf")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(hidden.status, 200);
+  assert.equal(hidden.body.length, 0);
+
+  const catalog = await request(app)
+    .get("/api/instruments?q=msf&scope=catalog")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(catalog.status, 200);
+  assert.equal(catalog.body.length, 1);
+  assert.equal(catalog.body[0].symbol, "MSFT");
+
   const etfs = await request(app)
     .get("/api/instruments?q=voo&assetClass=ETF")
     .set("Authorization", `Bearer ${token}`);
   assert.equal(etfs.status, 200);
   assert.equal(etfs.body.length, 1);
   assert.equal(etfs.body[0].assetClass, "ETF");
+});
+
+test("POST /api/instruments/allowlist adds to global search", async () => {
+  const prevKey = process.env.TWELVE_DATA_API_KEY;
+  delete process.env.TWELVE_DATA_API_KEY;
+  try {
+    const token = await registerAndLogin(
+      "allow@test.local",
+      "allowuser",
+      "password123",
+    );
+    const id = await seedInstrument({
+      symbol: "TSLA",
+      name: "Tesla",
+      allowlisted: false,
+    });
+    const before = await request(app)
+      .get("/api/instruments?q=tsl")
+      .set("Authorization", `Bearer ${token}`);
+    assert.equal(before.body.length, 0);
+
+    const added = await request(app)
+      .post("/api/instruments/allowlist")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ instrumentId: id });
+    assert.equal(added.status, 200);
+    assert.equal(added.body.allowlisted, true);
+
+    const after = await request(app)
+      .get("/api/instruments?q=tsl")
+      .set("Authorization", `Bearer ${token}`);
+    assert.equal(after.body.length, 1);
+  } finally {
+    if (prevKey !== undefined) process.env.TWELVE_DATA_API_KEY = prevKey;
+    else delete process.env.TWELVE_DATA_API_KEY;
+  }
 });
 
 test("watchlist add/list/remove with tenancy and missing price", async () => {

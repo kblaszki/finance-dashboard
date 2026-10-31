@@ -3,6 +3,7 @@ import { formatYmdUtc, utcDateFromYmd } from "./fx";
 
 export const VALUATION_SOURCE_TWELVE_DATA = "twelve_data";
 export const VALUATION_SOURCE_OANOR_GPW = "oanor_gpw";
+export const VALUATION_SOURCE_STOOQ = "stooq";
 
 type Db = PrismaClient | Prisma.TransactionClient;
 

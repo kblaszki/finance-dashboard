@@ -54,7 +54,12 @@ export async function syncInstrumentCatalog(
 }
 
 export type SyncQuotesOptions = {
-  /** When set, only this user's watchlist instruments. */
+  /**
+   * When true, only instruments on some watchlist (optionally filtered by userId).
+   * Default false: sync all allowlisted instruments (markets universe).
+   */
+  watchlistOnly?: boolean;
+  /** When set with watchlistOnly, only this user's watchlist instruments. */
   userId?: number;
   /** Force refresh even if valuation looks fresh. */
   force?: boolean;
@@ -168,7 +173,7 @@ async function syncOanorGpwBatch(
 }
 
 /**
- * Fetch closes for instruments on at least one watchlist.
+ * Fetch closes for allowlisted instruments (default) or watchlist-only.
  * GPW → Oanor (batched ≤20); others → Twelve Data (paced).
  */
 export async function syncWatchlistQuotes(
@@ -178,26 +183,42 @@ export async function syncWatchlistQuotes(
   const fetchImpl = options.fetchImpl ?? fetch;
   const now = options.now ?? new Date();
   const force = options.force === true;
+  const watchlistOnly = options.watchlistOnly === true;
 
-  const watchRows = await prisma.watchlistItem.findMany({
-    ...(options.userId != null ? { where: { userId: options.userId } } : {}),
-    select: { instrumentId: true },
-    distinct: ["instrumentId"],
-  });
-  const instrumentIds = watchRows.map((r) => r.instrumentId);
-  if (instrumentIds.length === 0) {
-    return {
-      attempted: 0,
-      updated: 0,
-      skippedFresh: 0,
-      failed: 0,
-      errors: [],
-    };
+  let instruments: InstrumentLite[];
+  if (watchlistOnly) {
+    const watchRows = await prisma.watchlistItem.findMany({
+      ...(options.userId != null ? { where: { userId: options.userId } } : {}),
+      select: { instrumentId: true },
+      distinct: ["instrumentId"],
+    });
+    const instrumentIds = watchRows.map((r) => r.instrumentId);
+    if (instrumentIds.length === 0) {
+      return {
+        attempted: 0,
+        updated: 0,
+        skippedFresh: 0,
+        failed: 0,
+        errors: [],
+      };
+    }
+    instruments = (await prisma.instrument.findMany({
+      where: { id: { in: instrumentIds } },
+    })) as InstrumentLite[];
+  } else {
+    instruments = (await prisma.instrument.findMany({
+      where: { allowlisted: true },
+    })) as InstrumentLite[];
+    if (instruments.length === 0) {
+      return {
+        attempted: 0,
+        updated: 0,
+        skippedFresh: 0,
+        failed: 0,
+        errors: [],
+      };
+    }
   }
-
-  const instruments = (await prisma.instrument.findMany({
-    where: { id: { in: instrumentIds } },
-  })) as InstrumentLite[];
 
   let updated = 0;
   let skippedFresh = 0;

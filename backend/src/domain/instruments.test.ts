@@ -9,9 +9,10 @@ import {
 } from "./instruments";
 import { isValuationFresh } from "./instrumentValuations";
 
-test("assertAssetClass accepts STOCK and ETF", () => {
+test("assertAssetClass accepts STOCK ETF and INDEX", () => {
   assert.equal(assertAssetClass("stock"), "STOCK");
   assert.equal(assertAssetClass("ETF"), "ETF");
+  assert.equal(assertAssetClass("INDEX"), "INDEX");
   assert.throws(() => assertAssetClass("CRYPTO"), /assetClass/);
 });
 

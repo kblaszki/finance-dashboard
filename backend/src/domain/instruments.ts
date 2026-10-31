@@ -3,8 +3,11 @@ import { badRequest, notFound } from "../lib/errors";
 import type { TwelveDataCatalogRow } from "./twelveDataClient";
 
 export const INSTRUMENT_PROVIDER_TWELVE_DATA = "twelve_data";
-export const INSTRUMENT_ASSET_CLASSES = ["STOCK", "ETF"] as const;
+export const INSTRUMENT_ASSET_CLASSES = ["STOCK", "ETF", "INDEX"] as const;
 export type InstrumentAssetClass = (typeof INSTRUMENT_ASSET_CLASSES)[number];
+
+export const INSTRUMENT_SEARCH_SCOPES = ["allowlist", "catalog"] as const;
+export type InstrumentSearchScope = (typeof INSTRUMENT_SEARCH_SCOPES)[number];
 
 const ASSET_SET = new Set<string>(INSTRUMENT_ASSET_CLASSES);
 
@@ -25,6 +28,7 @@ export type InstrumentRow = {
   assetClass: string;
   provider: string;
   providerSymbol: string;
+  allowlisted: boolean;
   createdAt: Date;
   updatedAt: Date;
 };
@@ -41,6 +45,7 @@ export function instrumentPayload(row: InstrumentRow) {
     assetClass: row.assetClass,
     provider: row.provider,
     providerSymbol: row.providerSymbol,
+    allowlisted: row.allowlisted,
   };
 }
 
@@ -100,6 +105,17 @@ export function parseSearchLimit(value: unknown): number {
     );
   }
   return n;
+}
+
+export function parseSearchScope(value: unknown): InstrumentSearchScope {
+  if (value === undefined || value === null || value === "") {
+    return "allowlist";
+  }
+  const scope = String(value).trim().toLowerCase();
+  if (scope !== "allowlist" && scope !== "catalog") {
+    throw badRequest('scope must be "allowlist" or "catalog"');
+  }
+  return scope;
 }
 
 export function providerSymbolForCatalog(
@@ -187,9 +203,12 @@ export async function searchInstruments(
     q: string;
     assetClass?: InstrumentAssetClass;
     limit: number;
+    /** Default allowlist — Markets search. catalog = full TD table. */
+    scope?: InstrumentSearchScope;
   },
 ): Promise<InstrumentRow[]> {
   const q = input.q.trim();
+  const scope = input.scope ?? "allowlist";
   const where: Prisma.InstrumentWhereInput = {
     OR: [
       { symbol: { contains: q } },
@@ -197,6 +216,9 @@ export async function searchInstruments(
       { providerSymbol: { contains: q } },
     ],
   };
+  if (scope === "allowlist") {
+    where.allowlisted = true;
+  }
   if (input.assetClass) {
     where.assetClass = input.assetClass;
   }
@@ -214,4 +236,19 @@ export async function findInstrumentById(
   const row = await db.instrument.findUnique({ where: { id } });
   if (!row) throw notFound("Instrument not found");
   return row;
+}
+
+/** Mark instrument visible in default Markets search (global allowlist). */
+export async function addInstrumentToAllowlist(
+  db: Db,
+  instrumentId: number,
+): Promise<InstrumentRow> {
+  if (!Number.isInteger(instrumentId) || instrumentId < 1) {
+    throw badRequest("instrumentId must be a positive integer");
+  }
+  await findInstrumentById(db, instrumentId);
+  return db.instrument.update({
+    where: { id: instrumentId },
+    data: { allowlisted: true },
+  });
 }

@@ -14,6 +14,7 @@ function readArg(flag: string): string | undefined {
 async function main(): Promise<void> {
   const userIdRaw = readArg("--userId");
   const force = process.argv.includes("--force");
+  const watchlistOnly = process.argv.includes("--watchlist-only");
   let userId: number | undefined;
   if (userIdRaw != null) {
     userId = Number(userIdRaw);
@@ -26,7 +27,8 @@ async function main(): Promise<void> {
   try {
     const result = await syncWatchlistQuotes(prisma, {
       force,
-      ...(userId != null ? { userId } : {}),
+      watchlistOnly,
+      ...(userId != null ? { userId, watchlistOnly: true } : {}),
     });
     // eslint-disable-next-line no-console
     console.log(JSON.stringify(result));

@@ -4,6 +4,7 @@ import {
   fetchTwelveDataEodQuote,
   fetchTwelveDataEtfs,
   fetchTwelveDataStocks,
+  fetchTwelveDataTimeSeries,
 } from "./twelveDataClient";
 
 test("fetchTwelveDataStocks maps catalog payload", async () => {
@@ -39,6 +40,26 @@ test("fetchTwelveDataEtfs maps catalog payload", async () => {
     );
   const rows = await fetchTwelveDataEtfs(fetchImpl, "test-key");
   assert.equal(rows[0]!.symbol, "VOO");
+});
+
+test("fetchTwelveDataTimeSeries maps daily closes", async () => {
+  const fetchImpl = async () =>
+    new Response(
+      JSON.stringify({
+        values: [
+          { datetime: "2026-10-29", close: "190.1" },
+          { datetime: "2026-10-30", close: "191.2" },
+        ],
+      }),
+      { status: 200 },
+    );
+  const bars = await fetchTwelveDataTimeSeries("AAPL", {
+    fetchImpl,
+    apiKey: "test-key",
+  });
+  assert.equal(bars.length, 2);
+  assert.equal(bars[0]!.close, 190.1);
+  assert.equal(bars[1]!.asOfYmd, "2026-10-30");
 });
 
 test("fetchTwelveDataEodQuote parses close and date", async () => {

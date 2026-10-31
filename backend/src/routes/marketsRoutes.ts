@@ -2,12 +2,15 @@ import { Router } from "express";
 import { Prisma as PrismaNS, type PrismaClient } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import {
+  addInstrumentToAllowlist,
   instrumentPayload,
   parseOptionalAssetClass,
   parseSearchLimit,
   parseSearchQuery,
+  parseSearchScope,
   searchInstruments,
 } from "../domain/instruments";
+import { ensureInstrumentQuote } from "../domain/marketData";
 import {
   addToWatchlist,
   listWatchlist,
@@ -45,14 +48,37 @@ export function createMarketsRouter(deps: MarketsDeps): Router {
         const q = parseSearchQuery(req.query.q);
         const assetClass = parseOptionalAssetClass(req.query.assetClass);
         const limit = parseSearchLimit(req.query.limit);
+        const scope = parseSearchScope(req.query.scope);
         const rows = await searchInstruments(prisma, {
           q,
           limit,
+          scope,
           ...(assetClass != null ? { assetClass } : {}),
         });
         res.json(rows.map(instrumentPayload));
       } catch (e: unknown) {
         handleRouteError(res, e, "Failed to search instruments");
+      }
+    },
+  );
+
+  router.post(
+    "/api/instruments/allowlist",
+    requireAuth,
+    async (req: AuthedRequest, res) => {
+      try {
+        const instrumentId = Math.trunc(
+          parsePositiveNumber(req.body?.instrumentId, "instrumentId"),
+        );
+        const row = await addInstrumentToAllowlist(prisma, instrumentId);
+        try {
+          await ensureInstrumentQuote(prisma, instrumentId);
+        } catch {
+          // Soft-fail quote; allowlist still succeeds.
+        }
+        res.status(200).json(instrumentPayload(row));
+      } catch (e: unknown) {
+        handleRouteError(res, e, "Add to allowlist failed");
       }
     },
   );

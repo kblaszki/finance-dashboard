@@ -177,6 +177,59 @@ export async function fetchTwelveDataEodQuote(
   };
 }
 
+export type TwelveDataBar = {
+  asOfYmd: string;
+  close: number;
+};
+
+/**
+ * Daily (or other interval) OHLC history via GET /time_series (1 credit / symbol).
+ * Default ~1 trading year of daily bars.
+ */
+export async function fetchTwelveDataTimeSeries(
+  providerSymbol: string,
+  options: {
+    interval?: string;
+    outputsize?: number;
+    fetchImpl?: TwelveDataFetch;
+    apiKey?: string;
+  } = {},
+): Promise<TwelveDataBar[]> {
+  const symbol = String(providerSymbol ?? "").trim();
+  if (!symbol) throw badRequest("symbol required");
+  const key = options.apiKey ?? getTwelveDataApiKey();
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const interval = options.interval ?? "1day";
+  const outputsize = options.outputsize ?? 260;
+
+  const url = buildUrl(
+    "/time_series",
+    {
+      symbol,
+      interval,
+      outputsize: String(outputsize),
+    },
+    key,
+  );
+  const payload = await readJson(url, fetchImpl);
+  const obj = asRecord(payload);
+  if (!obj) throw new Error("Twelve Data time_series: invalid payload");
+  if (obj.status === "error") {
+    throw badRequest(String(obj.message ?? `No time series for ${symbol}`));
+  }
+  const values = Array.isArray(obj.values) ? obj.values : [];
+  const out: TwelveDataBar[] = [];
+  for (const raw of values) {
+    const row = asRecord(raw);
+    if (!row) continue;
+    const asOfYmd = ymdFromDatetime(String(row.datetime ?? row.date ?? ""));
+    const close = Number(row.close);
+    if (!asOfYmd || !Number.isFinite(close) || close <= 0) continue;
+    out.push({ asOfYmd, close });
+  }
+  return out;
+}
+
 /**
  * Simple credit pacing: await so at most `creditsPerMinute` calls finish per rolling minute.
  * Call before each outbound Twelve Data request when looping.
