@@ -27,9 +27,9 @@ Run from `backend/` unless noted.
 | Market seed universe | `npm run market:seed-universe` | Mark curated S&P 500 / GPW / indexes / ETFs `allowlisted=true` from `backend/data/market-universe/` |
 | Market quote sync | `npm run market:sync-quotes` | Default: all **allowlisted**. `--watchlist-only` or `--userId=N` for favorites only; optional `--force`. GPW → Oanor; else Twelve Data |
 | Market history sync | `npm run market:sync-history` | ~1y daily closes for allowlisted (`--force`, `--instrumentId=N`). US/TD → Twelve Data time_series; GPW → Stooq CSV |
-| Market history Yahoo | `npm run market:sync-history-yahoo` | Yahoo chart closes (`--range=1y\|10y`, `--watchlist-only`, `--userId=N`, `--instrumentId=N`, `--force`). Source `yahoo` |
-| Market history export | `npm run market:export-history` | Allowlist valuations → NDJSON/`.gz` (`--out=`, `--months=`, `--monthly`, `--watchlist-only`). Default `data/market-history/exports/allowlist-eod.ndjson.gz` (gitignored) |
-| Market history import | `npm run market:import-history` | Import NDJSON/`.gz` into `InstrumentValuation` (`--file=`). Skips unknown instruments |
+| Market history Yahoo | `npm run market:sync-history-yahoo` | Yahoo chart closes (`--range 1y` \| `--range 10y`, default `1y`; `--watchlist-only`, `--userId N`, `--instrumentId N`, `--force`). Source `yahoo`. **CLI flags are space-separated** (`--range 10y`); `--range=10y` is ignored and falls back to `1y` |
+| Market history export | `npm run market:export-history` | Allowlist valuations → NDJSON/`.gz` (`--out PATH`, `--months N`, `--monthly`, `--watchlist-only`). Default `data/market-history/exports/allowlist-eod.ndjson.gz` (gitignored) |
+| Market history import | `npm run market:import-history` | Import NDJSON/`.gz` into `InstrumentValuation` (`--file PATH`). Skips unknown instruments |
 | DB reset | `npm run db:reset` | `prisma migrate reset --force` — wipe SQLite, migrate, run seed (cash demo). Re-run catalog/universe + `db:seed` for Markets fixture |
 | DB backup | `npm run db:backup` | Copy SQLite file (optional `--gzip` / `BACKUP_GZIP`). Requires build; Docker writes under `BACKUP_DIR` (Compose: `/data/backups` → `./data/backups`) |
 | Migrate deploy | `npx prisma migrate deploy` | Apply migrations (CI / production) |

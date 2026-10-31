@@ -51,13 +51,13 @@ Universe JSON lives in `backend/data/market-universe/`.
 
 1. **Search markets** — allowlisted only (`scope=allowlist`).
 2. **Add instrument** — full catalog (`scope=catalog`) → **Add to markets** (`POST /api/instruments/allowlist`, global).
-3. **Watchlist** — favorites with last close; click symbol/name → `/markets/:instrumentId` chart (`GET …/history` with `months` or `year`; soft ~1y backfill if sparse). Chart supports rolling 3/6/12 months or paging calendar years when multi-year closes are stored (e.g. after `market:sync-history-yahoo --range=10y --force`).
+3. **Watchlist** — favorites with last close; click symbol/name → `/markets/:instrumentId` chart (`GET …/history` with `months` or `year`; soft ~1y backfill if sparse). Chart supports rolling 3/6/12 months or paging calendar years when multi-year closes are stored (e.g. after `npm run market:sync-history-yahoo -- --range 10y --force`).
 
 ## CLI flags
 
 - `market:sync-quotes --watchlist-only` — old behavior (watchlist only)
 - `market:sync-quotes --userId=N` — implies watchlist-only for that user
 - `market:sync-history --force` / `--instrumentId=N`
-- `market:sync-history-yahoo --watchlist-only` / `--userId=N` / `--force` / `--range=10y` — Yahoo chart backfill (hobby; unofficial API)
-- `market:export-history` / `market:import-history` — NDJSON(`.gz`) dump of allowlist valuations. Default file: `data/market-history/exports/allowlist-eod.ndjson.gz` (gitignored). `--months=12 --monthly` builds sparse exports for fixtures.
+- `market:sync-history-yahoo --watchlist-only` / `--userId N` / `--force` / `--range 10y` — Yahoo chart backfill (hobby; unofficial API). Pass flags **with a space** (`--range 10y`); `--range=10y` is not parsed and silently uses the default `1y`.
+- `market:export-history` / `market:import-history` — NDJSON(`.gz`) dump of allowlist valuations. Default file: `data/market-history/exports/allowlist-eod.ndjson.gz` (gitignored). `--months 12 --monthly` builds sparse exports for fixtures.
 - Demo seed prefers that local export when present (imports all closes; watchlist stays 5 curated favorites); else committed `demo-eod.ndjson`.
