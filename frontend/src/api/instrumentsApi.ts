@@ -43,3 +43,31 @@ export async function addInstrumentToAllowlist(
     instrumentId,
   });
 }
+
+export type InstrumentHistoryPoint = {
+  asOf: string;
+  close: number;
+};
+
+export type InstrumentHistory = {
+  instrument: Instrument;
+  currency: string;
+  months: number;
+  from: string;
+  to: string;
+  series: InstrumentHistoryPoint[];
+  backfilled: boolean;
+  backfillMessage?: string;
+};
+
+export async function fetchInstrumentHistory(
+  instrumentId: number,
+  params?: { months?: number },
+): Promise<InstrumentHistory> {
+  const qs = new URLSearchParams();
+  if (params?.months != null) qs.set("months", String(params.months));
+  const suffix = qs.toString() ? `?${qs.toString()}` : "";
+  return apiClient.get<InstrumentHistory>(
+    `/api/instruments/${instrumentId}/history${suffix}`,
+  );
+}

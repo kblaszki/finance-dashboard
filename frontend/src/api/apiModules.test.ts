@@ -89,6 +89,7 @@ import {
 import {
   searchInstruments,
   addInstrumentToAllowlist,
+  fetchInstrumentHistory,
 } from './instrumentsApi'
 import {
   fetchWatchlist,
@@ -484,6 +485,11 @@ describe('API modules', () => {
     expect(apiClient.post).toHaveBeenCalledWith('/api/instruments/allowlist', {
       instrumentId: 7,
     })
+
+    await fetchInstrumentHistory(7, { months: 6 })
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/instruments/7/history?months=6',
+    )
 
     await fetchWatchlist()
     expect(apiClient.get).toHaveBeenCalledWith('/api/watchlist')

@@ -14,6 +14,7 @@ import { TagsPage } from "./pages/TagsPage";
 import { TransfersPage } from "./pages/TransfersPage";
 import { StatisticsPage } from "./pages/StatisticsPage";
 import { MarketsPage } from "./pages/MarketsPage";
+import { InstrumentDetailPage } from "./pages/InstrumentDetailPage";
 import { useAuth } from "./state/auth";
 
 function App() {
@@ -37,6 +38,10 @@ function App() {
           <Route path="/transfers" element={<TransfersPage />} />
           <Route path="/statistics" element={<StatisticsPage />} />
           <Route path="/markets" element={<MarketsPage />} />
+          <Route
+            path="/markets/:instrumentId"
+            element={<InstrumentDetailPage />}
+          />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Route>

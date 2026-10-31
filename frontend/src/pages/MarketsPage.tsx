@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   addInstrumentToAllowlist,
   searchInstruments,
@@ -388,9 +389,15 @@ export function MarketsPage() {
                 {watchlist.map((item) => (
                   <tr key={item.instrumentId}>
                     <td>
-                      <strong>{item.instrument.symbol}</strong>
+                      <Link to={`/markets/${item.instrumentId}`}>
+                        <strong>{item.instrument.symbol}</strong>
+                      </Link>
                     </td>
-                    <td>{item.instrument.name}</td>
+                    <td>
+                      <Link to={`/markets/${item.instrumentId}`}>
+                        {item.instrument.name}
+                      </Link>
+                    </td>
                     <td>
                       {item.lastClose != null
                         ? formatMoney(

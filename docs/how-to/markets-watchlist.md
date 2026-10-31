@@ -50,7 +50,7 @@ Universe JSON lives in `backend/data/market-universe/`.
 
 1. **Search markets** — allowlisted only (`scope=allowlist`).
 2. **Add instrument** — full catalog (`scope=catalog`) → **Add to markets** (`POST /api/instruments/allowlist`, global).
-3. **Watchlist** — favorites with last close.
+3. **Watchlist** — favorites with last close; click symbol/name → `/markets/:instrumentId` chart (`GET …/history`, soft ~1y backfill if sparse).
 
 ## CLI flags
 

@@ -167,7 +167,8 @@ Default search is the **global allowlist** (seeded curated universe + user “Ad
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
 | GET | `/api/instruments` | Bearer | Query: `q` (≥1 char), optional `assetClass=STOCK\|ETF\|INDEX`, `limit` (1–50, default 25), `scope=allowlist` (default) \| `catalog`. Body: `Instrument[]` including `allowlisted` |
-| POST | `/api/instruments/allowlist` | Bearer | Body `{ instrumentId }`. Sets global `allowlisted=true` (idempotent `200`); soft quote fetch; unknown → `404`. History backfill is CLI-only |
+| GET | `/api/instruments/:instrumentId/history` | Bearer | Query: `months=3\|6\|12` (default 12). Soft backfill ~1y when series sparse (&lt;20 distinct days); never 500 on provider failure. Body: `{ instrument, currency, months, from, to, series: [{ asOf, close }], backfilled, backfillMessage? }`. Collapse per day: `twelve_data` > `stooq` > `oanor_gpw`. Unknown id → `404` |
+| POST | `/api/instruments/allowlist` | Bearer | Body `{ instrumentId }`. Sets global `allowlisted=true` (idempotent `200`); soft quote fetch; unknown → `404` |
 | GET | `/api/watchlist` | Bearer | Owned favorites with latest `InstrumentValuation` (any `source`). Body: `{ instrumentId, createdAt, instrument, lastClose, asOf }[]` |
 | POST | `/api/watchlist` | Bearer | Body `{ instrumentId }`. Creates favorite; soft quote if stale. `201`; duplicate → `409`; unknown → `404` |
 | DELETE | `/api/watchlist/:instrumentId` | Bearer | `204`; other user's / missing → `404` |
