@@ -33,13 +33,14 @@ npm run market:sync-history-yahoo -- --force --range 10y   # EOD closes (Yahoo)
 npm run market:sync-quotes -- --force                      # latest Yahoo closes for allowlisted
 ```
 
-Universe JSON lives in `backend/data/market-universe/`. Seed also un-allowlists retired tickers (`CIE`, `CMR`, `CCC`, `SPL` — delisted or renamed to `MDV` / `EBP`).
+Universe JSON lives in `backend/data/market-universe/` (`historySource: "yahoo"`; no Stooq/TD hints in seed files). Seed also un-allowlists retired tickers (`CIE`, `CMR`, `CCC`, `SPL` — delisted or renamed to `MDV` / `EBP`).
 
 ## Quotes vs history
 
 | Source | Role |
 |--------|------|
-| **Yahoo chart** | **Primary** valuations — quotes (`market:sync-quotes`, soft HTTP when `marketLiveApi`) and history (`market:sync-history-yahoo`). Maps SPX→`^GSPC`, NDX→`^NDX`, GPW equities→`.WA`, WIG indexes→`WIG20.WA` / `MWIG40.WA` / `WIG.WA` |
+| **Yahoo chart** | **Primary** valuations — quotes (`market:sync-quotes`, soft HTTP when `marketLiveApi`) and history (`market:sync-history-yahoo` / `market:sync-history` → Yahoo). Maps SPX→`^GSPC`, NDX→`^NDX`, GPW equities→`.WA`, WIG indexes→`WIG20.WA` / `MWIG40.WA` / `WIG.WA` |
+| Local export | Offline restore via `market:import-history` / demo seed |
 | Twelve Data | Catalog sync only (dormant for quotes/history) |
 | Oanor GPW / Stooq | Dormant valuation paths (code kept for a future per-user API) |
 
@@ -57,6 +58,6 @@ Universe JSON lives in `backend/data/market-universe/`. Seed also un-allowlists 
 
 - `market:sync-quotes --watchlist-only` / `--userId N` / `--force` — Yahoo latest close
 - `market:sync-history-yahoo --watchlist-only` / `--userId N` / `--force` / `--range 10y` — Yahoo history (hobby; unofficial API). Space or equals forms work (`--range 10y` or `--range=10y`).
-- `market:sync-history` — **dormant** TD/Stooq path (prefer Yahoo)
+- `market:sync-history` — delegates to Yahoo for current universe seeds (legacy Stooq/TD only if a custom seed still sets `historySource`)
 - `market:export-history` / `market:import-history` — NDJSON(`.gz`) dump. Default `data/market-history/exports/allowlist-eod.ndjson.gz` (gitignored).
 - Demo seed prefers that local export when present; else committed `demo-eod.ndjson`.

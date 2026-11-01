@@ -40,12 +40,12 @@ export type SyncHistoryResult = {
 export type SyncHistoryOptions = {
   instrumentId?: number;
   force?: boolean;
-  /** Trading days to request from TD (~1y). */
+  /** Trading days to request from TD (~1y). Legacy TD path only. */
   outputsize?: number;
-  fetchImpl?: TwelveDataFetch & StooqFetch;
+  fetchImpl?: TwelveDataFetch & StooqFetch & YahooFetch;
   apiKey?: string;
   universeDir?: string;
-  /** Delay between Stooq calls (ms). */
+  /** Delay between provider calls (ms). */
   stooqDelayMs?: number;
 };
 
@@ -70,7 +70,8 @@ async function countRecentBars(
 
 /**
  * Backfill ~1y daily closes for allowlisted instruments.
- * GPW (+ seed stooqSymbol) → Stooq; otherwise Twelve Data time_series.
+ * Default / `historySource: yahoo` → Yahoo chart. Legacy `stooq` / `twelve_data`
+ * seed hints still supported if present in custom universe files.
  */
 export async function syncAllowlistHistory(
   prisma: PrismaClient,
@@ -94,6 +95,24 @@ export async function syncAllowlistHistory(
     orderBy: { symbol: "asc" },
   });
 
+  const usesLegacyProvider = instruments.some((instrument) => {
+    const seed = seedMap.get(instrument.providerSymbol.toUpperCase());
+    const src = String(seed?.historySource ?? "yahoo").toLowerCase();
+    return src === "stooq" || src === "twelve_data";
+  });
+
+  if (!usesLegacyProvider) {
+    return syncYahooHistory(prisma, {
+      force,
+      delayMs: stooqDelayMs,
+      range: "1y",
+      ...(options.instrumentId != null
+        ? { instrumentId: options.instrumentId }
+        : {}),
+      ...(options.fetchImpl != null ? { fetchImpl: options.fetchImpl } : {}),
+    });
+  }
+
   const pace = createCreditPacer();
   let updatedInstruments = 0;
   let barsUpserted = 0;
@@ -103,9 +122,41 @@ export async function syncAllowlistHistory(
 
   for (const instrument of instruments) {
     const seed = seedMap.get(instrument.providerSymbol.toUpperCase());
+    const historySource = String(seed?.historySource ?? "yahoo").toLowerCase();
     const useStooq =
-      seed?.historySource === "stooq" ||
-      (isGpwListed(instrument) && Boolean(seed?.stooqSymbol || instrument.symbol));
+      historySource === "stooq" ||
+      (historySource !== "yahoo" &&
+        historySource !== "twelve_data" &&
+        isGpwListed(instrument) &&
+        Boolean(seed?.stooqSymbol));
+    const useYahoo = historySource === "yahoo" || (!useStooq && historySource !== "twelve_data");
+
+    if (useYahoo) {
+      try {
+        if (stooqDelayMs > 0) await sleep(stooqDelayMs);
+        const yahoo = await syncYahooHistory(prisma, {
+          instrumentId: instrument.id,
+          force,
+          delayMs: 0,
+          range: "1y",
+          ...(options.fetchImpl != null ? { fetchImpl: options.fetchImpl } : {}),
+        });
+        updatedInstruments += yahoo.updatedInstruments;
+        barsUpserted += yahoo.barsUpserted;
+        skipped += yahoo.skipped;
+        failed += yahoo.failed;
+        errors.push(...yahoo.errors);
+      } catch (e: unknown) {
+        failed += 1;
+        errors.push({
+          instrumentId: instrument.id,
+          symbol: instrument.symbol,
+          message: e instanceof Error ? e.message : String(e),
+        });
+      }
+      continue;
+    }
+
     const source = useStooq
       ? VALUATION_SOURCE_STOOQ
       : VALUATION_SOURCE_TWELVE_DATA;
@@ -128,7 +179,6 @@ export async function syncAllowlistHistory(
             : instrument.symbol.toLowerCase());
         await sleep(stooqDelayMs);
         bars = await fetchStooqDailyHistory(stooqSymbol, fetchImpl);
-        // Keep ~1y
         bars = bars
           .slice()
           .sort((a, b) => (a.asOfYmd < b.asOfYmd ? 1 : -1))

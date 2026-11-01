@@ -7,7 +7,7 @@
     "country": "United States",
     "currency": "USD",
     "providerSymbol": "SPX",
-    "historySource": "twelve_data"
+    "historySource": "yahoo"
   },
   {
     "symbol": "NDX",
@@ -17,7 +17,7 @@
     "country": "United States",
     "currency": "USD",
     "providerSymbol": "NDX",
-    "historySource": "twelve_data"
+    "historySource": "yahoo"
   },
   {
     "symbol": "ACWI",
@@ -27,7 +27,7 @@
     "country": "United States",
     "currency": "USD",
     "providerSymbol": "ACWI",
-    "historySource": "twelve_data",
+    "historySource": "yahoo",
     "note": "All-World exposure via liquid US-listed ETF (true ACWI index ticker coverage varies by plan)"
   },
   {
@@ -38,8 +38,7 @@
     "country": "Poland",
     "currency": "PLN",
     "providerSymbol": "WIG20",
-    "stooqSymbol": "^wig20",
-    "historySource": "stooq"
+    "historySource": "yahoo"
   },
   {
     "symbol": "MWIG40",
@@ -49,8 +48,7 @@
     "country": "Poland",
     "currency": "PLN",
     "providerSymbol": "MWIG40",
-    "stooqSymbol": "^mwig40",
-    "historySource": "stooq"
+    "historySource": "yahoo"
   },
   {
     "symbol": "WIG",
@@ -60,7 +58,6 @@
     "country": "Poland",
     "currency": "PLN",
     "providerSymbol": "WIG",
-    "stooqSymbol": "^wig",
-    "historySource": "stooq"
+    "historySource": "yahoo"
   }
 ]

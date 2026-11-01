@@ -1,19 +1,172 @@
 [
-  {"symbol": "VOO", "name": "Vanguard S&P 500 ETF", "assetClass": "ETF", "exchange": "NYSE", "country": "United States", "currency": "USD", "providerSymbol": "VOO", "historySource": "twelve_data"},
-  {"symbol": "IVV", "name": "iShares Core S&P 500 ETF", "assetClass": "ETF", "exchange": "NYSE", "country": "United States", "currency": "USD", "providerSymbol": "IVV", "historySource": "twelve_data"},
-  {"symbol": "SPY", "name": "SPDR S&P 500 ETF Trust", "assetClass": "ETF", "exchange": "NYSE", "country": "United States", "currency": "USD", "providerSymbol": "SPY", "historySource": "twelve_data"},
-  {"symbol": "QQQ", "name": "Invesco QQQ Trust", "assetClass": "ETF", "exchange": "NASDAQ", "country": "United States", "currency": "USD", "providerSymbol": "QQQ", "historySource": "twelve_data"},
-  {"symbol": "QQQM", "name": "Invesco NASDAQ 100 ETF", "assetClass": "ETF", "exchange": "NASDAQ", "country": "United States", "currency": "USD", "providerSymbol": "QQQM", "historySource": "twelve_data"},
-  {"symbol": "VT", "name": "Vanguard Total World Stock ETF", "assetClass": "ETF", "exchange": "NYSE", "country": "United States", "currency": "USD", "providerSymbol": "VT", "historySource": "twelve_data"},
-  {"symbol": "VXUS", "name": "Vanguard Total International Stock ETF", "assetClass": "ETF", "exchange": "NASDAQ", "country": "United States", "currency": "USD", "providerSymbol": "VXUS", "historySource": "twelve_data"},
-  {"symbol": "VTI", "name": "Vanguard Total Stock Market ETF", "assetClass": "ETF", "exchange": "NYSE", "country": "United States", "currency": "USD", "providerSymbol": "VTI", "historySource": "twelve_data"},
-  {"symbol": "IWM", "name": "iShares Russell 2000 ETF", "assetClass": "ETF", "exchange": "NYSE", "country": "United States", "currency": "USD", "providerSymbol": "IWM", "historySource": "twelve_data"},
-  {"symbol": "IEFA", "name": "iShares Core MSCI EAFE ETF", "assetClass": "ETF", "exchange": "CBOE", "country": "United States", "currency": "USD", "providerSymbol": "IEFA", "historySource": "twelve_data"},
-  {"symbol": "IEMG", "name": "iShares Core MSCI Emerging Markets ETF", "assetClass": "ETF", "exchange": "NYSE", "country": "United States", "currency": "USD", "providerSymbol": "IEMG", "historySource": "twelve_data"},
-  {"symbol": "AGG", "name": "iShares Core U.S. Aggregate Bond ETF", "assetClass": "ETF", "exchange": "NYSE", "country": "United States", "currency": "USD", "providerSymbol": "AGG", "historySource": "twelve_data"},
-  {"symbol": "BND", "name": "Vanguard Total Bond Market ETF", "assetClass": "ETF", "exchange": "NASDAQ", "country": "United States", "currency": "USD", "providerSymbol": "BND", "historySource": "twelve_data"},
-  {"symbol": "GLD", "name": "SPDR Gold Shares", "assetClass": "ETF", "exchange": "NYSE", "country": "United States", "currency": "USD", "providerSymbol": "GLD", "historySource": "twelve_data"},
-  {"symbol": "ETFBW20TR", "name": "Beta ETF WIG20TR", "assetClass": "ETF", "exchange": "GPW", "country": "Poland", "currency": "PLN", "providerSymbol": "ETFBW20TR", "stooqSymbol": "etfbw20tr", "historySource": "stooq"},
-  {"symbol": "ETFSP500", "name": "Beta ETF S&P 500 PLN-Hedged", "assetClass": "ETF", "exchange": "GPW", "country": "Poland", "currency": "PLN", "providerSymbol": "ETFSP500", "stooqSymbol": "etfsp500", "historySource": "stooq"},
-  {"symbol": "ETFBNDXPL", "name": "Beta ETF Nasdaq-100 PLN-Hedged", "assetClass": "ETF", "exchange": "GPW", "country": "Poland", "currency": "PLN", "providerSymbol": "ETFBNDXPL", "stooqSymbol": "etfbndxpl", "historySource": "stooq"}
+  {
+    "symbol": "VOO",
+    "name": "Vanguard S&P 500 ETF",
+    "assetClass": "ETF",
+    "exchange": "NYSE",
+    "country": "United States",
+    "currency": "USD",
+    "providerSymbol": "VOO",
+    "historySource": "yahoo"
+  },
+  {
+    "symbol": "IVV",
+    "name": "iShares Core S&P 500 ETF",
+    "assetClass": "ETF",
+    "exchange": "NYSE",
+    "country": "United States",
+    "currency": "USD",
+    "providerSymbol": "IVV",
+    "historySource": "yahoo"
+  },
+  {
+    "symbol": "SPY",
+    "name": "SPDR S&P 500 ETF Trust",
+    "assetClass": "ETF",
+    "exchange": "NYSE",
+    "country": "United States",
+    "currency": "USD",
+    "providerSymbol": "SPY",
+    "historySource": "yahoo"
+  },
+  {
+    "symbol": "QQQ",
+    "name": "Invesco QQQ Trust",
+    "assetClass": "ETF",
+    "exchange": "NASDAQ",
+    "country": "United States",
+    "currency": "USD",
+    "providerSymbol": "QQQ",
+    "historySource": "yahoo"
+  },
+  {
+    "symbol": "QQQM",
+    "name": "Invesco NASDAQ 100 ETF",
+    "assetClass": "ETF",
+    "exchange": "NASDAQ",
+    "country": "United States",
+    "currency": "USD",
+    "providerSymbol": "QQQM",
+    "historySource": "yahoo"
+  },
+  {
+    "symbol": "VT",
+    "name": "Vanguard Total World Stock ETF",
+    "assetClass": "ETF",
+    "exchange": "NYSE",
+    "country": "United States",
+    "currency": "USD",
+    "providerSymbol": "VT",
+    "historySource": "yahoo"
+  },
+  {
+    "symbol": "VXUS",
+    "name": "Vanguard Total International Stock ETF",
+    "assetClass": "ETF",
+    "exchange": "NASDAQ",
+    "country": "United States",
+    "currency": "USD",
+    "providerSymbol": "VXUS",
+    "historySource": "yahoo"
+  },
+  {
+    "symbol": "VTI",
+    "name": "Vanguard Total Stock Market ETF",
+    "assetClass": "ETF",
+    "exchange": "NYSE",
+    "country": "United States",
+    "currency": "USD",
+    "providerSymbol": "VTI",
+    "historySource": "yahoo"
+  },
+  {
+    "symbol": "IWM",
+    "name": "iShares Russell 2000 ETF",
+    "assetClass": "ETF",
+    "exchange": "NYSE",
+    "country": "United States",
+    "currency": "USD",
+    "providerSymbol": "IWM",
+    "historySource": "yahoo"
+  },
+  {
+    "symbol": "IEFA",
+    "name": "iShares Core MSCI EAFE ETF",
+    "assetClass": "ETF",
+    "exchange": "CBOE",
+    "country": "United States",
+    "currency": "USD",
+    "providerSymbol": "IEFA",
+    "historySource": "yahoo"
+  },
+  {
+    "symbol": "IEMG",
+    "name": "iShares Core MSCI Emerging Markets ETF",
+    "assetClass": "ETF",
+    "exchange": "NYSE",
+    "country": "United States",
+    "currency": "USD",
+    "providerSymbol": "IEMG",
+    "historySource": "yahoo"
+  },
+  {
+    "symbol": "AGG",
+    "name": "iShares Core U.S. Aggregate Bond ETF",
+    "assetClass": "ETF",
+    "exchange": "NYSE",
+    "country": "United States",
+    "currency": "USD",
+    "providerSymbol": "AGG",
+    "historySource": "yahoo"
+  },
+  {
+    "symbol": "BND",
+    "name": "Vanguard Total Bond Market ETF",
+    "assetClass": "ETF",
+    "exchange": "NASDAQ",
+    "country": "United States",
+    "currency": "USD",
+    "providerSymbol": "BND",
+    "historySource": "yahoo"
+  },
+  {
+    "symbol": "GLD",
+    "name": "SPDR Gold Shares",
+    "assetClass": "ETF",
+    "exchange": "NYSE",
+    "country": "United States",
+    "currency": "USD",
+    "providerSymbol": "GLD",
+    "historySource": "yahoo"
+  },
+  {
+    "symbol": "ETFBW20TR",
+    "name": "Beta ETF WIG20TR",
+    "assetClass": "ETF",
+    "exchange": "GPW",
+    "country": "Poland",
+    "currency": "PLN",
+    "providerSymbol": "ETFBW20TR",
+    "historySource": "yahoo"
+  },
+  {
+    "symbol": "ETFSP500",
+    "name": "Beta ETF S&P 500 PLN-Hedged",
+    "assetClass": "ETF",
+    "exchange": "GPW",
+    "country": "Poland",
+    "currency": "PLN",
+    "providerSymbol": "ETFSP500",
+    "historySource": "yahoo"
+  },
+  {
+    "symbol": "ETFBNDXPL",
+    "name": "Beta ETF Nasdaq-100 PLN-Hedged",
+    "assetClass": "ETF",
+    "exchange": "GPW",
+    "country": "Poland",
+    "currency": "PLN",
+    "providerSymbol": "ETFBNDXPL",
+    "historySource": "yahoo"
+  }
 ]

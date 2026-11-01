@@ -9,4 +9,6 @@ JSON files consumed by `npm run market:seed-universe` (after `npm run build`).
 | `indices.json` | Benchmark indexes (and ACWI ETF proxy) |
 | `etfs.json` | Curated iShares / Vanguard / Beta PL ETFs |
 
-Each row: `symbol`, `name`, `assetClass` (`STOCK`\|`ETF`\|`INDEX`), optional `exchange`, `country`, `currency`, `providerSymbol`, `stooqSymbol`, `historySource` (`twelve_data`\|`stooq`).
+Each row: `symbol`, `name`, `assetClass` (`STOCK`\|`ETF`\|`INDEX`), optional `exchange`, `country`, `currency`, `providerSymbol`, optional `historySource` (`yahoo` — default when omitted, e.g. `sp500.json`).
+
+Valuations use **Yahoo** (`market:sync-history-yahoo` / `market:sync-quotes`) or a local export dump — not Twelve Data / Stooq from these seed files. Legacy `stooqSymbol` / `historySource: stooq|twelve_data` are unused if present.

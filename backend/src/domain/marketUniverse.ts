@@ -16,7 +16,8 @@ export type UniverseSeedRow = {
   currency?: string;
   providerSymbol?: string;
   stooqSymbol?: string;
-  historySource?: "twelve_data" | "stooq" | string;
+  /** Valuation provider hint; seed files use `yahoo`. */
+  historySource?: "yahoo" | "twelve_data" | "stooq" | string;
 };
 
 export type SeedUniverseResult = {

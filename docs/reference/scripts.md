@@ -26,7 +26,7 @@ Run from `backend/` unless noted.
 | Market catalog sync | `npm run market:sync-catalog` | Upsert Twelve Data `/stocks` + `/etfs` into `Instrument`. Requires `TWELVE_DATA_API_KEY` + build. Used by catalog search (`scope=catalog`) |
 | Market seed universe | `npm run market:seed-universe` | Mark curated S&P 500 / GPW / indexes / ETFs `allowlisted=true` from `backend/data/market-universe/`; un-allowlists retired tickers (`CIE`, `CMR`, `CCC`, `SPL`) |
 | Market quote sync | `npm run market:sync-quotes` | Default: all **allowlisted** via **Yahoo** latest close. `--watchlist-only` or `--userId N`; optional `--force` |
-| Market history sync | `npm run market:sync-history` | **Dormant** TD/Stooq path. Prefer `market:sync-history-yahoo` |
+| Market history sync | `npm run market:sync-history` | Allowlist history; with universe `historySource: yahoo` (default) uses Yahoo chart (~1y). Prefer `market:sync-history-yahoo` for explicit `--range` |
 | Market history Yahoo | `npm run market:sync-history-yahoo` | Primary Yahoo chart closes (`--range 1y` \| `--range 10y` or `--range=10y`, default `1y`; `--watchlist-only`, `--userId N`, `--instrumentId N`, `--force`). Source `yahoo` |
 | Market history export | `npm run market:export-history` | Allowlist valuations → NDJSON/`.gz` (`--out PATH`, `--months N`, `--monthly`, `--watchlist-only`). Default `data/market-history/exports/allowlist-eod.ndjson.gz` (gitignored) |
 | Market history import | `npm run market:import-history` | Import NDJSON/`.gz` into `InstrumentValuation` (`--file PATH`). Skips unknown instruments |
