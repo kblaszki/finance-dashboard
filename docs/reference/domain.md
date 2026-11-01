@@ -215,7 +215,7 @@ Unique `[provider, providerSymbol]`; indexes on `symbol`, `assetClass`, `name`, 
 
 ## InstrumentValuation
 
-Global close for one instrument on one UTC day. **Active write path:** `yahoo` (Yahoo chart quotes + history). Legacy/dormant sources may still exist in DB: `twelve_data`, `oanor_gpw`, `stooq`. Watchlist reads the latest row **across sources**. Chart collapse prefers `twelve_data` > `yahoo` > `stooq` > `oanor_gpw`.
+Global close for one instrument on one UTC day. **Active write path:** `yahoo` (Yahoo chart quotes + history). Legacy/dormant sources may still exist in DB: `twelve_data`, `oanor_gpw`, `stooq`. Watchlist reads the latest row **across sources**. Chart collapse prefers `yahoo` > `twelve_data` > `stooq` > `oanor_gpw`.
 
 Stored fields only: `asOfDate` (UTC midnight), `close` (major units in instrument currency), `source`. No OHLC/volume rows.
 

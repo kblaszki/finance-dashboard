@@ -181,6 +181,44 @@ test("syncYahooAllowlistGaps upserts bars after last valuation and day-locks", a
   assert.equal(fetches, 1);
 });
 
+test("syncYahooAllowlistGaps does not day-lock on total Yahoo outage", async () => {
+  await resetDatabase(prisma);
+  await prisma.instrument.create({
+    data: {
+      symbol: "FAIL",
+      name: "Fail Co",
+      exchange: "NASDAQ",
+      currency: "USD",
+      assetClass: "STOCK",
+      provider: INSTRUMENT_PROVIDER_TWELVE_DATA,
+      providerSymbol: "FAIL",
+      allowlisted: true,
+    },
+  });
+  const now = new Date(Date.UTC(2026, 10, 1, 12, 0, 0));
+  const first = await syncYahooAllowlistGaps(prisma, {
+    delayMs: 0,
+    now,
+    fetchImpl: async () => {
+      throw new Error("network down");
+    },
+  });
+  assert.equal(first.failed, 1);
+  assert.equal(first.skippedDueToDayLock, false);
+
+  let fetches = 0;
+  const second = await syncYahooAllowlistGaps(prisma, {
+    delayMs: 0,
+    now,
+    fetchImpl: async () => {
+      fetches += 1;
+      throw new Error("still down");
+    },
+  });
+  assert.equal(second.skippedDueToDayLock, false);
+  assert.equal(fetches, 1);
+});
+
 test("syncYahooAllowlistGaps skips fresh valuations without Yahoo", async () => {
   await resetDatabase(prisma);
   const instrument = await prisma.instrument.create({

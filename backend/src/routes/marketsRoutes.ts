@@ -25,7 +25,7 @@ import {
   listWatchlist,
   removeFromWatchlist,
 } from "../domain/watchlist";
-import { notFound } from "../lib/errors";
+import { conflict, notFound } from "../lib/errors";
 import {
   badRequest,
   handleRouteError,
@@ -162,7 +162,7 @@ export function createMarketsRouter(deps: MarketsDeps): Router {
         if (isUniqueConstraintError(e)) {
           handleRouteError(
             res,
-            badRequest("Instrument is already on your watchlist"),
+            conflict("Instrument is already on your watchlist"),
             "Add to watchlist failed",
           );
           return;

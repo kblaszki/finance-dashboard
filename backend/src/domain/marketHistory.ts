@@ -263,14 +263,28 @@ export async function ensureInstrumentHistory(
     return { backfilled: false };
   }
 
+  const timeoutMs = 12_000;
   try {
-    const yahoo = await syncYahooHistory(prisma, {
-      instrumentId,
-      force: true,
-      delayMs: 0,
-      range: "1y",
-      ...(options.fetchImpl != null ? { fetchImpl: options.fetchImpl } : {}),
-    });
+    const yahoo = await Promise.race([
+      syncYahooHistory(prisma, {
+        instrumentId,
+        // Never force on HTTP GET — skip when series is already dense enough.
+        force: false,
+        delayMs: 0,
+        range: "1y",
+        sparseThreshold: threshold,
+        ...(options.fetchImpl != null ? { fetchImpl: options.fetchImpl } : {}),
+      }),
+      new Promise<null>((resolve) => {
+        setTimeout(() => resolve(null), timeoutMs);
+      }),
+    ]);
+    if (yahoo == null) {
+      return {
+        backfilled: false,
+        backfillMessage: `Yahoo history backfill timed out after ${timeoutMs}ms`,
+      };
+    }
     if (yahoo.updatedInstruments > 0 || yahoo.barsUpserted > 0) {
       return { backfilled: true };
     }

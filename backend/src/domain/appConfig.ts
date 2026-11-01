@@ -59,6 +59,41 @@ export async function setYahooGapSyncLastRunYmd(
   return value;
 }
 
+/**
+ * Compare-and-set day-lock: writes `ymd` only when missing or different.
+ * Returns true when this caller set (or already held) today's value.
+ */
+export async function claimYahooGapSyncLastRunYmd(
+  db: Db,
+  ymd: string,
+): Promise<boolean> {
+  const value = String(ymd).trim();
+  const existing = await getYahooGapSyncLastRunYmd(db);
+  if (existing === value) return true;
+
+  if (existing == null) {
+    try {
+      await db.appConfig.create({
+        data: { key: APP_CONFIG_YAHOO_GAP_SYNC_LAST_RUN, value },
+      });
+      return true;
+    } catch {
+      const again = await getYahooGapSyncLastRunYmd(db);
+      return again === value;
+    }
+  }
+
+  const updated = await db.appConfig.updateMany({
+    where: {
+      key: APP_CONFIG_YAHOO_GAP_SYNC_LAST_RUN,
+      NOT: { value },
+    },
+    data: { value },
+  });
+  if (updated.count > 0) return true;
+  return (await getYahooGapSyncLastRunYmd(db)) === value;
+}
+
 export type AppConfigPayload = {
   marketLiveApi: boolean;
 };

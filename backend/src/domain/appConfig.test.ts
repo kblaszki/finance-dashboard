@@ -9,6 +9,7 @@ import {
 import {
   getAppConfigPayload,
   getMarketLiveApi,
+  claimYahooGapSyncLastRunYmd,
   getYahooGapSyncLastRunYmd,
   setMarketLiveApi,
   setYahooGapSyncLastRunYmd,
@@ -45,4 +46,13 @@ test("yahoo gap-sync last-run AppConfig round-trip", async () => {
   assert.equal(await getYahooGapSyncLastRunYmd(prisma), null);
   assert.equal(await setYahooGapSyncLastRunYmd(prisma, "2026-11-01"), "2026-11-01");
   assert.equal(await getYahooGapSyncLastRunYmd(prisma), "2026-11-01");
+});
+
+test("claimYahooGapSyncLastRunYmd is idempotent for the same day", async () => {
+  await resetDatabase(prisma);
+  assert.equal(await claimYahooGapSyncLastRunYmd(prisma, "2026-11-01"), true);
+  assert.equal(await claimYahooGapSyncLastRunYmd(prisma, "2026-11-01"), true);
+  assert.equal(await getYahooGapSyncLastRunYmd(prisma), "2026-11-01");
+  assert.equal(await claimYahooGapSyncLastRunYmd(prisma, "2026-11-02"), true);
+  assert.equal(await getYahooGapSyncLastRunYmd(prisma), "2026-11-02");
 });

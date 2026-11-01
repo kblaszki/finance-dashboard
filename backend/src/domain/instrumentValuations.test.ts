@@ -20,6 +20,7 @@ import {
   VALUATION_SOURCE_OANOR_GPW,
   VALUATION_SOURCE_STOOQ,
   VALUATION_SOURCE_TWELVE_DATA,
+  VALUATION_SOURCE_YAHOO,
 } from "./instrumentValuations";
 import { utcDateFromYmd } from "./fx";
 
@@ -67,14 +68,15 @@ test("historyWindowForYear uses full year or today for current", () => {
   });
 });
 
-test("collapseClosesByDay prefers twelve_data over stooq over oanor", () => {
+test("collapseClosesByDay prefers yahoo over twelve_data over stooq over oanor", () => {
   const day = utcDateFromYmd("2026-10-15");
   const points = collapseClosesByDay([
     { asOfDate: day, close: 100, source: VALUATION_SOURCE_OANOR_GPW },
     { asOfDate: day, close: 101, source: VALUATION_SOURCE_STOOQ },
     { asOfDate: day, close: 102, source: VALUATION_SOURCE_TWELVE_DATA },
+    { asOfDate: day, close: 103, source: VALUATION_SOURCE_YAHOO },
   ]);
-  assert.deepEqual(points, [{ asOf: "2026-10-15", close: 102 }]);
+  assert.deepEqual(points, [{ asOf: "2026-10-15", close: 103 }]);
 });
 
 test("listInstrumentCloses collapses and sorts ascending", async () => {

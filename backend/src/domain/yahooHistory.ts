@@ -1,12 +1,13 @@
 import type { PrismaClient } from "@prisma/client";
 import {
+  claimYahooGapSyncLastRunYmd,
   getYahooGapSyncLastRunYmd,
-  setYahooGapSyncLastRunYmd,
 } from "./appConfig";
 import { formatYmdUtc } from "./fx";
 import {
   countDistinctClosesInWindow,
   getLatestValuation,
+  getLatestValuationsByInstrumentIds,
   historyWindowFromMonths,
   isValuationFresh,
   upsertInstrumentClose,
@@ -136,6 +137,11 @@ export async function syncYahooAllowlistGaps(
     orderBy: { symbol: "asc" },
   });
 
+  const latestById = await getLatestValuationsByInstrumentIds(
+    prisma,
+    instruments.map((i) => i.id),
+  );
+
   let updatedInstruments = 0;
   let barsUpserted = 0;
   let skippedFresh = 0;
@@ -143,7 +149,7 @@ export async function syncYahooAllowlistGaps(
   const errors: SyncYahooGapsResult["errors"] = [];
 
   for (const instrument of instruments) {
-    const latest = await getLatestValuation(prisma, instrument.id);
+    const latest = latestById.get(instrument.id) ?? null;
     if (latest && isValuationFresh(latest.asOfDate, now)) {
       skippedFresh += 1;
       continue;
@@ -194,7 +200,13 @@ export async function syncYahooAllowlistGaps(
     }
   }
 
-  await setYahooGapSyncLastRunYmd(prisma, todayYmd);
+  // Success-only day-lock: avoid skipping retries after a total outage.
+  const totalOutage =
+    instruments.length > 0 && failed === instruments.length;
+  const madeProgress = updatedInstruments + skippedFresh > 0;
+  if (!totalOutage && (failed === 0 || madeProgress)) {
+    await claimYahooGapSyncLastRunYmd(prisma, todayYmd);
+  }
 
   return {
     attempted: instruments.length,

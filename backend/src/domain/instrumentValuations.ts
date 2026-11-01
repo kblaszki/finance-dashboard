@@ -9,8 +9,8 @@ export const VALUATION_SOURCE_YAHOO = "yahoo";
 
 /** Higher = preferred when collapsing multiple sources for one calendar day. */
 const SOURCE_PRIORITY: Record<string, number> = {
-  [VALUATION_SOURCE_TWELVE_DATA]: 4,
-  [VALUATION_SOURCE_YAHOO]: 3,
+  [VALUATION_SOURCE_YAHOO]: 4,
+  [VALUATION_SOURCE_TWELVE_DATA]: 3,
   [VALUATION_SOURCE_STOOQ]: 2,
   [VALUATION_SOURCE_OANOR_GPW]: 1,
 };
@@ -66,6 +66,27 @@ export async function getLatestValuation(
     },
     orderBy: { asOfDate: "desc" },
   });
+}
+
+/** Latest valuation per instrument id (one query; first row per id by asOfDate desc). */
+export async function getLatestValuationsByInstrumentIds(
+  db: Db,
+  instrumentIds: number[],
+  source?: string,
+): Promise<Map<number, InstrumentValuationRow>> {
+  const out = new Map<number, InstrumentValuationRow>();
+  if (instrumentIds.length === 0) return out;
+  const rows = await db.instrumentValuation.findMany({
+    where: {
+      instrumentId: { in: instrumentIds },
+      ...(source != null ? { source } : {}),
+    },
+    orderBy: { asOfDate: "desc" },
+  });
+  for (const row of rows) {
+    if (!out.has(row.instrumentId)) out.set(row.instrumentId, row);
+  }
+  return out;
 }
 
 export async function upsertInstrumentClose(
@@ -167,7 +188,7 @@ export function sourcePriority(source: string): number {
   return SOURCE_PRIORITY[source] ?? 0;
 }
 
-/** One close per calendar day; prefers twelve_data > stooq > oanor_gpw. */
+/** One close per calendar day; prefers yahoo > twelve_data > stooq > oanor_gpw. */
 export function collapseClosesByDay(
   rows: Array<{ asOfDate: Date; close: Prisma.Decimal | number; source: string }>,
 ): InstrumentClosePoint[] {

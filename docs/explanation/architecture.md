@@ -53,16 +53,16 @@ sequenceDiagram
 | Statistics routes | `backend/src/routes/statisticsRoutes.ts` | Category/tag breakdown, period summary, cashflow, FX net worth + history, rolling 12m (period loads soft-capped) |
 | Errors | `routes/httpSupport.ts`, `lib/errors.ts` | Typed HTTP errors (incl. 409 conflict) |
 | Markets routes | `backend/src/routes/marketsRoutes.ts` | Allowlist/catalog search, POST allowlist, watchlist CRUD (soft quote on add) |
-| Scripts | `backend/src/scripts/` | `createUser` (empty user), `backupDb`, `syncFxRates` (NBP EUR/USD), `syncMarketCatalog` / `syncMarketQuotes` (Twelve Data) |
+| Scripts | `backend/src/scripts/` | `createUser` (empty user), `backupDb`, `syncFxRates` (NBP EUR/USD), `syncMarketCatalog` (Twelve Data), `syncMarketQuotes` / `syncYahooHistory` / `syncYahooGaps` (Yahoo) |
 | Seed | `backend/prisma/seed.ts`, `domain/seedDemoPortfolio.ts` | Demo user + wipe/rebuild sample portfolio |
 | FX | `domain/fx.ts`, `fxRates.ts`, `nbpClient.ts` | NBP mids in `FxRateDaily`; `convertMajor` via PLN pivot |
-| Markets | `domain/instruments.ts`, `instrumentValuations.ts`, `marketData.ts`, `marketHistory.ts`, `marketUniverse.ts`, `twelveDataClient.ts`, `oanorGpwClient.ts`, `stooqClient.ts`, `watchlist.ts` | Global TD catalog + curated allowlist; valuations TD / Oanor / Stooq; user watchlist; CLIs for catalog, seed, quotes, history |
+| Markets | `domain/instruments.ts`, `instrumentValuations.ts`, `marketData.ts`, `marketHistory.ts`, `marketUniverse.ts`, `yahooFinanceClient.ts`, `yahooHistory.ts`, `yahooGapSyncScheduler.ts`, `twelveDataClient.ts`, `oanorGpwClient.ts`, `stooqClient.ts`, `watchlist.ts` | Global TD catalog + curated allowlist; **Yahoo** valuations (quotes/history/gap-fill); TD/Oanor/Stooq clients dormant for valuations; user watchlist; CLIs for catalog, seed, Yahoo sync |
 | Net worth | `domain/netWorth.ts`, `netWorthHistory.ts` | Current + monthly history; convert all owned PLN/EUR/USD accounts into the topbar reporting currency |
 | Cashflow stats | `domain/cashflowStats.ts` | Period summary, history, rolling 12m; same reporting-currency FX model (mid on each `occurredAt` day) |
 
 Money and FX conversion live in `domain/fx*.ts` / `nbpClient.ts` — not in route handlers or the UI. Net-worth and FX cashflow HTTP handlers only read persisted `FxRateDaily` rows (net worth: valuation date = today for current / month-end or today for history; cashflow: mid on or before each row’s `occurredAt` UTC day). Missing required mids fail closed. See [fullstack-practices.md](fullstack-practices.md).
 
-**Shipped (watchlist slice):** `Instrument` / `InstrumentValuation` / `WatchlistItem` + Twelve Data catalog/quote CLIs. **Still planned:** holdings, lots, asset trades — [holdings-market-architecture.md](holdings-market-architecture.md).
+**Shipped (watchlist slice):** `Instrument` / `InstrumentValuation` / `WatchlistItem` + Twelve Data **catalog** CLI + Yahoo quote/history/gap-fill CLIs (`marketLiveApi` gates soft HTTP). **Still planned:** holdings, lots, asset trades — [holdings-market-architecture.md](holdings-market-architecture.md).
 
 ## Auth
 
@@ -76,7 +76,7 @@ Money and FX conversion live in `domain/fx*.ts` / `nbpClient.ts` — not in rout
 ## Frontend shell
 
 - Guests: Landing; Login/Register inside `AuthSwapShell` (50/50 form + visual; sides swap by route).
-- Authed: AppShell sidebar + topbar with Dashboard, Accounts, Categories, Tags, Transfers, Statistics, Settings; account detail `/accounts/:id` for cash ledger; global currency in topbar (`CurrencyProvider`); default post-login path `/dashboard` (`/home` redirects).
+- Authed: AppShell sidebar + topbar with Dashboard, Accounts, Categories, Tags, Transfers, Statistics, Markets, Settings; account detail `/accounts/:id` for cash ledger; instrument detail `/markets/:instrumentId`; global currency in topbar (`CurrencyProvider`); default post-login path `/dashboard` (`/home` redirects).
 
 ## Related
 

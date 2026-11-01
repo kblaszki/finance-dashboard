@@ -52,13 +52,13 @@ Universe JSON lives in `backend/data/market-universe/` (`historySource: "yahoo"`
 
 1. **Search markets** — allowlisted only (`scope=allowlist`).
 2. **Add instrument** — full catalog (`scope=catalog`) → **Add to markets** (`POST /api/instruments/allowlist`, global).
-3. **Watchlist** — favorites with last close; click symbol/name → `/markets/:instrumentId` chart (`GET …/history` with `months` or `year`; soft ~1y Yahoo backfill if sparse and `marketLiveApi` on). Chart supports rolling 3/6/12 months or paging calendar years when multi-year closes are stored.
+3. **Watchlist** — favorites with last close; click symbol/name → `/markets/:instrumentId` chart (`GET …/history` with `months` or `year`; soft ~1y Yahoo backfill if sparse and `marketLiveApi` on — no forced full resync; 12s timeout). Chart supports rolling 3/6/12 months or paging calendar years when multi-year closes are stored.
 
 ## CLI flags
 
 - `market:sync-quotes --watchlist-only` / `--userId N` / `--force` — Yahoo latest close
 - `market:sync-history-yahoo --watchlist-only` / `--userId N` / `--force` / `--range 10y` — Yahoo history (hobby; unofficial API). Space or equals forms work (`--range 10y` or `--range=10y`).
-- `market:sync-yahoo-gaps` / `--force` — **daily allowlist gap-fill**: per allowlisted instrument, Yahoo range sized from last valuation date; upserts bars after that day. AppConfig day-lock skips a second run the same UTC day (`--force` overrides). Prefer this for ongoing EOD upkeep.
+- `market:sync-yahoo-gaps` / `--force` — **daily allowlist gap-fill**: per allowlisted instrument, Yahoo range sized from last valuation date; upserts bars after that day. AppConfig day-lock is set only after a successful/partial-success pass (not after total outage); skips a second run the same UTC day (`--force` overrides). Prefer host cron for production.
 - `market:sync-history` — delegates to Yahoo for current universe seeds (legacy Stooq/TD only if a custom seed still sets `historySource`)
 - `market:export-history` / `market:import-history` — NDJSON(`.gz`) dump. Default `data/market-history/exports/allowlist-eod.ndjson.gz` (gitignored).
 - Demo seed prefers that local export when present; else committed `demo-eod.ndjson`.
@@ -70,4 +70,4 @@ Universe JSON lives in `backend/data/market-universe/` (`historySource: "yahoo"`
 | Host cron | `npm run build && npm run market:sync-yahoo-gaps` (see [private-deploy](private-deploy.md)) |
 | In-process | `MARKET_YAHOO_GAP_SYNC=true` (optional `MARKET_YAHOO_GAP_SYNC_UTC_HOUR`, default `21`) — backend polls ~15m after listen |
 
-Both share the same day-lock so enabling cron **and** in-process on one host will not double-fetch Yahoo the same UTC day.
+Prefer a single runner. After a successful pass, the shared day-lock skips further runs the same UTC day (cron + in-process). A total Yahoo outage does not set the lock so the next tick/cron can retry.

@@ -33,11 +33,12 @@ Hub: [docs/README.md](../README.md).
 | `JSON_BODY_LIMIT` | Express JSON body limit (default `1mb`) |
 | `BACKUP_DIR` / `BACKUP_GZIP` | Used by `npm run db:backup` (Compose: `BACKUP_DIR=/data/backups`) |
 | `NBP_API_BASE` | Base URL for NBP FX sync (default `https://api.nbp.pl/api`); used by `npm run fx:sync` |
-| `TWELVE_DATA_API_KEY` | Twelve Data for catalog, non-GPW quotes, and `market:sync-history` time_series |
+| `TWELVE_DATA_API_KEY` | Twelve Data **catalog** sync only (`market:sync-catalog`). Valuations use Yahoo (no key) |
 | `TWELVE_DATA_API_BASE` | Optional override (default `https://api.twelvedata.com`) |
-| `MARKET_YAHOO_GAP_SYNC` | `true`/`1`/`yes` — enable in-process daily allowlist Yahoo gap-fill after listen (default off) |
-| `MARKET_YAHOO_GAP_SYNC_UTC_HOUR` | UTC hour (0–23) when the in-process job may run (default `21`). Day-lock still limits to one successful pass per UTC day |
-| `OANOR_API_KEY` | Oanor key (`x-oanor-key`) for GPW / WSE / Poland watchlist quotes |
+| `MARKET_YAHOO_GAP_SYNC` | `true`/`1`/`yes` — enable in-process daily allowlist Yahoo gap-fill after listen (default off; prefer host cron) |
+| `MARKET_YAHOO_GAP_SYNC_UTC_HOUR` | UTC hour (0–23) when the in-process job may run (default `21`). Day-lock after a successful pass limits to one run per UTC day |
+| `YAHOO_CHART_API_BASE` | Optional Yahoo chart base (default `https://query1.finance.yahoo.com/v8/finance/chart`) |
+| `OANOR_API_KEY` | Dormant — kept for a future per-user GPW quote path |
 | `OANOR_GPW_API_BASE` | Optional override (default `https://api.oanor.com/gpw-api`) |
 | `TRUST_PROXY` | Express trust-proxy hops: unset → `1` in production / off otherwise; `false`/`0`/`no` disables; integer = hop count |
 | `STATIC_DIR` | Directory of the Vite build (`index.html`); Docker sets `/app/public` |

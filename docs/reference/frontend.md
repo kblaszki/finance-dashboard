@@ -11,6 +11,9 @@ related_code:
   - frontend/src/api/transactionsApi.ts
   - frontend/src/api/transfersApi.ts
   - frontend/src/api/statisticsApi.ts
+  - frontend/src/api/instrumentsApi.ts
+  - frontend/src/api/watchlistApi.ts
+  - frontend/src/api/appConfigApi.ts
   - frontend/src/api/client.ts
   - frontend/src/state/currency.tsx
   - frontend/src/styles/index.css

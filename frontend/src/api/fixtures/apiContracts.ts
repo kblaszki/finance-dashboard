@@ -1,6 +1,11 @@
+import type { AppConfig } from "../appConfigApi";
 import type { AuthConfig, AuthUser } from "../authApi";
 import type { CategoriesImportPreview } from "../categoriesApi";
 import type { CategoryDescriptionRule } from "../categoryDescriptionRulesApi";
+import type {
+  Instrument,
+  InstrumentHistory,
+} from "../instrumentsApi";
 import type { PeriodSummary } from "../statisticsApi";
 import type {
   ImportColumnsPreview,
@@ -10,6 +15,7 @@ import type {
   CashTransfer,
   TransferImportPreview,
 } from "../transfersApi";
+import type { WatchlistItem } from "../watchlistApi";
 
 export const authUserFixture: AuthUser = {
   id: 1,
@@ -105,6 +111,48 @@ export const periodSummaryFixture: PeriodSummary = {
   expense: 400,
   net: 600,
   transfers: 50,
+};
+
+export const instrumentFixture: Instrument = {
+  id: 1,
+  symbol: "AAPL",
+  name: "Apple Inc",
+  exchange: "NASDAQ",
+  micCode: "XNAS",
+  country: "United States",
+  currency: "USD",
+  assetClass: "STOCK",
+  provider: "twelve_data",
+  providerSymbol: "AAPL",
+  allowlisted: true,
+};
+
+export const instrumentHistoryFixture: InstrumentHistory = {
+  instrument: instrumentFixture,
+  currency: "USD",
+  months: 12,
+  year: null,
+  oldestYear: 2020,
+  newestYear: 2026,
+  from: "2025-11-01",
+  to: "2026-11-01",
+  series: [
+    { asOf: "2025-11-03", close: 180.5 },
+    { asOf: "2025-11-04", close: 181.25 },
+  ],
+  backfilled: false,
+};
+
+export const watchlistItemFixture: WatchlistItem = {
+  instrumentId: 1,
+  createdAt: "2026-10-30T00:00:00.000Z",
+  instrument: instrumentFixture,
+  lastClose: 181.25,
+  asOf: "2026-10-29",
+};
+
+export const appConfigFixture: AppConfig = {
+  marketLiveApi: false,
 };
 
 export const transferImportPreviewFixture: TransferImportPreview = {
@@ -236,6 +284,52 @@ function assertPeriodSummaryShape(value: PeriodSummary): void {
   if (typeof value.transfers !== "number") throw new Error("period.transfers");
 }
 
+function assertInstrumentShape(value: Instrument): void {
+  if (typeof value.id !== "number") throw new Error("instrument.id");
+  if (typeof value.symbol !== "string") throw new Error("instrument.symbol");
+  if (typeof value.name !== "string") throw new Error("instrument.name");
+  if (typeof value.currency !== "string") throw new Error("instrument.currency");
+  if (typeof value.assetClass !== "string") {
+    throw new Error("instrument.assetClass");
+  }
+  if (typeof value.allowlisted !== "boolean") {
+    throw new Error("instrument.allowlisted");
+  }
+}
+
+function assertInstrumentHistoryShape(value: InstrumentHistory): void {
+  assertInstrumentShape(value.instrument);
+  if (typeof value.currency !== "string") {
+    throw new Error("history.currency");
+  }
+  if (!Array.isArray(value.series)) throw new Error("history.series");
+  if (typeof value.backfilled !== "boolean") {
+    throw new Error("history.backfilled");
+  }
+  if (typeof value.from !== "string" || typeof value.to !== "string") {
+    throw new Error("history.from/to");
+  }
+}
+
+function assertWatchlistItemShape(value: WatchlistItem): void {
+  if (typeof value.instrumentId !== "number") {
+    throw new Error("watchlist.instrumentId");
+  }
+  assertInstrumentShape(value.instrument);
+  if (value.lastClose !== null && typeof value.lastClose !== "number") {
+    throw new Error("watchlist.lastClose");
+  }
+  if (value.asOf !== null && typeof value.asOf !== "string") {
+    throw new Error("watchlist.asOf");
+  }
+}
+
+function assertAppConfigShape(value: AppConfig): void {
+  if (typeof value.marketLiveApi !== "boolean") {
+    throw new Error("appConfig.marketLiveApi");
+  }
+}
+
 export function validateApiContractFixtures(): void {
   assertAuthUserShape(authUserFixture);
   assertAuthConfigShape(authConfigFixture);
@@ -246,4 +340,8 @@ export function validateApiContractFixtures(): void {
   assertCategoriesImportPreviewShape(categoriesImportPreviewFixture);
   assertCashTransferShape(cashTransferFixture);
   assertPeriodSummaryShape(periodSummaryFixture);
+  assertInstrumentShape(instrumentFixture);
+  assertInstrumentHistoryShape(instrumentHistoryFixture);
+  assertWatchlistItemShape(watchlistItemFixture);
+  assertAppConfigShape(appConfigFixture);
 }

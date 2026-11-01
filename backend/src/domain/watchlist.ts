@@ -2,7 +2,10 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import { badRequest, conflict, notFound } from "../lib/errors";
 import { formatYmdUtc } from "./fx";
 import { findInstrumentById, instrumentPayload } from "./instruments";
-import { getLatestValuation } from "./instrumentValuations";
+import {
+  getLatestValuation,
+  getLatestValuationsByInstrumentIds,
+} from "./instrumentValuations";
 import { ensureInstrumentQuote } from "./marketData";
 import type { TwelveDataFetch } from "./twelveDataClient";
 
@@ -35,17 +38,16 @@ export async function listWatchlist(
     include: { instrument: true },
     orderBy: { createdAt: "desc" },
   });
-  const out: WatchlistListItem[] = [];
-  for (const row of rows) {
-    const valuation = await getLatestValuation(db, row.instrumentId);
-    out.push({
-      instrumentId: row.instrumentId,
-      createdAt: row.createdAt.toISOString(),
-      instrument: instrumentPayload(row.instrument),
-      ...valuationFields(valuation),
-    });
-  }
-  return out;
+  const latestById = await getLatestValuationsByInstrumentIds(
+    db,
+    rows.map((r) => r.instrumentId),
+  );
+  return rows.map((row) => ({
+    instrumentId: row.instrumentId,
+    createdAt: row.createdAt.toISOString(),
+    instrument: instrumentPayload(row.instrument),
+    ...valuationFields(latestById.get(row.instrumentId) ?? null),
+  }));
 }
 
 export async function addToWatchlist(
