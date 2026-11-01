@@ -24,6 +24,7 @@
 | [docs-audit](skills/docs-audit/SKILL.md) | Manual — docs vs code audit |
 | [docs-sync-during-work](skills/docs-sync-during-work/SKILL.md) | Significant API/schema/UI changes — same-chunk docs |
 | [fullstack-architecture-review](skills/fullstack-architecture-review/SKILL.md) | Manual — fullstack practices audit and remediation plan |
+| [css-ui-review](skills/css-ui-review/SKILL.md) | Manual — CSS/UI consistency, responsiveness and theming audit with fixes |
 | [mvp-scope-implementer](skills/mvp-scope-implementer/SKILL.md) | Manual — implement MVP from local scope docs |
 
 ## Agent index and docs

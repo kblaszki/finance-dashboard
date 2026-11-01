@@ -82,6 +82,7 @@ Shipped FR map: [docs/reference/requirements.md](docs/reference/requirements.md)
 | [.cursor/skills/docs-audit/SKILL.md](.cursor/skills/docs-audit/SKILL.md) | Check docs vs code drift |
 | [.cursor/skills/docs-sync-during-work/SKILL.md](.cursor/skills/docs-sync-during-work/SKILL.md) | **Required** — update docs in the same chunk as significant code changes |
 | [.cursor/skills/fullstack-architecture-review/SKILL.md](.cursor/skills/fullstack-architecture-review/SKILL.md) | Periodic fullstack architecture audit |
+| [.cursor/skills/css-ui-review/SKILL.md](.cursor/skills/css-ui-review/SKILL.md) | Exhaustive CSS/UI review — every component, chart, viewport, theme — then fix + unify styles |
 | [.cursor/skills/mvp-add-feature/SKILL.md](.cursor/skills/mvp-add-feature/SKILL.md) | Add a capability to `mvp/` + CHECKLIST |
 | [.cursor/skills/mvp-review/SKILL.md](.cursor/skills/mvp-review/SKILL.md) | Audit MVP checklist vs files vs code |
 | [.cursor/skills/mvp-scope-implementer/SKILL.md](.cursor/skills/mvp-scope-implementer/SKILL.md) | Implement from local `plans/<root>/` scope docs |
