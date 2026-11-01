@@ -17,17 +17,11 @@
   opacity: 0;
   animation: landing-fade-up 1s ease 0.15s both;
   background-image:
-    linear-gradient(rgba(26, 34, 44, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(26, 34, 44, 0.06) 1px, transparent 1px);
+    linear-gradient(var(--landing-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--landing-grid-line) 1px, transparent 1px);
   background-size: 32px 32px;
   mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, var(--color-mask) 20%, transparent 75%);
   pointer-events: none;
-}
-
-[data-theme="dark"] .landing-grid {
-  background-image:
-    linear-gradient(rgba(232, 238, 243, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(232, 238, 243, 0.06) 1px, transparent 1px);
 }
 
 .landing-topbar {
@@ -180,34 +174,6 @@
 @media (max-width: 40rem) {
   .landing-split {
     grid-template-columns: 1fr;
-  }
-
-  .ledger-table th,
-  .ledger-table td {
-    padding: var(--space-xs) 0.5rem;
-  }
-
-  .shell-topbar {
-    padding: 0.65rem 0.85rem;
-  }
-
-  .shell-content {
-    padding: 1rem 0.85rem;
-  }
-
-  .shell-page-title {
-    font-size: var(--text-lg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .landing-anim,
-  .landing-grid {
-    animation: none;
-  }
-
-  .landing-grid {
-    opacity: 1;
   }
 }
 }

@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { ChartCard } from "../ui/ChartCard";
 import { formatMoney } from "../../utils/format";
@@ -66,9 +67,12 @@ export function BreakdownPanel(props: {
                 <span className="legend-name">
                   <span
                     className="legend-dot"
-                    style={{
-                      background: CHART_COLORS[index % CHART_COLORS.length],
-                    }}
+                    style={
+                      {
+                        "--swatch":
+                          CHART_COLORS[index % CHART_COLORS.length],
+                      } as CSSProperties
+                    }
                     aria-hidden
                   />
                   {row.name}

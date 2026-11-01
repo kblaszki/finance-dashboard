@@ -29,8 +29,26 @@
   margin-bottom: var(--space-md);
 }
 
+.section-title {
+  font-size: var(--text-lg);
+  margin: 0 0 1rem;
+}
+
 .chart-card-head .section-title {
   margin: 0;
+}
+
+.chart-container {
+  width: 100%;
+  min-height: clamp(220px, 40vh, 360px);
+}
+
+.chart-container--sm {
+  min-height: 0;
+}
+
+.chart-container .recharts-responsive-container {
+  min-width: 0;
 }
 
 .chart-card-subtitle {
@@ -97,6 +115,7 @@
   flex-shrink: 0;
   border-radius: 3px;
   display: inline-block;
+  background: var(--swatch, var(--chart-1));
 }
 
 .legend-value {

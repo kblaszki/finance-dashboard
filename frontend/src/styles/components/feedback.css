@@ -1,0 +1,31 @@
+@layer components {
+.muted {
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.error-banner {
+  margin: 0 0 var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-negative);
+  background: var(--color-negative-subtle);
+  color: var(--color-negative);
+  font-size: var(--text-sm);
+}
+
+.success-banner {
+  margin: 0 0 var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-positive);
+  background: var(--color-positive-subtle);
+  color: var(--color-positive);
+  font-size: var(--text-sm);
+}
+
+.page-back-link {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+}

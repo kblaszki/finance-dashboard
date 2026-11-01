@@ -263,6 +263,11 @@ td.ledger-cell--editing {
 }
 
 @media (max-width: 40rem) {
+  .ledger-table th,
+  .ledger-table td {
+    padding: var(--space-xs) 0.5rem;
+  }
+
   .ledger-cell-input {
     min-height: var(--tap-target);
     height: auto;

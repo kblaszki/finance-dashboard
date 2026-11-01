@@ -1,16 +1,9 @@
+import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import type { NetWorth, NetWorthByBucket } from "../../api/statisticsApi";
 import { formatMoney } from "../../utils/format";
-
-const CHART_COLORS = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-5)",
-  "var(--chart-6)",
-] as const;
+import { CHART_COLORS } from "../statistics/chartColors";
 
 const BUCKET_LABELS: { key: keyof NetWorthByBucket; label: string }[] = [
   { key: "cash", label: "Cash" },
@@ -98,7 +91,11 @@ export function AllocationCard(props: { netWorth: NetWorth }) {
                   <span className="legend-name">
                     <span
                       className="legend-dot"
-                      style={{ background: slice.color }}
+                      style={
+                        {
+                          "--swatch": slice.color,
+                        } as CSSProperties
+                      }
                       aria-hidden
                     />
                     {slice.name}
