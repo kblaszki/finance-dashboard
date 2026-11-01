@@ -99,6 +99,8 @@ export type HoldingMtm = {
   holdingId: number;
   accountId: number;
   instrumentId: number;
+  symbol: string;
+  name: string;
   quantity: Prisma.Decimal;
   lastClose: number | null;
   lastCloseAsOf: string | null;
@@ -158,7 +160,11 @@ export async function valueHoldingsForAccount(
 ): Promise<{ holdings: HoldingMtm[]; holdingsValue: number }> {
   const holdings = await db.holding.findMany({
     where: { accountId, quantity: { gt: 0 } },
-    include: { instrument: { select: { id: true, currency: true } } },
+    include: {
+      instrument: {
+        select: { id: true, currency: true, symbol: true, name: true },
+      },
+    },
   });
   const closeById = await latestCollapsedClosesByInstrumentIds(
     db,
@@ -183,6 +189,8 @@ export async function valueHoldingsForAccount(
       holdingId: h.id,
       accountId: h.accountId,
       instrumentId: h.instrumentId,
+      symbol: h.instrument.symbol,
+      name: h.instrument.name,
       quantity: qty,
       lastClose: picked?.close ?? null,
       lastCloseAsOf: picked?.asOf ?? null,

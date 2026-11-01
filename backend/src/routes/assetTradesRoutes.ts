@@ -78,31 +78,22 @@ export function createAssetTradesRouter(deps: AssetTradesDeps): Router {
           accountId,
         );
 
-        const instruments = await prisma.instrument.findMany({
-          where: { id: { in: holdings.map((h) => h.instrumentId) } },
-          select: { id: true, symbol: true, name: true, currency: true },
-        });
-        const byId = new Map(instruments.map((i) => [i.id, i]));
-
         res.json({
           accountId,
           currency: account.currency,
           holdingsValue,
-          holdings: holdings.map((h) => {
-            const inst = byId.get(h.instrumentId);
-            return {
-              id: h.holdingId,
-              accountId: h.accountId,
-              instrumentId: h.instrumentId,
-              symbol: inst?.symbol ?? null,
-              name: inst?.name ?? null,
-              quantity: decimalToNumber(h.quantity),
-              lastClose: h.lastClose,
-              lastCloseAsOf: h.lastCloseAsOf,
-              marketValue: h.marketValue,
-              currency: h.currency,
-            };
-          }),
+          holdings: holdings.map((h) => ({
+            id: h.holdingId,
+            accountId: h.accountId,
+            instrumentId: h.instrumentId,
+            symbol: h.symbol,
+            name: h.name,
+            quantity: decimalToNumber(h.quantity),
+            lastClose: h.lastClose,
+            lastCloseAsOf: h.lastCloseAsOf,
+            marketValue: h.marketValue,
+            currency: h.currency,
+          })),
         });
       } catch (e: unknown) {
         handleRouteError(res, e, "Failed to list holdings");
