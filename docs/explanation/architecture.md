@@ -53,6 +53,8 @@ sequenceDiagram
 | Statistics routes | `backend/src/routes/statisticsRoutes.ts` | Category/tag breakdown, period summary, cashflow, FX net worth + history, rolling 12m (period loads soft-capped) |
 | Errors | `routes/httpSupport.ts`, `lib/errors.ts` | Typed HTTP errors (incl. 409 conflict) |
 | Markets routes | `backend/src/routes/marketsRoutes.ts` | Allowlist/catalog search, POST allowlist, watchlist CRUD (soft quote on add) |
+| App config | `backend/src/routes/appConfigRoutes.ts` | Global `marketLiveApi` flag (instance-wide; any authenticated user may patch — private single-tenant deploy) |
+| Asset trades / holdings | `backend/src/routes/assetTradesRoutes.ts` | Holdings MTM list; BUY/SELL + reverse on owned `BROKERAGE`/`IKE`/`IKZE` |
 | Scripts | `backend/src/scripts/` | `createUser` (empty user), `backupDb`, `syncFxRates` (NBP EUR/USD), `syncMarketCatalog` (Twelve Data), `syncMarketQuotes` / `syncYahooHistory` / `syncYahooGaps` (Yahoo) |
 | Seed | `backend/prisma/seed.ts`, `domain/seedDemo{Portfolio,FxRates,Markets,AssetTrades}.ts` | Demo user + wipe/rebuild sample portfolio, FX, markets, asset trades |
 | FX | `domain/fx.ts`, `fxRates.ts`, `nbpClient.ts` | NBP mids in `FxRateDaily`; `convertMajor` via PLN pivot |
@@ -63,6 +65,8 @@ sequenceDiagram
 Money and FX conversion live in `domain/fx*.ts` / `nbpClient.ts` — not in route handlers or the UI. Net-worth and FX cashflow HTTP handlers only read persisted `FxRateDaily` rows (net worth: valuation date = today for current / month-end or today for history; cashflow: mid on or before each row’s `occurredAt` UTC day). Missing required mids fail closed. See [fullstack-practices.md](fullstack-practices.md).
 
 **Shipped:** `Instrument` / `InstrumentValuation` / `WatchlistItem` + Markets CLIs; `Holding` / `Lot` / `LotClose` / `AssetTrade` with FIFO BUY/SELL and `ASSET_*` cash legs; MTM in net worth — [holdings-market-architecture.md](holdings-market-architecture.md), [brokerage-asset-trades.md](../how-to/brokerage-asset-trades.md).
+
+**Single-tenant globals:** Catalog allowlist writes and `AppConfig.marketLiveApi` are instance-wide and not role-gated. Safe when registration is closed and users are trusted ([private-deploy.md](../how-to/private-deploy.md)); do not treat this as multi-tenant SaaS isolation.
 
 ## Auth
 
@@ -82,4 +86,4 @@ Money and FX conversion live in `domain/fx*.ts` / `nbpClient.ts` — not in rout
 
 - [code-map.md](../meta/code-map.md) — path index
 - [api.md](../reference/api.md) — route catalog
-- [domain.md](../reference/domain.md) — Prisma models (User through FxRateDaily, import presets/rules/batches)
+- [domain.md](../reference/domain.md) — Prisma models (User through holdings/lots/AssetTrade, instruments, FxRateDaily, AppConfig, import presets/rules/batches)

@@ -2,7 +2,7 @@
 
 Token-aware index — open [docs/README.md](docs/README.md) for the Diátaxis compass; do not duplicate [README.md](README.md) here.
 
-**Code baseline:** JWT auth, multi-type accounts, category tree + tags, cash ledger + transfers, CSV import (column map, presets, dedup, description suggest), statistics, NBP FX domain, Markets (curated allowlist + TD catalog add, watchlist, EOD history). Product backlog (may say “done” for future intent): [mvp/CHECKLIST.md](mvp/CHECKLIST.md) — do not treat checklist status as shipped code without checking the tree.
+**Code baseline:** JWT auth, multi-type accounts, category tree + tags, cash ledger + transfers, CSV import (column map, presets, dedup, description suggest), statistics, NBP FX domain, Markets (curated allowlist + TD catalog add, watchlist, EOD history), brokerage holdings MTM + FIFO asset trades (demo seed includes BUY/SELL history). Product backlog (may say “done” for future intent): [mvp/CHECKLIST.md](mvp/CHECKLIST.md) — do not treat checklist status as shipped code without checking the tree.
 
 ## MVP feature map
 
@@ -64,7 +64,7 @@ Shipped FR map: [docs/reference/requirements.md](docs/reference/requirements.md)
 | Doc | Use when |
 |-----|----------|
 | [docs/explanation/architecture.md](docs/explanation/architecture.md) | Auth, request flow, modules |
-| [docs/explanation/holdings-market-architecture.md](docs/explanation/holdings-market-architecture.md) | Holdings / lots spike (Instruments + watchlist already ship) |
+| [docs/explanation/holdings-market-architecture.md](docs/explanation/holdings-market-architecture.md) | Holdings / lots / MTM as-built (+ remaining gaps) |
 | [docs/explanation/fullstack-practices.md](docs/explanation/fullstack-practices.md) | Fullstack practices rubric |
 
 ## Cursor rules

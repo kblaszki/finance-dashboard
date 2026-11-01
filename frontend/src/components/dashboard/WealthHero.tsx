@@ -69,8 +69,8 @@ export function WealthHero(props: {
         </h2>
         <p className="muted wealth-hero-note">
           {netWorth.asOf
-            ? `All accounts converted to ${currency} via NBP mid rates · as of ${netWorth.asOf}. Holdings valuations not included.`
-            : `All accounts converted to ${currency} via NBP mid rates. Holdings valuations not included.`}
+            ? `Cash + holdings MTM converted to ${currency} via NBP mid rates · as of ${netWorth.asOf}.`
+            : `Cash + holdings MTM converted to ${currency} via NBP mid rates.`}
         </p>
         {rateDates ? (
           <p className="muted wealth-hero-note">Rates: {rateDates}</p>

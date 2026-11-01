@@ -72,7 +72,7 @@ User-scoped financial account. Create accepts allow-listed types; `accountType` 
 |-------|------|-------|
 | id | Int | PK, autoincrement |
 | userId | Int | FK → User |
-| accountType | String | `BANK`, `BROKERAGE`, `CRYPTO`, `PRECIOUS_METAL`, `REAL_ESTATE`, `CREDIT_CARD`, `IKE`, `IKZE`, `TREASURY_BONDS`, `OTHER`, `MANUAL` (omit/blank → `BANK`). `CREDIT_CARD` uses signed `cashBalance` (≤ 0 = debt). `IKE` / `IKZE` / `TREASURY_BONDS` are cash sleeves for now (holdings later). |
+| accountType | String | `BANK`, `BROKERAGE`, `CRYPTO`, `PRECIOUS_METAL`, `REAL_ESTATE`, `CREDIT_CARD`, `IKE`, `IKZE`, `TREASURY_BONDS`, `OTHER`, `MANUAL` (omit/blank → `BANK`). `CREDIT_CARD` uses signed `cashBalance` (≤ 0 = debt). `BROKERAGE` / `IKE` / `IKZE` support asset trades + holdings MTM. `TREASURY_BONDS` and other types remain cash-only for trades. |
 | name | String | Unique per user (`@@unique([userId, name])`) |
 | currency | String | FX whitelist only: `PLN`, `EUR`, or `USD` (stored uppercase). Create/PATCH reject other codes |
 | cashBalance | Int | Working cash in minor units (cents). API JSON uses major units |

@@ -16,7 +16,7 @@ Finance-dashboard docs follow [Diátaxis](https://diataxis.fr/): each page has o
 | Explanation | Understand why | [explanation/](explanation/) |
 | Meta | Agent maps (not a Diátaxis mode) | [meta/](meta/) |
 
-**Code baseline:** JWT auth, multi-type accounts, category tree + tags, cash ledger + transfers, CSV import (column map, presets, dedup, description suggest), statistics, NBP FX domain, Markets watchlist (Twelve Data catalog + favorites), demo user with sample portfolio. Product backlog: [mvp/CHECKLIST.md](../mvp/CHECKLIST.md) (do not treat checklist “done” as shipped code).
+**Code baseline:** JWT auth, multi-type accounts, category tree + tags, cash ledger + transfers, CSV import (column map, presets, dedup, description suggest), statistics, NBP FX domain, Markets watchlist (Twelve Data catalog + favorites), brokerage holdings MTM + FIFO asset trades, demo user with sample portfolio (incl. seeded trades). Product backlog: [mvp/CHECKLIST.md](../mvp/CHECKLIST.md) (do not treat checklist “done” as shipped code).
 
 ## AI reading order
 
@@ -77,7 +77,7 @@ Never load all docs. Prefer reference for facts, how-to for tasks, explanation f
 | Doc | Use when |
 |-----|----------|
 | [architecture.md](explanation/architecture.md) | Auth and request flow |
-| [holdings-market-architecture.md](explanation/holdings-market-architecture.md) | Spike: holdings / lots; Instruments + watchlist already ship separately |
+| [holdings-market-architecture.md](explanation/holdings-market-architecture.md) | Holdings / lots / MTM architecture (as-built) |
 | [fullstack-practices.md](explanation/fullstack-practices.md) | Fullstack practices rubric |
 
 ## Meta

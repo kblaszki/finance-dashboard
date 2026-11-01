@@ -122,6 +122,45 @@ export async function upsertInstrumentClose(
   });
 }
 
+/**
+ * Batch upsert closes for one instrument in a single interactive transaction
+ * (avoids sequential await between each bar).
+ */
+export async function upsertInstrumentClosesBatch(
+  db: PrismaClient,
+  instrumentId: number,
+  bars: Array<{ asOfYmd: string; close: number | string | Prisma.Decimal }>,
+  source: string = VALUATION_SOURCE_TWELVE_DATA,
+): Promise<number> {
+  if (bars.length === 0) return 0;
+  await db.$transaction(
+    bars.map((bar) => {
+      const asOfDate = utcDateFromYmd(bar.asOfYmd);
+      const close =
+        bar.close instanceof Prisma.Decimal
+          ? bar.close
+          : new Prisma.Decimal(String(bar.close));
+      return db.instrumentValuation.upsert({
+        where: {
+          instrumentId_asOfDate_source: {
+            instrumentId,
+            asOfDate,
+            source,
+          },
+        },
+        create: {
+          instrumentId,
+          asOfDate,
+          close,
+          source,
+        },
+        update: { close },
+      });
+    }),
+  );
+  return bars.length;
+}
+
 export function parseInstrumentHistoryMonths(value: unknown): number {
   if (value === undefined || value === null || value === "") {
     return 12;

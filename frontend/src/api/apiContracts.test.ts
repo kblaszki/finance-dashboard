@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  accountBalanceHistoryFixture,
+  accountEquityFixture,
+  accountHoldingsFixture,
   appConfigFixture,
+  assetTradeFixture,
   authConfigFixture,
   authUserFixture,
   cashTransferFixture,
@@ -10,17 +14,21 @@ import {
   importPreviewFixture,
   instrumentFixture,
   instrumentHistoryFixture,
+  netWorthFixture,
   periodSummaryFixture,
   transferImportPreviewFixture,
   validateApiContractFixtures,
   watchlistItemFixture,
 } from "./fixtures/apiContracts";
+import type { Account, AccountBalanceHistory } from "./accountsApi";
 import type { AppConfig } from "./appConfigApi";
+import type { AssetTrade } from "./assetTradesApi";
 import type { AuthConfig, AuthUser } from "./authApi";
 import type { CategoriesImportPreview } from "./categoriesApi";
 import type { CategoryDescriptionRule } from "./categoryDescriptionRulesApi";
+import type { AccountHoldingsResponse } from "./holdingsApi";
 import type { Instrument, InstrumentHistory } from "./instrumentsApi";
-import type { PeriodSummary } from "./statisticsApi";
+import type { NetWorth, PeriodSummary } from "./statisticsApi";
 import type {
   ImportColumnsPreview,
   ImportPreviewResult,
@@ -109,5 +117,22 @@ describe("API contract fixtures", () => {
   it("app config fixture matches AppConfig", () => {
     const config: AppConfig = appConfigFixture;
     expect(config.marketLiveApi).toBe(false);
+  });
+
+  it("account equity fixture includes holdings MTM fields", () => {
+    const account: Account = accountEquityFixture;
+    expect(account.holdingsValue).toBe(2500);
+    expect(account.totalEquity).toBe(12_500);
+  });
+
+  it("holdings / trade / net-worth / balance-history fixtures match types", () => {
+    const holdings: AccountHoldingsResponse = accountHoldingsFixture;
+    const trade: AssetTrade = assetTradeFixture;
+    const netWorth: NetWorth = netWorthFixture;
+    const history: AccountBalanceHistory = accountBalanceHistoryFixture;
+    expect(holdings.holdings[0]?.symbol).toBe("XTB");
+    expect(trade.side).toBe("BUY");
+    expect(netWorth.byBucket.stock).toBe(2500);
+    expect(history.series[0]?.totalEquity).toBe(12_500);
   });
 });

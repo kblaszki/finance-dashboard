@@ -38,7 +38,9 @@ const account = {
   name: "Checking",
   currency: "PLN",
     cashBalance: 1000,
-    openingBalance: 500, // differs from cashBalance so setup checklist completes
+  holdingsValue: 0,
+  totalEquity: 1000,
+  openingBalance: 500, // differs from cashBalance so setup checklist completes
   openingCashAsOf: null,
   description: null,
   totalBalance: 1000,
@@ -114,7 +116,7 @@ describe("DashboardPage", () => {
     renderDashboard();
     expect(await screen.findByText(/Income ·/)).toBeTruthy();
     expect(
-      screen.getAllByText(/All accounts converted to PLN via NBP mid rates/)
+      screen.getAllByText(/Cash \+ holdings MTM converted to PLN via NBP mid rates/)
         .length,
     ).toBeGreaterThan(0);
     expect(fetchNetWorth).toHaveBeenCalledWith("PLN");

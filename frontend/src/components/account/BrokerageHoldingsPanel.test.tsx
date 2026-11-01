@@ -65,6 +65,27 @@ describe("BrokerageHoldingsPanel", () => {
     });
   });
 
+  it("shows loading state before holdings arrive", async () => {
+    vi.mocked(fetchAccountHoldings).mockImplementation(
+      () => new Promise(() => undefined),
+    );
+    vi.mocked(fetchAssetTrades).mockImplementation(
+      () => new Promise(() => undefined),
+    );
+
+    render(
+      <BrokerageHoldingsPanel
+        accountId={1}
+        currency="USD"
+        onChanged={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(/Loading holdings/i)).toBeTruthy();
+    expect(screen.queryByText(/No open holdings/i)).toBeNull();
+    cleanup();
+  });
+
   it("shows holdings MTM and records a trade", async () => {
     const onChanged = vi.fn();
     vi.mocked(createAssetTrade).mockResolvedValue({

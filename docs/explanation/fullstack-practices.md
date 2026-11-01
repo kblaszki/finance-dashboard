@@ -11,7 +11,7 @@ related_docs:
 
 Hub: [docs/README.md](../README.md).
 
-Practical habits for this monorepo. Examples match the **shipped** surface (auth, accounts, categories, tags, cash ledger, transfers, CSV import, statistics, NBP FX, Markets/watchlist + Yahoo valuations, app-config `marketLiveApi`). Unshipped product intent stays in [mvp/](../../mvp/).
+Practical habits for this monorepo. Examples match the **shipped** surface (auth, accounts, categories, tags, cash ledger, transfers, CSV import, statistics, NBP FX, Markets/watchlist + Yahoo valuations, brokerage holdings + FIFO asset trades, app-config `marketLiveApi`). Unshipped product intent stays in [mvp/](../../mvp/).
 
 ## 1. Clear boundaries
 
@@ -19,7 +19,7 @@ Practical habits for this monorepo. Examples match the **shipped** surface (auth
 - Route handlers coordinate work; business rules live in `backend/src/domain/*`.
 - Make it obvious where new logic belongs before adding code.
 
-Wire-up: `backend/src/app.ts` → `routes/mountRouters.ts`. HTTP: `backend/src/routes/*` (auth, accounts, categories, tags, cashTransactions, cashImport, csvImportPresets, categoryDescriptionRules, transfers, statistics, markets, appConfig). Shared helpers: `httpSupport.ts`, `routeSupport.ts`, `lib/errors.ts`. Money, FX, ledger, import, stats, and market valuation rules stay in domain modules — not in handlers or the SPA.
+Wire-up: `backend/src/app.ts` → `routes/mountRouters.ts`. HTTP: `backend/src/routes/*` (auth, accounts, categories, tags, cashTransactions, cashImport, csvImportPresets, categoryDescriptionRules, transfers, statistics, markets, appConfig, assetTrades). Shared helpers: `httpSupport.ts`, `routeSupport.ts`, `lib/errors.ts`. Money, FX, ledger, import, stats, holdings/MTM, and market valuation rules stay in domain modules — not in handlers or the SPA.
 
 ## 2. Boring request flow
 
@@ -38,7 +38,7 @@ Use `httpSupport.ts` / `lib/errors.ts` (`HttpError`, `handleRouteError`, `badReq
 
 - Structural truth lives in `backend/prisma/schema.prisma`.
 - Every schema change gets a migration.
-- Models and meaning: [domain.md](../reference/domain.md) (`User`, `Account`, `Category`, `CategoryDescriptionRule`, `Tag`, `CashTransaction`, `CashTransfer`, `CsvImportPreset`, `ImportBatch`, `FxRateDaily`, …).
+- Models and meaning: [domain.md](../reference/domain.md) (`User`, `Account`, `Category`, `CategoryDescriptionRule`, `Tag`, `CashTransaction`, `CashTransfer`, `CsvImportPreset`, `ImportBatch`, `FxRateDaily`, `Instrument`, `Holding`, `Lot`, `AssetTrade`, `AppConfig`, …).
 
 ## 5. Domain rules in one place
 

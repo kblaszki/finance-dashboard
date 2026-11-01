@@ -109,15 +109,32 @@ export function createMarketsRouter(deps: MarketsDeps): Router {
           throw notFound("Instrument not found");
         }
 
-        const ensure = await ensureInstrumentHistory(prisma, instrumentId);
         const range =
           year != null
             ? historyWindowForYear(year)
             : historyWindowFromMonths(months!);
-        const [series, yearBounds] = await Promise.all([
+        let [series, yearBounds] = await Promise.all([
           listInstrumentCloses(prisma, instrumentId, range),
           instrumentCloseYearBounds(prisma, instrumentId),
         ]);
+
+        // Cache-first: only block on Yahoo backfill when the window is empty.
+        // Otherwise return persisted series immediately and soft-fill in background.
+        let backfilled = false;
+        let backfillMessage: string | undefined;
+        if (series.length === 0) {
+          const ensure = await ensureInstrumentHistory(prisma, instrumentId);
+          backfilled = ensure.backfilled;
+          backfillMessage = ensure.backfillMessage ?? undefined;
+          [series, yearBounds] = await Promise.all([
+            listInstrumentCloses(prisma, instrumentId, range),
+            instrumentCloseYearBounds(prisma, instrumentId),
+          ]);
+        } else {
+          void ensureInstrumentHistory(prisma, instrumentId).catch(() => {
+            /* soft-fill; client already has cached series */
+          });
+        }
 
         res.json({
           instrument: instrumentPayload(instrument),
@@ -129,10 +146,8 @@ export function createMarketsRouter(deps: MarketsDeps): Router {
           from: range.fromYmd,
           to: range.toYmd,
           series,
-          backfilled: ensure.backfilled,
-          ...(ensure.backfillMessage != null
-            ? { backfillMessage: ensure.backfillMessage }
-            : {}),
+          backfilled,
+          ...(backfillMessage != null ? { backfillMessage } : {}),
         });
       } catch (e: unknown) {
         handleRouteError(res, e, "Failed to load instrument history");

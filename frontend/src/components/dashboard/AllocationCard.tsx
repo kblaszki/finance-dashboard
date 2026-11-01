@@ -44,7 +44,7 @@ export function AllocationCard(props: { netWorth: NetWorth }) {
         <div>
           <h2 className="section-title">Portfolio allocation</h2>
           <p className="muted chart-card-subtitle">
-            Cash balances by account-type bucket.
+            Equity by account-type bucket (cash + holdings MTM).
           </p>
         </div>
         <Link to="/accounts" className="btn-secondary">

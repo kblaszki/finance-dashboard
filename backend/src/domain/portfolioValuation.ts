@@ -132,6 +132,70 @@ export function pickLatestCollapsedClose(
   return best ? { asOf: best.asOf, close: best.close } : null;
 }
 
+/**
+ * One batched valuation read for many instruments: load recent rows (2y window),
+ * keep ~8 newest per instrument, collapse by source priority. Falls back to
+ * getLatestValuationsByInstrumentIds for ids with no window hits.
+ */
+async function latestCollapsedClosesByInstrumentIds(
+  db: Db,
+  instrumentIds: number[],
+): Promise<Map<number, { asOf: string; close: number }>> {
+  const out = new Map<number, { asOf: string; close: number }>();
+  const unique = [...new Set(instrumentIds.filter((id) => id > 0))];
+  if (unique.length === 0) return out;
+
+  const since = new Date();
+  since.setUTCFullYear(since.getUTCFullYear() - 2);
+
+  const rows = await db.instrumentValuation.findMany({
+    where: {
+      instrumentId: { in: unique },
+      asOfDate: { gte: since },
+    },
+    select: {
+      instrumentId: true,
+      asOfDate: true,
+      close: true,
+      source: true,
+    },
+    orderBy: [{ asOfDate: "desc" }],
+  });
+
+  const byInstrument = new Map<
+    number,
+    Array<{ asOfDate: Date; close: Prisma.Decimal | number; source: string }>
+  >();
+  for (const row of rows) {
+    const list = byInstrument.get(row.instrumentId) ?? [];
+    if (list.length >= 8) continue;
+    list.push(row);
+    byInstrument.set(row.instrumentId, list);
+  }
+
+  const missing: number[] = [];
+  for (const id of unique) {
+    const candidates = byInstrument.get(id) ?? [];
+    const picked = pickLatestCollapsedClose(candidates);
+    if (picked) out.set(id, picked);
+    else missing.push(id);
+  }
+
+  if (missing.length > 0) {
+    const latestById = await getLatestValuationsByInstrumentIds(db, missing);
+    for (const id of missing) {
+      const row = latestById.get(id);
+      if (!row) continue;
+      out.set(id, {
+        asOf: formatYmdUtc(row.asOfDate),
+        close: Number(row.close),
+      });
+    }
+  }
+
+  return out;
+}
+
 /** MTM for holdings on one account (quote currency = instrument currency). */
 export async function valueHoldingsForAccount(
   db: Db,
@@ -141,32 +205,18 @@ export async function valueHoldingsForAccount(
     where: { accountId, quantity: { gt: 0 } },
     include: { instrument: { select: { id: true, currency: true } } },
   });
-  const ids = holdings.map((h) => h.instrumentId);
-  const latestById = await getLatestValuationsByInstrumentIds(db, ids);
+  const closeById = await latestCollapsedClosesByInstrumentIds(
+    db,
+    holdings.map((h) => h.instrumentId),
+  );
 
-  // getLatestValuationsByInstrumentIds returns first row by asOfDate desc without
-  // source collapse when multiple sources share the same day. Re-fetch candidates
-  // for those instruments to collapse.
   const result: HoldingMtm[] = [];
   let total = new Prisma.Decimal(0);
 
   for (const h of holdings) {
     const qty = new Prisma.Decimal(h.quantity);
     const currency = h.instrument.currency;
-    const candidates = await db.instrumentValuation.findMany({
-      where: { instrumentId: h.instrumentId },
-      orderBy: { asOfDate: "desc" },
-      take: 8,
-      select: { asOfDate: true, close: true, source: true },
-    });
-    const picked =
-      pickLatestCollapsedClose(candidates) ??
-      (latestById.get(h.instrumentId)
-        ? {
-            asOf: formatYmdUtc(latestById.get(h.instrumentId)!.asOfDate),
-            close: Number(latestById.get(h.instrumentId)!.close),
-          }
-        : null);
+    const picked = closeById.get(h.instrumentId) ?? null;
 
     const marketValue =
       picked != null
@@ -208,30 +258,24 @@ export async function holdingsValueByAccountIds(
   });
   if (holdings.length === 0) return out;
 
-  const byAccount = new Map<number, typeof holdings>();
-  for (const h of holdings) {
-    const list = byAccount.get(h.accountId) ?? [];
-    list.push(h);
-    byAccount.set(h.accountId, list);
-  }
+  const closeById = await latestCollapsedClosesByInstrumentIds(
+    db,
+    holdings.map((h) => h.instrumentId),
+  );
 
-  for (const [accountId, list] of byAccount) {
-    let total = new Prisma.Decimal(0);
-    for (const h of list) {
-      const candidates = await db.instrumentValuation.findMany({
-        where: { instrumentId: h.instrumentId },
-        orderBy: { asOfDate: "desc" },
-        take: 8,
-        select: { asOfDate: true, close: true, source: true },
-      });
-      const picked = pickLatestCollapsedClose(candidates);
-      if (!picked) continue;
-      total = total.add(
-        new Prisma.Decimal(h.quantity)
-          .mul(picked.close)
-          .toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP),
-      );
-    }
+  const totals = new Map<number, Prisma.Decimal>();
+  for (const h of holdings) {
+    const picked = closeById.get(h.instrumentId);
+    if (!picked) continue;
+    const mv = new Prisma.Decimal(h.quantity)
+      .mul(picked.close)
+      .toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP);
+    totals.set(
+      h.accountId,
+      (totals.get(h.accountId) ?? new Prisma.Decimal(0)).add(mv),
+    );
+  }
+  for (const [accountId, total] of totals) {
     out.set(accountId, total.toDecimalPlaces(2).toNumber());
   }
   return out;

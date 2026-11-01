@@ -14,6 +14,8 @@ Hub: [docs/README.md](../README.md).
 
 Operational checklist for a **private household** instance: closed registration (`ALLOW_REGISTER=false`), users created with CLI, HTTPS terminated on a reverse proxy, **one** Compose service serving API + SPA. Basics: [README.md](../../README.md#private-deployment).
 
+**Trust model:** Markets allowlist mutations (`POST /api/instruments/allowlist`) and `PATCH /api/app-config` (`marketLiveApi`) are global and writable by **any authenticated user**. That is intentional for a single-tenant private deploy — do not expose open registration to untrusted parties.
+
 ## Target topology
 
 Browser → reverse proxy (TLS) → `finance-dashboard:3000` (Docker DNS, no host port) → Express (`/api` + Vite static) → SQLite under `./data/` (`file:/data/finance.db` in the container).

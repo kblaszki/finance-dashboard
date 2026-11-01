@@ -228,3 +228,47 @@ test("BANK account rejects asset trades", async () => {
     });
   assert.equal(res.status, 400);
 });
+
+test("DELETE account returns 409 while asset trades exist, then 204 after reverse", async () => {
+  const { token } = await createUserAndToken();
+  const instrument = await seedInstrument("USD");
+  const created = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      name: "Broker Keep Trades",
+      accountType: "BROKERAGE",
+      currency: "USD",
+      openingBalance: 500,
+    });
+  assert.equal(created.status, 201);
+  const accountId = created.body.id as number;
+
+  const buy = await request(app)
+    .post(`/api/accounts/${accountId}/asset-trades`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      instrumentId: instrument.id,
+      side: "BUY",
+      quantity: 1,
+      unitPrice: 100,
+      commission: 0,
+    });
+  assert.equal(buy.status, 201, JSON.stringify(buy.body));
+
+  const blocked = await request(app)
+    .delete(`/api/accounts/${accountId}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(blocked.status, 409);
+  assert.match(String(blocked.body.error), /asset trades/i);
+
+  const reverse = await request(app)
+    .delete(`/api/accounts/${accountId}/asset-trades/${buy.body.id}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(reverse.status, 204);
+
+  const ok = await request(app)
+    .delete(`/api/accounts/${accountId}`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(ok.status, 204);
+});

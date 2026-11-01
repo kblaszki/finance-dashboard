@@ -50,11 +50,7 @@ export function DashboardPage() {
     if (!currency) return Promise.resolve(null);
     return fetchNetWorthHistory(currency, 24, month);
   }, [currency, month]);
-  const {
-    data: history,
-    error: historyError,
-    loading: historyLoading,
-  } = useAsyncData(loadHistory);
+  const { data: history, error: historyError } = useAsyncData(loadHistory);
 
   const loadSummary = useCallback((): Promise<PeriodSummary | null> => {
     if (!currency) return Promise.resolve(null);
@@ -70,11 +66,8 @@ export function DashboardPage() {
     if (!currency) return Promise.resolve(null);
     return fetchPeriodSummary(prevMonth, currency);
   }, [currency, prevMonth]);
-  const {
-    data: prevSummary,
-    error: prevSummaryError,
-    loading: prevSummaryLoading,
-  } = useAsyncData(loadPrevSummary);
+  const { data: prevSummary, error: prevSummaryError } =
+    useAsyncData(loadPrevSummary);
 
   const loadTransfers = useCallback((): Promise<TransferListPage> => {
     return fetchTransfers({ limit: 8 });
@@ -92,23 +85,8 @@ export function DashboardPage() {
     loading: categoriesLoading,
   } = useAsyncData(loadCategories);
 
-  const loading =
-    accountsLoading ||
-    categoriesLoading ||
-    transfersLoading ||
-    (!!currency &&
-      (netWorthLoading ||
-        historyLoading ||
-        summaryLoading ||
-        prevSummaryLoading));
-  const error =
-    accountsError ||
-    categoriesError ||
-    netWorthError ||
-    historyError ||
-    summaryError ||
-    prevSummaryError ||
-    transfersError;
+  const setupLoading = accountsLoading || categoriesLoading;
+  const setupError = accountsError || categoriesError;
 
   const hasAccounts = (accounts?.length ?? 0) > 0;
   const hasCategories = (categories ?? []).some(
@@ -132,11 +110,11 @@ export function DashboardPage() {
     [currency, summary, netWorth],
   );
 
-  if (loading || error) {
+  if (setupLoading || setupError) {
     return (
       <StatusBlock
-        loading={loading}
-        error={error}
+        loading={setupLoading}
+        error={setupError}
         loadingMessage="Loading dashboard…"
       />
     );
@@ -160,7 +138,7 @@ export function DashboardPage() {
     );
   }
 
-  if (!currency || !netWorth || !summary) {
+  if (!currency) {
     return (
       <StatusBlock
         loading={false}
@@ -171,24 +149,45 @@ export function DashboardPage() {
 
   return (
     <div className="dashboard-page page-stack">
-      <WealthHero
-        netWorth={netWorth}
-        history={history}
-        currency={currency}
+      <StatusBlock
+        loading={netWorthLoading && !netWorth}
+        error={netWorthError || historyError}
+        loadingMessage="Loading net worth…"
       />
-      <PeriodKpiStrip
-        summary={summary}
-        prevSummary={prevSummary ?? null}
-        currency={currency}
+      {netWorth ? (
+        <WealthHero
+          netWorth={netWorth}
+          history={history}
+          currency={currency}
+        />
+      ) : null}
+      <StatusBlock
+        loading={summaryLoading && !summary}
+        error={summaryError || prevSummaryError}
+        loadingMessage="Loading period KPIs…"
       />
+      {summary ? (
+        <PeriodKpiStrip
+          summary={summary}
+          prevSummary={prevSummary ?? null}
+          currency={currency}
+        />
+      ) : null}
       <div className="dash-exec-grid">
-        <AllocationCard netWorth={netWorth} />
+        {netWorth ? <AllocationCard netWorth={netWorth} /> : null}
         <GoalsEmptyCard />
         <IdeasPanel ideas={ideas} />
-        <RecentActivityCard
-          transfers={transfersPage?.items ?? []}
-          accounts={accounts ?? []}
+        <StatusBlock
+          loading={transfersLoading && !transfersPage}
+          error={transfersError}
+          loadingMessage="Loading recent activity…"
         />
+        {transfersPage ? (
+          <RecentActivityCard
+            transfers={transfersPage.items}
+            accounts={accounts ?? []}
+          />
+        ) : null}
       </div>
     </div>
   );

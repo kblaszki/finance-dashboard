@@ -332,6 +332,14 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
             "Cannot delete account while it has transfers; delete transfers first",
           );
         }
+        const tradeCount = await tx.assetTrade.count({
+          where: { accountId: id },
+        });
+        if (tradeCount > 0) {
+          throw conflict(
+            "Cannot delete account while it has asset trades; reverse or delete trades first",
+          );
+        }
         await tx.account.delete({ where: { id } });
       });
       res.status(204).send();

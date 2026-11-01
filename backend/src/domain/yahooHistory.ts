@@ -11,6 +11,7 @@ import {
   historyWindowFromMonths,
   isValuationFresh,
   upsertInstrumentClose,
+  upsertInstrumentClosesBatch,
   VALUATION_SOURCE_YAHOO,
 } from "./instrumentValuations";
 import {
@@ -180,15 +181,15 @@ export async function syncYahooAllowlistGaps(
         }
         continue;
       }
-      for (const bar of toUpsert) {
-        await upsertInstrumentClose(prisma, {
-          instrumentId: instrument.id,
+      barsUpserted += await upsertInstrumentClosesBatch(
+        prisma,
+        instrument.id,
+        toUpsert.map((bar) => ({
           asOfYmd: bar.asOfYmd,
           close: bar.close,
-          source: VALUATION_SOURCE_YAHOO,
-        });
-        barsUpserted += 1;
-      }
+        })),
+        VALUATION_SOURCE_YAHOO,
+      );
       updatedInstruments += 1;
     } catch (e: unknown) {
       failed += 1;
@@ -331,15 +332,15 @@ export async function syncYahooHistory(
         });
         continue;
       }
-      for (const bar of bars) {
-        await upsertInstrumentClose(prisma, {
-          instrumentId: instrument.id,
+      barsUpserted += await upsertInstrumentClosesBatch(
+        prisma,
+        instrument.id,
+        bars.map((bar) => ({
           asOfYmd: bar.asOfYmd,
           close: bar.close,
-          source: VALUATION_SOURCE_YAHOO,
-        });
-        barsUpserted += 1;
-      }
+        })),
+        VALUATION_SOURCE_YAHOO,
+      );
       updatedInstruments += 1;
     } catch (e: unknown) {
       failed += 1;

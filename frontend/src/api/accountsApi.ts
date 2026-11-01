@@ -46,8 +46,8 @@ export type Account = {
   name: string;
   currency: string;
   cashBalance: number;
-  holdingsValue?: number;
-  totalEquity?: number;
+  holdingsValue: number;
+  totalEquity: number;
   openingBalance: number;
   openingCashAsOf: string | null;
   description: string | null;

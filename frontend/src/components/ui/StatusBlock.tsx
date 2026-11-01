@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 
 /**
- * Shared loading / error / empty rendering. Renders nothing when all clear,
- * so pages can do: `<StatusBlock … /> || <Content />` style branching.
+ * Shared loading / error / empty rendering. Renders nothing when all clear —
+ * place beside conditional content (e.g. `{data ? <Content /> : null}`).
  */
 export function StatusBlock(props: {
   loading?: boolean;

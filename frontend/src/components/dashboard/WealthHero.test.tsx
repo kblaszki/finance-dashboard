@@ -1,6 +1,9 @@
-import { describe, expect, it } from "vitest";
-import type { NetWorthHistory } from "../../api/statisticsApi";
-import { sliceNetWorthHistory } from "./WealthHero";
+import { cleanup, render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+import { afterEach, describe, expect, it } from "vitest";
+import type { NetWorth, NetWorthHistory } from "../../api/statisticsApi";
+import { sliceNetWorthHistory, WealthHero } from "./WealthHero";
+import { AllocationCard } from "./AllocationCard";
 
 function buildHistory(months: number): NetWorthHistory {
   return {
@@ -14,6 +17,22 @@ function buildHistory(months: number): NetWorthHistory {
     }),
   };
 }
+
+const sampleNetWorth: NetWorth = {
+  currency: "PLN",
+  asOf: "2026-10-30",
+  byBucket: {
+    cash: 1000,
+    stock: 500,
+    crypto: 0,
+    metal: 0,
+    real_estate: 0,
+    other: 0,
+  },
+  liabilities: 0,
+  netWorth: 1500,
+  ratesUsed: [{ currency: "EUR", rateDate: "2026-10-30", mid: 4.2 }],
+};
 
 describe("sliceNetWorthHistory", () => {
   it("returns empty when history is null", () => {
@@ -33,5 +52,37 @@ describe("sliceNetWorthHistory", () => {
 
     expect(sliceNetWorthHistory(series, 12)).toHaveLength(12);
     expect(sliceNetWorthHistory(series, 24)).toHaveLength(24);
+  });
+});
+
+describe("WealthHero copy", () => {
+  afterEach(() => cleanup());
+
+  it("states cash + holdings MTM are included", () => {
+    render(
+      <WealthHero
+        netWorth={sampleNetWorth}
+        history={null}
+        currency="PLN"
+      />,
+    );
+    expect(screen.getByText(/Cash \+ holdings MTM converted to PLN/)).toBeTruthy();
+    expect(screen.queryByText(/Holdings valuations not included/)).toBeNull();
+  });
+});
+
+describe("AllocationCard copy", () => {
+  afterEach(() => cleanup());
+
+  it("describes equity buckets including holdings MTM", () => {
+    render(
+      <MemoryRouter>
+        <AllocationCard netWorth={sampleNetWorth} />
+      </MemoryRouter>,
+    );
+    expect(
+      screen.getByText(/Equity by account-type bucket \(cash \+ holdings MTM\)/),
+    ).toBeTruthy();
+    expect(screen.queryByText(/Cash balances by account-type bucket/)).toBeNull();
   });
 });

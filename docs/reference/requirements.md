@@ -48,7 +48,7 @@ Hub: [docs/README.md](../README.md).
 | MVP-018 | Cash transaction tags | `Tag` + `CashTransactionTag`; `/tags`; ledger `tagIds`; `GET /api/statistics/tag-breakdown` |
 | FR-012 | Accounts list type filter | `/accounts` UI filter by `accountType` (`filterAccountsByType`) |
 | FR-010 | Historical NBP FX rates | `FxRateDaily`; `domain/fx.ts` + `fxRates.ts` + `nbpClient.ts`; `npm run fx:sync` (EUR/USD via PLN pivot); consumed by FR-038 |
-| MVP-021 | STOCK/ETF/INDEX catalog + EOD | `Instrument` allowlist + Yahoo valuations (TD catalog; Oanor/Stooq dormant); seed + Yahoo history/gap CLIs; no holdings |
+| MVP-021 | STOCK/ETF/INDEX catalog + EOD | `Instrument` allowlist + Yahoo valuations (TD catalog; Oanor/Stooq dormant); seed + Yahoo history/gap CLIs (independent of portfolio holdings UI) |
 | FR-039 | Markets watchlist UI | Allowlist/catalog search; `POST` allowlist; watchlist; [markets-watchlist.md](../how-to/markets-watchlist.md) |
 
 ## Planned / not in this codebase
@@ -57,6 +57,6 @@ Hub: [docs/README.md](../README.md).
 |------|----------------|
 | Password reset (MVP-003) | [mvp/features/auth/password-reset-api.md](../../mvp/features/auth/password-reset-api.md) |
 | JWT HttpOnly cookie (MVP-004) | [mvp/features/auth/jwt-httponly-cookie.md](../../mvp/features/auth/jwt-httponly-cookie.md) |
-| Holdings, tax, import, budgets, … | [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) |
+| Portfolio page (FR-008), tax, budgets, cross-currency trades, … | [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) |
 
 Do not invent “implemented” rows for domain FRs until the feature ships and docs-sync updates this page.

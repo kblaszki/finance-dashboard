@@ -144,10 +144,10 @@ export function StatisticsPeriodFilter(props: {
         Showing <strong>{periodLabel}</strong>
         {currency ? ` · ${currency}` : ""}. Top-bar currency is the reporting
         currency: period KPIs and the cashflow chart convert all accounts via
-        NBP mids. Category and tag breakdowns stay in that currency only
-        (unconverted). Transfers are listed separately and do not change
-        income, expense, or net. Tag totals count the full amount on each
-        attached tag.
+        NBP mids. Category and tag analysis list native-currency rows and keep
+        only the selected currency (other currencies omitted — not FX-converted).
+        Transfers are listed separately and do not change income, expense, or
+        net. Tag totals count the full amount on each attached tag.
       </p>
     </section>
   );
