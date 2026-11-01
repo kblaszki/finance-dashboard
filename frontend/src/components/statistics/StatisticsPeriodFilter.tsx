@@ -64,6 +64,7 @@ export function StatisticsPeriodFilter(props: {
           <label>
             Month
             <input
+              className="field-control"
               type="month"
               value={month}
               onChange={(e) => onMonthChange(e.target.value)}
@@ -76,6 +77,7 @@ export function StatisticsPeriodFilter(props: {
             <label>
               Year
               <select
+                className="field-control"
                 value={yearOf(month)}
                 onChange={(e) =>
                   onMonthChange(
@@ -93,6 +95,7 @@ export function StatisticsPeriodFilter(props: {
             <label>
               Quarter
               <select
+                className="field-control"
                 value={quarterOf(month)}
                 onChange={(e) =>
                   onMonthChange(
@@ -113,6 +116,7 @@ export function StatisticsPeriodFilter(props: {
           <label>
             Year
             <select
+              className="field-control"
               value={yearOf(month)}
               onChange={(e) =>
                 onMonthChange(anchorForYear(Number(e.target.value)))
@@ -129,6 +133,7 @@ export function StatisticsPeriodFilter(props: {
         <label>
           History range
           <select
+            className="field-control"
             value={historyMonths}
             onChange={(e) => onHistoryMonthsChange(Number(e.target.value))}
           >

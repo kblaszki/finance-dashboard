@@ -173,8 +173,8 @@ export function BrokerageHoldingsPanel(props: Props) {
   const trades = tradesPage?.items ?? [];
 
   return (
-    <section className="panel" aria-label="Holdings and trades">
-      <h2>Holdings</h2>
+    <section className="card" aria-label="Holdings and trades">
+      <h2 className="section-title">Holdings</h2>
       <StatusBlock
         loading={holdingsLoading && !holdingsData}
         error={holdingsError}
@@ -191,38 +191,40 @@ export function BrokerageHoldingsPanel(props: Props) {
               No open holdings.
             </p>
           ) : (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Symbol</th>
-                  <th>Qty</th>
-                  <th>Last close</th>
-                  <th>Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                {holdings.map((h) => (
-                  <tr key={h.id}>
-                    <td>
-                      {h.symbol ?? h.instrumentId}
-                      {h.name ? ` · ${h.name}` : ""}
-                    </td>
-                    <td>{h.quantity}</td>
-                    <td>
-                      {h.lastClose != null
-                        ? formatMoney(h.lastClose, h.currency)
-                        : "—"}
-                      {h.lastCloseAsOf ? ` (${h.lastCloseAsOf})` : ""}
-                    </td>
-                    <td>
-                      {h.marketValue != null
-                        ? formatMoney(h.marketValue, h.currency)
-                        : "—"}
-                    </td>
+            <div className="table-wrap">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Symbol</th>
+                    <th className="num">Qty</th>
+                    <th className="num">Last close</th>
+                    <th className="num">Value</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {holdings.map((h) => (
+                    <tr key={h.id}>
+                      <td className="col-text">
+                        {h.symbol ?? h.instrumentId}
+                        {h.name ? ` · ${h.name}` : ""}
+                      </td>
+                      <td className="num">{h.quantity}</td>
+                      <td className="num">
+                        {h.lastClose != null
+                          ? formatMoney(h.lastClose, h.currency)
+                          : "—"}
+                        {h.lastCloseAsOf ? ` (${h.lastCloseAsOf})` : ""}
+                      </td>
+                      <td className="num">
+                        {h.marketValue != null
+                          ? formatMoney(h.marketValue, h.currency)
+                          : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </>
       ) : null}
@@ -230,11 +232,12 @@ export function BrokerageHoldingsPanel(props: Props) {
       {formError ? <p className="error-banner">{formError}</p> : null}
       {searchError ? <p className="error-banner">{searchError}</p> : null}
 
-      <h3>New trade</h3>
+      <h3 className="section-title">New trade</h3>
       <form className="form-grid" onSubmit={handleSubmit}>
         <label>
           Instrument
           <input
+            className="field-control"
             value={query || instrumentLabel}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -271,6 +274,7 @@ export function BrokerageHoldingsPanel(props: Props) {
         <label>
           Date
           <input
+            className="field-control"
             type="date"
             value={occurredAt}
             onChange={(e) => setOccurredAt(e.target.value)}
@@ -280,6 +284,7 @@ export function BrokerageHoldingsPanel(props: Props) {
         <label>
           Side
           <select
+            className="field-control"
             value={side}
             onChange={(e) => setSide(e.target.value as AssetTradeSide)}
           >
@@ -290,6 +295,7 @@ export function BrokerageHoldingsPanel(props: Props) {
         <label>
           Quantity
           <input
+            className="field-control"
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
             inputMode="decimal"
@@ -299,6 +305,7 @@ export function BrokerageHoldingsPanel(props: Props) {
         <label>
           Unit price
           <input
+            className="field-control"
             value={unitPrice}
             onChange={(e) => setUnitPrice(e.target.value)}
             inputMode="decimal"
@@ -308,6 +315,7 @@ export function BrokerageHoldingsPanel(props: Props) {
         <label>
           Commission
           <input
+            className="field-control"
             value={commission}
             onChange={(e) => setCommission(e.target.value)}
             inputMode="decimal"
@@ -318,7 +326,7 @@ export function BrokerageHoldingsPanel(props: Props) {
         </button>
       </form>
 
-      <h3>Recent trades</h3>
+      <h3 className="section-title">Recent trades</h3>
       <StatusBlock
         loading={tradesLoading && !tradesPage}
         error={tradesError}
@@ -330,39 +338,45 @@ export function BrokerageHoldingsPanel(props: Props) {
             No trades yet.
           </p>
         ) : (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>When</th>
-                <th>Side</th>
-                <th>Symbol</th>
-                <th>Qty</th>
-                <th>Price</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {trades.map((t) => (
-                <tr key={t.id}>
-                  <td>{formatOccurredAt(t.occurredAt)}</td>
-                  <td>{t.side}</td>
-                  <td>{t.instrumentSymbol ?? t.instrumentId}</td>
-                  <td>{t.quantity}</td>
-                  <td>{formatMoney(t.unitPrice, t.currency)}</td>
-                  <td>
-                    <button
-                      type="button"
-                      className="btn-link"
-                      disabled={busy}
-                      onClick={() => void handleDelete(t)}
-                    >
-                      Delete
-                    </button>
-                  </td>
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>When</th>
+                  <th>Side</th>
+                  <th>Symbol</th>
+                  <th className="num">Qty</th>
+                  <th className="num">Price</th>
+                  <th className="col-actions" />
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {trades.map((t) => (
+                  <tr key={t.id}>
+                    <td>{formatOccurredAt(t.occurredAt)}</td>
+                    <td>{t.side}</td>
+                    <td className="col-text">
+                      {t.instrumentSymbol ?? t.instrumentId}
+                    </td>
+                    <td className="num">{t.quantity}</td>
+                    <td className="num">
+                      {formatMoney(t.unitPrice, t.currency)}
+                    </td>
+                    <td className="col-actions">
+                      <button
+                        type="button"
+                        className="btn-link"
+                        disabled={busy}
+                        onClick={() => void handleDelete(t)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )
       ) : null}
     </section>

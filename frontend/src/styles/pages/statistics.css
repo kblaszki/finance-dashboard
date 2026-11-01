@@ -18,17 +18,6 @@
   color: var(--color-text-muted);
 }
 
-.period-filter-row select,
-.period-filter-row input {
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border);
-  padding: var(--space-xs) var(--space-sm);
-  background: var(--color-bg);
-  color: var(--color-text);
-  font-family: inherit;
-  font-size: var(--text-sm);
-}
-
 .period-filter-summary {
   font-size: var(--text-sm);
   color: var(--color-text-muted);
@@ -61,6 +50,12 @@
   color: var(--color-text);
 }
 
+.stats-segmented__btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  color: var(--color-text);
+}
+
 .stats-segmented__btn--active {
   background: var(--color-surface);
   color: var(--color-text);
@@ -89,6 +84,12 @@
 }
 
 .stats-facet-tabs__btn:hover {
+  color: var(--color-text);
+}
+
+.stats-facet-tabs__btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
   color: var(--color-text);
 }
 

@@ -2,8 +2,12 @@ export function ChartCard(props: {
   title: string;
   subtitle?: React.ReactNode;
   actions?: React.ReactNode;
+  /** Compact height for donuts / small charts (avoids forced tall min-height). */
+  size?: "sm" | "md";
   children: React.ReactNode;
 }) {
+  const sizeClass =
+    props.size === "sm" ? "chart-container chart-container--sm" : "chart-container";
   return (
     <section className="card chart-card">
       <div className="chart-card-head">
@@ -17,7 +21,7 @@ export function ChartCard(props: {
           <div className="chart-card-actions">{props.actions}</div>
         )}
       </div>
-      <div className="chart-container">{props.children}</div>
+      <div className={sizeClass}>{props.children}</div>
     </section>
   );
 }

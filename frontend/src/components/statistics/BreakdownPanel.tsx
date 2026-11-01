@@ -24,7 +24,11 @@ export function BreakdownPanel(props: {
   } = props;
   const toneClass = tone === "neutral" ? "" : `stat-row-value ${tone}`;
   return (
-    <ChartCard title={`${title} by ${byLabel}`} subtitle={subtitle}>
+    <ChartCard
+      title={`${title} by ${byLabel}`}
+      subtitle={subtitle}
+      size="sm"
+    >
       {rows.length === 0 ? (
         <p className="empty-state">{emptyLabel}</p>
       ) : (

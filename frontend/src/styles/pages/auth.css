@@ -150,6 +150,12 @@
   font-weight: var(--weight-semibold);
   cursor: pointer;
   padding: 0.25rem 0.4rem;
+  border-radius: var(--radius-sm);
+}
+
+.auth-swap-password__toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 .auth-swap-submit {

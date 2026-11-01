@@ -91,6 +91,12 @@
   cursor: pointer;
 }
 
+.wealth-range-btn:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: var(--focus-ring);
+}
+
 .wealth-range-btn--active {
   background: var(--color-accent-subtle);
   border-color: var(--color-accent);

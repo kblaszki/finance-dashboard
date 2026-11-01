@@ -95,6 +95,10 @@ button.badge.badge--removable:disabled {
   min-height: clamp(220px, 40vh, 360px);
 }
 
+.chart-container--sm {
+  min-height: 0;
+}
+
 .chart-container .recharts-responsive-container {
   min-width: 0;
 }

@@ -9,4 +9,29 @@
 .font-display {
   font-family: var(--font-display);
 }
+
+/* Wins over earlier layers: short-circuit non-essential motion. */
+@media (prefers-reduced-motion: reduce) {
+  .shell-nav a,
+  .shell-logout,
+  .shell-backdrop,
+  .shell--drawer-mode .shell-sidebar,
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger,
+  .theme-toggle,
+  .data-table tbody tr,
+  .appearance-option,
+  .auth-swap-form,
+  .auth-swap-visual,
+  .landing-anim,
+  .landing-grid {
+    transition: none;
+    animation: none;
+  }
+
+  .landing-grid {
+    opacity: 1;
+  }
+}
 }

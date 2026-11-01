@@ -97,6 +97,12 @@
   color: var(--sidebar-brand);
 }
 
+.shell-nav a:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  color: var(--sidebar-brand);
+}
+
 .shell-nav a.active {
   background: var(--sidebar-active-bg);
   color: var(--sidebar-active-text);
@@ -267,6 +273,12 @@
   color: var(--color-accent);
 }
 
+.shell-menu-btn:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: var(--focus-ring);
+}
+
 .shell-backdrop {
   display: none;
   position: fixed;
@@ -387,7 +399,7 @@
 }
 
 @media (max-width: 40rem) {
-  .chart-container {
+  .chart-container:not(.chart-container--sm) {
     min-height: clamp(220px, 40vh, 360px);
   }
 

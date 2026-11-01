@@ -15,6 +15,12 @@
     color: var(--color-text);
   }
 
+  .link-button:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+    border-radius: var(--radius-sm);
+  }
+
 .stat-list {
   list-style: none;
   margin: 0;
@@ -90,6 +96,12 @@ button:disabled {
 
 .btn-link:hover {
   text-decoration: underline;
+}
+
+.btn-link:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm);
 }
 
 .btn-link.danger {

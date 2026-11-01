@@ -218,6 +218,7 @@ export function MarketsPage() {
         <label>
           Search
           <input
+            className="field-control"
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -293,6 +294,7 @@ export function MarketsPage() {
         <label>
           Catalog search
           <input
+            className="field-control"
             type="search"
             value={catalogQuery}
             onChange={(e) => setCatalogQuery(e.target.value)}

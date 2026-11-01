@@ -105,4 +105,53 @@
   .account-edit-row .auth-form--compact {
     max-width: 28rem;
   }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    gap: var(--space-md);
+    align-items: end;
+    margin-bottom: var(--space-md);
+  }
+
+  .form-grid > label {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    min-width: 0;
+  }
+
+  .form-grid .btn-primary {
+    justify-self: start;
+  }
+
+  .suggest-list {
+    list-style: none;
+    margin: 0;
+    padding: var(--space-xs);
+    grid-column: 1 / -1;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    max-height: 12rem;
+    overflow: auto;
+  }
+
+  .suggest-list li {
+    margin: 0;
+  }
+
+  .suggest-list .btn-link {
+    display: block;
+    width: 100%;
+    text-align: start;
+    padding: var(--space-xs) var(--space-sm);
+  }
+
+  .suggest-list .btn-link:hover,
+  .suggest-list .btn-link:focus-visible {
+    background: var(--color-accent-subtle);
+  }
 }
