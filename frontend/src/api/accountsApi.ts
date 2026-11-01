@@ -42,7 +42,7 @@ export function accountTypeLabel(type: string): string {
 export type Account = {
   id: number;
   userId: number;
-  accountType: AccountType | string;
+  accountType: AccountType;
   name: string;
   currency: string;
   cashBalance: number;

@@ -6,7 +6,7 @@ export type AssetTrade = {
   id: number;
   accountId: number;
   instrumentId: number;
-  side: AssetTradeSide | string;
+  side: AssetTradeSide;
   quantity: number;
   unitPrice: number;
   commission: number;

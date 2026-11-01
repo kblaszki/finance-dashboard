@@ -65,7 +65,6 @@ New `*Api.ts` modules must extend `apiModules.test.ts`. High-churn DTOs should e
 
 | Job | What |
 |-----|------|
-| `backend-test` | `prisma generate`, `npm run build`, `npm test` in `backend/` |
-| `frontend-checks` | `npm run build`, `npm test`, `npm run lint` in `frontend/` |
-| `coverage` | Runs after `backend-test` + `frontend-checks` (`needs`); per-package `npm run test:coverage` (same thresholds as root script) |
-| `docker-build` | Runs after the three jobs above succeed; `docker build` (does not push) |
+| `backend-test` | `prisma generate`, `npm run build`, `npm run test:coverage` in `backend/` (single coverage-bearing suite run; uploads `backend-coverage` artifact) |
+| `frontend-checks` | `npm run build`, `npm run test:coverage`, `npm run lint` in `frontend/` (single coverage-bearing suite run; uploads `frontend-coverage` artifact) |
+| `docker-build` | Runs after `backend-test` + `frontend-checks`; `docker build` (does not push) |

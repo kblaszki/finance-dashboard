@@ -174,4 +174,27 @@ describe("StatisticsPage period and analysis views", () => {
     });
     expect(screen.getAllByText("Untagged").length).toBeGreaterThan(0);
   });
+
+  it("paints KPIs while the cashflow chart is still loading", async () => {
+    let resolveHistory!: (value: Awaited<ReturnType<typeof fetchCashflowHistory>>) => void;
+    vi.mocked(fetchCashflowHistory).mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveHistory = resolve;
+        }),
+    );
+
+    renderStats();
+    expect(await screen.findByText(/Transfers ·/)).toBeTruthy();
+    expect(screen.getByText("Loading cashflow chart…")).toBeTruthy();
+
+    resolveHistory({
+      currency: "PLN",
+      monthCount: 1,
+      series: [{ month: "2026-08", income: 3000, expense: 400, net: 2600 }],
+    });
+    await waitFor(() => {
+      expect(screen.queryByText("Loading cashflow chart…")).toBeNull();
+    });
+  });
 });

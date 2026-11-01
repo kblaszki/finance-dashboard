@@ -55,6 +55,13 @@ export async function closeLotsFifo(
 
   let remaining = quantity;
   const allocations: CloseAllocation[] = [];
+  const lotUpdates: Prisma.PrismaPromise<unknown>[] = [];
+  const closeRows: Array<{
+    lotId: number;
+    tradeId: number;
+    quantity: Prisma.Decimal;
+    commissionAllocated: Prisma.Decimal;
+  }> = [];
 
   for (const lot of lots) {
     if (remaining.lte(0)) break;
@@ -70,21 +77,23 @@ export async function closeLotsFifo(
       ? new Prisma.Decimal(lot.commissionOpen).mul(take).div(open)
       : new Prisma.Decimal(0);
 
-    await db.lot.update({
-      where: { id: lot.id },
-      data: {
-        quantityOpen: nextOpen,
-        quantityClosed: nextClosed,
-        commissionOpen: new Prisma.Decimal(lot.commissionOpen).sub(commissionShare),
-      },
-    });
-    await db.lotClose.create({
-      data: {
-        lotId: lot.id,
-        tradeId,
-        quantity: take,
-        commissionAllocated: commissionShare,
-      },
+    lotUpdates.push(
+      db.lot.update({
+        where: { id: lot.id },
+        data: {
+          quantityOpen: nextOpen,
+          quantityClosed: nextClosed,
+          commissionOpen: new Prisma.Decimal(lot.commissionOpen).sub(
+            commissionShare,
+          ),
+        },
+      }),
+    );
+    closeRows.push({
+      lotId: lot.id,
+      tradeId,
+      quantity: take,
+      commissionAllocated: commissionShare,
     });
 
     allocations.push({
@@ -98,6 +107,14 @@ export async function closeLotsFifo(
 
   if (remaining.gt(0)) {
     throw badRequest("insufficient open quantity to sell");
+  }
+
+  // Sequential updates (safe inside interactive trade tx) + one createMany.
+  for (const update of lotUpdates) {
+    await update;
+  }
+  if (closeRows.length > 0) {
+    await db.lotClose.createMany({ data: closeRows });
   }
 
   return allocations;
@@ -136,20 +153,26 @@ export async function reverseLotCloses(
   if (closes.length === 0) return null;
 
   let holdingId: number | null = null;
+  const lotUpdates: Prisma.PrismaPromise<unknown>[] = [];
   for (const close of closes) {
     holdingId = close.lot.holdingId;
     const qty = new Prisma.Decimal(close.quantity);
     const commission = new Prisma.Decimal(close.commissionAllocated);
-    await db.lot.update({
-      where: { id: close.lotId },
-      data: {
-        quantityOpen: new Prisma.Decimal(close.lot.quantityOpen).add(qty),
-        quantityClosed: new Prisma.Decimal(close.lot.quantityClosed).sub(qty),
-        commissionOpen: new Prisma.Decimal(close.lot.commissionOpen).add(
-          commission,
-        ),
-      },
-    });
+    lotUpdates.push(
+      db.lot.update({
+        where: { id: close.lotId },
+        data: {
+          quantityOpen: new Prisma.Decimal(close.lot.quantityOpen).add(qty),
+          quantityClosed: new Prisma.Decimal(close.lot.quantityClosed).sub(qty),
+          commissionOpen: new Prisma.Decimal(close.lot.commissionOpen).add(
+            commission,
+          ),
+        },
+      }),
+    );
+  }
+  for (const update of lotUpdates) {
+    await update;
   }
   await db.lotClose.deleteMany({ where: { tradeId } });
   return holdingId;

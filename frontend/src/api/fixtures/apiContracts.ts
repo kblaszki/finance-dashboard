@@ -445,17 +445,53 @@ function assertAccountHoldingsShape(value: AccountHoldingsResponse): void {
 
 function assertAssetTradeShape(value: AssetTrade): void {
   if (typeof value.id !== "number") throw new Error("trade.id");
-  if (typeof value.side !== "string") throw new Error("trade.side");
+  if (typeof value.accountId !== "number") throw new Error("trade.accountId");
+  if (typeof value.instrumentId !== "number") {
+    throw new Error("trade.instrumentId");
+  }
+  if (value.side !== "BUY" && value.side !== "SELL") {
+    throw new Error("trade.side");
+  }
   if (typeof value.quantity !== "number") throw new Error("trade.quantity");
   if (typeof value.unitPrice !== "number") throw new Error("trade.unitPrice");
+  if (typeof value.commission !== "number") throw new Error("trade.commission");
+  if (typeof value.currency !== "string") throw new Error("trade.currency");
   if (typeof value.occurredAt !== "string") throw new Error("trade.occurredAt");
+  if (value.settlementDate !== null && typeof value.settlementDate !== "string") {
+    throw new Error("trade.settlementDate");
+  }
+  if (value.notes !== null && typeof value.notes !== "string") {
+    throw new Error("trade.notes");
+  }
+  if (typeof value.createdAt !== "string") throw new Error("trade.createdAt");
+  if (value.instrumentSymbol !== null && typeof value.instrumentSymbol !== "string") {
+    throw new Error("trade.instrumentSymbol");
+  }
+  if (value.instrumentName !== null && typeof value.instrumentName !== "string") {
+    throw new Error("trade.instrumentName");
+  }
 }
 
 function assertNetWorthShape(value: NetWorth): void {
   if (typeof value.currency !== "string") throw new Error("netWorth.currency");
+  if (typeof value.asOf !== "string") throw new Error("netWorth.asOf");
   if (typeof value.netWorth !== "number") throw new Error("netWorth.netWorth");
-  if (typeof value.byBucket.stock !== "number") {
-    throw new Error("netWorth.byBucket.stock");
+  if (typeof value.liabilities !== "number") {
+    throw new Error("netWorth.liabilities");
+  }
+  if (!Array.isArray(value.ratesUsed)) throw new Error("netWorth.ratesUsed");
+  const bucket = value.byBucket;
+  for (const key of [
+    "cash",
+    "stock",
+    "crypto",
+    "metal",
+    "real_estate",
+    "other",
+  ] as const) {
+    if (typeof bucket[key] !== "number") {
+      throw new Error(`netWorth.byBucket.${key}`);
+    }
   }
 }
 

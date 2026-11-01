@@ -68,25 +68,182 @@ export async function getLatestValuation(
   });
 }
 
-/** Latest valuation per instrument id (one query; first row per id by asOfDate desc). */
+type LatestValuationRaw = {
+  id: number | bigint;
+  instrumentId: number | bigint;
+  asOfDate: Date | string;
+  close: Prisma.Decimal | string | number;
+  source: string;
+  createdAt: Date | string;
+};
+
+function mapRawValuationRow(row: LatestValuationRaw): InstrumentValuationRow {
+  return {
+    id: Number(row.id),
+    instrumentId: Number(row.instrumentId),
+    asOfDate:
+      row.asOfDate instanceof Date ? row.asOfDate : new Date(row.asOfDate),
+    close:
+      row.close instanceof Prisma.Decimal
+        ? row.close
+        : new Prisma.Decimal(String(row.close)),
+    source: String(row.source),
+    createdAt:
+      row.createdAt instanceof Date ? row.createdAt : new Date(row.createdAt),
+  };
+}
+
+/**
+ * Latest valuation per instrument id via SQL MAX(asOfDate) join — does not
+ * load full EOD history into memory. When multiple sources share the max day,
+ * prefers higher sourcePriority (yahoo > twelve_data > …).
+ */
 export async function getLatestValuationsByInstrumentIds(
   db: Db,
   instrumentIds: number[],
   source?: string,
 ): Promise<Map<number, InstrumentValuationRow>> {
   const out = new Map<number, InstrumentValuationRow>();
-  if (instrumentIds.length === 0) return out;
-  const rows = await db.instrumentValuation.findMany({
-    where: {
-      instrumentId: { in: instrumentIds },
-      ...(source != null ? { source } : {}),
-    },
-    orderBy: { asOfDate: "desc" },
-  });
-  for (const row of rows) {
-    if (!out.has(row.instrumentId)) out.set(row.instrumentId, row);
+  const unique = [
+    ...new Set(instrumentIds.filter((id) => Number.isInteger(id) && id > 0)),
+  ];
+  if (unique.length === 0) return out;
+
+  const rows =
+    source != null
+      ? await db.$queryRaw<LatestValuationRaw[]>`
+          SELECT v.id, v.instrumentId, v.asOfDate, v.close, v.source, v.createdAt
+          FROM InstrumentValuation v
+          INNER JOIN (
+            SELECT instrumentId, MAX(asOfDate) AS maxAsOf
+            FROM InstrumentValuation
+            WHERE instrumentId IN (${Prisma.join(unique)})
+              AND source = ${source}
+            GROUP BY instrumentId
+          ) latest
+            ON latest.instrumentId = v.instrumentId
+           AND latest.maxAsOf = v.asOfDate
+          WHERE v.source = ${source}
+        `
+      : await db.$queryRaw<LatestValuationRaw[]>`
+          SELECT v.id, v.instrumentId, v.asOfDate, v.close, v.source, v.createdAt
+          FROM InstrumentValuation v
+          INNER JOIN (
+            SELECT instrumentId, MAX(asOfDate) AS maxAsOf
+            FROM InstrumentValuation
+            WHERE instrumentId IN (${Prisma.join(unique)})
+            GROUP BY instrumentId
+          ) latest
+            ON latest.instrumentId = v.instrumentId
+           AND latest.maxAsOf = v.asOfDate
+        `;
+
+  for (const raw of rows) {
+    const row = mapRawValuationRow(raw);
+    const prev = out.get(row.instrumentId);
+    if (
+      !prev ||
+      sourcePriority(row.source) > sourcePriority(prev.source)
+    ) {
+      out.set(row.instrumentId, row);
+    }
   }
   return out;
+}
+
+/**
+ * Latest valuation per instrument with asOfDate strictly before `before`
+ * (carry-forward for month-replay windows).
+ */
+export async function getLatestValuationsBeforeDate(
+  db: Db,
+  instrumentIds: number[],
+  before: Date,
+): Promise<
+  Array<{
+    instrumentId: number;
+    asOfDate: Date;
+    close: Prisma.Decimal | number;
+    source: string;
+  }>
+> {
+  const unique = [
+    ...new Set(instrumentIds.filter((id) => Number.isInteger(id) && id > 0)),
+  ];
+  if (unique.length === 0) return [];
+
+  const rows = await db.$queryRaw<LatestValuationRaw[]>`
+    SELECT v.id, v.instrumentId, v.asOfDate, v.close, v.source, v.createdAt
+    FROM InstrumentValuation v
+    INNER JOIN (
+      SELECT instrumentId, MAX(asOfDate) AS maxAsOf
+      FROM InstrumentValuation
+      WHERE instrumentId IN (${Prisma.join(unique)})
+        AND asOfDate < ${before}
+      GROUP BY instrumentId
+    ) latest
+      ON latest.instrumentId = v.instrumentId
+     AND latest.maxAsOf = v.asOfDate
+  `;
+
+  const byId = new Map<number, InstrumentValuationRow>();
+  for (const raw of rows) {
+    const row = mapRawValuationRow(raw);
+    const prev = byId.get(row.instrumentId);
+    if (
+      !prev ||
+      sourcePriority(row.source) > sourcePriority(prev.source)
+    ) {
+      byId.set(row.instrumentId, row);
+    }
+  }
+  return [...byId.values()].map((row) => ({
+    instrumentId: row.instrumentId,
+    asOfDate: row.asOfDate,
+    close: row.close,
+    source: row.source,
+  }));
+}
+
+/**
+ * Valuations for holdings month-replay: dense rows in [windowStart, exclusiveEnd)
+ * plus one carry-forward close per instrument before windowStart.
+ */
+export async function loadValuationsForAsOfReplay(
+  db: Db,
+  instrumentIds: number[],
+  windowStart: Date,
+  exclusiveEnd: Date,
+): Promise<
+  Array<{
+    instrumentId: number;
+    asOfDate: Date;
+    close: Prisma.Decimal | number;
+    source: string;
+  }>
+> {
+  const unique = [
+    ...new Set(instrumentIds.filter((id) => Number.isInteger(id) && id > 0)),
+  ];
+  if (unique.length === 0) return [];
+
+  const [inWindow, prior] = await Promise.all([
+    db.instrumentValuation.findMany({
+      where: {
+        instrumentId: { in: unique },
+        asOfDate: { gte: windowStart, lt: exclusiveEnd },
+      },
+      select: {
+        instrumentId: true,
+        asOfDate: true,
+        close: true,
+        source: true,
+      },
+    }),
+    getLatestValuationsBeforeDate(db, unique, windowStart),
+  ]);
+
+  return [...prior, ...inWindow];
 }
 
 export async function upsertInstrumentClose(

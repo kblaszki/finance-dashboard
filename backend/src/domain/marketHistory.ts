@@ -4,7 +4,7 @@ import { isGpwListed } from "./instruments";
 import {
   countDistinctClosesInWindow,
   historyWindowFromMonths,
-  upsertInstrumentClose,
+  upsertInstrumentClosesBatch,
   VALUATION_SOURCE_STOOQ,
   VALUATION_SOURCE_TWELVE_DATA,
 } from "./instrumentValuations";
@@ -202,15 +202,15 @@ export async function syncAllowlistHistory(
         continue;
       }
 
-      for (const bar of bars) {
-        await upsertInstrumentClose(prisma, {
-          instrumentId: instrument.id,
+      barsUpserted += await upsertInstrumentClosesBatch(
+        prisma,
+        instrument.id,
+        bars.map((bar) => ({
           asOfYmd: bar.asOfYmd,
           close: bar.close,
-          source,
-        });
-        barsUpserted += 1;
-      }
+        })),
+        source,
+      );
       updatedInstruments += 1;
     } catch (e: unknown) {
       failed += 1;

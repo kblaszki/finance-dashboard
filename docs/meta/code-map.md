@@ -38,7 +38,7 @@ JWT auth, multi-type accounts, category tree + tags, cash ledger + transfers, CS
 | Stats period (M/Q/Y) | `backend/src/domain/statsPeriod.ts` |
 | Tag breakdown domain | `backend/src/domain/tagBreakdown.ts` |
 | Cashflow stats domain | `backend/src/domain/cashflowStats.ts` (reporting-currency FX period/history/rolling) |
-| Account balance history domain | `backend/src/domain/accountBalanceHistory.ts` (cash + holdings MTM + equity; holdings via `portfolioValuation.holdingsValuesAsOf`) |
+| Account balance history domain | `backend/src/domain/accountBalanceHistory.ts` (cash + holdings MTM + equity; holdings via `portfolioValuation.holdingsValuesAsOf`; as-of closes via `instrumentValuations.loadValuationsForAsOfReplay`) |
 | Net worth domain | `backend/src/domain/netWorth.ts`, `netWorthHistory.ts` |
 | FX / NBP rates | `backend/src/domain/fx.ts`, `fxRates.ts`, `nbpClient.ts` |
 | FX sync CLI | `backend/src/scripts/syncFxRates.ts` |
@@ -53,7 +53,7 @@ JWT auth, multi-type accounts, category tree + tags, cash ledger + transfers, CS
 | Create user CLI | `backend/src/scripts/createUser.ts` |
 | DB backup CLI | `backend/src/scripts/backupDb.ts` |
 | SQLite path helper | `backend/src/dbPath.ts` |
-| HTTP / schema tests | `backend/test/httpHarness.ts`, `auth.http.test.ts`, `accounts.http.test.ts` (+ `ledgerImport` / `categories` / `transfers` / `statistics` / `markets` / `assetTrades` HTTP suites), `schema.integration.test.ts`, `migrateDeploy.test.ts` |
+| HTTP / schema tests | `backend/test/httpHarness.ts`, `auth.http.test.ts`, `accounts.http.test.ts` (+ `ledgerImport` / `categories` / `transfers` / `statistics` / `markets` / `assetTrades` / `appConfig` HTTP suites), `schema.integration.test.ts`, `migrateDeploy.test.ts` |
 | Test Prisma helper | `backend/test/prismaTestClient.ts`, `setupTestEnv.ts` |
 | SPA routes | `frontend/src/App.tsx` |
 | Auth state | `frontend/src/state/auth.tsx` |

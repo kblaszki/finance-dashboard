@@ -95,9 +95,7 @@ export function StatisticsPage() {
   } = useAsyncData(loadTags);
 
   const loadHistory = useCallback(() => {
-    if (!currency) {
-      return Promise.resolve({ currency: "", monthCount: 0, series: [] });
-    }
+    if (!currency) return Promise.resolve(null);
     return fetchCashflowHistory(month, currency, historyMonths, period);
   }, [month, currency, historyMonths, period]);
   const {
@@ -160,22 +158,6 @@ export function StatisticsPage() {
     );
   }, [tagBreakdown]);
 
-  const loading =
-    !!currency &&
-    (summaryLoading ||
-      historyLoading ||
-      breakdownLoading ||
-      tagLoading ||
-      rollingLoading);
-  const error =
-    summaryError ||
-    historyError ||
-    breakdownError ||
-    tagError ||
-    rollingError ||
-    categoriesError ||
-    prevSummaryError;
-
   const categoryFacetRows =
     categoryFacet === "income"
       ? incomeRollup
@@ -197,6 +179,34 @@ export function StatisticsPage() {
   const tagFacetRows =
     tagFacet === "income" ? tagIncomeRollup : tagExpenseRollup;
 
+  const analysisLoading =
+    analysisView === "tags"
+      ? tagLoading && !tagBreakdown
+      : breakdownLoading && !breakdown;
+  const analysisError =
+    categoriesError ||
+    (analysisView === "tags" ? tagError : breakdownError);
+
+  if (currencies.length === 0) {
+    return (
+      <StatusBlock
+        loading={false}
+        error={null}
+        empty
+        emptyMessage="Add an account to see period KPIs and charts."
+      />
+    );
+  }
+
+  if (!currency) {
+    return (
+      <StatusBlock
+        loading={false}
+        error="Statistics data is incomplete for the selected currency."
+      />
+    );
+  }
+
   return (
     <>
       <StatisticsPeriodFilter
@@ -211,36 +221,48 @@ export function StatisticsPage() {
       />
 
       <StatusBlock
-        loading={loading}
-        error={error}
-        empty={currencies.length === 0}
-        loadingMessage="Loading statistics…"
-        emptyMessage="Add an account to see period KPIs and charts."
+        loading={summaryLoading && !summary}
+        error={summaryError || prevSummaryError}
+        loadingMessage="Loading period KPIs…"
       />
-
-      {!loading && !error && currency && summary && (
+      {summary ? (
         <StatisticsKpiGrid
           summary={summary}
           prevSummary={prevSummary}
           periodLabel={periodLabel}
           currency={currency}
         />
-      )}
+      ) : null}
 
-      {!loading && !error && currency && rolling && (
+      <StatusBlock
+        loading={rollingLoading && !rolling}
+        error={rollingError}
+        loadingMessage="Loading rolling averages…"
+      />
+      {rolling ? (
         <RollingCashflowStrip rolling={rolling} currency={currency} />
-      )}
+      ) : null}
 
-      {!loading && !error && currency && history && (
+      <StatusBlock
+        loading={historyLoading && !history}
+        error={historyError}
+        loadingMessage="Loading cashflow chart…"
+      />
+      {history ? (
         <CashflowHistoryChart
           series={chartSeries}
           currency={currency}
           historyMonths={historyMonths}
           periodLabel={periodLabel}
         />
-      )}
+      ) : null}
 
-      {!loading && !error && currency && (
+      <StatusBlock
+        loading={analysisLoading}
+        error={analysisError}
+        loadingMessage="Loading analysis…"
+      />
+      {!analysisLoading && !analysisError ? (
         <StatisticsAnalysisSection
           analysisView={analysisView}
           categoryFacet={categoryFacet}
@@ -256,7 +278,7 @@ export function StatisticsPage() {
           onCategoryFacetChange={setCategoryFacet}
           onTagFacetChange={setTagFacet}
         />
-      )}
+      ) : null}
     </>
   );
 }

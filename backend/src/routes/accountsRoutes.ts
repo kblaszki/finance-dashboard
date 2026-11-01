@@ -15,6 +15,7 @@ import { findOwnedAccount } from "../domain/ownedAccount";
 import {
   resolveOpeningEffectiveAt,
 } from "../domain/accountBalanceHistory";
+import { loadValuationsForAsOfReplay } from "../domain/instrumentValuations";
 import {
   holdingsValueByAccountIds,
   holdingsValuesAsOf,
@@ -215,21 +216,13 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
         const instrumentIds = [
           ...new Set(assetTrades.map((t) => t.instrumentId)),
         ];
-        const valuations =
-          instrumentIds.length === 0
-            ? []
-            : await prisma.instrumentValuation.findMany({
-                where: {
-                  instrumentId: { in: instrumentIds },
-                  asOfDate: { lt: end },
-                },
-                select: {
-                  instrumentId: true,
-                  asOfDate: true,
-                  close: true,
-                  source: true,
-                },
-              });
+        const { start: windowStart } = parseMonthParam(months[0]!);
+        const valuations = await loadValuationsForAsOfReplay(
+          prisma,
+          instrumentIds,
+          windowStart,
+          end,
+        );
         const holdingsValueByMonth = new Map<string, number>();
         for (const monthKey of months) {
           const { end: exclusive } = parseMonthParam(monthKey);

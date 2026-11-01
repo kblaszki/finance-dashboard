@@ -10,10 +10,12 @@ import { INSTRUMENT_PROVIDER_TWELVE_DATA } from "./instruments";
 import {
   collapseClosesByDay,
   countDistinctClosesInWindow,
+  getLatestValuationsByInstrumentIds,
   historyWindowForYear,
   historyWindowFromMonths,
   instrumentCloseYearBounds,
   listInstrumentCloses,
+  loadValuationsForAsOfReplay,
   parseInstrumentHistoryMonths,
   parseInstrumentHistoryYear,
   upsertInstrumentClose,
@@ -135,4 +137,119 @@ test("listInstrumentCloses collapses and sorts ascending", async () => {
 
   const bounds = await instrumentCloseYearBounds(prisma, instrument.id);
   assert.deepEqual(bounds, { oldestYear: 2026, newestYear: 2026 });
+});
+
+test("getLatestValuationsByInstrumentIds returns newest day and prefers yahoo", async () => {
+  await resetDatabase(prisma);
+  const a = await prisma.instrument.create({
+    data: {
+      symbol: "LAT",
+      name: "Latest",
+      exchange: "NASDAQ",
+      currency: "USD",
+      assetClass: "STOCK",
+      provider: INSTRUMENT_PROVIDER_TWELVE_DATA,
+      providerSymbol: "LAT",
+      allowlisted: true,
+    },
+  });
+  const b = await prisma.instrument.create({
+    data: {
+      symbol: "LAT2",
+      name: "Latest 2",
+      exchange: "NASDAQ",
+      currency: "USD",
+      assetClass: "STOCK",
+      provider: INSTRUMENT_PROVIDER_TWELVE_DATA,
+      providerSymbol: "LAT2",
+      allowlisted: true,
+    },
+  });
+  await upsertInstrumentClose(prisma, {
+    instrumentId: a.id,
+    asOfYmd: "2025-01-01",
+    close: 1,
+    source: VALUATION_SOURCE_TWELVE_DATA,
+  });
+  await upsertInstrumentClose(prisma, {
+    instrumentId: a.id,
+    asOfYmd: "2026-10-01",
+    close: 50,
+    source: VALUATION_SOURCE_TWELVE_DATA,
+  });
+  await upsertInstrumentClose(prisma, {
+    instrumentId: a.id,
+    asOfYmd: "2026-10-01",
+    close: 55,
+    source: VALUATION_SOURCE_YAHOO,
+  });
+  await upsertInstrumentClose(prisma, {
+    instrumentId: b.id,
+    asOfYmd: "2026-09-15",
+    close: 9,
+    source: VALUATION_SOURCE_TWELVE_DATA,
+  });
+
+  const latest = await getLatestValuationsByInstrumentIds(prisma, [
+    a.id,
+    b.id,
+    a.id,
+  ]);
+  assert.equal(latest.size, 2);
+  assert.equal(Number(latest.get(a.id)!.close), 55);
+  assert.equal(latest.get(a.id)!.source, VALUATION_SOURCE_YAHOO);
+  assert.equal(Number(latest.get(b.id)!.close), 9);
+});
+
+test("loadValuationsForAsOfReplay bounds window and carry-forward", async () => {
+  await resetDatabase(prisma);
+  const instrument = await prisma.instrument.create({
+    data: {
+      symbol: "REP",
+      name: "Replay",
+      exchange: "NASDAQ",
+      currency: "USD",
+      assetClass: "STOCK",
+      provider: INSTRUMENT_PROVIDER_TWELVE_DATA,
+      providerSymbol: "REP",
+      allowlisted: true,
+    },
+  });
+  await upsertInstrumentClose(prisma, {
+    instrumentId: instrument.id,
+    asOfYmd: "2024-06-01",
+    close: 10,
+    source: VALUATION_SOURCE_YAHOO,
+  });
+  await upsertInstrumentClose(prisma, {
+    instrumentId: instrument.id,
+    asOfYmd: "2026-01-15",
+    close: 20,
+    source: VALUATION_SOURCE_YAHOO,
+  });
+  await upsertInstrumentClose(prisma, {
+    instrumentId: instrument.id,
+    asOfYmd: "2026-02-15",
+    close: 30,
+    source: VALUATION_SOURCE_YAHOO,
+  });
+  await upsertInstrumentClose(prisma, {
+    instrumentId: instrument.id,
+    asOfYmd: "2026-05-01",
+    close: 99,
+    source: VALUATION_SOURCE_YAHOO,
+  });
+
+  const windowStart = utcDateFromYmd("2026-01-01");
+  const exclusiveEnd = utcDateFromYmd("2026-03-01");
+  const rows = await loadValuationsForAsOfReplay(
+    prisma,
+    [instrument.id],
+    windowStart,
+    exclusiveEnd,
+  );
+  // Carry-forward 2024-06 + Jan/Feb window; May after exclusiveEnd omitted
+  assert.equal(rows.length, 3);
+  const closes = rows.map((r) => Number(r.close)).sort((x, y) => x - y);
+  assert.deepEqual(closes, [10, 20, 30]);
 });

@@ -16,6 +16,7 @@ import {
   parseMonthsParam,
 } from "../domain/cashflowStats";
 import { getMidOnOrBefore, getMidRowOnOrBefore } from "../domain/fxRates";
+import { loadValuationsForAsOfReplay } from "../domain/instrumentValuations";
 import { minorToDecimal } from "../domain/money";
 import {
   aggregateNetWorth,
@@ -387,21 +388,13 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
         const instrumentIds = [
           ...new Set(assetTrades.map((t) => t.instrumentId)),
         ];
-        const valuations =
-          instrumentIds.length === 0
-            ? []
-            : await prisma.instrumentValuation.findMany({
-                where: {
-                  instrumentId: { in: instrumentIds },
-                  asOfDate: { lt: historyEnd },
-                },
-                select: {
-                  instrumentId: true,
-                  asOfDate: true,
-                  close: true,
-                  source: true,
-                },
-              });
+        const { start: windowStart } = parseMonthParam(months[0]!);
+        const valuations = await loadValuationsForAsOfReplay(
+          prisma,
+          instrumentIds,
+          windowStart,
+          historyEnd,
+        );
 
         res.json(
           await aggregateNetWorthHistory({
