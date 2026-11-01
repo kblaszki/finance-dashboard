@@ -21,45 +21,6 @@
     border-radius: var(--radius-sm);
   }
 
-.stat-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-/* .stat-list { padding: 0 } would cancel .card padding when both classes share an element */
-.stat-list.card {
-  padding: var(--space-md) var(--space-lg);
-}
-
-.stat-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--space-md);
-  padding: 0.85rem 0;
-  border-bottom: 1px solid var(--color-border);
-  font-size: var(--text-base);
-}
-
-.stat-row:first-child {
-  padding-top: 0.15rem;
-}
-
-.stat-row:last-child {
-  border-bottom: none;
-  padding-bottom: 0.15rem;
-}
-
-.stat-row-label {
-  color: var(--color-text-muted);
-  font-weight: var(--weight-medium);
-  min-width: 0;
-}
-
 .stat-row-value {
   font-weight: var(--weight-semibold);
   font-variant-numeric: tabular-nums;

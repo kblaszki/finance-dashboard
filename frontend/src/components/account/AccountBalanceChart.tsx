@@ -56,7 +56,8 @@ export function AccountBalanceChart(props: {
         emptyMessage="No balance history yet."
       />
       {!error && series.length > 0 && (
-        <ResponsiveContainer width="100%" height={260}>
+        <div className="chart-plot chart-plot--md">
+        <ResponsiveContainer width="100%" height="100%">
           <LineChart data={series}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
             <XAxis
@@ -105,6 +106,7 @@ export function AccountBalanceChart(props: {
             />
           </LineChart>
         </ResponsiveContainer>
+        </div>
       )}
     </ChartCard>
   );

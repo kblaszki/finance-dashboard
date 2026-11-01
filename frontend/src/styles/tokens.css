@@ -19,8 +19,23 @@
   --color-positive: #047857;
   --color-positive-subtle: #ecfdf5;
   --color-warning: #d68910;
-  --accent: var(--color-accent);
   --focus-ring: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent);
+
+  /* Stacking: skip-link < topbar < backdrop < drawer; table sticky local 1–3 */
+  --z-base: 0;
+  --z-raised: 1;
+  --z-sticky: 2;
+  --z-sticky-corner: 3;
+  --z-popover: 5;
+  --z-topbar: 10;
+  --z-skip: 20;
+  --z-backdrop: 25;
+  --z-drawer: 30;
+
+  /* Recharts plot heights (parents of ResponsiveContainer) */
+  --chart-h-sm: 12.5rem;
+  --chart-h-md: 17.5rem;
+  --chart-h-lg: 20rem;
 
   --shadow-card: 0 1px 3px rgba(26, 34, 44, 0.08), 0 4px 12px rgba(26, 34, 44, 0.05);
   --radius-sm: 0.5rem;
@@ -48,7 +63,7 @@
   --sidebar-width: 14.5rem;
   --tap-target: 2.75rem;
 
-  /* Canonical breakpoints (documentation): 40rem / 64rem / 80rem */
+  /* Viewport media: 40rem / 64rem; content max-width: 80rem */
 
   --font-ui: "IBM Plex Sans", system-ui, sans-serif;
   --font-display: "Space Grotesk", system-ui, sans-serif;

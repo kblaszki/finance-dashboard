@@ -10,5 +10,5 @@ alwaysApply: false
 - HTTP calls via `frontend/src/api/` (`client.ts`, `authApi.ts`; add `*Api.ts` modules as features return).
 - Tests for API modules: [docs/reference/testing.md](mdc:docs/reference/testing.md).
 - Formatting helpers: `frontend/src/utils/format.ts` when displaying numbers.
-- Styles: existing classes in `App.css` / `index.css` — match the current UI layout.
+- Styles: layered CSS under `frontend/src/styles/` (via `index.css`) — match existing tokens, components, and page classes.
 - Routes and API mapping: [docs/reference/frontend.md](mdc:docs/reference/frontend.md) — add a row when adding pages or client functions.

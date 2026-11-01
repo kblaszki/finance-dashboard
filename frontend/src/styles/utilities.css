@@ -6,10 +6,6 @@
 }
 
 
-.font-display {
-  font-family: var(--font-display);
-}
-
 /* Wins over earlier layers: short-circuit non-essential motion. */
 @media (prefers-reduced-motion: reduce) {
   .shell-nav a,

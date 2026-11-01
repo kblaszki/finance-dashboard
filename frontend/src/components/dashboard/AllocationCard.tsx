@@ -51,7 +51,7 @@ export function AllocationCard(props: { netWorth: NetWorth }) {
       ) : (
         <div className="donut-layout">
           <div className="dash-donut-wrap">
-            <ResponsiveContainer width="100%" height={180}>
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={nonZero}

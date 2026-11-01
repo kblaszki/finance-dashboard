@@ -3,7 +3,7 @@
   position: absolute;
   left: 0.75rem;
   top: 0.75rem;
-  z-index: 20;
+  z-index: var(--z-skip);
   padding: 0.45rem 0.75rem;
   background: var(--color-surface);
   color: var(--color-text);
@@ -215,7 +215,7 @@
 .shell-topbar {
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: var(--z-topbar);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -285,7 +285,7 @@
   display: none;
   position: fixed;
   inset: 0;
-  z-index: 25;
+  z-index: var(--z-backdrop);
   margin: 0;
   padding: 0;
   border: none;
@@ -309,20 +309,10 @@
 }
 
 
-@container main (max-width: 40rem) {
-  .dash-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* Canonical breakpoints: 40rem / 64rem / 80rem */
+/* Canonical breakpoints: 40rem / 64rem / 80rem (80rem = content max-width) */
 @media (max-width: 64rem) {
   .card {
     padding: var(--space-md) var(--space-lg);
-  }
-
-  .kpi-highlight {
-    font-size: var(--text-2xl);
   }
 
   .kpi-grid {
@@ -356,7 +346,7 @@
   inset: 0 auto 0 0;
   width: min(100%, 18rem);
   height: 100vh;
-  z-index: 30;
+  z-index: var(--z-drawer);
   flex-direction: column;
   flex-wrap: nowrap;
   align-items: stretch;

@@ -106,7 +106,8 @@ export function WealthHero(props: {
           </div>
         </div>
         {series.length > 0 ? (
-          <ResponsiveContainer width="100%" height={200}>
+          <div className="chart-plot chart-plot--sm">
+          <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={series}>
               <defs>
                 <linearGradient id="dashNetArea" x1="0" y1="0" x2="0" y2="1">
@@ -166,6 +167,7 @@ export function WealthHero(props: {
               />
             </AreaChart>
           </ResponsiveContainer>
+          </div>
         ) : (
           <p className="empty-state">No net-worth history yet.</p>
         )}

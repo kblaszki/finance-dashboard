@@ -56,7 +56,4 @@ button.badge.badge--removable:disabled {
   cursor: default;
 }
 
-.stack-md {
-  margin-top: var(--space-md);
-}
 }

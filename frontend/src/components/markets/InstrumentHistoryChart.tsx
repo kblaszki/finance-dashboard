@@ -121,7 +121,8 @@ export function InstrumentHistoryChart(props: {
         </p>
       )}
       {!error && series.length > 0 && (
-        <ResponsiveContainer width="100%" height={280}>
+        <div className="chart-plot chart-plot--md">
+        <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={series}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
             <XAxis
@@ -157,6 +158,7 @@ export function InstrumentHistoryChart(props: {
             />
           </AreaChart>
         </ResponsiveContainer>
+        </div>
       )}
     </ChartCard>
   );

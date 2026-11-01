@@ -46,10 +46,4 @@
   font-size: var(--text-sm);
 }
 
-.field-warning {
-  color: var(--color-warning);
-  margin-left: 0.35rem;
-  cursor: help;
-}
-
 }

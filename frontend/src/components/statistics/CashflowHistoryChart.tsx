@@ -33,7 +33,8 @@ export function CashflowHistoryChart(props: {
       title={`Cashflow history (${currency})`}
       subtitle={`${historyMonths} months ending ${periodLabel}, with savings rate on the right axis.`}
     >
-      <ResponsiveContainer width="100%" height={320}>
+      <div className="chart-plot chart-plot--lg">
+      <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={series}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
           <XAxis
@@ -109,6 +110,7 @@ export function CashflowHistoryChart(props: {
           />
         </ComposedChart>
       </ResponsiveContainer>
+      </div>
       <p className="muted">
         Legend: Income, Expense, and Net use the left axis. Savings % uses the
         right axis.

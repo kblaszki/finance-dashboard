@@ -34,7 +34,8 @@ export function BreakdownPanel(props: {
         <p className="empty-state">{emptyLabel}</p>
       ) : (
         <div className="donut-layout">
-          <ResponsiveContainer width="100%" height={200}>
+          <div className="chart-plot chart-plot--sm">
+          <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={rows}
@@ -61,6 +62,7 @@ export function BreakdownPanel(props: {
               />
             </PieChart>
           </ResponsiveContainer>
+          </div>
           <ul className="legend-list">
             {rows.map((row, index) => (
               <li key={row.key} className="legend-row">

@@ -77,4 +77,4 @@ JWT auth, multi-type accounts, category tree + tags, cash ledger + transfers, CS
 | Transfers API client | `frontend/src/api/transfersApi.ts` |
 | Account ledger UI | `frontend/src/components/account/` |
 | Theme | `frontend/src/state/theme.tsx`, `ThemeToggle.tsx` (light/dark) |
-| CSS layers / tokens | `frontend/src/styles/` (`tokens`, `base`, `layout`, `components/*`, `pages/*`, `utilities`) |
+| CSS layers / tokens | `frontend/src/styles/` (`tokens`, `base`, `layout`, `components/*` incl. `feedback`/`segmented`/`chart`, `pages/*`, `utilities`) |

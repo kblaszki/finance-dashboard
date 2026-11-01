@@ -39,13 +39,13 @@
   border-radius: var(--radius-sm);
 }
 
-.data-table :is(.col-num, .num) .th-sort {
+.data-table .num .th-sort {
   width: 100%;
   justify-content: flex-end;
 }
 
-/* Type-based alignment: numbers right, text/date/status left, icons center */
-.data-table :is(.col-num, .num) {
+/* Type-based alignment: numbers right, text/date/status left */
+.data-table .num {
   text-align: right;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -59,11 +59,6 @@
 .data-table .col-status {
   text-align: left;
   white-space: nowrap;
-  width: 1%;
-}
-
-.data-table .col-icon {
-  text-align: center;
   width: 1%;
 }
 
@@ -206,7 +201,7 @@ td.ledger-cell--editing {
   position: sticky;
   /* Stick to the table-wrap scrollport (overflow-x), not the shell topbar */
   top: 0;
-  z-index: 2;
+  z-index: var(--z-sticky);
   background: var(--color-surface);
   box-shadow: 0 1px 0 var(--color-border-subtle);
 }
@@ -214,7 +209,7 @@ td.ledger-cell--editing {
 .data-table :is(th, td):first-child {
   position: sticky;
   left: 0;
-  z-index: 1;
+  z-index: var(--z-raised);
   background: var(--color-surface);
   box-shadow: 1px 0 0 var(--color-border-subtle);
 }
@@ -227,13 +222,7 @@ td.ledger-cell--editing {
 }
 
 .data-table thead th:first-child {
-  z-index: 3;
-}
-
-.table-actions {
-  white-space: nowrap;
-  display: flex;
-  gap: var(--space-sm);
+  z-index: var(--z-sticky-corner);
 }
 
 /* Add/Delete columns: content-sized, right-aligned, with breathing room */
@@ -300,7 +289,7 @@ td.ledger-cell--editing {
 
   /* Keep sticky first column readable while editing */
   .data-table td:first-child.ledger-cell--editing {
-    z-index: 2;
+    z-index: var(--z-sticky);
     background: var(--color-surface);
   }
 }

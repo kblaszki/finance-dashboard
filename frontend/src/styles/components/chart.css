@@ -125,14 +125,20 @@
 }
 
 
-.dash-grid {
-  display: grid;
-  grid-template-columns: 3fr 2fr;
-  gap: var(--space-lg);
+.chart-plot {
+  width: 100%;
+  min-width: 0;
 }
 
-.dash-grid > .card {
-  margin: 0;
-  min-width: 0;
+.chart-plot--sm {
+  height: var(--chart-h-sm);
+}
+
+.chart-plot--md {
+  height: var(--chart-h-md);
+}
+
+.chart-plot--lg {
+  height: var(--chart-h-lg);
 }
 }
