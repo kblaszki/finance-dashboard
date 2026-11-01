@@ -82,7 +82,7 @@ User-scoped financial account. Create accepts allow-listed types; `accountType` 
 | createdAt | DateTime | Default now |
 | updatedAt | DateTime | `@updatedAt` |
 
-Indexes: `[userId, accountType]`. API responses also expose computed `totalBalance` (= `cashBalance` until holdings exist). Allow-list: `backend/src/domain/accountTypes.ts`. Relations: `cashTransactions` → `CashTransaction[]` (`onDelete: Cascade`); `transfersFrom` / `transfersTo` → `CashTransfer[]` (`onDelete: Restrict` — delete account while transfers exist → API `409`); `csvImportPresets` → `CsvImportPreset[]` (`onDelete: Cascade`); `importBatches` → `ImportBatch[]` (`onDelete: Cascade`).
+Indexes: `[userId, accountType]`. API responses expose `cashBalance`, `holdingsValue` (MTM), and `totalEquity` (= cash + holdings MTM in account currency); `totalBalance` remains an alias of cash for older clients. Allow-list: `backend/src/domain/accountTypes.ts`. Relations: `cashTransactions` → `CashTransaction[]` (`onDelete: Cascade`); `transfersFrom` / `transfersTo` → `CashTransfer[]` (`onDelete: Restrict` — delete account while transfers exist → API `409`); `holdings` → `Holding[]` (`onDelete: Cascade`); `assetTrades` → `AssetTrade[]` (`onDelete: Restrict`); `csvImportPresets` → `CsvImportPreset[]` (`onDelete: Cascade`); `importBatches` → `ImportBatch[]` (`onDelete: Cascade`).
 
 ## CsvImportPreset
 
@@ -158,21 +158,22 @@ M:N join between `CashTransaction` and `Tag`. Composite PK `[cashTransactionId, 
 
 ## CashTransaction
 
-Single-account cash ledger row. Positive `amount`; type drives signed effect on `Account.cashBalance`. User-created types are `INCOME` / `EXPENSE`. Transfer legs use `TRANSFER_OUT` / `TRANSFER_IN` and are excluded from cashflow statistics. No `balanceAfter`. Optional category (`INCOME`/`EXPENSE` for cash rows; `TRANSFER` for transfer legs via the transfer header). Optional many tags via `CashTransactionTag` on cash rows only (API `tagIds`).
+Single-account cash ledger row. Positive `amount`; type drives signed effect on `Account.cashBalance`. User-created types are `INCOME` / `EXPENSE`. Transfer legs use `TRANSFER_OUT` / `TRANSFER_IN` and are excluded from cashflow statistics. Asset trade legs use `ASSET_BUY` / `ASSET_SELL` (also excluded from cashflow stats; included in `cashBalance` / balance history). No `balanceAfter`. Optional category (`INCOME`/`EXPENSE` for cash rows; `TRANSFER` for transfer legs via the transfer header). Optional many tags via `CashTransactionTag` on cash rows only (API `tagIds`). Edit/delete of transfer and asset legs only via their parent APIs.
 
 | Field | Type | Notes |
 |-------|------|-------|
 | id | Int | PK, autoincrement |
 | accountId | Int | FK → Account (`onDelete: Cascade`) |
-| type | String | `INCOME`, `EXPENSE`, `TRANSFER_IN`, or `TRANSFER_OUT` |
+| type | String | `INCOME`, `EXPENSE`, `TRANSFER_IN`, `TRANSFER_OUT`, `ASSET_BUY`, or `ASSET_SELL` |
 | amount | Int | Always positive, minor units (cents). API JSON uses major units |
 | occurredAt | DateTime | Movement time (default now) |
 | description | String? | Optional note |
 | categoryId | Int? | FK → Category (`onDelete: SetNull`) |
 | transferId | Int? | FK → CashTransfer (`onDelete: Cascade`); set on transfer legs |
+| assetTradeId | Int? | FK → AssetTrade (`onDelete: Cascade`); set on asset trade cash legs |
 | createdAt | DateTime | Default now |
 
-Indexes: `[accountId, occurredAt]`, `[categoryId]`, `[transferId]`. Domain rules: `backend/src/domain/cashLedger.ts` (`CASH_TX_TYPES` vs `LEDGER_TX_TYPES`). Parsing and minor-unit conversion: `backend/src/domain/money.ts`. SQLite stores these integers so cent arithmetic does not pass through REAL. Tags: `backend/src/domain/tags.ts` (`assertOwnedTagIds`, `setTransactionTags`).
+Indexes: `[accountId, occurredAt]`, `[categoryId]`, `[transferId]`, `[assetTradeId]`. Domain rules: `backend/src/domain/cashLedger.ts` (`CASH_TX_TYPES` vs `LEDGER_TX_TYPES`). Parsing and minor-unit conversion: `backend/src/domain/money.ts`. SQLite stores these integers so cent arithmetic does not pass through REAL. Tags: `backend/src/domain/tags.ts` (`assertOwnedTagIds`, `setTransactionTags`).
 
 ## FxRateDaily
 
@@ -243,6 +244,68 @@ User favorite instrument for `/markets`.
 
 Unique `[userId, instrumentId]`. Domain: `backend/src/domain/watchlist.ts`.
 
-## Planned: holdings (positions)
+## Holding
 
-`Holding` / `Lot` / `AssetTrade` still not shipped. Sketch: [holdings-market-architecture.md](../explanation/holdings-market-architecture.md). `Account.totalBalance` remains cash-only until holdings land.
+Open position on one owned account for one instrument. `quantity` is a cache of open lot qty (synced after BUY/SELL). Eligible account types for trades: `BROKERAGE`, `IKE`, `IKZE`.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id | Int | PK |
+| accountId | Int | FK → Account (`onDelete: Cascade`) |
+| instrumentId | Int | FK → Instrument (`onDelete: Restrict`) |
+| quantity | Decimal | Open qty in instrument units |
+| createdAt / updatedAt | DateTime | |
+
+Unique `[accountId, instrumentId]`. Domain: `backend/src/domain/holdings.ts`. MTM: `portfolioValuation.ts`.
+
+## Lot
+
+FIFO lot under a holding. BUY opens a lot; SELL closes oldest open qty first.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id | Int | PK |
+| holdingId | Int | FK → Holding (`onDelete: Cascade`) |
+| openTradeId | Int? | FK → AssetTrade (`onDelete: SetNull`) |
+| openedAt | DateTime | Trade time |
+| quantityOpen | Decimal | Remaining open qty |
+| quantityClosed | Decimal | Closed qty |
+| unitCost | Decimal | Per-unit cost in account/instrument currency (v1 same) |
+| commissionOpen | Decimal | Commission allocated at open |
+| createdAt / updatedAt | DateTime | |
+
+Index `[holdingId, openedAt]`. Domain: `backend/src/domain/lots.ts`.
+
+## LotClose
+
+Allocation of a SELL onto one lot (enables delete/reverse).
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id | Int | PK |
+| lotId | Int | FK → Lot (`onDelete: Cascade`) |
+| tradeId | Int | FK → AssetTrade (`onDelete: Cascade`) |
+| quantity | Decimal | Qty closed from this lot by the trade |
+| commissionAllocated | Decimal | Commission removed from the lot at close (restored on reverse) |
+| createdAt | DateTime | |
+
+## AssetTrade
+
+BUY/SELL on a brokerage-like account. Creates `ASSET_*` cash legs and lot open/close. v1: trade currency and instrument quote currency must equal account currency (no FX inside the trade).
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id | Int | PK |
+| accountId | Int | FK → Account (`onDelete: Restrict`) |
+| instrumentId | Int | FK → Instrument (`onDelete: Restrict`) |
+| side | String | `BUY` \| `SELL` |
+| quantity | Decimal | Positive |
+| unitPrice | Decimal | Positive; major units |
+| commission | Decimal | ≥ 0; major units |
+| currency | String | Account currency |
+| occurredAt | DateTime | |
+| settlementDate | DateTime? | Optional |
+| notes | String? | Optional |
+| createdAt / updatedAt | DateTime | |
+
+Domain: `backend/src/domain/assetTrades.ts`. Architecture note: [holdings-market-architecture.md](../explanation/holdings-market-architecture.md).

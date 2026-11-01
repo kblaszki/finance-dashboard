@@ -89,6 +89,8 @@ model Account {
   transfersTo     CashTransfer[]    @relation("TransferTo")
   csvImportPresets CsvImportPreset[]
   importBatches ImportBatch[]
+  holdings        Holding[]
+  assetTrades     AssetTrade[]
 
   @@unique([userId, name])
   @@index([userId, accountType])
@@ -169,15 +171,19 @@ model CashTransaction {
   description String?
   categoryId  Int?
   transferId  Int?
+  /// Set for ASSET_BUY / ASSET_SELL legs created by AssetTrade.
+  assetTradeId Int?
   createdAt   DateTime  @default(now())
   account     Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
   category    Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   transfer    CashTransfer? @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  assetTrade  AssetTrade? @relation(fields: [assetTradeId], references: [id], onDelete: Cascade)
   cashTransactionTags CashTransactionTag[]
 
   @@index([accountId, occurredAt])
   @@index([categoryId])
   @@index([transferId])
+  @@index([assetTradeId])
 }
 
 /// User-scoped free-form label for cash ledger rows (not categories).
@@ -243,6 +249,8 @@ model Instrument {
   updatedAt      DateTime  @updatedAt
   valuations     InstrumentValuation[]
   watchlistItems WatchlistItem[]
+  holdings       Holding[]
+  assetTrades    AssetTrade[]
 
   @@unique([provider, providerSymbol])
   @@index([symbol])
@@ -280,6 +288,90 @@ model WatchlistItem {
 
   @@unique([userId, instrumentId])
   @@index([userId])
+  @@index([instrumentId])
+}
+
+/// Open position on one owned account for one instrument (qty cache from lots).
+model Holding {
+  id           Int        @id @default(autoincrement())
+  accountId    Int
+  instrumentId Int
+  /// Open quantity in instrument units (synced from open lots).
+  quantity     Decimal    @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  account      Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  instrument   Instrument @relation(fields: [instrumentId], references: [id], onDelete: Restrict)
+  lots         Lot[]
+
+  @@unique([accountId, instrumentId])
+  @@index([accountId])
+  @@index([instrumentId])
+}
+
+/// FIFO lot for a holding (realized P&L on close).
+model Lot {
+  id             Int        @id @default(autoincrement())
+  holdingId      Int
+  /// Opening AssetTrade that created this lot (BUY).
+  openTradeId    Int?
+  openedAt       DateTime
+  quantityOpen   Decimal
+  quantityClosed Decimal    @default(0)
+  /// Unit cost in instrument / account currency (v1: same).
+  unitCost       Decimal
+  /// Commission allocated to this lot at open (major units).
+  commissionOpen Decimal    @default(0)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  holding        Holding    @relation(fields: [holdingId], references: [id], onDelete: Cascade)
+  openTrade      AssetTrade? @relation("LotOpenTrade", fields: [openTradeId], references: [id], onDelete: SetNull)
+  closes         LotClose[]
+
+  @@index([holdingId, openedAt])
+  @@index([openTradeId])
+}
+
+/// FIFO close allocation from a SELL trade onto one lot (enables reverse).
+model LotClose {
+  id                 Int        @id @default(autoincrement())
+  lotId              Int
+  tradeId            Int
+  quantity           Decimal
+  /// Commission moved off the lot at close (restored on reverse).
+  commissionAllocated Decimal   @default(0)
+  createdAt          DateTime   @default(now())
+  lot                Lot        @relation(fields: [lotId], references: [id], onDelete: Cascade)
+  trade              AssetTrade @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+
+  @@index([lotId])
+  @@index([tradeId])
+}
+
+/// BUY/SELL on a brokerage-like account; creates ASSET_* cash legs + lots.
+model AssetTrade {
+  id             Int       @id @default(autoincrement())
+  accountId      Int
+  instrumentId   Int
+  /// BUY | SELL
+  side           String
+  quantity       Decimal
+  unitPrice      Decimal
+  commission     Decimal   @default(0)
+  /// Must match account.currency in v1.
+  currency       String
+  occurredAt     DateTime  @default(now())
+  settlementDate DateTime?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  account        Account   @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  instrument     Instrument @relation(fields: [instrumentId], references: [id], onDelete: Restrict)
+  cashLegs       CashTransaction[]
+  openedLots     Lot[]     @relation("LotOpenTrade")
+  lotCloses      LotClose[]
+
+  @@index([accountId, occurredAt])
   @@index([instrumentId])
 }
 
