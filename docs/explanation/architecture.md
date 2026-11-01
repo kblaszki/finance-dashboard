@@ -62,7 +62,7 @@ sequenceDiagram
 
 Money and FX conversion live in `domain/fx*.ts` / `nbpClient.ts` — not in route handlers or the UI. Net-worth and FX cashflow HTTP handlers only read persisted `FxRateDaily` rows (net worth: valuation date = today for current / month-end or today for history; cashflow: mid on or before each row’s `occurredAt` UTC day). Missing required mids fail closed. See [fullstack-practices.md](fullstack-practices.md).
 
-**Shipped (watchlist slice):** `Instrument` / `InstrumentValuation` / `WatchlistItem` + Twelve Data **catalog** CLI + Yahoo quote/history/gap-fill CLIs (`marketLiveApi` gates soft HTTP). **Still planned:** holdings, lots, asset trades — [holdings-market-architecture.md](holdings-market-architecture.md).
+**Shipped:** `Instrument` / `InstrumentValuation` / `WatchlistItem` + Markets CLIs; `Holding` / `Lot` / `LotClose` / `AssetTrade` with FIFO BUY/SELL and `ASSET_*` cash legs; MTM in net worth — [holdings-market-architecture.md](holdings-market-architecture.md), [brokerage-asset-trades.md](../how-to/brokerage-asset-trades.md).
 
 ## Auth
 

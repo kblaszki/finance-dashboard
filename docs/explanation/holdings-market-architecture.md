@@ -1,23 +1,29 @@
 ---
 diataxis: explanation
-use_when: Designing holdings, lots, trades, or market-data sync before implementing FR-007/014/MVP-021
+use_when: Designing holdings, lots, trades, or market-data sync; FR-007/014/MVP-012 shipped core path
 audience: both
 related_docs:
   - docs/explanation/architecture.md
   - docs/reference/domain.md
   - docs/meta/code-map.md
+  - docs/how-to/brokerage-asset-trades.md
   - mvp/CHECKLIST.md
 related_code:
   - backend/prisma/schema.prisma
+  - backend/src/domain/assetTrades.ts
+  - backend/src/domain/lots.ts
+  - backend/src/domain/holdings.ts
+  - backend/src/domain/portfolioValuation.ts
   - backend/src/domain/fx.ts
-  - backend/src/domain/accountTypes.ts
 ---
 
-# Holdings and market-data architecture (spike)
+# Holdings and market-data architecture
 
-Hub: [docs/README.md](../README.md). Product backlog: [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) (`holdings-trades`, `market-fx`). **Not shipped** — this page freezes layout and tenancy rules before schema migrations.
+Hub: [docs/README.md](../README.md). Product backlog: [mvp/CHECKLIST.md](../../mvp/CHECKLIST.md) (`holdings-trades`, `market-fx`).
 
-Cash sleeve (accounts, ledger, transfers, categories, tags, CSV import, period stats) stays the baseline. Holdings is a **new axis**: instruments + account-scoped positions + valuations, joined to net-worth later (FR-038).
+**Shipped (v1):** `Holding` / `Lot` / `LotClose` / `AssetTrade`; FIFO BUY/SELL on `BROKERAGE`/`IKE`/`IKZE`; cash legs `ASSET_BUY`/`ASSET_SELL` (excluded from cashflow stats); MTM in account equity + net worth/history. Instruments + Yahoo EOD already ship under Markets.
+
+Still out of scope: full `/portfolio` page (FR-008), CRYPTO/metals trades, cross-currency trades, corporate actions, CSV broker import.
 
 ## Goals of this spike
 
@@ -45,7 +51,7 @@ Names are provisional; migrate only when an implementation plan starts.
 - `Instrument` 1—* `InstrumentValuation` (global); sync CLIs write valuations only.
 - Do **not** put prices on `Holding` permanently — mark-to-market reads latest valuation × quantity in domain code.
 
-**Cash interaction:** Asset trades may later debit/credit `cashBalance` on the same account; treat that as an explicit domain transaction (cash leg + trade), not an orphan ledger row. Until then, cash and holdings can coexist without auto-linking.
+**Cash interaction (shipped):** Asset trades debit/credit `cashBalance` in the same Prisma transaction as the trade via `ASSET_BUY` / `ASSET_SELL` ledger rows (`assetTradeId`). Edit/delete those legs only through the asset-trade API (same pattern as transfer legs).
 
 ## Domain module layout
 

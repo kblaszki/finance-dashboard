@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { fetchAccount, fetchAccountBalanceHistory } from "../api/accountsApi";
+import {
+  fetchAccount,
+  fetchAccountBalanceHistory,
+  supportsAssetTrades,
+} from "../api/accountsApi";
+import { BrokerageHoldingsPanel } from "../components/account/BrokerageHoldingsPanel";
 import { fetchCategories } from "../api/categoriesApi";
 import { fetchTags } from "../api/tagsApi";
 import {
@@ -286,6 +291,16 @@ export function AccountDetailPage() {
             currency={account.currency}
             months={historyMonths}
             onMonthsChange={setHistoryMonths}
+          />
+        </div>
+      )}
+
+      {account && supportsAssetTrades(account.accountType) && (
+        <div className="form-section-gap">
+          <BrokerageHoldingsPanel
+            accountId={accountId}
+            currency={account.currency}
+            onChanged={() => void refresh()}
           />
         </div>
       )}

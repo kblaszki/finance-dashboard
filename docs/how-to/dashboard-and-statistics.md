@@ -29,7 +29,7 @@ This page covers shipped dashboard KPIs (`/dashboard`) and statistics (`/statist
 
 1. Open **Dashboard** (or go to `/dashboard`). `/home` redirects here.
 2. Confirm the **reporting currency** in the top bar (`PLN` / `EUR` / `USD` — available once you have any account, even if you only hold one of them). Incomplete workspaces still show the **Setup checklist** first.
-3. Review **Wealth hero**: total net worth for **all** owned accounts converted into the topbar currency via stored NBP mids (valuation / rate dates shown), cash / invested / debt chips, and a **net-worth history** area chart. Range chips `6M` / `1Y` / `2Y` slice the fetched 24-month series client-side.
+3. Review **Wealth hero**: total net worth for **all** owned accounts (cash + holdings mark-to-market) converted into the topbar currency via stored NBP mids (valuation / rate dates shown), cash / invested / debt chips, and a **net-worth history** area chart. Range chips `6M` / `1Y` / `2Y` slice the fetched 24-month series client-side.
 4. Review **period KPI strip** for the current UTC month (labeled with the topbar **reporting** currency): income, expense, savings ratio (`net / income`), and monthly net from **all** owned accounts, converted via NBP mids on each transaction date, each with % vs the previous month when available.
 5. Review the **executive grid**:
    - **Portfolio allocation** — donut + legend by account-type bucket (after FX); link to Accounts.

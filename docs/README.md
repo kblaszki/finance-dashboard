@@ -56,6 +56,7 @@ Never load all docs. Prefer reference for facts, how-to for tasks, explanation f
 | [import-csv-column-map.md](how-to/import-csv-column-map.md) | Map arbitrary CSV columns + description category suggest on account Upload |
 | [dashboard-and-statistics.md](how-to/dashboard-and-statistics.md) | Home net worth / rolling 12m; period KPIs, chart, category breakdown |
 | [markets-watchlist.md](how-to/markets-watchlist.md) | Allowlist seed, history/quotes sync, `/markets` catalog add + watchlist |
+| [brokerage-asset-trades.md](how-to/brokerage-asset-trades.md) | BUY/SELL on brokerage accounts, holdings MTM, FIFO |
 | [write-integration-tests.md](how-to/write-integration-tests.md) | HTTP / integration tests |
 | [private-deploy.md](how-to/private-deploy.md) | Private single-user deploy |
 

@@ -35,7 +35,10 @@ Hub: [docs/README.md](../README.md).
 | FR-016 | Category spend breakdown | `GET /api/statistics/category-breakdown`; `/statistics` month Income/Expense lists (UTC, no FX) |
 | FR-003 | Statistics period cashflow summary | `GET /api/statistics/period-summary`; reporting-currency KPIs (all-account NBP FX); `/statistics` + `/dashboard` strip |
 | FR-004 | Cashflow history chart | `GET /api/statistics/cashflow-history`; reporting-currency series (`months` 6\|12\|24); `/statistics` Recharts |
-| FR-002 | Net worth (cash buckets) | `GET /api/statistics/net-worth`; `/dashboard` byBucket after FX; `CREDIT_CARD` debt → `liabilities` (no holdings) |
+| FR-002 | Net worth (cash + holdings MTM) | `GET /api/statistics/net-worth`; `/dashboard` byBucket after FX; account contribution = cash + holdings MTM; `CREDIT_CARD` debt → `liabilities` |
+| FR-007 | Asset trades (BUY/SELL) | `POST/GET/DELETE /api/accounts/:id/asset-trades`; FIFO lots; `ASSET_BUY`/`ASSET_SELL` cash legs; brokerage/IKE/IKZE; same-currency v1 |
+| FR-014 | Account holdings | `GET /api/accounts/:id/holdings`; `BrokerageHoldingsPanel` on account detail |
+| MVP-012 | FIFO lot closes | `Lot` + `LotClose`; realized P&L helper in domain |
 | FR-005 | Rolling 12-month cashflow averages | `GET /api/statistics/cashflow-rolling-12m`; reporting-currency avgs; `/statistics` |
 | FR-038 | Reporting-currency net-worth rollup + history | `GET /api/statistics/net-worth` + `net-worth-history`; NBP mid via PLN pivot into topbar currency; `/dashboard` WealthHero 6M/1Y/2Y chart |
 | FR-011 | Internal cash transfers | `CashTransfer` + `TRANSFER_*` legs; `/api/transfers`; `/transfers`; [internal-transfers.md](../how-to/internal-transfers.md) |

@@ -7,8 +7,21 @@ export function AccountSubtitle(props: { account: Account }) {
   return (
     <>
       <span className="badge">{account.accountType}</span>
-      {" · Balance "}
+      {" · Cash "}
       <strong>{formatMoney(account.cashBalance, account.currency)}</strong>
+      {account.holdingsValue != null && account.holdingsValue !== 0 && (
+        <>
+          {" · Holdings "}
+          <strong>{formatMoney(account.holdingsValue, account.currency)}</strong>
+        </>
+      )}
+      {account.totalEquity != null &&
+        account.totalEquity !== account.cashBalance && (
+          <>
+            {" · Equity "}
+            <strong>{formatMoney(account.totalEquity, account.currency)}</strong>
+          </>
+        )}
       {account.openingCashAsOf && (
         <>
           {" · Opening as of "}

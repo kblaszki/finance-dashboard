@@ -31,6 +31,12 @@ import {
   updateAccount,
   deleteAccount,
 } from './accountsApi'
+import { fetchAccountHoldings } from './holdingsApi'
+import {
+  fetchAssetTrades,
+  createAssetTrade,
+  deleteAssetTrade,
+} from './assetTradesApi'
 import {
   fetchTransactions,
   createTransaction,
@@ -517,5 +523,35 @@ describe('API modules', () => {
 
     await removeFromWatchlist(42)
     expect(apiClient.delete).toHaveBeenCalledWith('/api/watchlist/42')
+  })
+
+  it('holdingsApi and assetTradesApi call correct endpoints', async () => {
+    await fetchAccountHoldings(3)
+    expect(apiClient.get).toHaveBeenCalledWith('/api/accounts/3/holdings')
+
+    await fetchAssetTrades(3, { month: '2026-01' })
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/accounts/3/asset-trades?month=2026-01',
+    )
+
+    await createAssetTrade(3, {
+      instrumentId: 7,
+      side: 'BUY',
+      quantity: 2,
+      unitPrice: 10,
+      commission: 0.5,
+    })
+    expect(apiClient.post).toHaveBeenCalledWith('/api/accounts/3/asset-trades', {
+      instrumentId: 7,
+      side: 'BUY',
+      quantity: 2,
+      unitPrice: 10,
+      commission: 0.5,
+    })
+
+    await deleteAssetTrade(3, 9)
+    expect(apiClient.delete).toHaveBeenCalledWith(
+      '/api/accounts/3/asset-trades/9',
+    )
   })
 })

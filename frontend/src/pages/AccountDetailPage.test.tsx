@@ -4,10 +4,35 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AccountDetailPage } from "./AccountDetailPage";
 import { CurrencyProvider } from "../state/currency";
 
-vi.mock("../api/accountsApi", () => ({
-  fetchAccount: vi.fn(),
-  fetchAccounts: vi.fn(),
-  fetchAccountBalanceHistory: vi.fn(),
+vi.mock("../api/accountsApi", async () => {
+  const actual = await vi.importActual<typeof import("../api/accountsApi")>(
+    "../api/accountsApi",
+  );
+  return {
+    ...actual,
+    fetchAccount: vi.fn(),
+    fetchAccounts: vi.fn(),
+    fetchAccountBalanceHistory: vi.fn(),
+  };
+});
+
+vi.mock("../api/holdingsApi", () => ({
+  fetchAccountHoldings: vi.fn().mockResolvedValue({
+    accountId: 1,
+    currency: "USD",
+    holdingsValue: 0,
+    holdings: [],
+  }),
+}));
+
+vi.mock("../api/assetTradesApi", () => ({
+  fetchAssetTrades: vi.fn().mockResolvedValue({ items: [], nextCursor: null }),
+  createAssetTrade: vi.fn(),
+  deleteAssetTrade: vi.fn(),
+}));
+
+vi.mock("../api/instrumentsApi", () => ({
+  searchInstruments: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock("../api/categoriesApi", async () => {

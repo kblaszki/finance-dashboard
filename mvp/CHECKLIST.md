@@ -44,10 +44,10 @@ Last review: 2026-10-29 — statuses aligned to **auth + multi-type accounts + c
 | MVP-013 | Cash ledger CSV export | done | [features/cash-transfers/cash-ledger-csv-export.md](features/cash-transfers/cash-ledger-csv-export.md) | /accounts/:id Download CSV |
 | MVP-014 | Cash ledger CSV import | done | [features/cash-transfers/cash-ledger-csv-import.md](features/cash-transfers/cash-ledger-csv-import.md) | /accounts/:id Upload CSV |
 | MVP-015 | Transfers CSV export and mapped import | done | [features/cash-transfers/transfers-csv-export-import.md](features/cash-transfers/transfers-csv-export-import.md) | /transfers Download/Upload CSV |
-| FR-007 | Asset trades with commission and settlementDate | planned | [features/holdings-trades/asset-trades-commission.md](features/holdings-trades/asset-trades-commission.md) | /transactions, lots |
+| FR-007 | Asset trades with commission and settlementDate | done | [features/holdings-trades/asset-trades-commission.md](features/holdings-trades/asset-trades-commission.md) | Account detail trades; `ASSET_*` cash legs; same-currency v1 |
 | FR-009 | Instrument price chart and manual valuations | planned | [features/holdings-trades/instrument-price-chart.md](features/holdings-trades/instrument-price-chart.md) | /assets/:id |
-| FR-014 | Account-scoped holding detail | planned | [features/holdings-trades/holding-detail.md](features/holdings-trades/holding-detail.md) | /accounts/:id/assets/:instrumentId |
-| MVP-012 | FIFO realized P&L on closed lots | planned | [features/holdings-trades/fifo-realized-pnl.md](features/holdings-trades/fifo-realized-pnl.md) | Holding/portfolio KPIs |
+| FR-014 | Account-scoped holding detail | done | [features/holdings-trades/holding-detail.md](features/holdings-trades/holding-detail.md) | Holdings table on `/accounts/:id` (brokerage); dedicated asset page later |
+| MVP-012 | FIFO realized P&L on closed lots | done | [features/holdings-trades/fifo-realized-pnl.md](features/holdings-trades/fifo-realized-pnl.md) | Domain FIFO + LotClose; UI P&L KPIs later |
 | FR-019 | Bank and broker CSV import | planned | [features/import/csv-import-bank-broker.md](features/import/csv-import-bank-broker.md) | /import |
 | FR-047 | Import presets catalog | planned | [features/import/import-presets.md](features/import/import-presets.md) | /import/presets |
 | MVP-020 | Import preset column mapping UI wired to import | planned | [features/import/preset-column-mapping-ui.md](features/import/preset-column-mapping-ui.md) | /import/presets + /import |
@@ -123,10 +123,10 @@ Last review: 2026-10-29 — statuses aligned to **auth + multi-type accounts + c
 
 ### holdings-trades
 
-- **planned** [FR-007 Asset trades with commission and settlementDate](features/holdings-trades/asset-trades-commission.md)
+- **done** [FR-007 Asset trades with commission and settlementDate](features/holdings-trades/asset-trades-commission.md) (brokerage BUY/SELL + cash legs; settlementDate stored)
 - **planned** [FR-009 Instrument price chart and manual valuations](features/holdings-trades/instrument-price-chart.md)
-- **planned** [FR-014 Account-scoped holding detail](features/holdings-trades/holding-detail.md)
-- **planned** [MVP-012 FIFO realized P&L on closed lots](features/holdings-trades/fifo-realized-pnl.md)
+- **done** [FR-014 Account-scoped holding detail](features/holdings-trades/holding-detail.md) (holdings on account detail; deep asset page later)
+- **done** [MVP-012 FIFO realized P&L on closed lots](features/holdings-trades/fifo-realized-pnl.md) (domain FIFO; surface KPIs later)
 
 ### import
 

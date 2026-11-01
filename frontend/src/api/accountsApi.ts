@@ -46,6 +46,8 @@ export type Account = {
   name: string;
   currency: string;
   cashBalance: number;
+  holdingsValue?: number;
+  totalEquity?: number;
   openingBalance: number;
   openingCashAsOf: string | null;
   description: string | null;
@@ -53,6 +55,14 @@ export type Account = {
   createdAt: string;
   updatedAt: string;
 };
+
+export const ASSET_TRADE_ACCOUNT_TYPES = ["BROKERAGE", "IKE", "IKZE"] as const;
+
+export function supportsAssetTrades(accountType: string): boolean {
+  return (ASSET_TRADE_ACCOUNT_TYPES as readonly string[]).includes(
+    String(accountType).trim().toUpperCase(),
+  );
+}
 
 export type CreateAccountInput = {
   name: string;
