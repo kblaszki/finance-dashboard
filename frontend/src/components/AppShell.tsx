@@ -165,9 +165,13 @@ export function AppShell() {
       frame = requestAnimationFrame(() => {
         measuring = true;
         try {
+          // Prefer layout viewport (clientWidth) over window.innerWidth —
+          // device emulation and scrollbars can diverge and leave sticky
+          // sidebar crushing the content at phone widths.
+          const viewportWidth = document.documentElement.clientWidth;
           setDrawerMode(
             shouldUseShellDrawerMode(
-              window.innerWidth,
+              viewportWidth,
               maxTableMinWidthIn(root),
               readSidebarWidthPx(),
             ),
@@ -184,14 +188,17 @@ export function AppShell() {
     update();
     const resizeObserver = new ResizeObserver(update);
     resizeObserver.observe(root);
+    resizeObserver.observe(document.documentElement);
     const mutationObserver = new MutationObserver(update);
     mutationObserver.observe(root, { childList: true, subtree: true });
     window.addEventListener("resize", update);
+    window.visualViewport?.addEventListener("resize", update);
     return () => {
       cancelAnimationFrame(frame);
       resizeObserver.disconnect();
       mutationObserver.disconnect();
       window.removeEventListener("resize", update);
+      window.visualViewport?.removeEventListener("resize", update);
     };
   }, [pathname]);
 
