@@ -24,7 +24,7 @@ related_code:
 ## UI
 
 1. Open `/accounts/:id` for a brokerage-like account.
-2. Use **Holdings** — MTM table, **New trade** (search instrument → BUY/SELL → qty/price/commission), **Recent trades** (delete reverses when allowed).
+2. Use **Holdings** — MTM table, **New trade** (search instrument → date → BUY/SELL → qty/price/commission), **Recent trades** (delete reverses when allowed). Trade date defaults to today; change it to backdate a fill.
 
 ## API sketch
 

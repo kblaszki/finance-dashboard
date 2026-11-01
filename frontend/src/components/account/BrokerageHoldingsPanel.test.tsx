@@ -18,6 +18,7 @@ vi.mock("../../api/instrumentsApi", () => ({
 
 import { fetchAccountHoldings } from "../../api/holdingsApi";
 import { createAssetTrade, fetchAssetTrades } from "../../api/assetTradesApi";
+import { dateInputToIso } from "./occurredAt";
 
 describe("BrokerageHoldingsPanel", () => {
   beforeEach(() => {
@@ -96,6 +97,9 @@ describe("BrokerageHoldingsPanel", () => {
     });
     expect(screen.getAllByText(/AAPL/).length).toBeGreaterThan(0);
 
+    fireEvent.change(screen.getByLabelText(/^Date$/i), {
+      target: { value: "2024-06-15" },
+    });
     fireEvent.change(screen.getByLabelText(/Unit price/), {
       target: { value: "50" },
     });
@@ -103,5 +107,7 @@ describe("BrokerageHoldingsPanel", () => {
     await waitFor(() => {
       expect(screen.getByText(/Pick an instrument/i)).toBeTruthy();
     });
+    expect(createAssetTrade).not.toHaveBeenCalled();
+    expect(dateInputToIso("2024-06-15")).toMatch(/^2024-06-15T/);
   });
 });

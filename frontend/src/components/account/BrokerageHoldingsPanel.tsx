@@ -13,6 +13,11 @@ import {
 } from "../../api/holdingsApi";
 import { searchInstruments, type Instrument } from "../../api/instrumentsApi";
 import { formatMoney } from "../../utils/format";
+import {
+  dateInputToIso,
+  defaultOccurredAtValue,
+  formatOccurredAt,
+} from "./occurredAt";
 
 type Props = {
   accountId: number;
@@ -36,6 +41,7 @@ export function BrokerageHoldingsPanel(props: Props) {
   const [quantity, setQuantity] = useState("1");
   const [unitPrice, setUnitPrice] = useState("");
   const [commission, setCommission] = useState("0");
+  const [occurredAt, setOccurredAt] = useState(defaultOccurredAtValue);
 
   const reload = useCallback(async () => {
     setError(null);
@@ -90,12 +96,21 @@ export function BrokerageHoldingsPanel(props: Props) {
       return;
     }
 
+    let occurredAtIso: string;
+    try {
+      occurredAtIso = dateInputToIso(occurredAt);
+    } catch {
+      setError("Invalid date");
+      return;
+    }
+
     const input: CreateAssetTradeInput = {
       instrumentId,
       side,
       quantity: qty,
       unitPrice: price,
       commission: fee,
+      occurredAt: occurredAtIso,
     };
     setBusy(true);
     setError(null);
@@ -104,6 +119,7 @@ export function BrokerageHoldingsPanel(props: Props) {
       setQuantity("1");
       setUnitPrice("");
       setCommission("0");
+      setOccurredAt(defaultOccurredAtValue());
       await reload();
       onChanged();
     } catch (err) {
@@ -215,6 +231,15 @@ export function BrokerageHoldingsPanel(props: Props) {
           </ul>
         )}
         <label>
+          Date
+          <input
+            type="date"
+            value={occurredAt}
+            onChange={(e) => setOccurredAt(e.target.value)}
+            required
+          />
+        </label>
+        <label>
           Side
           <select
             value={side}
@@ -273,7 +298,7 @@ export function BrokerageHoldingsPanel(props: Props) {
           <tbody>
             {trades.map((t) => (
               <tr key={t.id}>
-                <td>{new Date(t.occurredAt).toLocaleString()}</td>
+                <td>{formatOccurredAt(t.occurredAt)}</td>
                 <td>{t.side}</td>
                 <td>{t.instrumentSymbol ?? t.instrumentId}</td>
                 <td>{t.quantity}</td>
