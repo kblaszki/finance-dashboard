@@ -93,7 +93,11 @@ export async function fetchAccount(id: number): Promise<Account> {
 
 export type AccountBalanceHistoryPoint = {
   month: string;
+  /** Cash end-of-month (legacy alias of cashBalance). */
   balance: number;
+  cashBalance: number;
+  holdingsValue: number;
+  totalEquity: number;
 };
 
 export type AccountBalanceHistory = {

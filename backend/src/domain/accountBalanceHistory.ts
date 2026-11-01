@@ -12,7 +12,11 @@ export type BalanceHistorySourceRow = {
 
 export type AccountBalanceHistoryPoint = {
   month: string;
+  /** End-of-month cash (ledger); alias kept for older clients. */
   balance: number;
+  cashBalance: number;
+  holdingsValue: number;
+  totalEquity: number;
 };
 
 export type AccountBalanceHistoryResult = {
@@ -21,6 +25,26 @@ export type AccountBalanceHistoryResult = {
   monthCount: number;
   series: AccountBalanceHistoryPoint[];
 };
+
+function roundMajor2(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+function historyPoint(
+  month: string,
+  cashBalance: number,
+  holdingsValue: number,
+): AccountBalanceHistoryPoint {
+  const cash = roundMajor2(cashBalance);
+  const holdings = roundMajor2(holdingsValue);
+  return {
+    month,
+    balance: cash,
+    cashBalance: cash,
+    holdingsValue: holdings,
+    totalEquity: roundMajor2(cash + holdings),
+  };
+}
 
 /** Current UTC calendar month as YYYY-MM. */
 export function currentUtcMonthKey(asOf: Date = new Date()): string {
@@ -60,10 +84,11 @@ export function resolveOpeningEffectiveAt(
 }
 
 /**
- * End-of-month cash balances. Balance is 0 for months ending before
+ * End-of-month cash + holdings MTM. Cash is 0 for months ending before
  * `openingEffectiveAt`. Opening balance is introduced on that date, then
  * ledger deltas with occurredAt >= openingEffectiveAt and < next month start
- * are applied (includes TRANSFER_IN / TRANSFER_OUT).
+ * are applied (includes TRANSFER_* and ASSET_*). Holdings use
+ * `holdingsValueByMonth` (major units) keyed by YYYY-MM when provided.
  */
 export function aggregateAccountBalanceHistory(
   accountId: number,
@@ -72,6 +97,7 @@ export function aggregateAccountBalanceHistory(
   openingBalanceMinor: number,
   rows: BalanceHistorySourceRow[],
   openingEffectiveAt: Date,
+  holdingsValueByMonth: Map<string, number> = new Map(),
 ): AccountBalanceHistoryResult {
   const sorted = rows
     .filter((row) => {
@@ -92,9 +118,10 @@ export function aggregateAccountBalanceHistory(
 
   for (const month of months) {
     const { end } = parseMonthParam(month);
+    const holdings = holdingsValueByMonth.get(month) ?? 0;
     if (!opened) {
       if (openingEffectiveAt >= end) {
-        series.push({ month, balance: 0 });
+        series.push(historyPoint(month, 0, holdings));
         continue;
       }
       running = openingBalanceMinor;
@@ -113,7 +140,7 @@ export function aggregateAccountBalanceHistory(
         txIndex += 1;
       }
     }
-    series.push({ month, balance: minorToMajor(running) });
+    series.push(historyPoint(month, minorToMajor(running), holdings));
   }
 
   return {

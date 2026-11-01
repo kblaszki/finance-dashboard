@@ -15,11 +15,15 @@ import { findOwnedAccount } from "../domain/ownedAccount";
 import {
   resolveOpeningEffectiveAt,
 } from "../domain/accountBalanceHistory";
-import { holdingsValueByAccountIds } from "../domain/portfolioValuation";
+import {
+  holdingsValueByAccountIds,
+  holdingsValuesAsOf,
+} from "../domain/portfolioValuation";
 import {
   assertBalanceHistoryTxCap,
   BALANCE_HISTORY_TX_CAP,
 } from "../domain/rowCaps";
+import { parseMonthParam } from "../domain/categoryBreakdown";
 import {
   badRequest,
   conflict,
@@ -194,6 +198,50 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
         });
         assertBalanceHistoryTxCap(rows.length);
         const oldestOccurredAt = rows[0]?.occurredAt ?? null;
+
+        const assetTrades = await prisma.assetTrade.findMany({
+          where: {
+            accountId: id,
+            occurredAt: { lt: end },
+          },
+          select: {
+            accountId: true,
+            instrumentId: true,
+            side: true,
+            quantity: true,
+            occurredAt: true,
+          },
+        });
+        const instrumentIds = [
+          ...new Set(assetTrades.map((t) => t.instrumentId)),
+        ];
+        const valuations =
+          instrumentIds.length === 0
+            ? []
+            : await prisma.instrumentValuation.findMany({
+                where: {
+                  instrumentId: { in: instrumentIds },
+                  asOfDate: { lt: end },
+                },
+                select: {
+                  instrumentId: true,
+                  asOfDate: true,
+                  close: true,
+                  source: true,
+                },
+              });
+        const holdingsValueByMonth = new Map<string, number>();
+        for (const monthKey of months) {
+          const { end: exclusive } = parseMonthParam(monthKey);
+          const byAccount = holdingsValuesAsOf(
+            [id],
+            assetTrades,
+            valuations,
+            exclusive,
+          );
+          holdingsValueByMonth.set(monthKey, byAccount.get(id) ?? 0);
+        }
+
         res.json(
           aggregateAccountBalanceHistory(
             account.id,
@@ -202,6 +250,7 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
             account.openingBalance,
             rows,
             resolveOpeningEffectiveAt(account, oldestOccurredAt),
+            holdingsValueByMonth,
           ),
         );
       } catch (e: unknown) {

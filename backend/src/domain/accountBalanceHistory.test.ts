@@ -63,9 +63,27 @@ test("aggregateAccountBalanceHistory is zero before opening date", () => {
     opening,
   );
   assert.deepEqual(result.series, [
-    { month: "2026-01", balance: 0 },
-    { month: "2026-02", balance: 100 },
-    { month: "2026-03", balance: 100 },
+    {
+      month: "2026-01",
+      balance: 0,
+      cashBalance: 0,
+      holdingsValue: 0,
+      totalEquity: 0,
+    },
+    {
+      month: "2026-02",
+      balance: 100,
+      cashBalance: 100,
+      holdingsValue: 0,
+      totalEquity: 100,
+    },
+    {
+      month: "2026-03",
+      balance: 100,
+      cashBalance: 100,
+      holdingsValue: 0,
+      totalEquity: 100,
+    },
   ]);
 });
 
@@ -110,9 +128,61 @@ test("aggregateAccountBalanceHistory accumulates end-of-month balances after ope
   // opening 50 + Dec 100 = 150 at end of Jan (+25) = 175
   // Feb −10 = 165; Mar −5 = 160
   assert.deepEqual(result.series, [
-    { month: "2026-01", balance: 175 },
-    { month: "2026-02", balance: 165 },
-    { month: "2026-03", balance: 160 },
+    {
+      month: "2026-01",
+      balance: 175,
+      cashBalance: 175,
+      holdingsValue: 0,
+      totalEquity: 175,
+    },
+    {
+      month: "2026-02",
+      balance: 165,
+      cashBalance: 165,
+      holdingsValue: 0,
+      totalEquity: 165,
+    },
+    {
+      month: "2026-03",
+      balance: 160,
+      cashBalance: 160,
+      holdingsValue: 0,
+      totalEquity: 160,
+    },
+  ]);
+});
+
+test("aggregateAccountBalanceHistory adds holdings MTM into totalEquity", () => {
+  const months = listMonthsEndingAt("2026-02", 2);
+  const opening = new Date("2025-01-01T00:00:00.000Z");
+  const holdings = new Map([
+    ["2026-01", 200],
+    ["2026-02", 250],
+  ]);
+  const result = aggregateAccountBalanceHistory(
+    1,
+    "USD",
+    months,
+    100_00,
+    [],
+    opening,
+    holdings,
+  );
+  assert.deepEqual(result.series, [
+    {
+      month: "2026-01",
+      balance: 100,
+      cashBalance: 100,
+      holdingsValue: 200,
+      totalEquity: 300,
+    },
+    {
+      month: "2026-02",
+      balance: 100,
+      cashBalance: 100,
+      holdingsValue: 250,
+      totalEquity: 350,
+    },
   ]);
 });
 
@@ -139,8 +209,20 @@ test("aggregateAccountBalanceHistory includes TRANSFER_IN and TRANSFER_OUT", () 
     opening,
   );
   assert.deepEqual(result.series, [
-    { month: "2026-01", balance: 60 },
-    { month: "2026-02", balance: 75 },
+    {
+      month: "2026-01",
+      balance: 60,
+      cashBalance: 60,
+      holdingsValue: 0,
+      totalEquity: 60,
+    },
+    {
+      month: "2026-02",
+      balance: 75,
+      cashBalance: 75,
+      holdingsValue: 0,
+      totalEquity: 75,
+    },
   ]);
 });
 

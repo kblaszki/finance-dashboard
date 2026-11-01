@@ -136,8 +136,20 @@ describe("AccountDetailPage", () => {
       currency: "USD",
       monthCount: 12,
       series: [
-        { month: "2025-04", balance: 10 },
-        { month: "2026-03", balance: 10 },
+        {
+          month: "2025-04",
+          balance: 10,
+          cashBalance: 10,
+          holdingsValue: 0,
+          totalEquity: 10,
+        },
+        {
+          month: "2026-03",
+          balance: 10,
+          cashBalance: 10,
+          holdingsValue: 0,
+          totalEquity: 10,
+        },
       ],
     });
     vi.mocked(fetchCategories).mockResolvedValue([

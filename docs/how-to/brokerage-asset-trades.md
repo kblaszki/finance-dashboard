@@ -45,7 +45,7 @@ Content-Type: application/json
 - List: `GET …/holdings`, `GET …/asset-trades`
 - Delete/reverse: `DELETE …/asset-trades/:id` (BUY with closed lots → `400`)
 
-Cash legs appear on the ledger as `ASSET_BUY` / `ASSET_SELL` (read-only there). Period cashflow stats ignore them; cash balance history and net worth include cash + holdings MTM.
+Cash legs appear on the ledger as `ASSET_BUY` / `ASSET_SELL` (read-only there). Period cashflow stats ignore them. Account **balance history** chart shows three end-of-month series: cash, holdings MTM, and equity (sum). Net worth includes cash + holdings MTM.
 
 ## Related
 

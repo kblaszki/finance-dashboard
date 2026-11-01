@@ -1,7 +1,8 @@
 import {
-  Area,
-  AreaChart,
   CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -28,7 +29,7 @@ export function AccountBalanceChart(props: {
   return (
     <ChartCard
       title="Balance history"
-      subtitle={`End-of-month cash balance · ${months} months · ${currency}`}
+      subtitle={`End-of-month cash, holdings MTM, and equity · ${months} months · ${currency}`}
       actions={
         <label>
           Range{" "}
@@ -56,7 +57,7 @@ export function AccountBalanceChart(props: {
       />
       {!error && series.length > 0 && (
         <ResponsiveContainer width="100%" height={260}>
-          <AreaChart data={series}>
+          <LineChart data={series}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
             <XAxis
               dataKey="month"
@@ -70,23 +71,39 @@ export function AccountBalanceChart(props: {
               }
             />
             <Tooltip
-              formatter={(value) =>
+              formatter={(value, name) => [
                 typeof value === "number"
                   ? formatMoney(value, currency)
-                  : String(value ?? "")
-              }
+                  : String(value ?? ""),
+                String(name),
+              ]}
             />
-            <Area
+            <Legend />
+            <Line
               type="monotone"
-              dataKey="balance"
-              name="Balance"
+              dataKey="cashBalance"
+              name="Cash"
               stroke="var(--chart-1)"
-              fill="var(--chart-1)"
-              fillOpacity={0.18}
               strokeWidth={2}
               dot={false}
             />
-          </AreaChart>
+            <Line
+              type="monotone"
+              dataKey="holdingsValue"
+              name="Holdings"
+              stroke="var(--chart-2)"
+              strokeWidth={2}
+              dot={false}
+            />
+            <Line
+              type="monotone"
+              dataKey="totalEquity"
+              name="Equity"
+              stroke="var(--chart-3)"
+              strokeWidth={2}
+              dot={false}
+            />
+          </LineChart>
         </ResponsiveContainer>
       )}
     </ChartCard>

@@ -300,7 +300,20 @@ test("GET /api/accounts/:id/balance-history returns flat opening and scopes owne
   assert.equal(empty.body.series.length, 6);
   assert.equal(empty.body.series[0].month, "2025-08");
   assert.equal(empty.body.series[5].month, "2026-01");
-  assert.ok(empty.body.series.every((p: { balance: number }) => p.balance === 250));
+  assert.ok(
+    empty.body.series.every(
+      (p: {
+        balance: number;
+        cashBalance: number;
+        holdingsValue: number;
+        totalEquity: number;
+      }) =>
+        p.balance === 250 &&
+        p.cashBalance === 250 &&
+        p.holdingsValue === 0 &&
+        p.totalEquity === 250,
+    ),
+  );
 
   const forbidden = await request(app)
     .get(`/api/accounts/${accountId}/balance-history?month=2026-01`)
@@ -346,6 +359,81 @@ test("GET /api/accounts/:id/balance-history aggregates end-of-month cash balance
   assert.equal(byMonth.get("2025-11"), 100);
   assert.equal(byMonth.get("2025-12"), 150);
   assert.equal(byMonth.get("2026-01"), 130);
+});
+
+test("GET /api/accounts/:id/balance-history includes holdings MTM and equity", async () => {
+  const { token } = await createUserAndToken();
+  const instrument = await prisma.instrument.create({
+    data: {
+      symbol: "EQTY",
+      name: "Equity Co",
+      currency: "USD",
+      assetClass: "STOCK",
+      provider: "twelve_data",
+      providerSymbol: "EQTY-USD-BAL",
+      allowlisted: true,
+    },
+  });
+  await prisma.instrumentValuation.create({
+    data: {
+      instrumentId: instrument.id,
+      asOfDate: new Date("2026-01-15T00:00:00.000Z"),
+      close: 50,
+      source: "yahoo",
+    },
+  });
+  const account = await request(app)
+    .post("/api/accounts")
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      name: "Broker Equity Hist",
+      accountType: "BROKERAGE",
+      currency: "USD",
+      openingBalance: 1000,
+      openingCashAsOf: "2025-01-01T00:00:00.000Z",
+    });
+  assert.equal(account.status, 201);
+  const accountId = account.body.id as number;
+
+  const buy = await request(app)
+    .post(`/api/accounts/${accountId}/asset-trades`)
+    .set("Authorization", `Bearer ${token}`)
+    .send({
+      instrumentId: instrument.id,
+      side: "BUY",
+      quantity: 10,
+      unitPrice: 40,
+      commission: 0,
+      occurredAt: "2026-01-10T12:00:00.000Z",
+    });
+  assert.equal(buy.status, 201, JSON.stringify(buy.body));
+
+  const res = await request(app)
+    .get(`/api/accounts/${accountId}/balance-history?month=2026-02&months=6`)
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200, JSON.stringify(res.body));
+  const byMonth = new Map(
+    (
+      res.body.series as Array<{
+        month: string;
+        cashBalance: number;
+        holdingsValue: number;
+        totalEquity: number;
+      }>
+    ).map((p) => [p.month, p]),
+  );
+  // Dec: cash 1000, no holdings yet
+  assert.equal(byMonth.get("2025-12")?.cashBalance, 1000);
+  assert.equal(byMonth.get("2025-12")?.holdingsValue, 0);
+  assert.equal(byMonth.get("2025-12")?.totalEquity, 1000);
+  // Jan: cash 1000-400=600; holdings 10*50=500; equity 1100
+  assert.equal(byMonth.get("2026-01")?.cashBalance, 600);
+  assert.equal(byMonth.get("2026-01")?.holdingsValue, 500);
+  assert.equal(byMonth.get("2026-01")?.totalEquity, 1100);
+  // Feb: same cash/holdings (last close still Jan 15)
+  assert.equal(byMonth.get("2026-02")?.cashBalance, 600);
+  assert.equal(byMonth.get("2026-02")?.holdingsValue, 500);
+  assert.equal(byMonth.get("2026-02")?.totalEquity, 1100);
 });
 
 test("GET /api/accounts/:id/balance-history uses oldest tx when openingCashAsOf is unset", async () => {
