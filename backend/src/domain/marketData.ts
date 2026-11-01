@@ -1,30 +1,18 @@
 import type { PrismaClient } from "@prisma/client";
 import { getMarketLiveApi } from "./appConfig";
-import {
-  isGpwListed,
-  upsertCatalogInstruments,
-} from "./instruments";
+import { upsertCatalogInstruments } from "./instruments";
 import { formatYmdUtc } from "./fx";
 import {
   getLatestValuation,
   isValuationFresh,
-  upsertInstrumentClose,
-  VALUATION_SOURCE_OANOR_GPW,
-  VALUATION_SOURCE_TWELVE_DATA,
 } from "./instrumentValuations";
 import {
-  createRpsPacer,
-  fetchOanorGpwQuotes,
-  OANOR_GPW_QUOTE_BATCH_SIZE,
-  type OanorFetch,
-} from "./oanorGpwClient";
-import {
-  createCreditPacer,
-  fetchTwelveDataEodQuote,
   fetchTwelveDataEtfs,
   fetchTwelveDataStocks,
   type TwelveDataFetch,
 } from "./twelveDataClient";
+import type { YahooFetch } from "./yahooFinanceClient";
+import { upsertYahooLatestClose } from "./yahooHistory";
 
 export type SyncCatalogResult = {
   stocksUpserted: number;
@@ -39,8 +27,8 @@ export type SyncQuotesResult = {
   errors: Array<{ instrumentId: number; symbol: string; message: string }>;
 };
 
-/** Shared fetch shape: URL + optional RequestInit (Oanor needs headers). */
-export type MarketDataFetch = OanorFetch;
+/** Shared fetch for Yahoo quotes (and catalog uses Twelve Data separately). */
+export type MarketDataFetch = YahooFetch;
 
 export async function syncInstrumentCatalog(
   prisma: PrismaClient,
@@ -65,11 +53,13 @@ export type SyncQuotesOptions = {
   /** Force refresh even if valuation looks fresh. */
   force?: boolean;
   fetchImpl?: MarketDataFetch;
-  /** Twelve Data API key (non-GPW quotes). */
+  /** @deprecated Ignored — valuations use Yahoo (no API key). */
   apiKey?: string;
-  /** Oanor API key (GPW quotes). */
+  /** @deprecated Ignored — Oanor GPW quote path is dormant. */
   oanorApiKey?: string;
   now?: Date;
+  /** Delay between Yahoo quote calls (ms). */
+  delayMs?: number;
 };
 
 type InstrumentLite = {
@@ -79,103 +69,16 @@ type InstrumentLite = {
   currency: string;
   exchange: string;
   country: string | null;
+  assetClass: string;
 };
 
-async function applyQuoteCurrency(
-  prisma: PrismaClient,
-  instrument: InstrumentLite,
-  currency: string | null,
-): Promise<void> {
-  if (currency && currency !== instrument.currency) {
-    await prisma.instrument.update({
-      where: { id: instrument.id },
-      data: { currency },
-    });
-  }
-}
-
-async function syncTwelveDataInstrument(
-  prisma: PrismaClient,
-  instrument: InstrumentLite,
-  fetchImpl: MarketDataFetch,
-  apiKey: string | undefined,
-): Promise<void> {
-  const quote = await fetchTwelveDataEodQuote(
-    instrument.providerSymbol,
-    fetchImpl,
-    apiKey,
-  );
-  await upsertInstrumentClose(prisma, {
-    instrumentId: instrument.id,
-    asOfYmd: quote.asOfYmd,
-    close: quote.close,
-    source: VALUATION_SOURCE_TWELVE_DATA,
-  });
-  await applyQuoteCurrency(prisma, instrument, quote.currency);
-}
-
-async function syncOanorGpwBatch(
-  prisma: PrismaClient,
-  batch: InstrumentLite[],
-  fetchImpl: MarketDataFetch,
-  oanorApiKey: string | undefined,
-  now: Date,
-): Promise<{
-  updated: number;
-  failed: number;
-  errors: SyncQuotesResult["errors"];
-}> {
-  const errors: SyncQuotesResult["errors"] = [];
-  let updated = 0;
-  let failed = 0;
-  try {
-    const quotes = await fetchOanorGpwQuotes(
-      batch.map((i) => i.providerSymbol || i.symbol),
-      fetchImpl,
-      oanorApiKey,
-      now,
-    );
-    const bySymbol = new Map(quotes.map((q) => [q.symbol, q]));
-    for (const instrument of batch) {
-      const key = (instrument.providerSymbol || instrument.symbol)
-        .trim()
-        .toUpperCase();
-      const quote = bySymbol.get(key);
-      if (!quote) {
-        failed += 1;
-        errors.push({
-          instrumentId: instrument.id,
-          symbol: instrument.symbol,
-          message: `Oanor GPW returned no quote for ${instrument.symbol}`,
-        });
-        continue;
-      }
-      await upsertInstrumentClose(prisma, {
-        instrumentId: instrument.id,
-        asOfYmd: quote.asOfYmd,
-        close: quote.close,
-        source: VALUATION_SOURCE_OANOR_GPW,
-      });
-      await applyQuoteCurrency(prisma, instrument, quote.currency);
-      updated += 1;
-    }
-  } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : String(e);
-    for (const instrument of batch) {
-      failed += 1;
-      errors.push({
-        instrumentId: instrument.id,
-        symbol: instrument.symbol,
-        message,
-      });
-    }
-  }
-  return { updated, failed, errors };
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
 }
 
 /**
- * Fetch closes for allowlisted instruments (default) or watchlist-only.
- * GPW → Oanor (batched ≤20); others → Twelve Data (paced).
+ * Fetch closes for allowlisted instruments (default) or watchlist-only via Yahoo.
+ * Twelve Data / Oanor quote paths are dormant (future per-user API keys).
  */
 export async function syncWatchlistQuotes(
   prisma: PrismaClient,
@@ -185,6 +88,7 @@ export async function syncWatchlistQuotes(
   const now = options.now ?? new Date();
   const force = options.force === true;
   const watchlistOnly = options.watchlistOnly === true;
+  const delayMs = options.delayMs ?? 200;
 
   let instruments: InstrumentLite[];
   if (watchlistOnly) {
@@ -226,45 +130,15 @@ export async function syncWatchlistQuotes(
   let failed = 0;
   const errors: SyncQuotesResult["errors"] = [];
 
-  const needGpw: InstrumentLite[] = [];
-  const needTd: InstrumentLite[] = [];
-
   for (const instrument of instruments) {
     const latest = await getLatestValuation(prisma, instrument.id);
     if (!force && latest && isValuationFresh(latest.asOfDate, now)) {
       skippedFresh += 1;
       continue;
     }
-    if (isGpwListed(instrument)) needGpw.push(instrument);
-    else needTd.push(instrument);
-  }
-
-  const oanorPace = createRpsPacer();
-  for (let i = 0; i < needGpw.length; i += OANOR_GPW_QUOTE_BATCH_SIZE) {
-    const batch = needGpw.slice(i, i + OANOR_GPW_QUOTE_BATCH_SIZE);
-    await oanorPace();
-    const part = await syncOanorGpwBatch(
-      prisma,
-      batch,
-      fetchImpl,
-      options.oanorApiKey,
-      now,
-    );
-    updated += part.updated;
-    failed += part.failed;
-    errors.push(...part.errors);
-  }
-
-  const tdPace = createCreditPacer();
-  for (const instrument of needTd) {
     try {
-      await tdPace();
-      await syncTwelveDataInstrument(
-        prisma,
-        instrument,
-        fetchImpl,
-        options.apiKey,
-      );
+      if (delayMs > 0) await sleep(delayMs);
+      await upsertYahooLatestClose(prisma, instrument, { fetchImpl });
       updated += 1;
     } catch (e: unknown) {
       failed += 1;
@@ -285,21 +159,14 @@ export async function syncWatchlistQuotes(
   };
 }
 
-export type EnsureQuoteOptions = {
-  fetchImpl?: MarketDataFetch;
-  now?: Date;
-  apiKey?: string;
-  oanorApiKey?: string;
-};
-
 /** Ensure one instrument has a fresh valuation (used on watchlist add). */
 export async function ensureInstrumentQuote(
   prisma: PrismaClient,
   instrumentId: number,
   fetchImpl: MarketDataFetch = fetch,
   now: Date = new Date(),
-  apiKey?: string,
-  oanorApiKey?: string,
+  _apiKey?: string,
+  _oanorApiKey?: string,
 ): Promise<{ fetched: boolean; asOfYmd: string | null; close: number | null }> {
   if (!(await getMarketLiveApi(prisma))) {
     const latestOffline = await getLatestValuation(prisma, instrumentId);
@@ -325,47 +192,10 @@ export async function ensureInstrumentQuote(
     };
   }
 
-  const lite: InstrumentLite = {
-    id: instrument.id,
-    symbol: instrument.symbol,
-    providerSymbol: instrument.providerSymbol,
-    currency: instrument.currency,
-    exchange: instrument.exchange,
-    country: instrument.country,
-  };
-
-  if (isGpwListed(instrument)) {
-    const quotes = await fetchOanorGpwQuotes(
-      [instrument.providerSymbol || instrument.symbol],
-      fetchImpl,
-      oanorApiKey,
-      now,
-    );
-    const quote = quotes[0];
-    if (!quote) {
-      throw new Error(
-        `Oanor GPW returned no quote for ${instrument.symbol}`,
-      );
-    }
-    const row = await upsertInstrumentClose(prisma, {
-      instrumentId,
-      asOfYmd: quote.asOfYmd,
-      close: quote.close,
-      source: VALUATION_SOURCE_OANOR_GPW,
-    });
-    await applyQuoteCurrency(prisma, lite, quote.currency);
-    return {
-      fetched: true,
-      asOfYmd: quote.asOfYmd,
-      close: Number(row.close),
-    };
-  }
-
-  await syncTwelveDataInstrument(prisma, lite, fetchImpl, apiKey);
-  const row = await getLatestValuation(prisma, instrumentId);
+  const quote = await upsertYahooLatestClose(prisma, instrument, { fetchImpl });
   return {
     fetched: true,
-    asOfYmd: row ? formatYmdUtc(row.asOfDate) : null,
-    close: row ? Number(row.close) : null,
+    asOfYmd: quote.asOfYmd,
+    close: quote.close,
   };
 }

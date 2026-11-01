@@ -124,7 +124,7 @@ test("ensureInstrumentHistory soft-fails when provider errors", async () => {
   assert.match(String(result.backfillMessage), /provider down|history/i);
 });
 
-test("ensureInstrumentHistory backfills via Twelve Data time_series", async () => {
+test("ensureInstrumentHistory backfills via Yahoo chart", async () => {
   await resetDatabase(prisma);
   await setMarketLiveApi(prisma, true);
   const instrument = await prisma.instrument.create({
@@ -144,18 +144,27 @@ test("ensureInstrumentHistory backfills via Twelve Data time_series", async () =
     now: new Date(Date.UTC(2026, 9, 31)),
     fetchImpl: async (input) => {
       const url = String(input);
-      assert.match(url, /time_series/);
+      assert.match(url, /chart\/FILL|finance\.yahoo/);
+      const t0 = Date.UTC(2026, 9, 29) / 1000;
+      const t1 = Date.UTC(2026, 9, 30) / 1000;
       return new Response(
         JSON.stringify({
-          values: [
-            { datetime: "2026-10-30", close: "12.5" },
-            { datetime: "2026-10-29", close: "12.0" },
-          ],
+          chart: {
+            result: [
+              {
+                timestamp: [t0, t1],
+                indicators: {
+                  adjclose: [{ adjclose: [12.0, 12.5] }],
+                  quote: [{ close: [12.0, 12.5] }],
+                },
+              },
+            ],
+            error: null,
+          },
         }),
         { status: 200 },
       );
     },
-    apiKey: "test-key",
   });
   assert.equal(result.backfilled, true);
 

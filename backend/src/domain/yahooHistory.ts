@@ -38,6 +38,41 @@ function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
 }
 
+export type YahooInstrumentRef = {
+  id: number;
+  symbol: string;
+  providerSymbol?: string | null;
+  assetClass?: string | null;
+  exchange?: string | null;
+  country?: string | null;
+};
+
+/**
+ * Latest close from Yahoo chart (`range=5d` by default) → InstrumentValuation.
+ */
+export async function upsertYahooLatestClose(
+  prisma: PrismaClient,
+  instrument: YahooInstrumentRef,
+  options: { fetchImpl?: YahooFetch; range?: string } = {},
+): Promise<{ asOfYmd: string; close: number }> {
+  const yahooSymbol = yahooSymbolForInstrument(instrument);
+  const bars = await fetchYahooDailyHistory(yahooSymbol, {
+    range: options.range ?? "5d",
+    ...(options.fetchImpl != null ? { fetchImpl: options.fetchImpl } : {}),
+  });
+  if (bars.length === 0) {
+    throw new Error(`Yahoo returned no bars for ${yahooSymbol}`);
+  }
+  const last = bars[bars.length - 1]!;
+  await upsertInstrumentClose(prisma, {
+    instrumentId: instrument.id,
+    asOfYmd: last.asOfYmd,
+    close: last.close,
+    source: VALUATION_SOURCE_YAHOO,
+  });
+  return { asOfYmd: last.asOfYmd, close: last.close };
+}
+
 /**
  * Backfill daily closes from Yahoo chart API into InstrumentValuation.
  * Default range `1y`; use `range: "10y"` for a full allowlist dump.

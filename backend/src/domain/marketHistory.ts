@@ -185,12 +185,13 @@ export async function syncAllowlistHistory(
 /**
  * Soft backfill ~1y history when the series is sparse. Never throws — callers
  * still return whatever is already in InstrumentValuation.
+ * Valuation path is Yahoo-only (TD/Stooq dormant for HTTP).
  */
 export async function ensureInstrumentHistory(
   prisma: PrismaClient,
   instrumentId: number,
   options: {
-    fetchImpl?: TwelveDataFetch & StooqFetch & YahooFetch;
+    fetchImpl?: YahooFetch;
     apiKey?: string;
     now?: Date;
     sparseThreshold?: number;
@@ -203,7 +204,7 @@ export async function ensureInstrumentHistory(
   const now = options.now ?? new Date();
   const threshold = options.sparseThreshold ?? HISTORY_SPARSE_THRESHOLD;
   const window = historyWindowFromMonths(12, now);
-  let existing = await countDistinctClosesInWindow(
+  const existing = await countDistinctClosesInWindow(
     prisma,
     instrumentId,
     window,
@@ -212,53 +213,30 @@ export async function ensureInstrumentHistory(
     return { backfilled: false };
   }
 
-  let backfilled = false;
-  let lastMessage: string | undefined;
-
-  try {
-    const result = await syncAllowlistHistory(prisma, {
-      instrumentId,
-      force: false,
-      ...(options.fetchImpl != null ? { fetchImpl: options.fetchImpl } : {}),
-      ...(options.apiKey !== undefined ? { apiKey: options.apiKey } : {}),
-      stooqDelayMs: 0,
-    });
-    if (result.updatedInstruments > 0 || result.barsUpserted > 0) {
-      backfilled = true;
-    } else if (result.failed > 0) {
-      lastMessage = result.errors[0]?.message ?? "History backfill failed";
-    }
-  } catch (e: unknown) {
-    lastMessage = e instanceof Error ? e.message : String(e);
-  }
-
-  existing = await countDistinctClosesInWindow(prisma, instrumentId, window);
-  if (existing >= threshold) {
-    return { backfilled };
-  }
-
-  // Yahoo fallback when TD/Stooq left the series sparse (indexes, mismatched listings).
   try {
     const yahoo = await syncYahooHistory(prisma, {
       instrumentId,
       force: true,
       delayMs: 0,
+      range: "1y",
       ...(options.fetchImpl != null ? { fetchImpl: options.fetchImpl } : {}),
     });
     if (yahoo.updatedInstruments > 0 || yahoo.barsUpserted > 0) {
       return { backfilled: true };
     }
     if (yahoo.failed > 0) {
-      lastMessage =
-        yahoo.errors[0]?.message ?? lastMessage ?? "Yahoo history backfill failed";
+      return {
+        backfilled: false,
+        backfillMessage:
+          yahoo.errors[0]?.message ?? "Yahoo history backfill failed",
+      };
     }
   } catch (e: unknown) {
-    lastMessage = e instanceof Error ? e.message : String(e);
+    return {
+      backfilled: false,
+      backfillMessage: e instanceof Error ? e.message : String(e),
+    };
   }
 
-  if (backfilled) return { backfilled: true };
-  return {
-    backfilled: false,
-    ...(lastMessage != null ? { backfillMessage: lastMessage } : {}),
-  };
+  return { backfilled: false };
 }

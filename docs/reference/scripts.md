@@ -24,10 +24,10 @@ Run from `backend/` unless noted.
 | Demo user seed | `npm run db:seed` | Upsert `demo@finance.local` and wipe/rebuild sample portfolio (categories, 4 accounts, cash txs) |
 | NBP FX sync | `npm run fx:sync` | Upsert NBP table A mids for **EUR** and **USD** into `FxRateDaily`. Default last 30 UTC days; or `--days N` / `--from YYYY-MM-DD --to YYYY-MM-DD`. For dashboard net-worth history (up to 24 months), run an initial backfill such as `npm run fx:sync -- --days 760`, then keep a short rolling window for daily sync. Requires `npm run build`. Optional `NBP_API_BASE`. Dashboard/net-worth HTTP never fetches NBP live |
 | Market catalog sync | `npm run market:sync-catalog` | Upsert Twelve Data `/stocks` + `/etfs` into `Instrument`. Requires `TWELVE_DATA_API_KEY` + build. Used by catalog search (`scope=catalog`) |
-| Market seed universe | `npm run market:seed-universe` | Mark curated S&P 500 / GPW / indexes / ETFs `allowlisted=true` from `backend/data/market-universe/` |
-| Market quote sync | `npm run market:sync-quotes` | Default: all **allowlisted**. `--watchlist-only` or `--userId=N` for favorites only; optional `--force`. GPW → Oanor; else Twelve Data |
-| Market history sync | `npm run market:sync-history` | ~1y daily closes for allowlisted (`--force`, `--instrumentId=N`). US/TD → Twelve Data time_series; GPW → Stooq CSV |
-| Market history Yahoo | `npm run market:sync-history-yahoo` | Yahoo chart closes (`--range 1y` \| `--range 10y`, default `1y`; `--watchlist-only`, `--userId N`, `--instrumentId N`, `--force`). Source `yahoo`. **CLI flags are space-separated** (`--range 10y`); `--range=10y` is ignored and falls back to `1y` |
+| Market seed universe | `npm run market:seed-universe` | Mark curated S&P 500 / GPW / indexes / ETFs `allowlisted=true` from `backend/data/market-universe/`; un-allowlists retired tickers (`CIE`, `CMR`, `CCC`, `SPL`) |
+| Market quote sync | `npm run market:sync-quotes` | Default: all **allowlisted** via **Yahoo** latest close. `--watchlist-only` or `--userId N`; optional `--force` |
+| Market history sync | `npm run market:sync-history` | **Dormant** TD/Stooq path. Prefer `market:sync-history-yahoo` |
+| Market history Yahoo | `npm run market:sync-history-yahoo` | Primary Yahoo chart closes (`--range 1y` \| `--range 10y` or `--range=10y`, default `1y`; `--watchlist-only`, `--userId N`, `--instrumentId N`, `--force`). Source `yahoo` |
 | Market history export | `npm run market:export-history` | Allowlist valuations → NDJSON/`.gz` (`--out PATH`, `--months N`, `--monthly`, `--watchlist-only`). Default `data/market-history/exports/allowlist-eod.ndjson.gz` (gitignored) |
 | Market history import | `npm run market:import-history` | Import NDJSON/`.gz` into `InstrumentValuation` (`--file PATH`). Skips unknown instruments |
 | DB reset | `npm run db:reset` | `prisma migrate reset --force` — wipe SQLite, migrate, run seed (cash demo). Re-run catalog/universe + `db:seed` for Markets fixture |

@@ -2,14 +2,9 @@ import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import { defaultSyncRange, syncFxRates } from "../domain/fxRates";
 import { utcDateFromYmd } from "../domain/fx";
+import { readArg } from "../lib/cliArgs";
 
 dotenv.config();
-
-function readArg(flag: string): string | undefined {
-  const idx = process.argv.indexOf(flag);
-  if (idx < 0 || idx + 1 >= process.argv.length) return undefined;
-  return process.argv[idx + 1];
-}
 
 function parseRange(): { fromYmd: string; toYmd: string } {
   const from = readArg("--from");

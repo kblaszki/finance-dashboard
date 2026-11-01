@@ -1,14 +1,15 @@
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
-import { hashPassword, normalizeEmail, validatePassword, validateUsername, canonicalUsernameKey } from "../auth";
+import {
+  hashPassword,
+  normalizeEmail,
+  validatePassword,
+  validateUsername,
+  canonicalUsernameKey,
+} from "../auth";
+import { readArg } from "../lib/cliArgs";
 
 dotenv.config();
-
-function readArg(flag: string): string | undefined {
-  const idx = process.argv.indexOf(flag);
-  if (idx < 0 || idx + 1 >= process.argv.length) return undefined;
-  return process.argv[idx + 1];
-}
 
 async function main(): Promise<void> {
   const email = normalizeEmail(readArg("--email") ?? "");
@@ -16,7 +17,9 @@ async function main(): Promise<void> {
   const password = readArg("--password") ?? "";
 
   if (!email || !username) {
-    throw new Error("Usage: createUser.ts --email <email> --username <name> --password <password>");
+    throw new Error(
+      "Usage: createUser.ts --email <email> --username <name> --password <password>",
+    );
   }
   const pwdErr = validatePassword(password);
   if (pwdErr) throw new Error(pwdErr);
@@ -31,7 +34,12 @@ async function main(): Promise<void> {
     }
     const passwordHash = await hashPassword(password);
     const user = await prisma.user.create({
-      data: { email, username, usernameKey: canonicalUsernameKey(username), passwordHash },
+      data: {
+        email,
+        username,
+        usernameKey: canonicalUsernameKey(username),
+        passwordHash,
+      },
     });
     // eslint-disable-next-line no-console
     console.log(JSON.stringify({ id: user.id, email: user.email, username: user.username }));

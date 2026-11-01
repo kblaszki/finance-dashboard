@@ -36,6 +36,14 @@ const UNIVERSE_FILES = [
   "etfs.json",
 ] as const;
 
+/** Former GPW tickers removed/renamed — drop from allowlist on seed. */
+export const RETIRED_ALLOWLIST_PROVIDER_SYMBOLS = [
+  "CIE", // Ciech delisted 2024-03
+  "CMR", // Comarch delisted 2025-03
+  "CCC", // renamed → MDV (Modivo) 2026-02
+  "SPL", // renamed → EBP (Erste Bank Polska) 2026-04
+] as const;
+
 export function marketUniverseDir(
   fromDir: string = path.resolve(__dirname, "../../data/market-universe"),
 ): string {
@@ -158,6 +166,14 @@ export async function seedMarketUniverse(
     });
     updated += 1;
   }
+
+  await prisma.instrument.updateMany({
+    where: {
+      provider: INSTRUMENT_PROVIDER_TWELVE_DATA,
+      providerSymbol: { in: [...RETIRED_ALLOWLIST_PROVIDER_SYMBOLS] },
+    },
+    data: { allowlisted: false },
+  });
 
   return {
     files,

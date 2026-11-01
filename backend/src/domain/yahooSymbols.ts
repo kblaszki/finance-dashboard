@@ -6,9 +6,10 @@ const INDEX_YAHOO: Record<string, string> = {
   NDX: "^NDX",
   DJI: "^DJI",
   IXIC: "^IXIC",
-  WIG20: "^WIG20",
-  MWIG40: "^MWIG40",
-  WIG: "^WIG",
+  // Warsaw indexes use .WA on Yahoo chart (caret forms 404).
+  WIG20: "WIG20.WA",
+  MWIG40: "MWIG40.WA",
+  WIG: "WIG.WA",
 };
 
 /**

@@ -9,13 +9,13 @@
 
 ## CLI flag form
 
-Market CLIs parse flags as **space-separated** (`--range 10y`, `--out path`, `--file path`). Forms with `=` (`--range=10y`) are **not** read and fall back to defaults (for Yahoo history that means `1y`).
+Market CLIs accept `--flag value` and `--flag=value` (e.g. `--range 10y` or `--range=10y`).
 
 ## Export all allowlist valuations
 
 ```bash
 cd backend && npm run build
-# optional: collect prices first (note the space after --range)
+# optional: collect prices first
 # npm run market:sync-history-yahoo -- --force --range 10y
 npm run market:export-history
 # → data/market-history/exports/allowlist-eod.ndjson.gz

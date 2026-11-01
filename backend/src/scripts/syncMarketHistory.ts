@@ -3,14 +3,9 @@ import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import { syncAllowlistHistory } from "../domain/marketHistory";
 import { marketUniverseDir } from "../domain/marketUniverse";
+import { readArg } from "../lib/cliArgs";
 
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
-
-function readArg(flag: string): string | undefined {
-  const idx = process.argv.indexOf(flag);
-  if (idx < 0 || idx + 1 >= process.argv.length) return undefined;
-  return process.argv[idx + 1];
-}
 
 async function main(): Promise<void> {
   const force = process.argv.includes("--force");

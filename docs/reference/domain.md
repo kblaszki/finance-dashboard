@@ -215,7 +215,9 @@ Unique `[provider, providerSymbol]`; indexes on `symbol`, `assetClass`, `name`, 
 
 ## InstrumentValuation
 
-Global close for one instrument on one UTC day. Sources: `twelve_data` (quote / time_series), `yahoo` (chart history fallback), `oanor_gpw` (live GPW last), `stooq` (GPW/index history CSV). Watchlist reads the latest row **across sources**. Chart collapse prefers `twelve_data` > `yahoo` > `stooq` > `oanor_gpw`.
+Global close for one instrument on one UTC day. **Active write path:** `yahoo` (Yahoo chart quotes + history). Legacy/dormant sources may still exist in DB: `twelve_data`, `oanor_gpw`, `stooq`. Watchlist reads the latest row **across sources**. Chart collapse prefers `twelve_data` > `yahoo` > `stooq` > `oanor_gpw`.
+
+Stored fields only: `asOfDate` (UTC midnight), `close` (major units in instrument currency), `source`. No OHLC/volume rows.
 
 | Field | Type | Notes |
 |-------|------|-------|
@@ -223,10 +225,10 @@ Global close for one instrument on one UTC day. Sources: `twelve_data` (quote / 
 | instrumentId | Int | FK → Instrument (`onDelete: Cascade`) |
 | asOfDate | DateTime | UTC midnight |
 | close | Decimal | Major units in instrument currency |
-| source | String | `twelve_data` \| `yahoo` \| `oanor_gpw` \| `stooq` |
+| source | String | `yahoo` (primary) \| `twelve_data` \| `oanor_gpw` \| `stooq` |
 | createdAt | DateTime | |
 
-Unique `[instrumentId, asOfDate, source]`. Domain: `instrumentValuations.ts`, `marketHistory.ts`, `stooqClient.ts`, `oanorGpwClient.ts`. CLIs: `market:sync-quotes`, `market:sync-history`.
+Unique `[instrumentId, asOfDate, source]`. Domain: `instrumentValuations.ts`, `yahooHistory.ts`, `marketData.ts`, `marketHistory.ts`. CLIs: `market:sync-quotes`, `market:sync-history-yahoo`.
 
 ## WatchlistItem
 

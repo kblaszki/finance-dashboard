@@ -25,12 +25,48 @@ test("yahooSymbolForInstrument maps indexes and GPW", () => {
   );
   assert.equal(
     yahooSymbolForInstrument({
+      symbol: "WIG20",
+      assetClass: "INDEX",
+      exchange: "GPW",
+      country: "Poland",
+    }),
+    "WIG20.WA",
+  );
+  assert.equal(
+    yahooSymbolForInstrument({
+      symbol: "MWIG40",
+      assetClass: "INDEX",
+      exchange: "GPW",
+      country: "Poland",
+    }),
+    "MWIG40.WA",
+  );
+  assert.equal(
+    yahooSymbolForInstrument({
+      symbol: "WIG",
+      assetClass: "INDEX",
+      exchange: "GPW",
+      country: "Poland",
+    }),
+    "WIG.WA",
+  );
+  assert.equal(
+    yahooSymbolForInstrument({
       symbol: "PKN",
       assetClass: "STOCK",
       exchange: "GPW",
       country: "Poland",
     }),
     "PKN.WA",
+  );
+  assert.equal(
+    yahooSymbolForInstrument({
+      symbol: "MDV",
+      assetClass: "STOCK",
+      exchange: "GPW",
+      country: "Poland",
+    }),
+    "MDV.WA",
   );
   assert.equal(
     yahooSymbolForInstrument({

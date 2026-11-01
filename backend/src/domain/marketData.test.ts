@@ -9,7 +9,7 @@ import {
 import { setMarketLiveApi } from "./appConfig";
 import { syncInstrumentCatalog, ensureInstrumentQuote } from "./marketData";
 import { INSTRUMENT_PROVIDER_TWELVE_DATA } from "./instruments";
-import { VALUATION_SOURCE_OANOR_GPW } from "./instrumentValuations";
+import { VALUATION_SOURCE_YAHOO } from "./instrumentValuations";
 
 let prisma: PrismaClient;
 
@@ -20,6 +20,26 @@ before(async () => {
 after(async () => {
   await disconnectTestPrisma(prisma);
 });
+
+function yahooChartResponse(close: number, unixSec: number): Response {
+  return new Response(
+    JSON.stringify({
+      chart: {
+        result: [
+          {
+            timestamp: [unixSec],
+            indicators: {
+              adjclose: [{ adjclose: [close] }],
+              quote: [{ close: [close] }],
+            },
+          },
+        ],
+        error: null,
+      },
+    }),
+    { status: 200 },
+  );
+}
 
 test("syncInstrumentCatalog upserts stocks and etfs from mocked fetch", async () => {
   await resetDatabase(prisma);
@@ -58,7 +78,7 @@ test("syncInstrumentCatalog upserts stocks and etfs from mocked fetch", async ()
   assert.equal(apple!.name, "Apple");
 });
 
-test("ensureInstrumentQuote fetches and stores close when missing", async () => {
+test("ensureInstrumentQuote fetches Yahoo close when missing", async () => {
   await resetDatabase(prisma);
   await setMarketLiveApi(prisma, true);
   const instrument = await prisma.instrument.create({
@@ -73,23 +93,18 @@ test("ensureInstrumentQuote fetches and stores close when missing", async () => 
     },
   });
 
-  const fetchImpl = async () =>
-    new Response(
-      JSON.stringify({
-        symbol: "MSFT",
-        close: "420.5",
-        datetime: "2026-10-29 16:00:00",
-        currency: "USD",
-      }),
-      { status: 200 },
-    );
+  // 2026-10-29 UTC
+  const unixSec = Date.UTC(2026, 9, 29) / 1000;
+  const fetchImpl = async (url: string) => {
+    assert.match(url, /finance\.yahoo\.com|chart\/MSFT/);
+    return yahooChartResponse(420.5, unixSec);
+  };
 
   const first = await ensureInstrumentQuote(
     prisma,
     instrument.id,
     fetchImpl,
     new Date(Date.UTC(2026, 9, 30)),
-    "test-key",
   );
   assert.equal(first.fetched, true);
   assert.equal(first.asOfYmd, "2026-10-29");
@@ -102,13 +117,18 @@ test("ensureInstrumentQuote fetches and stores close when missing", async () => 
       throw new Error("should not call");
     },
     new Date(Date.UTC(2026, 9, 30)),
-    "test-key",
   );
   assert.equal(second.fetched, false);
   assert.equal(second.close, 420.5);
+
+  const valuation = await prisma.instrumentValuation.findFirst({
+    where: { instrumentId: instrument.id },
+  });
+  assert.ok(valuation);
+  assert.equal(valuation!.source, VALUATION_SOURCE_YAHOO);
 });
 
-test("ensureInstrumentQuote uses Oanor for GPW instruments", async () => {
+test("ensureInstrumentQuote uses Yahoo for GPW instruments", async () => {
   await resetDatabase(prisma);
   await setMarketLiveApi(prisma, true);
   const instrument = await prisma.instrument.create({
@@ -124,21 +144,10 @@ test("ensureInstrumentQuote uses Oanor for GPW instruments", async () => {
     },
   });
 
+  const unixSec = Date.UTC(2026, 9, 30) / 1000;
   const fetchImpl = async (url: string) => {
-    assert.match(url, /gpw-api\/v1\/quote/);
-    return new Response(
-      JSON.stringify({
-        success: true,
-        status: "ok",
-        data: {
-          quotes: [
-            { ticker: "ETFBW20TR", price: 53.45, currency: "PLN" },
-          ],
-        },
-        meta: { timestamp: "2026-10-30T14:00:00.000Z" },
-      }),
-      { status: 200 },
-    );
+    assert.match(url, /ETFBW20TR\.WA/);
+    return yahooChartResponse(53.45, unixSec);
   };
 
   const result = await ensureInstrumentQuote(
@@ -146,8 +155,6 @@ test("ensureInstrumentQuote uses Oanor for GPW instruments", async () => {
     instrument.id,
     fetchImpl,
     new Date(Date.UTC(2026, 9, 30)),
-    undefined,
-    "oanor-test-key",
   );
   assert.equal(result.fetched, true);
   assert.equal(result.close, 53.45);
@@ -157,7 +164,7 @@ test("ensureInstrumentQuote uses Oanor for GPW instruments", async () => {
     where: { instrumentId: instrument.id },
   });
   assert.ok(valuation);
-  assert.equal(valuation!.source, VALUATION_SOURCE_OANOR_GPW);
+  assert.equal(valuation!.source, VALUATION_SOURCE_YAHOO);
 });
 
 test("getLatestValuation returns newest across sources", async () => {
@@ -186,10 +193,10 @@ test("getLatestValuation returns newest across sources", async () => {
     instrumentId: instrument.id,
     asOfYmd: "2026-10-30",
     close: 12,
-    source: VALUATION_SOURCE_OANOR_GPW,
+    source: VALUATION_SOURCE_YAHOO,
   });
   const latest = await getLatestValuation(prisma, instrument.id);
   assert.ok(latest);
   assert.equal(Number(latest!.close), 12);
-  assert.equal(latest!.source, VALUATION_SOURCE_OANOR_GPW);
+  assert.equal(latest!.source, VALUATION_SOURCE_YAHOO);
 });
