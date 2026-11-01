@@ -24,6 +24,7 @@ export type NetWorthHistoryTxRow = {
 };
 
 export type NetWorthHistoryAccount = {
+  id: number;
   accountType: string;
   currency: string;
   openingBalanceMinor: number;
@@ -84,6 +85,10 @@ export async function aggregateNetWorthHistory(input: {
   accounts: NetWorthHistoryAccount[];
   asOfToday?: Date;
   getMidRow: GetMidRowFn;
+  /** Optional holdings MTM by account id for each exclusive as-of bound. */
+  holdingsValueForExclusive?: (
+    exclusive: Date,
+  ) => Map<number, number> | Promise<Map<number, number>>;
 }): Promise<NetWorthHistoryResult> {
   const reporting = assertFxCurrency(input.currency);
   const asOfToday = input.asOfToday ?? new Date();
@@ -108,10 +113,14 @@ export async function aggregateNetWorthHistory(input: {
   for (const month of input.months) {
     const valuationDate = valuationDateForMonth(month, asOfToday);
     const exclusive = asOfExclusiveBound(valuationDate);
+    const holdingsByAccount = input.holdingsValueForExclusive
+      ? await input.holdingsValueForExclusive(exclusive)
+      : new Map<number, number>();
     const snapshot: NetWorthAccountRow[] = input.accounts.map((account) => ({
       accountType: account.accountType,
       currency: account.currency,
       cashBalance: balanceMajorAsOf(account, exclusive),
+      holdingsValue: holdingsByAccount.get(account.id) ?? 0,
     }));
 
     const point = await aggregateNetWorth({

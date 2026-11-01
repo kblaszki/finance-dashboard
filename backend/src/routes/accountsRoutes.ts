@@ -15,6 +15,7 @@ import { findOwnedAccount } from "../domain/ownedAccount";
 import {
   resolveOpeningEffectiveAt,
 } from "../domain/accountBalanceHistory";
+import { holdingsValueByAccountIds } from "../domain/portfolioValuation";
 import {
   assertBalanceHistoryTxCap,
   BALANCE_HISTORY_TX_CAP,
@@ -62,8 +63,14 @@ function isUniqueConstraintError(error: unknown): boolean {
   );
 }
 
-export function accountPayload(account: Account) {
+export function accountPayload(
+  account: Account,
+  equity: { holdingsValue?: number } = {},
+) {
   const cashBalance = minorToMajor(account.cashBalance);
+  const holdingsValue = equity.holdingsValue ?? 0;
+  const totalEquity =
+    Math.round((cashBalance + holdingsValue) * 100) / 100;
   return {
     id: account.id,
     userId: account.userId,
@@ -71,6 +78,8 @@ export function accountPayload(account: Account) {
     name: account.name,
     currency: account.currency,
     cashBalance,
+    holdingsValue,
+    totalEquity,
     openingBalance: minorToMajor(account.openingBalance),
     openingCashAsOf: account.openingCashAsOf
       ? account.openingCashAsOf.toISOString()
@@ -92,7 +101,17 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
         where: { userId: uid(req) },
         orderBy: { createdAt: "desc" },
       });
-      res.json(accounts.map(accountPayload));
+      const holdingsByAccount = await holdingsValueByAccountIds(
+        prisma,
+        accounts.map((a) => a.id),
+      );
+      res.json(
+        accounts.map((account) =>
+          accountPayload(account, {
+            holdingsValue: holdingsByAccount.get(account.id) ?? 0,
+          }),
+        ),
+      );
     } catch (e: unknown) {
       handleRouteError(res, e, "Failed to list accounts");
     }
@@ -139,7 +158,12 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
     try {
       const id = parseIdParam(req.params.id);
       const account = await findOwnedAccount(prisma, uid(req), id);
-      res.json(accountPayload(account));
+      const holdingsByAccount = await holdingsValueByAccountIds(prisma, [id]);
+      res.json(
+        accountPayload(account, {
+          holdingsValue: holdingsByAccount.get(id) ?? 0,
+        }),
+      );
     } catch (e: unknown) {
       handleRouteError(res, e, "Failed to load account");
     }
@@ -229,7 +253,12 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
           data,
         });
       });
-      res.json(accountPayload(updated));
+      const holdingsByAccount = await holdingsValueByAccountIds(prisma, [id]);
+      res.json(
+        accountPayload(updated, {
+          holdingsValue: holdingsByAccount.get(id) ?? 0,
+        }),
+      );
     } catch (e: unknown) {
       if (isUniqueConstraintError(e)) {
         handleRouteError(res, badRequest("Account name already exists"), "Update account failed");

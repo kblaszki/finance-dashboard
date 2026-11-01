@@ -78,6 +78,7 @@ export function cashTransactionPayload(
     categoryId: tx.categoryId,
     tagIds,
     transferId: tx.transferId ?? null,
+    assetTradeId: tx.assetTradeId ?? null,
     createdAt: tx.createdAt.toISOString(),
   };
 }
@@ -280,6 +281,9 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
         if (existing.transferId != null) {
           throw badRequest("edit or delete via /api/transfers");
         }
+        if (existing.assetTradeId != null) {
+          throw badRequest("edit or delete via /api/accounts/:accountId/asset-trades");
+        }
 
         const body = req.body ?? {};
         const hasField = [
@@ -361,6 +365,9 @@ export function createCashTransactionsRouter(deps: CashTxDeps): Router {
         if (!existing) throw notFound("Transaction not found");
         if (existing.transferId != null) {
           throw badRequest("edit or delete via /api/transfers");
+        }
+        if (existing.assetTradeId != null) {
+          throw badRequest("edit or delete via /api/accounts/:accountId/asset-trades");
         }
 
         await prisma.$transaction((tx) =>

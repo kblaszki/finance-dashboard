@@ -28,6 +28,8 @@ export type NetWorthAccountRow = {
   accountType: string;
   currency: string;
   cashBalance: Prisma.Decimal | number;
+  /** Mark-to-market holdings in account currency (major units). */
+  holdingsValue?: Prisma.Decimal | number;
 };
 
 export type NetWorthRateUsed = {
@@ -143,8 +145,11 @@ export async function aggregateNetWorth(input: {
     const accountCurrency = assertSupportedAccountCurrency(
       String(account.currency).trim().toUpperCase(),
     );
-    const amount = majorToDecimal(account.cashBalance);
-    if (!amount || amount.isZero()) continue;
+    const cash = majorToDecimal(account.cashBalance) ?? new Prisma.Decimal(0);
+    const holdings =
+      majorToDecimal(account.holdingsValue ?? 0) ?? new Prisma.Decimal(0);
+    const amount = cash.add(holdings);
+    if (amount.isZero()) continue;
 
     const converted = new Prisma.Decimal(
       (

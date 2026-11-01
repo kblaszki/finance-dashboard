@@ -24,6 +24,7 @@ function midRow(mids: Record<string, number>): GetMidRowFn {
 const bankPln = (
   overrides: Partial<NetWorthHistoryAccount> = {},
 ): NetWorthHistoryAccount => ({
+  id: 1,
   accountType: "BANK",
   currency: "PLN",
   openingBalanceMinor: 10_000,
@@ -83,6 +84,7 @@ test("aggregateNetWorthHistory converts multi-currency month-end balances", asyn
         ],
       }),
       {
+        id: 2,
         accountType: "CRYPTO",
         currency: "USD",
         openingBalanceMinor: 10_000,
@@ -112,6 +114,7 @@ test("aggregateNetWorthHistory fails closed when a required mid is missing", asy
         getMidRow: midRow({}),
         accounts: [
           {
+            id: 1,
             accountType: "BANK",
             currency: "EUR",
             openingBalanceMinor: 100,

@@ -24,6 +24,10 @@ import {
 } from "../domain/netWorth";
 import { aggregateNetWorthHistory } from "../domain/netWorthHistory";
 import { resolveOpeningEffectiveAt } from "../domain/accountBalanceHistory";
+import {
+  holdingsValueByAccountIds,
+  holdingsValuesAsOf,
+} from "../domain/portfolioValuation";
 import { parseStatsPeriod } from "../domain/statsPeriod";
 import { aggregateTagBreakdown } from "../domain/tagBreakdown";
 import {
@@ -252,11 +256,16 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
         const accounts = await prisma.account.findMany({
           where: { userId: uid(req) },
           select: {
+            id: true,
             accountType: true,
             currency: true,
             cashBalance: true,
           },
         });
+        const holdingsByAccount = await holdingsValueByAccountIds(
+          prisma,
+          accounts.map((a) => a.id),
+        );
         res.json(
           await aggregateNetWorth({
             currency,
@@ -265,6 +274,7 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
               accountType: account.accountType,
               currency: account.currency,
               cashBalance: minorToDecimal(account.cashBalance),
+              holdingsValue: holdingsByAccount.get(account.id) ?? 0,
             })),
             getMid: (code, asOfDate) =>
               getMidOnOrBefore(prisma, code, asOfDate),
@@ -358,6 +368,41 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
           txsByAccount.set(row.accountId, list);
         }
 
+        const assetTrades =
+          accountIds.length === 0
+            ? []
+            : await prisma.assetTrade.findMany({
+                where: {
+                  accountId: { in: accountIds },
+                  occurredAt: { lt: historyEnd },
+                },
+                select: {
+                  accountId: true,
+                  instrumentId: true,
+                  side: true,
+                  quantity: true,
+                  occurredAt: true,
+                },
+              });
+        const instrumentIds = [
+          ...new Set(assetTrades.map((t) => t.instrumentId)),
+        ];
+        const valuations =
+          instrumentIds.length === 0
+            ? []
+            : await prisma.instrumentValuation.findMany({
+                where: {
+                  instrumentId: { in: instrumentIds },
+                  asOfDate: { lt: historyEnd },
+                },
+                select: {
+                  instrumentId: true,
+                  asOfDate: true,
+                  close: true,
+                  source: true,
+                },
+              });
+
         res.json(
           await aggregateNetWorthHistory({
             currency,
@@ -367,6 +412,7 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
               const transactions = txsByAccount.get(account.id) ?? [];
               const oldestOccurredAt = transactions[0]?.occurredAt ?? null;
               return {
+                id: account.id,
                 accountType: account.accountType,
                 currency: account.currency,
                 openingBalanceMinor: account.openingBalance,
@@ -377,6 +423,13 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
                 transactions,
               };
             }),
+            holdingsValueForExclusive: (exclusive) =>
+              holdingsValuesAsOf(
+                accountIds,
+                assetTrades,
+                valuations,
+                exclusive,
+              ),
             getMidRow: async (code, asOfDate) => {
               const row = await getMidRowOnOrBefore(prisma, code, asOfDate);
               return { mid: row.mid, rateDate: row.rateDate };

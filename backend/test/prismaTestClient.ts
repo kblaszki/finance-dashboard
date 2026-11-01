@@ -53,6 +53,10 @@ export async function createTestPrisma(): Promise<PrismaClient> {
 export async function resetDatabase(prisma: PrismaClient): Promise<void> {
   await prisma.cashTransaction.deleteMany();
   await prisma.cashTransfer.deleteMany();
+  await prisma.lotClose.deleteMany();
+  await prisma.lot.deleteMany();
+  await prisma.holding.deleteMany();
+  await prisma.assetTrade.deleteMany();
   await prisma.category.updateMany({ data: { parentId: null } });
   await prisma.category.deleteMany();
   await prisma.tag.deleteMany();

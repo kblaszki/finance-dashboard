@@ -25,7 +25,7 @@ export function parseMoneyDecimal(
   if (!options.allowZero && minor === 0) {
     throw badRequest(`${field} must be a positive number`);
   }
-  if (!options.allowNegative && minor <= 0) {
+  if (!options.allowNegative && !options.allowZero && minor <= 0) {
     throw badRequest(`${field} must be a positive number`);
   }
   return new Prisma.Decimal(minor).div(MINOR_PER_MAJOR);
@@ -33,6 +33,23 @@ export function parseMoneyDecimal(
 
 export function parsePositiveAmount(value: unknown): Prisma.Decimal {
   return parseMoneyDecimal(value, "amount");
+}
+
+const QTY_SCALE = 8;
+
+/** Positive quantity with up to 8 decimal places (instrument units). */
+export function parseQuantityDecimal(
+  value: unknown,
+  field = "quantity",
+): Prisma.Decimal {
+  const decimal = coerceDecimal(value, field);
+  if (decimal.decimalPlaces() > QTY_SCALE) {
+    throw badRequest(`${field} must have at most ${QTY_SCALE} decimal places`);
+  }
+  if (decimal.lte(0)) {
+    throw badRequest(`${field} must be a positive number`);
+  }
+  return decimal;
 }
 
 export function parseOpeningBalance(value: unknown): Prisma.Decimal {

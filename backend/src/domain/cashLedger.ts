@@ -14,7 +14,16 @@ export const TRANSFER_TX_TYPES = ["TRANSFER_IN", "TRANSFER_OUT"] as const;
 
 export type TransferTxType = (typeof TRANSFER_TX_TYPES)[number];
 
-export const LEDGER_TX_TYPES = [...CASH_TX_TYPES, ...TRANSFER_TX_TYPES] as const;
+/** Asset trade cash legs — excluded from cashflow stats; included in cashBalance. */
+export const ASSET_TX_TYPES = ["ASSET_BUY", "ASSET_SELL"] as const;
+
+export type AssetTxType = (typeof ASSET_TX_TYPES)[number];
+
+export const LEDGER_TX_TYPES = [
+  ...CASH_TX_TYPES,
+  ...TRANSFER_TX_TYPES,
+  ...ASSET_TX_TYPES,
+] as const;
 
 export type LedgerTxType = (typeof LEDGER_TX_TYPES)[number];
 
@@ -46,10 +55,10 @@ export function parseLedgerTxType(value: unknown): LedgerTxType {
 }
 
 function isCreditType(type: LedgerTxType): boolean {
-  return type === "INCOME" || type === "TRANSFER_IN";
+  return type === "INCOME" || type === "TRANSFER_IN" || type === "ASSET_SELL";
 }
 
-/** INCOME/TRANSFER_IN → +amount; EXPENSE/TRANSFER_OUT → −amount. */
+/** Credits: INCOME / TRANSFER_IN / ASSET_SELL; debits: EXPENSE / TRANSFER_OUT / ASSET_BUY. */
 export function signedDelta(type: LedgerTxType, amount: Prisma.Decimal): Prisma.Decimal {
   return isCreditType(type) ? amount : amount.negated();
 }
@@ -66,6 +75,7 @@ export type CashPostInput = {
   description: string | null;
   categoryId: number | null;
   transferId?: number | null;
+  assetTradeId?: number | null;
 };
 
 /** Insert one ledger row and apply its signed minor-unit delta to cashBalance. */
@@ -83,6 +93,7 @@ export async function postCashTransaction(
       description: input.description,
       categoryId: input.categoryId,
       transferId: input.transferId ?? null,
+      assetTradeId: input.assetTradeId ?? null,
     },
   });
   await db.account.update({

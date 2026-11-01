@@ -40,6 +40,26 @@ test("accountTypeToBucket maps known types and unknowns to other", () => {
   assert.equal(accountTypeToBucket("WEIRD"), "other");
 });
 
+test("aggregateNetWorth includes holdingsValue in account equity", async () => {
+  const { getMid, getMidRow } = midMap({ USD: 4 });
+  const result = await aggregateNetWorth({
+    currency: "PLN",
+    asOf: utcDateFromYmd("2026-01-10"),
+    getMid,
+    getMidRow,
+    accounts: [
+      {
+        accountType: "BROKERAGE",
+        currency: "USD",
+        cashBalance: 100,
+        holdingsValue: 50,
+      },
+    ],
+  });
+  assert.equal(result.byBucket.stock, 600);
+  assert.equal(result.netWorth, 600);
+});
+
 test("aggregateNetWorth converts foreign balances into reporting currency", async () => {
   const { getMid, getMidRow } = midMap({ EUR: 4, USD: 4 });
   const result = await aggregateNetWorth({

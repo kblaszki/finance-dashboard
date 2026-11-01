@@ -24,6 +24,7 @@ import { createCsvImportPresetsRouter } from "./csvImportPresetsRoutes";
 import { createCategoryDescriptionRulesRouter } from "./categoryDescriptionRulesRoutes";
 import { createMarketsRouter } from "./marketsRoutes";
 import { createAppConfigRouter } from "./appConfigRoutes";
+import { createAssetTradesRouter } from "./assetTradesRoutes";
 
 export function mountApiRouters(app: Express, prisma: PrismaClient): void {
   const requireAuth = createRequireAuth(prisma);
@@ -112,6 +113,13 @@ export function mountApiRouters(app: Express, prisma: PrismaClient): void {
   );
   app.use(
     createMarketsRouter({
+      prisma,
+      requireAuth,
+      uid,
+    }),
+  );
+  app.use(
+    createAssetTradesRouter({
       prisma,
       requireAuth,
       uid,
