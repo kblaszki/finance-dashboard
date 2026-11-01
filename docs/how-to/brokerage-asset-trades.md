@@ -47,6 +47,8 @@ Content-Type: application/json
 
 Cash legs appear on the ledger as `ASSET_BUY` / `ASSET_SELL` (read-only there). Period cashflow stats ignore them. Account **balance history** chart shows three end-of-month series: cash, holdings MTM, and equity (sum). Net worth includes cash + holdings MTM.
 
+Demo seed (`npm run db:seed`) applies a deterministic BUY/SELL history on Brokerage Cash, Brokerage USD, and IKE after markets valuations load — see [demo-seed.md](../tutorials/demo-seed.md).
+
 ## Related
 
 - [api.md](../reference/api.md) — route catalog

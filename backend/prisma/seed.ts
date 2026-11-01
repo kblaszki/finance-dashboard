@@ -2,6 +2,7 @@ import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { canonicalUsernameKey, hashPassword } from "../src/auth";
 import { marketHistoryDataDir } from "../src/domain/marketHistoryIo";
+import { seedDemoAssetTrades } from "../src/domain/seedDemoAssetTrades";
 import { seedDemoFxRates } from "../src/domain/seedDemoFxRates";
 import { seedDemoMarkets } from "../src/domain/seedDemoMarkets";
 import { seedDemoPortfolio } from "../src/domain/seedDemoPortfolio";
@@ -56,6 +57,17 @@ async function main(): Promise<void> {
     );
   }
 
+  const trades = await seedDemoAssetTrades(prisma, user.id);
+  if (trades.skipped.length > 0) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `Demo asset trades skipped (${trades.skipped.length}): ${trades.skipped
+        .slice(0, 5)
+        .map((s) => `${s.trade.side} ${s.trade.providerSymbol}: ${s.reason}`)
+        .join("; ")}${trades.skipped.length > 5 ? "…" : ""}`,
+    );
+  }
+
   // eslint-disable-next-line no-console
   console.log(
     JSON.stringify({
@@ -74,7 +86,12 @@ async function main(): Promise<void> {
         watchlistAdded: markets.watchlistAdded,
         valuationsUpserted: markets.valuationsUpserted,
       },
-      note: "Demo user + sample portfolio + NBP/fallback FX (+ markets history from local export or committed fixture). Re-run wipes demo user data.",
+      trades: {
+        applied: trades.applied,
+        skipped: trades.skipped.length,
+        openHoldings: trades.openHoldingsSummary,
+      },
+      note: "Demo user + sample portfolio + NBP/fallback FX + markets history + asset trades. Re-run wipes demo user data.",
     }),
   );
 }

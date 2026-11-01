@@ -123,6 +123,7 @@ export const DEMO_ACCOUNT_NAMES = {
   checking: "Everyday Checking",
   euro: "Euro Travel",
   brokerage: "Brokerage Cash",
+  brokerageUsd: "Brokerage USD",
   crypto: "Crypto Spot",
   creditCard: "Everyday Credit Card",
   ike: "IKE Brokerage",
@@ -142,7 +143,8 @@ export const DEMO_IKE_CONTRIBUTION = 500;
 export const DEMO_OPENINGS: Record<DemoAccountKey, number> = {
   checking: 2500,
   euro: 400,
-  brokerage: 10000,
+  brokerage: 15000,
+  brokerageUsd: 8000,
   crypto: 1500,
   creditCard: -800,
   ike: 3000,
@@ -581,6 +583,51 @@ function monthPlansForAccount(
               category: "Subscriptions",
             },
       ];
+    case "brokerageUsd":
+      return [
+        {
+          type: "INCOME",
+          amountMin: 40,
+          amountMax: 120,
+          description: "USD dividend cash",
+          category: "Equity dividends",
+        },
+        {
+          type: "EXPENSE",
+          amountMin: 5,
+          amountMax: 18,
+          description: "USD account fee",
+          category: "Subscriptions",
+        },
+        {
+          type: "INCOME",
+          amountMin: 8,
+          amountMax: 30,
+          description: "USD interest credit",
+          category: "Interest credit",
+        },
+        {
+          type: "EXPENSE",
+          amountMin: 3,
+          amountMax: 12,
+          description: "USD wire fee",
+          category: "Subscriptions",
+        },
+        rng() < 0.35
+          ? {
+              type: "EXPENSE",
+              amountMin: 2,
+              amountMax: 10,
+              description: "USD brokerage misc",
+            }
+          : {
+              type: "EXPENSE",
+              amountMin: 4,
+              amountMax: 14,
+              description: "USD platform fee",
+              category: "Subscriptions",
+            },
+      ];
     default: {
       const _exhaustive: never = accountKey;
       return _exhaustive;
@@ -692,6 +739,18 @@ export function buildDemoTransfers(now = new Date()): DemoPlannedTransfer[] {
 async function wipeDemoPortfolio(db: Db, userId: number): Promise<void> {
   // CashTransfer Restricts account delete — clear headers (cascades legs) first.
   await db.cashTransfer.deleteMany({ where: { userId } });
+  // AssetTrade Restricts account delete — clear trades (cascades LotClose / ASSET_* legs).
+  const accountIds = (
+    await db.account.findMany({
+      where: { userId },
+      select: { id: true },
+    })
+  ).map((a) => a.id);
+  if (accountIds.length > 0) {
+    await db.assetTrade.deleteMany({
+      where: { accountId: { in: accountIds } },
+    });
+  }
   await db.account.deleteMany({ where: { userId } });
   await db.tag.deleteMany({ where: { userId } });
   await db.category.updateMany({
@@ -937,7 +996,12 @@ export async function seedDemoPortfolio(
     brokerage: {
       accountType: "BROKERAGE",
       currency: "PLN",
-      description: "Brokerage cash sleeve (no holdings yet)",
+      description: "PLN brokerage — GPW stocks/ETFs + cash sleeve",
+    },
+    brokerageUsd: {
+      accountType: "BROKERAGE",
+      currency: "USD",
+      description: "USD brokerage — US stocks/ETFs + cash sleeve",
     },
     crypto: {
       accountType: "CRYPTO",
@@ -952,7 +1016,7 @@ export async function seedDemoPortfolio(
     ike: {
       accountType: "IKE",
       currency: "PLN",
-      description: "IKE cash sleeve (holdings later)",
+      description: "IKE — PLN ETFs + cash sleeve",
     },
   };
 

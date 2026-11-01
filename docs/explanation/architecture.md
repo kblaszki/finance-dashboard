@@ -54,7 +54,7 @@ sequenceDiagram
 | Errors | `routes/httpSupport.ts`, `lib/errors.ts` | Typed HTTP errors (incl. 409 conflict) |
 | Markets routes | `backend/src/routes/marketsRoutes.ts` | Allowlist/catalog search, POST allowlist, watchlist CRUD (soft quote on add) |
 | Scripts | `backend/src/scripts/` | `createUser` (empty user), `backupDb`, `syncFxRates` (NBP EUR/USD), `syncMarketCatalog` (Twelve Data), `syncMarketQuotes` / `syncYahooHistory` / `syncYahooGaps` (Yahoo) |
-| Seed | `backend/prisma/seed.ts`, `domain/seedDemoPortfolio.ts` | Demo user + wipe/rebuild sample portfolio |
+| Seed | `backend/prisma/seed.ts`, `domain/seedDemo{Portfolio,FxRates,Markets,AssetTrades}.ts` | Demo user + wipe/rebuild sample portfolio, FX, markets, asset trades |
 | FX | `domain/fx.ts`, `fxRates.ts`, `nbpClient.ts` | NBP mids in `FxRateDaily`; `convertMajor` via PLN pivot |
 | Markets | `domain/instruments.ts`, `instrumentValuations.ts`, `marketData.ts`, `marketHistory.ts`, `marketUniverse.ts`, `yahooFinanceClient.ts`, `yahooHistory.ts`, `yahooGapSyncScheduler.ts`, `twelveDataClient.ts`, `oanorGpwClient.ts`, `stooqClient.ts`, `watchlist.ts` | Global TD catalog + curated allowlist; **Yahoo** valuations (quotes/history/gap-fill); TD/Oanor/Stooq clients dormant for valuations; user watchlist; CLIs for catalog, seed, Yahoo sync |
 | Net worth | `domain/netWorth.ts`, `netWorthHistory.ts` | Current + monthly history; convert all owned PLN/EUR/USD accounts into the topbar reporting currency |

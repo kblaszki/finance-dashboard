@@ -179,7 +179,7 @@ test("seedDemoPortfolio matches ledger balances and scopes wipe to one user", as
       where: { userId: demo.id },
       orderBy: { name: "asc" },
     });
-    assert.equal(accounts.length, 6);
+    assert.equal(accounts.length, 7);
     for (const name of Object.values(DEMO_ACCOUNT_NAMES)) {
       assert.ok(accounts.some((a) => a.name === name));
     }
