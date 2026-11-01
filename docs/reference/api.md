@@ -25,8 +25,10 @@ Hobby-scale guardrails in `backend/src/domain/rowCaps.ts` (and month-list caps o
 | Cap | Value | Endpoints |
 |-----|------:|-----------|
 | `CSV_EXPORT_ROW_CAP` | 50_000 | `GET …/transactions/export`, `GET /api/transfers/export`, `GET /api/categories/export` |
-| `BALANCE_HISTORY_TX_CAP` | 100_000 | `GET /api/accounts/:id/balance-history` |
-| `NET_WORTH_HISTORY_TX_CAP` | 100_000 | `GET /api/statistics/net-worth-history` |
+| `BALANCE_HISTORY_TX_CAP` | 100_000 | `GET /api/accounts/:id/balance-history` (cash ledger scan) |
+| `BALANCE_HISTORY_TRADE_CAP` | 100_000 | `GET /api/accounts/:id/balance-history` (asset-trade scan for holdings replay) |
+| `NET_WORTH_HISTORY_TX_CAP` | 100_000 | `GET /api/statistics/net-worth-history` (cash ledger scan) |
+| `NET_WORTH_HISTORY_TRADE_CAP` | 100_000 | `GET /api/statistics/net-worth-history` (asset-trade scan for holdings replay) |
 | `STATS_PERIOD_ROW_CAP` | 50_000 | Statistics period loaders (`category-breakdown`, `period-summary`, `tag-breakdown`, `cashflow-history`, `cashflow-rolling-12m`) |
 | `MONTH_LIST_CAP` | 2_000 | `GET …/transactions?month=…`, `GET /api/transfers?month=…` (omit `month` and use cursor pagination when over) |
 | `IMPORT_FINGERPRINT_SCAN_LIMIT` | 50_000 | Cash ledger import fingerprint window (`…/transactions/import*`) — overflow → `400` |

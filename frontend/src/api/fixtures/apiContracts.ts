@@ -318,8 +318,23 @@ function assertImportColumnsPreviewShape(value: ImportColumnsPreview): void {
   }
   if (!Array.isArray(value.headers)) throw new Error("columns.headers");
   if (!Array.isArray(value.sampleRows)) throw new Error("columns.sampleRows");
-  if (typeof value.suggestedMapping !== "object" || !value.suggestedMapping) {
+  const map = value.suggestedMapping;
+  if (typeof map !== "object" || !map) {
     throw new Error("columns.suggestedMapping");
+  }
+  for (const key of [
+    "occurredAt",
+    "amount",
+    "description",
+    "type",
+    "categoryPath",
+  ] as const) {
+    if (map[key] !== null && typeof map[key] !== "number") {
+      throw new Error(`columns.suggestedMapping.${key}`);
+    }
+  }
+  if (typeof map.amountSignMode !== "string") {
+    throw new Error("columns.suggestedMapping.amountSignMode");
   }
   if (
     value.matchingPresetId !== null &&
@@ -342,6 +357,46 @@ function assertTransferImportPreviewShape(value: TransferImportPreview): void {
   if (typeof value.rowCount !== "number") throw new Error("transfer.rowCount");
   if (!Array.isArray(value.accounts)) throw new Error("transfer.accounts");
   if (!Array.isArray(value.rows)) throw new Error("transfer.rows");
+  const account = value.accounts[0];
+  if (account) {
+    if (typeof account.name !== "string") {
+      throw new Error("transfer.accounts.name");
+    }
+    if (typeof account.currency !== "string") {
+      throw new Error("transfer.accounts.currency");
+    }
+    if (typeof account.rowCount !== "number") {
+      throw new Error("transfer.accounts.rowCount");
+    }
+    if (
+      account.suggestedAccountId !== null &&
+      typeof account.suggestedAccountId !== "number"
+    ) {
+      throw new Error("transfer.accounts.suggestedAccountId");
+    }
+  }
+  const row = value.rows[0];
+  if (row) {
+    if (typeof row.row !== "number") throw new Error("transfer.rows.row");
+    if (typeof row.occurredAt !== "string") {
+      throw new Error("transfer.rows.occurredAt");
+    }
+    if (typeof row.fromAccountId !== "number") {
+      throw new Error("transfer.rows.fromAccountId");
+    }
+    if (typeof row.toAccountId !== "number") {
+      throw new Error("transfer.rows.toAccountId");
+    }
+    if (typeof row.amountFrom !== "number") {
+      throw new Error("transfer.rows.amountFrom");
+    }
+    if (typeof row.amountTo !== "number") {
+      throw new Error("transfer.rows.amountTo");
+    }
+    if (typeof row.duplicate !== "boolean") {
+      throw new Error("transfer.rows.duplicate");
+    }
+  }
 }
 
 function assertCategoriesImportPreviewShape(
@@ -358,16 +413,44 @@ function assertCashTransferShape(value: CashTransfer): void {
   if (typeof value.fromAccountId !== "number") {
     throw new Error("transfer.fromAccountId");
   }
+  if (typeof value.toAccountId !== "number") {
+    throw new Error("transfer.toAccountId");
+  }
+  if (typeof value.fromCurrency !== "string") {
+    throw new Error("transfer.fromCurrency");
+  }
+  if (typeof value.toCurrency !== "string") {
+    throw new Error("transfer.toCurrency");
+  }
   if (typeof value.amountFrom !== "number") {
     throw new Error("transfer.amountFrom");
   }
+  if (typeof value.amountTo !== "number") {
+    throw new Error("transfer.amountTo");
+  }
+  if (value.fxRate !== null && typeof value.fxRate !== "number") {
+    throw new Error("transfer.fxRate");
+  }
   if (typeof value.occurredAt !== "string") {
     throw new Error("transfer.occurredAt");
+  }
+  if (value.description !== null && typeof value.description !== "string") {
+    throw new Error("transfer.description");
+  }
+  if (value.categoryId !== null && typeof value.categoryId !== "number") {
+    throw new Error("transfer.categoryId");
+  }
+  if (typeof value.createdAt !== "string") {
+    throw new Error("transfer.createdAt");
   }
 }
 
 function assertPeriodSummaryShape(value: PeriodSummary): void {
   if (typeof value.month !== "string") throw new Error("period.month");
+  if (value.period !== "month" && value.period !== "quarter" && value.period !== "year") {
+    throw new Error("period.period");
+  }
+  if (typeof value.label !== "string") throw new Error("period.label");
   if (typeof value.currency !== "string") throw new Error("period.currency");
   if (typeof value.income !== "number") throw new Error("period.income");
   if (typeof value.expense !== "number") throw new Error("period.expense");
@@ -379,9 +462,18 @@ function assertInstrumentShape(value: Instrument): void {
   if (typeof value.id !== "number") throw new Error("instrument.id");
   if (typeof value.symbol !== "string") throw new Error("instrument.symbol");
   if (typeof value.name !== "string") throw new Error("instrument.name");
+  if (typeof value.exchange !== "string") throw new Error("instrument.exchange");
   if (typeof value.currency !== "string") throw new Error("instrument.currency");
-  if (typeof value.assetClass !== "string") {
+  if (
+    value.assetClass !== "STOCK" &&
+    value.assetClass !== "ETF" &&
+    value.assetClass !== "INDEX"
+  ) {
     throw new Error("instrument.assetClass");
+  }
+  if (typeof value.provider !== "string") throw new Error("instrument.provider");
+  if (typeof value.providerSymbol !== "string") {
+    throw new Error("instrument.providerSymbol");
   }
   if (typeof value.allowlisted !== "boolean") {
     throw new Error("instrument.allowlisted");
@@ -394,6 +486,11 @@ function assertInstrumentHistoryShape(value: InstrumentHistory): void {
     throw new Error("history.currency");
   }
   if (!Array.isArray(value.series)) throw new Error("history.series");
+  const point = value.series[0];
+  if (point) {
+    if (typeof point.asOf !== "string") throw new Error("history.series.asOf");
+    if (typeof point.close !== "number") throw new Error("history.series.close");
+  }
   if (typeof value.backfilled !== "boolean") {
     throw new Error("history.backfilled");
   }
@@ -422,6 +519,12 @@ function assertAppConfigShape(value: AppConfig): void {
 }
 
 function assertAccountEquityShape(value: Account): void {
+  if (typeof value.id !== "number") throw new Error("account.id");
+  if (typeof value.name !== "string") throw new Error("account.name");
+  if (typeof value.currency !== "string") throw new Error("account.currency");
+  if (typeof value.accountType !== "string") {
+    throw new Error("account.accountType");
+  }
   if (typeof value.cashBalance !== "number") throw new Error("account.cashBalance");
   if (typeof value.holdingsValue !== "number") {
     throw new Error("account.holdingsValue");
@@ -433,13 +536,21 @@ function assertAccountEquityShape(value: Account): void {
 
 function assertAccountHoldingsShape(value: AccountHoldingsResponse): void {
   if (typeof value.accountId !== "number") throw new Error("holdings.accountId");
+  if (typeof value.currency !== "string") throw new Error("holdings.currency");
   if (typeof value.holdingsValue !== "number") {
     throw new Error("holdings.holdingsValue");
   }
   if (!Array.isArray(value.holdings)) throw new Error("holdings.holdings");
   const row = value.holdings[0];
-  if (row && typeof row.instrumentId !== "number") {
-    throw new Error("holdings.instrumentId");
+  if (row) {
+    if (typeof row.instrumentId !== "number") {
+      throw new Error("holdings.instrumentId");
+    }
+    if (typeof row.quantity !== "number") throw new Error("holdings.quantity");
+    if (typeof row.currency !== "string") throw new Error("holdings.rowCurrency");
+    if (row.marketValue !== null && typeof row.marketValue !== "number") {
+      throw new Error("holdings.marketValue");
+    }
   }
 }
 
@@ -499,9 +610,21 @@ function assertBalanceHistoryShape(value: AccountBalanceHistory): void {
   if (typeof value.accountId !== "number") {
     throw new Error("balanceHistory.accountId");
   }
+  if (typeof value.currency !== "string") {
+    throw new Error("balanceHistory.currency");
+  }
+  if (typeof value.monthCount !== "number") {
+    throw new Error("balanceHistory.monthCount");
+  }
   if (!Array.isArray(value.series)) throw new Error("balanceHistory.series");
   const point = value.series[0];
   if (point) {
+    if (typeof point.month !== "string") {
+      throw new Error("balanceHistory.month");
+    }
+    if (typeof point.balance !== "number") {
+      throw new Error("balanceHistory.balance");
+    }
     if (typeof point.cashBalance !== "number") {
       throw new Error("balanceHistory.cashBalance");
     }

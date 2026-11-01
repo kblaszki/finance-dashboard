@@ -15,6 +15,7 @@ related_code:
   - backend/src/domain/lots.ts
   - backend/src/domain/holdings.ts
   - backend/src/domain/portfolioValuation.ts
+  - backend/src/domain/instrumentValuations.ts
   - backend/src/routes/assetTradesRoutes.ts
   - backend/src/domain/fx.ts
 ---
@@ -43,19 +44,19 @@ Currency rule (v1): instrument quote currency must equal account currency (no cr
 | `Lot` / `LotClose` | Via `Holding` | FIFO open lots and partial closes |
 | `AssetTrade` | Via `Account` | BUY/SELL; `onDelete: Restrict` on account — DELETE account → `409` until trades reversed |
 
-Mark-to-market never stores prices on `Holding`; it reads collapsed latest valuation × quantity in `portfolioValuation.ts`.
+Mark-to-market never stores prices on `Holding`; it reads latest collapsed close × quantity in `portfolioValuation.ts` via SQL latest-per-id (`getLatestValuationsByInstrumentIds`). Month replay for balance / net-worth history loads a bounded as-of window (+ prior-close carry-forward) through `loadValuationsForAsOfReplay`.
 
 ## Domain module layout
 
 | Path | Responsibility |
 |------|----------------|
 | `domain/instruments.ts` | Catalog helpers, search scopes |
-| `domain/instrumentValuations.ts` | Upsert closes, source priority |
+| `domain/instrumentValuations.ts` | Upsert closes, source priority, SQL latest-per-id, as-of replay loader |
 | `domain/holdings.ts` | Resolve holding, sync qty, account-type gate |
 | `domain/lots.ts` | Open lot / FIFO close / reverse |
 | `domain/assetTrades.ts` | Parse + apply/reverse trade |
-| `domain/portfolioValuation.ts` | Batched MTM, balance-history holdings |
-| `domain/marketData.ts` / `yahooHistory.ts` / … | Provider sync (prefer CLIs + gap scheduler; history GET may still backfill) |
+| `domain/portfolioValuation.ts` | Batched MTM (SQL latest), balance-history holdings replay |
+| `domain/marketData.ts` / `yahooHistory.ts` / … | Provider sync (prefer CLIs + gap scheduler; history GET may still backfill; soft-fill deduped in-process) |
 | `routes/assetTradesRoutes.ts` | Auth + owned account + serialize |
 | `frontend/src/api/holdingsApi.ts` / `assetTradesApi.ts` | Client contracts |
 

@@ -24,6 +24,8 @@ npm run test:coverage
 3. Document new routes in [docs/reference/api.md](../reference/api.md) and new clients in [docs/reference/frontend.md](../reference/frontend.md) when applicable.
 4. Report pass/fail in the completion message (see `.cursor/rules/verification.mdc`).
 
+**Local vs CI:** Agents/local verification still run both commands above. CI folds the suite into a single coverage-bearing run per package (`npm run test:coverage` in `backend-test` / `frontend-checks`) — see [testing.md](../reference/testing.md).
+
 ## Skip when
 
 - Documentation-only edits (`.md`, comments with no logic change).

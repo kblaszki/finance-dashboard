@@ -8,9 +8,14 @@ export const CSV_EXPORT_ROW_CAP = 50_000;
 /** Max ledger rows scanned for account balance-history before 400. */
 export const BALANCE_HISTORY_TX_CAP = 100_000;
 
+/** Max asset trades scanned for account balance-history holdings replay before 400. */
+export const BALANCE_HISTORY_TRADE_CAP = 100_000;
+
 /** Max ledger rows scanned across all accounts for consolidated net-worth history. */
 export const NET_WORTH_HISTORY_TX_CAP = 100_000;
 
+/** Max asset trades scanned across all accounts for net-worth history holdings replay. */
+export const NET_WORTH_HISTORY_TRADE_CAP = 100_000;
 /** Max transactions/transfers loaded for a statistics period before 400. */
 export const STATS_PERIOD_ROW_CAP = 50_000;
 
@@ -56,10 +61,26 @@ export function assertBalanceHistoryTxCap(count: number): void {
   }
 }
 
+export function assertBalanceHistoryTradeCap(count: number): void {
+  if (count > BALANCE_HISTORY_TRADE_CAP) {
+    throw badRequest(
+      `Account has more than ${BALANCE_HISTORY_TRADE_CAP} asset trades before this month; shorten history or archive older trades`,
+    );
+  }
+}
+
 export function assertNetWorthHistoryTxCap(count: number): void {
   if (count > NET_WORTH_HISTORY_TX_CAP) {
     throw badRequest(
       `Net-worth history exceeds ${NET_WORTH_HISTORY_TX_CAP} ledger rows; shorten the history window`,
+    );
+  }
+}
+
+export function assertNetWorthHistoryTradeCap(count: number): void {
+  if (count > NET_WORTH_HISTORY_TRADE_CAP) {
+    throw badRequest(
+      `Net-worth history exceeds ${NET_WORTH_HISTORY_TRADE_CAP} asset trades; shorten the history window`,
     );
   }
 }

@@ -2,16 +2,20 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { HttpError } from "../lib/errors";
 import {
+  assertBalanceHistoryTradeCap,
   assertBalanceHistoryTxCap,
   assertExportRowCap,
   assertImportFingerprintScanCap,
   assertMonthListCap,
+  assertNetWorthHistoryTradeCap,
   assertStatsPeriodRowCap,
   assertTransferImportDedupScanCap,
+  BALANCE_HISTORY_TRADE_CAP,
   BALANCE_HISTORY_TX_CAP,
   CSV_EXPORT_ROW_CAP,
   IMPORT_FINGERPRINT_SCAN_LIMIT,
   MONTH_LIST_CAP,
+  NET_WORTH_HISTORY_TRADE_CAP,
   STATS_PERIOD_ROW_CAP,
   TRANSFER_IMPORT_DEDUP_SCAN_LIMIT,
 } from "./rowCaps";
@@ -31,6 +35,8 @@ describe("rowCaps constants", () => {
   it("keeps hobby-scale soft caps stable", () => {
     assert.equal(CSV_EXPORT_ROW_CAP, 50_000);
     assert.equal(BALANCE_HISTORY_TX_CAP, 100_000);
+    assert.equal(BALANCE_HISTORY_TRADE_CAP, 100_000);
+    assert.equal(NET_WORTH_HISTORY_TRADE_CAP, 100_000);
     assert.equal(STATS_PERIOD_ROW_CAP, 50_000);
     assert.equal(MONTH_LIST_CAP, 2000);
     assert.equal(IMPORT_FINGERPRINT_SCAN_LIMIT, 50_000);
@@ -66,6 +72,22 @@ describe("rowCaps assert helpers", () => {
     expectBadRequest(
       () => assertBalanceHistoryTxCap(BALANCE_HISTORY_TX_CAP + 1),
       /shorten history/,
+    );
+
+    assert.doesNotThrow(() =>
+      assertBalanceHistoryTradeCap(BALANCE_HISTORY_TRADE_CAP),
+    );
+    expectBadRequest(
+      () => assertBalanceHistoryTradeCap(BALANCE_HISTORY_TRADE_CAP + 1),
+      /asset trades/,
+    );
+
+    assert.doesNotThrow(() =>
+      assertNetWorthHistoryTradeCap(NET_WORTH_HISTORY_TRADE_CAP),
+    );
+    expectBadRequest(
+      () => assertNetWorthHistoryTradeCap(NET_WORTH_HISTORY_TRADE_CAP + 1),
+      /asset trades/,
     );
 
     assert.doesNotThrow(() =>

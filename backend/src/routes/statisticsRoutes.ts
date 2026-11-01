@@ -32,8 +32,10 @@ import {
 import { parseStatsPeriod } from "../domain/statsPeriod";
 import { aggregateTagBreakdown } from "../domain/tagBreakdown";
 import {
+  assertNetWorthHistoryTradeCap,
   assertNetWorthHistoryTxCap,
   assertStatsPeriodRowCap,
+  NET_WORTH_HISTORY_TRADE_CAP,
   NET_WORTH_HISTORY_TX_CAP,
   STATS_PERIOD_ROW_CAP,
 } from "../domain/rowCaps";
@@ -384,7 +386,9 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
                   quantity: true,
                   occurredAt: true,
                 },
+                take: NET_WORTH_HISTORY_TRADE_CAP + 1,
               });
+        assertNetWorthHistoryTradeCap(assetTrades.length);
         const instrumentIds = [
           ...new Set(assetTrades.map((t) => t.instrumentId)),
         ];

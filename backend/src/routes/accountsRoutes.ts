@@ -21,7 +21,9 @@ import {
   holdingsValuesAsOf,
 } from "../domain/portfolioValuation";
 import {
+  assertBalanceHistoryTradeCap,
   assertBalanceHistoryTxCap,
+  BALANCE_HISTORY_TRADE_CAP,
   BALANCE_HISTORY_TX_CAP,
 } from "../domain/rowCaps";
 import { parseMonthParam } from "../domain/categoryBreakdown";
@@ -212,7 +214,9 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
             quantity: true,
             occurredAt: true,
           },
+          take: BALANCE_HISTORY_TRADE_CAP + 1,
         });
+        assertBalanceHistoryTradeCap(assetTrades.length);
         const instrumentIds = [
           ...new Set(assetTrades.map((t) => t.instrumentId)),
         ];

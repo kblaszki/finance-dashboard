@@ -4,6 +4,7 @@ import { upsertCatalogInstruments } from "./instruments";
 import { formatYmdUtc } from "./fx";
 import {
   getLatestValuation,
+  getLatestValuationsByInstrumentIds,
   isValuationFresh,
 } from "./instrumentValuations";
 import {
@@ -130,8 +131,15 @@ export async function syncWatchlistQuotes(
   let failed = 0;
   const errors: SyncQuotesResult["errors"] = [];
 
+  const latestById = force
+    ? new Map<number, { asOfDate: Date }>()
+    : await getLatestValuationsByInstrumentIds(
+        prisma,
+        instruments.map((i) => i.id),
+      );
+
   for (const instrument of instruments) {
-    const latest = await getLatestValuation(prisma, instrument.id);
+    const latest = latestById.get(instrument.id);
     if (!force && latest && isValuationFresh(latest.asOfDate, now)) {
       skippedFresh += 1;
       continue;

@@ -232,6 +232,12 @@ export async function syncAllowlistHistory(
   };
 }
 
+/** In-flight soft-fill promises — concurrent GETs share one Yahoo backfill. */
+const ensureHistoryInFlight = new Map<
+  number,
+  Promise<EnsureInstrumentHistoryResult>
+>();
+
 /**
  * Soft backfill ~1y history when the series is sparse. Never throws — callers
  * still return whatever is already in InstrumentValuation.
@@ -247,60 +253,72 @@ export async function ensureInstrumentHistory(
     sparseThreshold?: number;
   } = {},
 ): Promise<EnsureInstrumentHistoryResult> {
-  if (!(await getMarketLiveApi(prisma))) {
-    return { backfilled: false };
-  }
+  const existing = ensureHistoryInFlight.get(instrumentId);
+  if (existing) return existing;
 
-  const now = options.now ?? new Date();
-  const threshold = options.sparseThreshold ?? HISTORY_SPARSE_THRESHOLD;
-  const window = historyWindowFromMonths(12, now);
-  const existing = await countDistinctClosesInWindow(
-    prisma,
-    instrumentId,
-    window,
-  );
-  if (existing >= threshold) {
-    return { backfilled: false };
-  }
+  const run = (async (): Promise<EnsureInstrumentHistoryResult> => {
+    if (!(await getMarketLiveApi(prisma))) {
+      return { backfilled: false };
+    }
 
-  const timeoutMs = 12_000;
+    const now = options.now ?? new Date();
+    const threshold = options.sparseThreshold ?? HISTORY_SPARSE_THRESHOLD;
+    const window = historyWindowFromMonths(12, now);
+    const distinct = await countDistinctClosesInWindow(
+      prisma,
+      instrumentId,
+      window,
+    );
+    if (distinct >= threshold) {
+      return { backfilled: false };
+    }
+
+    const timeoutMs = 12_000;
+    try {
+      const yahoo = await Promise.race([
+        syncYahooHistory(prisma, {
+          instrumentId,
+          // Never force on HTTP GET — skip when series is already dense enough.
+          force: false,
+          delayMs: 0,
+          range: "1y",
+          sparseThreshold: threshold,
+          ...(options.fetchImpl != null ? { fetchImpl: options.fetchImpl } : {}),
+        }),
+        new Promise<null>((resolve) => {
+          setTimeout(() => resolve(null), timeoutMs);
+        }),
+      ]);
+      if (yahoo == null) {
+        return {
+          backfilled: false,
+          backfillMessage: `Yahoo history backfill timed out after ${timeoutMs}ms`,
+        };
+      }
+      if (yahoo.updatedInstruments > 0 || yahoo.barsUpserted > 0) {
+        return { backfilled: true };
+      }
+      if (yahoo.failed > 0) {
+        return {
+          backfilled: false,
+          backfillMessage:
+            yahoo.errors[0]?.message ?? "Yahoo history backfill failed",
+        };
+      }
+    } catch (e: unknown) {
+      return {
+        backfilled: false,
+        backfillMessage: e instanceof Error ? e.message : String(e),
+      };
+    }
+
+    return { backfilled: false };
+  })();
+
+  ensureHistoryInFlight.set(instrumentId, run);
   try {
-    const yahoo = await Promise.race([
-      syncYahooHistory(prisma, {
-        instrumentId,
-        // Never force on HTTP GET — skip when series is already dense enough.
-        force: false,
-        delayMs: 0,
-        range: "1y",
-        sparseThreshold: threshold,
-        ...(options.fetchImpl != null ? { fetchImpl: options.fetchImpl } : {}),
-      }),
-      new Promise<null>((resolve) => {
-        setTimeout(() => resolve(null), timeoutMs);
-      }),
-    ]);
-    if (yahoo == null) {
-      return {
-        backfilled: false,
-        backfillMessage: `Yahoo history backfill timed out after ${timeoutMs}ms`,
-      };
-    }
-    if (yahoo.updatedInstruments > 0 || yahoo.barsUpserted > 0) {
-      return { backfilled: true };
-    }
-    if (yahoo.failed > 0) {
-      return {
-        backfilled: false,
-        backfillMessage:
-          yahoo.errors[0]?.message ?? "Yahoo history backfill failed",
-      };
-    }
-  } catch (e: unknown) {
-    return {
-      backfilled: false,
-      backfillMessage: e instanceof Error ? e.message : String(e),
-    };
+    return await run;
+  } finally {
+    ensureHistoryInFlight.delete(instrumentId);
   }
-
-  return { backfilled: false };
 }

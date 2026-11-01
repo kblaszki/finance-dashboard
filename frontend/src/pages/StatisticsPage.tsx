@@ -49,6 +49,7 @@ export function StatisticsPage() {
   const {
     data: categories,
     error: categoriesError,
+    loading: categoriesLoading,
   } = useAsyncData(loadCategories);
 
   const loadBreakdown = useCallback(
@@ -182,10 +183,12 @@ export function StatisticsPage() {
   const analysisLoading =
     analysisView === "tags"
       ? tagLoading && !tagBreakdown
-      : breakdownLoading && !breakdown;
+      : (breakdownLoading && !breakdown) ||
+        (categoriesLoading && !categories);
   const analysisError =
-    categoriesError ||
-    (analysisView === "tags" ? tagError : breakdownError);
+    analysisView === "tags"
+      ? tagError
+      : breakdownError || categoriesError;
 
   if (currencies.length === 0) {
     return (
@@ -222,13 +225,13 @@ export function StatisticsPage() {
 
       <StatusBlock
         loading={summaryLoading && !summary}
-        error={summaryError || prevSummaryError}
+        error={summaryError}
         loadingMessage="Loading period KPIs…"
       />
       {summary ? (
         <StatisticsKpiGrid
           summary={summary}
-          prevSummary={prevSummary}
+          prevSummary={prevSummaryError ? null : prevSummary}
           periodLabel={periodLabel}
           currency={currency}
         />

@@ -133,66 +133,21 @@ export function pickLatestCollapsedClose(
 }
 
 /**
- * One batched valuation read for many instruments: load recent rows (2y window),
- * keep ~8 newest per instrument, collapse by source priority. Falls back to
- * getLatestValuationsByInstrumentIds for ids with no window hits.
+ * One batched valuation read for many instruments via SQL latest-per-id
+ * (source priority already applied in getLatestValuationsByInstrumentIds).
  */
 async function latestCollapsedClosesByInstrumentIds(
   db: Db,
   instrumentIds: number[],
 ): Promise<Map<number, { asOf: string; close: number }>> {
   const out = new Map<number, { asOf: string; close: number }>();
-  const unique = [...new Set(instrumentIds.filter((id) => id > 0))];
-  if (unique.length === 0) return out;
-
-  const since = new Date();
-  since.setUTCFullYear(since.getUTCFullYear() - 2);
-
-  const rows = await db.instrumentValuation.findMany({
-    where: {
-      instrumentId: { in: unique },
-      asOfDate: { gte: since },
-    },
-    select: {
-      instrumentId: true,
-      asOfDate: true,
-      close: true,
-      source: true,
-    },
-    orderBy: [{ asOfDate: "desc" }],
-  });
-
-  const byInstrument = new Map<
-    number,
-    Array<{ asOfDate: Date; close: Prisma.Decimal | number; source: string }>
-  >();
-  for (const row of rows) {
-    const list = byInstrument.get(row.instrumentId) ?? [];
-    if (list.length >= 8) continue;
-    list.push(row);
-    byInstrument.set(row.instrumentId, list);
+  const latestById = await getLatestValuationsByInstrumentIds(db, instrumentIds);
+  for (const [id, row] of latestById) {
+    out.set(id, {
+      asOf: formatYmdUtc(row.asOfDate),
+      close: Number(row.close),
+    });
   }
-
-  const missing: number[] = [];
-  for (const id of unique) {
-    const candidates = byInstrument.get(id) ?? [];
-    const picked = pickLatestCollapsedClose(candidates);
-    if (picked) out.set(id, picked);
-    else missing.push(id);
-  }
-
-  if (missing.length > 0) {
-    const latestById = await getLatestValuationsByInstrumentIds(db, missing);
-    for (const id of missing) {
-      const row = latestById.get(id);
-      if (!row) continue;
-      out.set(id, {
-        asOf: formatYmdUtc(row.asOfDate),
-        close: Number(row.close),
-      });
-    }
-  }
-
   return out;
 }
 

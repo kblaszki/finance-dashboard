@@ -12,7 +12,7 @@ export type Instrument = {
   micCode: string | null;
   country: string | null;
   currency: string;
-  assetClass: InstrumentAssetClass | string;
+  assetClass: InstrumentAssetClass;
   provider: string;
   providerSymbol: string;
   allowlisted?: boolean;

@@ -27,12 +27,6 @@ type Props = {
   onChanged: () => void;
 };
 
-type HoldingsPanelData = {
-  holdings: AccountHolding[];
-  holdingsValue: number;
-  trades: AssetTrade[];
-};
-
 export function BrokerageHoldingsPanel(props: Props) {
   const { accountId, currency, onChanged } = props;
   const [formError, setFormError] = useState<string | null>(null);
@@ -40,6 +34,7 @@ export function BrokerageHoldingsPanel(props: Props) {
 
   const [query, setQuery] = useState("");
   const [hits, setHits] = useState<Instrument[]>([]);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [instrumentId, setInstrumentId] = useState<number | null>(null);
   const [instrumentLabel, setInstrumentLabel] = useState("");
   const [side, setSide] = useState<AssetTradeSide>("BUY");
@@ -48,30 +43,51 @@ export function BrokerageHoldingsPanel(props: Props) {
   const [commission, setCommission] = useState("0");
   const [occurredAt, setOccurredAt] = useState(defaultOccurredAtValue);
 
-  const loadPanel = useCallback(async (): Promise<HoldingsPanelData> => {
-    const [h, t] = await Promise.all([
-      fetchAccountHoldings(accountId),
-      fetchAssetTrades(accountId, { limit: 50 }),
-    ]);
-    return {
-      holdings: h.holdings,
-      holdingsValue: h.holdingsValue,
-      trades: t.items,
-    };
-  }, [accountId]);
+  const loadHoldings = useCallback(() => fetchAccountHoldings(accountId), [
+    accountId,
+  ]);
+  const {
+    data: holdingsData,
+    error: holdingsError,
+    loading: holdingsLoading,
+    reload: reloadHoldings,
+  } = useAsyncData(loadHoldings);
 
-  const { data, error, loading, reload } = useAsyncData(loadPanel);
+  const loadTrades = useCallback(
+    () => fetchAssetTrades(accountId, { limit: 50 }),
+    [accountId],
+  );
+  const {
+    data: tradesPage,
+    error: tradesError,
+    loading: tradesLoading,
+    reload: reloadTrades,
+  } = useAsyncData(loadTrades);
+
+  function reloadPanel() {
+    reloadHoldings();
+    reloadTrades();
+  }
 
   useEffect(() => {
     const q = query.trim();
     if (q.length < 1) {
       setHits([]);
+      setSearchError(null);
       return;
     }
     const handle = window.setTimeout(() => {
       void searchInstruments({ q, limit: 8, scope: "catalog" })
-        .then(setHits)
-        .catch(() => setHits([]));
+        .then((rows) => {
+          setHits(rows);
+          setSearchError(null);
+        })
+        .catch((err: unknown) => {
+          setHits([]);
+          setSearchError(
+            err instanceof Error ? err.message : "Instrument search failed",
+          );
+        });
     }, 250);
     return () => window.clearTimeout(handle);
   }, [query]);
@@ -122,7 +138,7 @@ export function BrokerageHoldingsPanel(props: Props) {
       setUnitPrice("");
       setCommission("0");
       setOccurredAt(defaultOccurredAtValue());
-      reload();
+      reloadPanel();
       onChanged();
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Trade failed");
@@ -143,7 +159,7 @@ export function BrokerageHoldingsPanel(props: Props) {
     setFormError(null);
     try {
       await deleteAssetTrade(accountId, trade.id);
-      reload();
+      reloadPanel();
       onChanged();
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Delete failed");
@@ -152,25 +168,24 @@ export function BrokerageHoldingsPanel(props: Props) {
     }
   }
 
-  const holdings = data?.holdings ?? [];
-  const holdingsValue = data?.holdingsValue ?? 0;
-  const trades = data?.trades ?? [];
+  const holdings: AccountHolding[] = holdingsData?.holdings ?? [];
+  const holdingsValue = holdingsData?.holdingsValue ?? 0;
+  const trades = tradesPage?.items ?? [];
 
   return (
     <section className="panel" aria-label="Holdings and trades">
       <h2>Holdings</h2>
       <StatusBlock
-        loading={loading && data == null}
-        error={error}
+        loading={holdingsLoading && !holdingsData}
+        error={holdingsError}
         loadingMessage="Loading holdings…"
       />
-      {data ? (
+      {holdingsData ? (
         <>
           <p>
             Mark-to-market{" "}
             <strong>{formatMoney(holdingsValue, currency)}</strong>
           </p>
-          {formError ? <p className="error-banner">{formError}</p> : null}
           {holdings.length === 0 ? (
             <p className="empty-state" role="status">
               No open holdings.
@@ -209,135 +224,146 @@ export function BrokerageHoldingsPanel(props: Props) {
               </tbody>
             </table>
           )}
+        </>
+      ) : null}
 
-          <h3>New trade</h3>
-          <form className="form-grid" onSubmit={handleSubmit}>
-            <label>
-              Instrument
-              <input
-                value={query || instrumentLabel}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setInstrumentId(null);
-                  setInstrumentLabel("");
-                }}
-                placeholder="Search symbol…"
-                autoComplete="off"
-              />
-            </label>
-            {hits.length > 0 && instrumentId == null && (
-              <ul className="suggest-list">
-                {hits.map((hit) => (
-                  <li key={hit.id}>
+      {formError ? <p className="error-banner">{formError}</p> : null}
+      {searchError ? <p className="error-banner">{searchError}</p> : null}
+
+      <h3>New trade</h3>
+      <form className="form-grid" onSubmit={handleSubmit}>
+        <label>
+          Instrument
+          <input
+            value={query || instrumentLabel}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setInstrumentId(null);
+              setInstrumentLabel("");
+            }}
+            placeholder="Search symbol…"
+            autoComplete="off"
+          />
+        </label>
+        {hits.length > 0 && instrumentId == null && (
+          <ul className="suggest-list">
+            {hits.map((hit) => (
+              <li key={hit.id}>
+                <button
+                  type="button"
+                  className="btn-link"
+                  onClick={() => {
+                    setInstrumentId(hit.id);
+                    setInstrumentLabel(
+                      `${hit.symbol} · ${hit.name} (${hit.currency})`,
+                    );
+                    setQuery("");
+                    setHits([]);
+                    setSearchError(null);
+                  }}
+                >
+                  {hit.symbol} · {hit.name} ({hit.currency})
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <label>
+          Date
+          <input
+            type="date"
+            value={occurredAt}
+            onChange={(e) => setOccurredAt(e.target.value)}
+            required
+          />
+        </label>
+        <label>
+          Side
+          <select
+            value={side}
+            onChange={(e) => setSide(e.target.value as AssetTradeSide)}
+          >
+            <option value="BUY">BUY</option>
+            <option value="SELL">SELL</option>
+          </select>
+        </label>
+        <label>
+          Quantity
+          <input
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+            inputMode="decimal"
+            required
+          />
+        </label>
+        <label>
+          Unit price
+          <input
+            value={unitPrice}
+            onChange={(e) => setUnitPrice(e.target.value)}
+            inputMode="decimal"
+            required
+          />
+        </label>
+        <label>
+          Commission
+          <input
+            value={commission}
+            onChange={(e) => setCommission(e.target.value)}
+            inputMode="decimal"
+          />
+        </label>
+        <button type="submit" className="btn-primary" disabled={busy}>
+          Record trade
+        </button>
+      </form>
+
+      <h3>Recent trades</h3>
+      <StatusBlock
+        loading={tradesLoading && !tradesPage}
+        error={tradesError}
+        loadingMessage="Loading trades…"
+      />
+      {tradesPage ? (
+        trades.length === 0 ? (
+          <p className="empty-state" role="status">
+            No trades yet.
+          </p>
+        ) : (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>When</th>
+                <th>Side</th>
+                <th>Symbol</th>
+                <th>Qty</th>
+                <th>Price</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {trades.map((t) => (
+                <tr key={t.id}>
+                  <td>{formatOccurredAt(t.occurredAt)}</td>
+                  <td>{t.side}</td>
+                  <td>{t.instrumentSymbol ?? t.instrumentId}</td>
+                  <td>{t.quantity}</td>
+                  <td>{formatMoney(t.unitPrice, t.currency)}</td>
+                  <td>
                     <button
                       type="button"
                       className="btn-link"
-                      onClick={() => {
-                        setInstrumentId(hit.id);
-                        setInstrumentLabel(
-                          `${hit.symbol} · ${hit.name} (${hit.currency})`,
-                        );
-                        setQuery("");
-                        setHits([]);
-                      }}
+                      disabled={busy}
+                      onClick={() => void handleDelete(t)}
                     >
-                      {hit.symbol} · {hit.name} ({hit.currency})
+                      Delete
                     </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <label>
-              Date
-              <input
-                type="date"
-                value={occurredAt}
-                onChange={(e) => setOccurredAt(e.target.value)}
-                required
-              />
-            </label>
-            <label>
-              Side
-              <select
-                value={side}
-                onChange={(e) => setSide(e.target.value as AssetTradeSide)}
-              >
-                <option value="BUY">BUY</option>
-                <option value="SELL">SELL</option>
-              </select>
-            </label>
-            <label>
-              Quantity
-              <input
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                inputMode="decimal"
-                required
-              />
-            </label>
-            <label>
-              Unit price
-              <input
-                value={unitPrice}
-                onChange={(e) => setUnitPrice(e.target.value)}
-                inputMode="decimal"
-                required
-              />
-            </label>
-            <label>
-              Commission
-              <input
-                value={commission}
-                onChange={(e) => setCommission(e.target.value)}
-                inputMode="decimal"
-              />
-            </label>
-            <button type="submit" className="btn-primary" disabled={busy}>
-              Record trade
-            </button>
-          </form>
-
-          <h3>Recent trades</h3>
-          {trades.length === 0 ? (
-            <p className="empty-state" role="status">
-              No trades yet.
-            </p>
-          ) : (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>When</th>
-                  <th>Side</th>
-                  <th>Symbol</th>
-                  <th>Qty</th>
-                  <th>Price</th>
-                  <th />
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {trades.map((t) => (
-                  <tr key={t.id}>
-                    <td>{formatOccurredAt(t.occurredAt)}</td>
-                    <td>{t.side}</td>
-                    <td>{t.instrumentSymbol ?? t.instrumentId}</td>
-                    <td>{t.quantity}</td>
-                    <td>{formatMoney(t.unitPrice, t.currency)}</td>
-                    <td>
-                      <button
-                        type="button"
-                        className="btn-link"
-                        disabled={busy}
-                        onClick={() => void handleDelete(t)}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </>
+              ))}
+            </tbody>
+          </table>
+        )
       ) : null}
     </section>
   );
