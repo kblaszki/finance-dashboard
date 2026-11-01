@@ -44,7 +44,7 @@ This page covers shipped dashboard KPIs (`/dashboard`) and statistics (`/statist
    - `GET /api/accounts` (shared via `CurrencyProvider`)
    - `GET /api/categories` (setup checklist only)
 
-Net worth uses persisted NBP rates only (no live NBP during the request). Mapping after conversion: `BANK→cash`, `BROKERAGE|IKE|IKZE→stock`, `CRYPTO→crypto`, `PRECIOUS_METAL→metal`, `REAL_ESTATE→real_estate`, `OTHER|MANUAL|TREASURY_BONDS→other`. `CREDIT_CARD` debt adds to `liabilities`; overpayment goes to `cash`. Mortgage-style liabilities (FR-029) are separate. Holdings valuations are not included. Ensure FX history is synced before relying on long charts (`cd backend && npm run build && npm run fx:sync -- --days 760`). Rolling 12-month cashflow averages remain on **Statistics**.
+Net worth uses persisted NBP rates only (no live NBP during the request). Mapping after conversion: `BANK→cash`, `BROKERAGE|IKE|IKZE→stock`, `CRYPTO→crypto`, `PRECIOUS_METAL→metal`, `REAL_ESTATE→real_estate`, `OTHER|MANUAL|TREASURY_BONDS→other`. `CREDIT_CARD` debt adds to `liabilities`; overpayment goes to `cash`. Mortgage-style liabilities (FR-029) are separate. Demo seed loads FX history automatically (`seedDemoFxRates`); otherwise sync with `cd backend && npm run build && npm run fx:sync -- --days 760`. Rolling 12-month cashflow averages remain on **Statistics**.
 
 ## Period KPIs and cashflow chart (FR-003 / FR-004)
 

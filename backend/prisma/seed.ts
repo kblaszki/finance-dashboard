@@ -2,6 +2,7 @@ import path from "node:path";
 import { PrismaClient } from "@prisma/client";
 import { canonicalUsernameKey, hashPassword } from "../src/auth";
 import { marketHistoryDataDir } from "../src/domain/marketHistoryIo";
+import { seedDemoFxRates } from "../src/domain/seedDemoFxRates";
 import { seedDemoMarkets } from "../src/domain/seedDemoMarkets";
 import { seedDemoPortfolio } from "../src/domain/seedDemoPortfolio";
 
@@ -32,6 +33,12 @@ async function main(): Promise<void> {
     await seedDemoPortfolio(tx, user.id);
   });
 
+  const fx = await seedDemoFxRates(prisma);
+  if (fx.warning) {
+    // eslint-disable-next-line no-console
+    console.warn(`Demo FX: ${fx.warning}`);
+  }
+
   const markets = await seedDemoMarkets(prisma, user.id, {
     historyDir: marketHistoryDataDir(
       path.resolve(__dirname, "../data/market-history"),
@@ -55,13 +62,19 @@ async function main(): Promise<void> {
       id: user.id,
       email: user.email,
       username: user.username,
+      fx: {
+        source: fx.source,
+        from: fx.from,
+        to: fx.to,
+        upserted: fx.upserted,
+      },
       markets: {
         sourceKind: markets.sourceKind,
         fixturePath: markets.fixturePath,
         watchlistAdded: markets.watchlistAdded,
         valuationsUpserted: markets.valuationsUpserted,
       },
-      note: "Demo user + sample portfolio (+ markets history from local export or committed fixture). Re-run wipes demo user data.",
+      note: "Demo user + sample portfolio + NBP/fallback FX (+ markets history from local export or committed fixture). Re-run wipes demo user data.",
     }),
   );
 }
