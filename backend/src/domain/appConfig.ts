@@ -3,6 +3,8 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 type Db = PrismaClient | Prisma.TransactionClient;
 
 export const APP_CONFIG_MARKET_LIVE_API = "marketLiveApi";
+/** UTC YYYY-MM-DD of last completed allowlist Yahoo gap-fill (cron + in-process day-lock). */
+export const APP_CONFIG_YAHOO_GAP_SYNC_LAST_RUN = "yahooGapSyncLastRunYmd";
 
 function parseBool(raw: string | undefined | null): boolean {
   const v = String(raw ?? "")
@@ -32,6 +34,29 @@ export async function setMarketLiveApi(
     update: { value: enabled ? "true" : "false" },
   });
   return enabled;
+}
+
+export async function getYahooGapSyncLastRunYmd(
+  db: Db,
+): Promise<string | null> {
+  const row = await db.appConfig.findUnique({
+    where: { key: APP_CONFIG_YAHOO_GAP_SYNC_LAST_RUN },
+  });
+  const v = String(row?.value ?? "").trim();
+  return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
+}
+
+export async function setYahooGapSyncLastRunYmd(
+  db: Db,
+  ymd: string,
+): Promise<string> {
+  const value = String(ymd).trim();
+  await db.appConfig.upsert({
+    where: { key: APP_CONFIG_YAHOO_GAP_SYNC_LAST_RUN },
+    create: { key: APP_CONFIG_YAHOO_GAP_SYNC_LAST_RUN, value },
+    update: { value },
+  });
+  return value;
 }
 
 export type AppConfigPayload = {

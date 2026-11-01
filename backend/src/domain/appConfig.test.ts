@@ -9,7 +9,9 @@ import {
 import {
   getAppConfigPayload,
   getMarketLiveApi,
+  getYahooGapSyncLastRunYmd,
   setMarketLiveApi,
+  setYahooGapSyncLastRunYmd,
 } from "./appConfig";
 
 let prisma: PrismaClient;
@@ -36,4 +38,11 @@ test("setMarketLiveApi persists true and false", async () => {
   assert.equal(await getMarketLiveApi(prisma), true);
   assert.equal(await setMarketLiveApi(prisma, false), false);
   assert.equal(await getMarketLiveApi(prisma), false);
+});
+
+test("yahoo gap-sync last-run AppConfig round-trip", async () => {
+  await resetDatabase(prisma);
+  assert.equal(await getYahooGapSyncLastRunYmd(prisma), null);
+  assert.equal(await setYahooGapSyncLastRunYmd(prisma, "2026-11-01"), "2026-11-01");
+  assert.equal(await getYahooGapSyncLastRunYmd(prisma), "2026-11-01");
 });

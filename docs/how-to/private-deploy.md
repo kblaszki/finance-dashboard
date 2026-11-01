@@ -82,7 +82,9 @@ Same-origin: Express serves the SPA, so leave `CORS_ORIGIN` / `APP_ORIGIN` unset
 | Health | `GET /api/health` (via HTTPS domain) |
 | Additional users | `docker compose exec finance-dashboard node dist/scripts/createUser.js --email … --username … --password …` |
 | Daily DB backup | `docker compose exec finance-dashboard npm run db:backup` → files in `./data/backups/` (`BACKUP_DIR=/data/backups`). Optional `--gzip` / `BACKUP_GZIP=true`. Sync off-site. |
-| Cron example | `0 2 * * * cd /path/to/compose-project && docker compose exec -T finance-dashboard npm run db:backup` |
+| Daily Yahoo valuations | `docker compose exec finance-dashboard npm run market:sync-yahoo-gaps` — allowlist gap-fill from last close (Yahoo). Optional in-process via `MARKET_YAHOO_GAP_SYNC=true` (day-lock shared with cron). |
+| Cron example (backup) | `0 2 * * * cd /path/to/compose-project && docker compose exec -T finance-dashboard npm run db:backup` |
+| Cron example (Yahoo gaps) | `15 21 * * * cd /path/to/compose-project && docker compose exec -T finance-dashboard npm run market:sync-yahoo-gaps` |
 
 ## Update
 

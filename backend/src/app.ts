@@ -12,6 +12,7 @@ import {
   mountStaticAndSpa,
 } from "./httpConfig";
 import { handleRouteError } from "./lib/errors";
+import { startYahooGapSyncScheduler } from "./domain/yahooGapSyncScheduler";
 import { mountApiRouters } from "./routes/mountRouters";
 
 dotenv.config();
@@ -80,6 +81,7 @@ if (require.main === module) {
   app.listen(PORT, "0.0.0.0", () => {
     // eslint-disable-next-line no-console
     console.log(`Backend listening on http://0.0.0.0:${PORT}`);
+    startYahooGapSyncScheduler(prisma);
   });
 }
 /* c8 ignore end */

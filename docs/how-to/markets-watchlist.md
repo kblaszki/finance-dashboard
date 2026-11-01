@@ -58,6 +58,16 @@ Universe JSON lives in `backend/data/market-universe/` (`historySource: "yahoo"`
 
 - `market:sync-quotes --watchlist-only` / `--userId N` / `--force` — Yahoo latest close
 - `market:sync-history-yahoo --watchlist-only` / `--userId N` / `--force` / `--range 10y` — Yahoo history (hobby; unofficial API). Space or equals forms work (`--range 10y` or `--range=10y`).
+- `market:sync-yahoo-gaps` / `--force` — **daily allowlist gap-fill**: per allowlisted instrument, Yahoo range sized from last valuation date; upserts bars after that day. AppConfig day-lock skips a second run the same UTC day (`--force` overrides). Prefer this for ongoing EOD upkeep.
 - `market:sync-history` — delegates to Yahoo for current universe seeds (legacy Stooq/TD only if a custom seed still sets `historySource`)
 - `market:export-history` / `market:import-history` — NDJSON(`.gz`) dump. Default `data/market-history/exports/allowlist-eod.ndjson.gz` (gitignored).
 - Demo seed prefers that local export when present; else committed `demo-eod.ndjson`.
+
+## Daily gap-fill (optional)
+
+| Path | How |
+|------|-----|
+| Host cron | `npm run build && npm run market:sync-yahoo-gaps` (see [private-deploy](private-deploy.md)) |
+| In-process | `MARKET_YAHOO_GAP_SYNC=true` (optional `MARKET_YAHOO_GAP_SYNC_UTC_HOUR`, default `21`) — backend polls ~15m after listen |
+
+Both share the same day-lock so enabling cron **and** in-process on one host will not double-fetch Yahoo the same UTC day.

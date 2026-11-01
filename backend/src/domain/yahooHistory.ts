@@ -1,12 +1,20 @@
 import type { PrismaClient } from "@prisma/client";
 import {
+  getYahooGapSyncLastRunYmd,
+  setYahooGapSyncLastRunYmd,
+} from "./appConfig";
+import { formatYmdUtc } from "./fx";
+import {
   countDistinctClosesInWindow,
+  getLatestValuation,
   historyWindowFromMonths,
+  isValuationFresh,
   upsertInstrumentClose,
   VALUATION_SOURCE_YAHOO,
 } from "./instrumentValuations";
 import {
   fetchYahooDailyHistory,
+  type YahooBar,
   type YahooFetch,
 } from "./yahooFinanceClient";
 import { yahooSymbolForInstrument } from "./yahooSymbols";
@@ -36,6 +44,167 @@ export type SyncYahooHistoryOptions = {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+/** Calendar days from last valuation UTC midnight to `now` UTC date (no valuation → large). */
+export function calendarDaysSinceLastClose(
+  lastAsOf: Date | null,
+  now: Date = new Date(),
+): number {
+  if (lastAsOf == null) return Number.POSITIVE_INFINITY;
+  const lastUtc = Date.UTC(
+    lastAsOf.getUTCFullYear(),
+    lastAsOf.getUTCMonth(),
+    lastAsOf.getUTCDate(),
+  );
+  const nowUtc = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate(),
+  );
+  return Math.max(0, Math.floor((nowUtc - lastUtc) / 86_400_000));
+}
+
+/** Yahoo chart `range` sized to cover the valuation gap. */
+export function yahooRangeForGapDays(gapDays: number): string {
+  if (!Number.isFinite(gapDays) || gapDays > 100) return "1y";
+  if (gapDays <= 5) return "5d";
+  if (gapDays <= 35) return "1mo";
+  return "3mo";
+}
+
+/** Keep bars strictly after the last stored UTC day (null → all). */
+export function barsAfterLastYmd(
+  bars: YahooBar[],
+  lastYmd: string | null,
+): YahooBar[] {
+  if (lastYmd == null) return bars;
+  return bars.filter((b) => b.asOfYmd > lastYmd);
+}
+
+export type SyncYahooGapsResult = {
+  attempted: number;
+  updatedInstruments: number;
+  barsUpserted: number;
+  skippedFresh: number;
+  failed: number;
+  skippedDueToDayLock: boolean;
+  errors: Array<{ instrumentId: number; symbol: string; message: string }>;
+};
+
+export type SyncYahooGapsOptions = {
+  force?: boolean;
+  fetchImpl?: YahooFetch;
+  delayMs?: number;
+  now?: Date;
+};
+
+/**
+ * Daily allowlist gap-fill: for each allowlisted instrument, fetch Yahoo closes
+ * covering days after the latest valuation and upsert missing bars.
+ * Day-lock (AppConfig) skips a second run on the same UTC day unless `force`.
+ */
+export async function syncYahooAllowlistGaps(
+  prisma: PrismaClient,
+  options: SyncYahooGapsOptions = {},
+): Promise<SyncYahooGapsResult> {
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const force = options.force === true;
+  const delayMs = options.delayMs ?? 200;
+  const now = options.now ?? new Date();
+  const todayYmd = formatYmdUtc(
+    new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())),
+  );
+
+  if (!force) {
+    const lastRun = await getYahooGapSyncLastRunYmd(prisma);
+    if (lastRun === todayYmd) {
+      return {
+        attempted: 0,
+        updatedInstruments: 0,
+        barsUpserted: 0,
+        skippedFresh: 0,
+        failed: 0,
+        skippedDueToDayLock: true,
+        errors: [],
+      };
+    }
+  }
+
+  const instruments = await prisma.instrument.findMany({
+    where: { allowlisted: true },
+    orderBy: { symbol: "asc" },
+  });
+
+  let updatedInstruments = 0;
+  let barsUpserted = 0;
+  let skippedFresh = 0;
+  let failed = 0;
+  const errors: SyncYahooGapsResult["errors"] = [];
+
+  for (const instrument of instruments) {
+    const latest = await getLatestValuation(prisma, instrument.id);
+    if (latest && isValuationFresh(latest.asOfDate, now)) {
+      skippedFresh += 1;
+      continue;
+    }
+
+    const lastYmd = latest ? formatYmdUtc(latest.asOfDate) : null;
+    const gapDays = calendarDaysSinceLastClose(latest?.asOfDate ?? null, now);
+    const range = yahooRangeForGapDays(gapDays);
+    const yahooSymbol = yahooSymbolForInstrument(instrument);
+
+    try {
+      if (delayMs > 0) await sleep(delayMs);
+      const bars = await fetchYahooDailyHistory(yahooSymbol, {
+        range,
+        fetchImpl,
+      });
+      const toUpsert = barsAfterLastYmd(bars, lastYmd);
+      if (toUpsert.length === 0) {
+        if (bars.length === 0) {
+          failed += 1;
+          errors.push({
+            instrumentId: instrument.id,
+            symbol: instrument.symbol,
+            message: `Yahoo returned no bars for ${yahooSymbol}`,
+          });
+        } else {
+          skippedFresh += 1;
+        }
+        continue;
+      }
+      for (const bar of toUpsert) {
+        await upsertInstrumentClose(prisma, {
+          instrumentId: instrument.id,
+          asOfYmd: bar.asOfYmd,
+          close: bar.close,
+          source: VALUATION_SOURCE_YAHOO,
+        });
+        barsUpserted += 1;
+      }
+      updatedInstruments += 1;
+    } catch (e: unknown) {
+      failed += 1;
+      errors.push({
+        instrumentId: instrument.id,
+        symbol: instrument.symbol,
+        message: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }
+
+  await setYahooGapSyncLastRunYmd(prisma, todayYmd);
+
+  return {
+    attempted: instruments.length,
+    updatedInstruments,
+    barsUpserted,
+    skippedFresh,
+    failed,
+    skippedDueToDayLock: false,
+    errors,
+  };
 }
 
 export type YahooInstrumentRef = {

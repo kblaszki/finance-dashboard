@@ -42,7 +42,7 @@ JWT auth, multi-type accounts, category tree + tags, cash ledger + transfers, CS
 | Net worth domain | `backend/src/domain/netWorth.ts`, `netWorthHistory.ts` |
 | FX / NBP rates | `backend/src/domain/fx.ts`, `fxRates.ts`, `nbpClient.ts` |
 | FX sync CLI | `backend/src/scripts/syncFxRates.ts` |
-| Markets catalog / allowlist / watchlist / history chart | `backend/src/domain/{instruments,instrumentValuations,marketData,marketHistory,marketHistoryIo,marketUniverse,twelveDataClient,oanorGpwClient,stooqClient,yahooFinanceClient,yahooHistory,watchlist,seedDemoMarkets}.ts`; routes `marketsRoutes.ts`; CLIs catalog/universe/quotes/history/yahoo/export/import; UI `MarketsPage`, `InstrumentDetailPage`; data `backend/data/market-universe/`, `backend/data/market-history/demo-eod.ndjson` |
+| Markets catalog / allowlist / watchlist / history chart | `backend/src/domain/{instruments,instrumentValuations,marketData,marketHistory,marketHistoryIo,marketUniverse,twelveDataClient,oanorGpwClient,stooqClient,yahooFinanceClient,yahooHistory,yahooGapSyncScheduler,watchlist,seedDemoMarkets}.ts`; routes `marketsRoutes.ts`; CLIs catalog/universe/quotes/history/yahoo/gaps/export/import; UI `MarketsPage`, `InstrumentDetailPage`; data `backend/data/market-universe/`, `backend/data/market-history/demo-eod.ndjson` |
 | Holdings / lots (planned) | Spike: [docs/explanation/holdings-market-architecture.md](../explanation/holdings-market-architecture.md) — no `Holding`/`Lot` yet |
 | Router mount | `backend/src/routes/mountRouters.ts` |
 | HTTP helpers / errors | `backend/src/routes/httpSupport.ts`, `backend/src/lib/errors.ts` |

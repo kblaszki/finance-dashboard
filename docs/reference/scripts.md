@@ -28,6 +28,7 @@ Run from `backend/` unless noted.
 | Market quote sync | `npm run market:sync-quotes` | Default: all **allowlisted** via **Yahoo** latest close. `--watchlist-only` or `--userId N`; optional `--force` |
 | Market history sync | `npm run market:sync-history` | Allowlist history; with universe `historySource: yahoo` (default) uses Yahoo chart (~1y). Prefer `market:sync-history-yahoo` for explicit `--range` |
 | Market history Yahoo | `npm run market:sync-history-yahoo` | Primary Yahoo chart closes (`--range 1y` \| `--range 10y` or `--range=10y`, default `1y`; `--watchlist-only`, `--userId N`, `--instrumentId N`, `--force`). Source `yahoo` |
+| Market Yahoo gap-fill | `npm run market:sync-yahoo-gaps` | Allowlist: fetch Yahoo closes after each instrument’s latest valuation (`5d`/`1mo`/`3mo`/`1y` by gap). Day-lock once per UTC day; `--force` re-runs. Requires build |
 | Market history export | `npm run market:export-history` | Allowlist valuations → NDJSON/`.gz` (`--out PATH`, `--months N`, `--monthly`, `--watchlist-only`). Default `data/market-history/exports/allowlist-eod.ndjson.gz` (gitignored) |
 | Market history import | `npm run market:import-history` | Import NDJSON/`.gz` into `InstrumentValuation` (`--file PATH`). Skips unknown instruments |
 | DB reset | `npm run db:reset` | `prisma migrate reset --force` — wipe SQLite, migrate, run seed (cash demo). Re-run catalog/universe + `db:seed` for Markets fixture |
