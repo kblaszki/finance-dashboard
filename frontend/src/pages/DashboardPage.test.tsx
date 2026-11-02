@@ -20,11 +20,13 @@ vi.mock("../api/statisticsApi", () => ({
   fetchNetWorth: vi.fn(),
   fetchNetWorthHistory: vi.fn(),
   fetchPeriodSummary: vi.fn(),
+  fetchCategoryBreakdown: vi.fn(),
 }));
 
 import { fetchAccounts } from "../api/accountsApi";
 import { fetchCategories } from "../api/categoriesApi";
 import {
+  fetchCategoryBreakdown,
   fetchNetWorth,
   fetchNetWorthHistory,
   fetchPeriodSummary,
@@ -109,6 +111,22 @@ describe("DashboardPage", () => {
       expense: 1000,
       net: 2000,
       transfers: 0,
+    });
+    vi.mocked(fetchCategoryBreakdown).mockResolvedValue({
+      month: "2026-10",
+      period: "month",
+      label: "2026-10",
+      income: [],
+      expense: [
+        {
+          categoryId: 2,
+          categoryName: "Food",
+          currency: "PLN",
+          total: 400,
+          count: 3,
+        },
+      ],
+      transfer: [],
     });
   });
 

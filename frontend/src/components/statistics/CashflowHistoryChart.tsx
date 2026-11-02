@@ -30,8 +30,8 @@ export function CashflowHistoryChart(props: {
 
   return (
     <ChartCard
-      title={`Cashflow history (${currency})`}
-      subtitle={`${historyMonths} months ending ${periodLabel}, with savings rate on the right axis.`}
+      title={`Are savings growing? · cashflow (${currency})`}
+      subtitle={`${historyMonths} months ending ${periodLabel}: income/expense bars, net, and savings % on the right axis.`}
     >
       <div className="chart-plot chart-plot--lg">
       <ResponsiveContainer width="100%" height="100%">

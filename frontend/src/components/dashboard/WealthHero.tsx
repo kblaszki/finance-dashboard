@@ -57,7 +57,7 @@ export function WealthHero(props: {
   const cash = netWorth.byBucket.cash;
   const invested = investedTotal(netWorth);
   const rateDates = (netWorth.ratesUsed ?? [])
-    .map((r) => `${r.currency} ${r.rateDate}`)
+    .map((r) => `${r.currency} ${r.mid} (${r.rateDate})`)
     .join(", ");
 
   const rangeChange = useMemo(() => {
@@ -111,7 +111,9 @@ export function WealthHero(props: {
       </div>
       <div className="wealth-hero-chart">
         <div className="wealth-chart-head">
-          <span className="muted">Net worth · last {range}m</span>
+          <span className="muted">
+            Is net worth growing? · last {range}m
+          </span>
           <div className="wealth-chart-range" role="group" aria-label="Chart range">
             {RANGE_OPTIONS.map((opt) => (
               <button
@@ -195,6 +197,14 @@ export function WealthHero(props: {
         ) : (
           <p className="empty-state">No net-worth history yet.</p>
         )}
+        {history?.ratesUsed && history.ratesUsed.length > 0 ? (
+          <p className="muted wealth-hero-note">
+            History rates:{" "}
+            {history.ratesUsed
+              .map((r) => `${r.currency} ${r.mid} (${r.rateDate})`)
+              .join(", ")}
+          </p>
+        ) : null}
       </div>
     </section>
   );

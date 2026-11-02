@@ -1,9 +1,11 @@
 import { useCallback, useMemo } from "react";
 import { fetchCategories } from "../api/categoriesApi";
 import {
+  fetchCategoryBreakdown,
   fetchNetWorth,
   fetchNetWorthHistory,
   fetchPeriodSummary,
+  type CategoryBreakdown,
   type NetWorth,
   type NetWorthHistory,
   type PeriodSummary,
@@ -16,6 +18,7 @@ import { AllocationCard } from "../components/dashboard/AllocationCard";
 import { IdeasPanel } from "../components/dashboard/IdeasPanel";
 import { PeriodKpiStrip } from "../components/dashboard/PeriodKpiStrip";
 import { RecentActivityCard } from "../components/dashboard/RecentActivityCard";
+import { TopCategoriesCard } from "../components/dashboard/TopCategoriesCard";
 import { WealthHero } from "../components/dashboard/WealthHero";
 import {
   SetupChecklist,
@@ -83,6 +86,15 @@ export function DashboardPage() {
     error: categoriesError,
     loading: categoriesLoading,
   } = useAsyncData(loadCategories);
+
+  const loadBreakdown = useCallback((): Promise<CategoryBreakdown> => {
+    return fetchCategoryBreakdown(month);
+  }, [month]);
+  const {
+    data: breakdown,
+    error: breakdownError,
+    loading: breakdownLoading,
+  } = useAsyncData(loadBreakdown);
 
   const setupLoading = accountsLoading || categoriesLoading;
   const setupError = accountsError || categoriesError;
@@ -176,19 +188,32 @@ export function DashboardPage() {
         ) : null}
       </div>
       <div className="dash-exec-grid">
-        {netWorth ? <AllocationCard netWorth={netWorth} /> : null}
         <StatusBlock
-          loading={transfersLoading && !transfersPage}
-          error={transfersError}
-          loadingMessage="Loading recent transfers…"
+          loading={breakdownLoading && !breakdown}
+          error={breakdownError || categoriesError}
+          loadingMessage="Loading categories…"
         />
-        {transfersPage ? (
-          <RecentActivityCard
-            transfers={transfersPage.items}
-            accounts={accounts ?? []}
+        {breakdown && categories ? (
+          <TopCategoriesCard
+            breakdown={breakdown}
+            categories={categories}
+            currency={currency}
+            periodLabel={summary?.label ?? month}
           />
         ) : null}
+        {netWorth ? <AllocationCard netWorth={netWorth} /> : null}
       </div>
+      <StatusBlock
+        loading={transfersLoading && !transfersPage}
+        error={transfersError}
+        loadingMessage="Loading recent transfers…"
+      />
+      {transfersPage ? (
+        <RecentActivityCard
+          transfers={transfersPage.items}
+          accounts={accounts ?? []}
+        />
+      ) : null}
       <IdeasPanel ideas={ideas} />
     </div>
   );

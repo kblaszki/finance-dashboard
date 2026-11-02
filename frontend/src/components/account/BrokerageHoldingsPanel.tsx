@@ -344,9 +344,10 @@ export function BrokerageHoldingsPanel(props: Props) {
                 <tr>
                   <th>When</th>
                   <th>Side</th>
-                  <th>Symbol</th>
+                  <th>Instrument</th>
                   <th className="num">Qty</th>
                   <th className="num">Price</th>
+                  <th className="num">Commission</th>
                   <th className="col-actions" />
                 </tr>
               </thead>
@@ -357,10 +358,16 @@ export function BrokerageHoldingsPanel(props: Props) {
                     <td>{t.side}</td>
                     <td className="col-text">
                       {t.instrumentSymbol ?? t.instrumentId}
+                      {t.instrumentName ? (
+                        <div className="muted">{t.instrumentName}</div>
+                      ) : null}
                     </td>
                     <td className="num">{t.quantity}</td>
                     <td className="num">
                       {formatMoney(t.unitPrice, t.currency)}
+                    </td>
+                    <td className="num">
+                      {formatMoney(t.commission, t.currency)}
                     </td>
                     <td className="col-actions">
                       <button

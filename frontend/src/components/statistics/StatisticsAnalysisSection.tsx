@@ -126,7 +126,7 @@ export function StatisticsAnalysisSection(props: {
                   : "neutral"
             }
             emptyLabel={`No ${categoryFacet} in ${periodLabel} for ${currency} accounts (unconverted; other currencies omitted).`}
-            subtitle={`Root category rollup · ${periodLabel} · ${currency} accounts only`}
+            subtitle={`Where money went · root rollup · ${periodLabel} · ${currency} accounts only`}
           />
           <DetailTable
             title={`${categoryFacet === "transfer" ? "Transfer" : categoryFacet === "income" ? "Income" : "Expense"} detail`}

@@ -170,7 +170,7 @@ export function AccountsPage() {
     () =>
       sortBy(filteredAccounts, sort, {
         name: (a) => a.name,
-        balance: (a) => a.cashBalance,
+        balance: (a) => a.totalEquity,
       }),
     [filteredAccounts, sort],
   );
@@ -315,7 +315,7 @@ export function AccountsPage() {
                   />
                   <th>Type</th>
                   <SortableTh
-                    label="Balance"
+                    label="Equity"
                     sortKey="balance"
                     sort={sort}
                     onToggle={(key) => setSort((prev) => toggleSort(prev, key))}
@@ -344,7 +344,7 @@ export function AccountsPage() {
                         </span>
                       </td>
                       <td className="num">
-                        {formatMoney(account.totalBalance, account.currency)}
+                        {formatMoney(account.totalEquity, account.currency)}
                       </td>
                       <td className="col-actions">
                         {editingId !== account.id ? (

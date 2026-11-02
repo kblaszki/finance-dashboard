@@ -72,7 +72,12 @@ export function InstrumentDetailPage() {
               <>
                 {instrument.name}
                 {instrument.exchange ? ` · ${instrument.exchange}` : ""}
+                {instrument.micCode ? ` · MIC ${instrument.micCode}` : ""}
                 {instrument.assetClass ? ` · ${instrument.assetClass}` : ""}
+                {instrument.provider ? ` · ${instrument.provider}` : ""}
+                {history.from && history.to
+                  ? ` · ${history.from} → ${history.to}`
+                  : ""}
                 {last != null
                   ? ` · Last close ${formatMoney(last.close, history.currency)} (${last.asOf})`
                   : ""}

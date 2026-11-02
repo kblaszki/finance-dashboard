@@ -81,7 +81,9 @@ describe("AllocationCard copy", () => {
       </MemoryRouter>,
     );
     expect(
-      screen.getByText(/Equity by account-type bucket \(cash \+ holdings MTM\)/),
+      screen.getByText(
+        /Portfolio allocation by account-type bucket \(cash \+ holdings MTM\)/,
+      ),
     ).toBeTruthy();
     expect(screen.queryByText(/Cash balances by account-type bucket/)).toBeNull();
   });

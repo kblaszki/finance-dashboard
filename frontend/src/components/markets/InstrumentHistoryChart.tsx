@@ -45,14 +45,17 @@ export function InstrumentHistoryChart(props: {
   const canPrevYear = year > oldestYear;
   const canNextYear = year < newestYear;
 
-  const subtitle =
-    mode === "year"
-      ? `Daily close · ${year} · ${currency}`
-      : `Daily close · ${months} months · ${currency}`;
+  const rangeNote =
+    history?.from && history?.to
+      ? `${history.from} → ${history.to}`
+      : mode === "year"
+        ? String(year)
+        : `${months} months`;
+  const subtitle = `Daily close · ${rangeNote} · ${currency}`;
 
   return (
     <ChartCard
-      title="Price history"
+      title={`Price history · ${mode === "year" ? year : `${months}m`}`}
       subtitle={subtitle}
       actions={
         <div className="form-actions-row">

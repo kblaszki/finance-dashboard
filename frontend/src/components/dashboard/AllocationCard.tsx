@@ -35,9 +35,9 @@ export function AllocationCard(props: { netWorth: NetWorth }) {
     <article className="card dash-panel">
       <div className="chart-card-head">
         <div>
-          <h2 className="section-title">Portfolio allocation</h2>
+          <h2 className="section-title">What I own</h2>
           <p className="muted chart-card-subtitle">
-            Equity by account-type bucket (cash + holdings MTM).
+            Portfolio allocation by account-type bucket (cash + holdings MTM).
           </p>
         </div>
         <Link to="/accounts" className="btn-secondary">

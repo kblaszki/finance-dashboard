@@ -31,6 +31,8 @@ function account(
     userId: 1,
     currency: "PLN",
     cashBalance: 0,
+    holdingsValue: 0,
+    totalEquity: 0,
     openingBalance: 0,
     openingCashAsOf: null,
     description: null,

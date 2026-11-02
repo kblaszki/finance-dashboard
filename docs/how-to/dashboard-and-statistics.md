@@ -32,16 +32,18 @@ This page covers shipped dashboard KPIs (`/dashboard`) and cashflow analysis (`/
 3. Review **Wealth hero**: total net worth for **all** owned accounts (cash + holdings mark-to-market) converted into the topbar currency via stored NBP mids (valuation / rate dates shown), cash / invested / debt chips, change over the selected chart range, and a **net-worth history** area chart. Range chips `6M` / `1Y` / `2Y` slice the fetched 24-month series client-side.
 4. Review **This month** KPIs (reporting currency): income, expense, savings ratio (`net / income`), and monthly net from **all** owned accounts, each with **absolute + %** vs the previous month when available. Use **Open cashflow** / **Record expense** for the next step.
 5. Review the **grid**:
-   - **Portfolio allocation** — donut + legend by account-type bucket (after FX); link to Accounts.
-   - **Recent transfers** — latest internal transfers (`GET /api/transfers?limit=8`), including cross-currency amounts when present.
-6. **Ideas** (below the grid) — heuristic educational tips; goals are not available yet.
-7. APIs:
+   - **Where money went** — top expense category horizontal bars for the current month (native-currency filter matching the topbar currency); link to Cashflow.
+   - **What I own** — allocation donut + legend by account-type bucket (after FX); link to Accounts.
+6. **Recent transfers** — latest internal transfers (`GET /api/transfers?limit=8`), including cross-currency amounts when present.
+7. **Ideas** (below) — heuristic educational tips; goals are not available yet.
+8. APIs:
    - `GET /api/statistics/net-worth?currency=XXX`
    - `GET /api/statistics/net-worth-history?month=YYYY-MM&currency=XXX&months=24`
    - `GET /api/statistics/period-summary?month=YYYY-MM&currency=XXX` (current + previous month)
+   - `GET /api/statistics/category-breakdown?month=YYYY-MM`
    - `GET /api/transfers?limit=8`
    - `GET /api/accounts` (shared via `CurrencyProvider`)
-   - `GET /api/categories` (setup checklist only)
+   - `GET /api/categories` (setup checklist + category rollup)
 
 Net worth uses persisted NBP rates only (no live NBP during the request). Mapping after conversion: `BANK→cash`, `BROKERAGE|IKE|IKZE→stock`, `CRYPTO→crypto`, `PRECIOUS_METAL→metal`, `REAL_ESTATE→real_estate`, `OTHER|MANUAL|TREASURY_BONDS→other`. `CREDIT_CARD` debt adds to `liabilities`; overpayment goes to `cash`. Mortgage-style liabilities (FR-029) are separate. Demo seed loads FX history automatically (`seedDemoFxRates`); otherwise sync with `cd backend && npm run build && npm run fx:sync -- --days 760`. Rolling 12-month cashflow averages remain on **Statistics**.
 
@@ -63,8 +65,8 @@ Bounds are UTC. `period` defaults to `month`. Quarter/year are calendar bounds c
 ## Category and tag breakdown (FR-016+)
 
 1. On `/statistics`, open the **Categories** or **Tags** tab (shown above the history chart).
-2. **Categories:** switch Income / Expense / Transfers. Donuts roll up to each **category tree root**; the detail table starts at **roots** (rolled-up totals) and expands with ▸ to show nested children (Food ≥ Groceries ≥ Supermarket). Transfer rows come from `CashTransfer` categories (not ledger `TRANSFER_*` legs).
-3. **Tags:** switch Income / Expense. Full amount is counted under each attached tag (a multi-tag transaction appears in each tag). **Untagged** is listed separately. Tags apply only to cash income/expense.
+2. **Categories:** switch Income / Expense / Transfers. Horizontal bars roll up to each **category tree root**; the detail table starts at **roots** (rolled-up totals) and expands with ▸ to show nested children (Food ≥ Groceries ≥ Supermarket). Transfer rows come from `CashTransfer` categories (not ledger `TRANSFER_*` legs).
+3. **Tags:** switch Income / Expense. Horizontal bars by tag; full amount is counted under each attached tag (a multi-tag transaction appears in each tag). **Untagged** is listed separately. Tags apply only to cash income/expense.
 4. Totals use the category/tag name currently stored (renames affect past periods).
 5. APIs:
    - `GET /api/statistics/category-breakdown?month=YYYY-MM&period=…` (+ `GET /api/categories` for the rollup join)
