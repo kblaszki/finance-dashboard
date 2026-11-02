@@ -25,7 +25,7 @@ export function PeriodKpiStrip(props: {
       <div className="dash-period-kpis-head">
         <h2 className="section-title">This month · {label}</h2>
         <div className="dash-period-kpis-actions">
-          <Link to="/statistics" className="btn-primary">
+          <Link to="/cashflow" className="btn-primary">
             Open cashflow
           </Link>
           {firstAccountId != null ? (

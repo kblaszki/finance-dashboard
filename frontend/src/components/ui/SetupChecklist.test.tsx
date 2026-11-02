@@ -61,7 +61,7 @@ describe("SetupChecklist", () => {
       screen
         .getByRole("link", { name: "Add income or expense categories" })
         .getAttribute("href"),
-    ).toBe("/categories");
+    ).toBe("/organize/categories");
   });
 
   it("links record step to first account ledger when available", () => {

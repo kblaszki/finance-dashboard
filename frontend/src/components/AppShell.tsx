@@ -49,52 +49,8 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
-    to: "/accounts",
-    label: "Accounts",
-    icon: (
-      <Icon>
-        <rect x="2.5" y="6" width="19" height="13" rx="2" />
-        <path d="M2.5 10.5h19" />
-        <path d="M6.5 15h4" />
-      </Icon>
-    ),
-  },
-  {
-    to: "/categories",
-    label: "Categories",
-    icon: (
-      <Icon>
-        <path d="M3.5 6.5 10 3l6.5 3.5v6L10 16l-6.5-3.5v-6Z" transform="translate(2 3)" />
-        <path d="M12 9.5v10" />
-        <path d="M5.5 6.5 12 9.5l6.5-3" />
-      </Icon>
-    ),
-  },
-  {
-    to: "/tags",
-    label: "Tags",
-    icon: (
-      <Icon>
-        <path d="M20.6 13.4 12.4 5.2a2 2 0 0 0-1.4-.6H5a2 2 0 0 0-2 2v6a2 2 0 0 0 .6 1.4l8.2 8.2a2 2 0 0 0 2.8 0l6-6a2 2 0 0 0 0-2.8Z" />
-        <circle cx="7.5" cy="7.5" r="1.2" fill="currentColor" stroke="none" />
-      </Icon>
-    ),
-  },
-  {
-    to: "/transfers",
-    label: "Transfers",
-    icon: (
-      <Icon>
-        <path d="M4 8h12" />
-        <path d="M12 4l4 4-4 4" />
-        <path d="M20 16H8" />
-        <path d="M12 12l-4 4 4 4" />
-      </Icon>
-    ),
-  },
-  {
-    to: "/statistics",
-    label: "Statistics",
+    to: "/cashflow",
+    label: "Cashflow",
     icon: (
       <Icon>
         <path d="M4 20V10" />
@@ -105,12 +61,24 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
-    to: "/markets",
-    label: "Markets",
+    to: "/accounts",
+    label: "Wealth",
     icon: (
       <Icon>
-        <path d="M3 17l6-6 4 4 8-8" />
-        <path d="M14 7h7v7" />
+        <rect x="2.5" y="6" width="19" height="13" rx="2" />
+        <path d="M2.5 10.5h19" />
+        <path d="M6.5 15h4" />
+      </Icon>
+    ),
+  },
+  {
+    to: "/organize",
+    label: "Organize",
+    icon: (
+      <Icon>
+        <path d="M3.5 6.5 10 3l6.5 3.5v6L10 16l-6.5-3.5v-6Z" transform="translate(2 3)" />
+        <path d="M12 9.5v10" />
+        <path d="M5.5 6.5 12 9.5l6.5-3" />
       </Icon>
     ),
   },
@@ -127,15 +95,50 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 function pageTitle(pathname: string): string {
+  if (pathname.startsWith("/cashflow") || pathname.startsWith("/statistics")) {
+    return "Cashflow";
+  }
+  if (
+    pathname.startsWith("/accounts") ||
+    pathname.startsWith("/markets") ||
+    pathname.startsWith("/wealth")
+  ) {
+    return "Wealth";
+  }
+  if (pathname.startsWith("/organize") || pathname.startsWith("/categories") || pathname.startsWith("/tags")) {
+    return "Organize";
+  }
+  if (pathname.startsWith("/transfers")) {
+    return "Transfers";
+  }
   const item = NAV_ITEMS.find((nav) =>
     nav.end ? pathname === nav.to : pathname.startsWith(nav.to),
   );
   return item?.label ?? "Dashboard";
 }
 
-function navLinkClass({ isActive }: { isActive: boolean }) {
-  return isActive ? "active" : undefined;
+function navIsActive(to: string, pathname: string, end?: boolean): boolean {
+  if (to === "/accounts") {
+    return (
+      pathname.startsWith("/accounts") ||
+      pathname.startsWith("/markets") ||
+      pathname.startsWith("/wealth")
+    );
+  }
+  if (to === "/organize") {
+    return (
+      pathname.startsWith("/organize") ||
+      pathname.startsWith("/categories") ||
+      pathname.startsWith("/tags")
+    );
+  }
+  if (to === "/cashflow") {
+    return pathname.startsWith("/cashflow") || pathname.startsWith("/statistics");
+  }
+  if (end) return pathname === to;
+  return pathname.startsWith(to);
 }
+
 
 export function AppShell() {
   const { user, logout } = useAuth();
@@ -257,17 +260,21 @@ export function AppShell() {
             Finance Dashboard
           </p>
           <nav className="shell-nav" aria-label="Main">
-            {NAV_ITEMS.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={navLinkClass}
-                end={item.end}
-              >
-                {item.icon}
-                {item.label}
-              </NavLink>
-            ))}
+            {NAV_ITEMS.map((item) => {
+              const active = navIsActive(item.to, pathname, item.end);
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={active ? "active" : undefined}
+                  end={item.end}
+                  aria-current={active ? "page" : undefined}
+                >
+                  {item.icon}
+                  {item.label}
+                </NavLink>
+              );
+            })}
           </nav>
           <div className="shell-sidebar-footer">
             <div className="shell-user">

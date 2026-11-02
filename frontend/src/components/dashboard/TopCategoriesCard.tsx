@@ -25,7 +25,7 @@ export function TopCategoriesCard(props: {
             currency filter).
           </p>
         </div>
-        <Link to="/statistics" className="btn-link">
+        <Link to="/cashflow" className="btn-link">
           Open cashflow
         </Link>
       </div>

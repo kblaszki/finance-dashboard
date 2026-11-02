@@ -23,7 +23,7 @@ related_code:
 
 Hub: [docs/README.md](../README.md).
 
-This page covers shipped dashboard KPIs (`/dashboard`) and cashflow analysis (`/statistics`, nav label may say Cashflow after IA updates). Currency is chosen once in the shell topbar (persisted in `localStorage`).
+This page covers shipped dashboard KPIs (`/dashboard`) and cashflow analysis (`/cashflow`; `/statistics` redirects). Currency is chosen once in the shell topbar (persisted in `localStorage`).
 
 ## Dashboard: balanced overview (FR-002 / FR-005 / FR-038)
 
@@ -49,7 +49,7 @@ Net worth uses persisted NBP rates only (no live NBP during the request). Mappin
 
 ## Period KPIs and cashflow chart (FR-003 / FR-004)
 
-1. Open **Statistics** / Cashflow in the AppShell (or go to `/statistics`).
+1. Open **Cashflow** in the AppShell (or go to `/cashflow`).
 2. Choose **Month**, **Quarter**, or **Year**, then pick the anchor (month input, quarter + year, or year). Currency comes from the top bar. Optionally set history range (6 / 12 / 24 months).
 3. Review **Period summary**: income, expense, net, and **savings ratio** — all owned `PLN`/`EUR`/`USD` accounts converted into the topbar reporting currency (NBP mid on each row’s date). Transfer volume is noted under the KPIs and does **not** change income/expense/net. Each money KPI shows **absolute + % vs previous** period when available.
 4. Review **category/tag breakdown** next (native-currency filter — see the warning banner). Totals for other currencies are omitted until FX-converted breakdown ships.
@@ -64,7 +64,7 @@ Bounds are UTC. `period` defaults to `month`. Quarter/year are calendar bounds c
 
 ## Category and tag breakdown (FR-016+)
 
-1. On `/statistics`, open the **Categories** or **Tags** tab (shown above the history chart).
+1. On `/cashflow`, open the **Categories** or **Tags** tab (shown above the history chart).
 2. **Categories:** switch Income / Expense / Transfers. Horizontal bars roll up to each **category tree root**; the detail table starts at **roots** (rolled-up totals) and expands with ▸ to show nested children (Food ≥ Groceries ≥ Supermarket). Transfer rows come from `CashTransfer` categories (not ledger `TRANSFER_*` legs).
 3. **Tags:** switch Income / Expense. Horizontal bars by tag; full amount is counted under each attached tag (a multi-tag transaction appears in each tag). **Untagged** is listed separately. Tags apply only to cash income/expense.
 4. Totals use the category/tag name currently stored (renames affect past periods).
@@ -72,4 +72,4 @@ Bounds are UTC. `period` defaults to `month`. Quarter/year are calendar bounds c
    - `GET /api/statistics/category-breakdown?month=YYYY-MM&period=…` (+ `GET /api/categories` for the rollup join)
    - `GET /api/statistics/tag-breakdown?month=YYYY-MM&currency=XXX&period=…`
 
-**Tip:** Run `cd backend && npm run db:seed` for the demo user (deterministic ~24 months of ledger history). Open `/dashboard` (PLN in the top bar) for the executive overview, and `/statistics` for rolling averages, period KPIs, and breakdown charts across seeded months.
+**Tip:** Run `cd backend && npm run db:seed` for the demo user (deterministic ~24 months of ledger history). Open `/dashboard` (PLN in the top bar) for the executive overview, and `/cashflow` for rolling averages, period KPIs, and breakdown charts across seeded months.

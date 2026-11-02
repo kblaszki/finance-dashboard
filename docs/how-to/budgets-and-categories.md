@@ -37,6 +37,6 @@ This page covers the shipped category tree and optional cash tagging. Monthly bu
 
 Categories remain a single optional spend-type label. Tags are a separate flat list for multiple **cross-cutting** labels on `INCOME`/`EXPENSE` only (not transfer legs) — e.g. one trip or project tag across Food, Transport, and Housing.
 
-1. Manage tags on `/tags` (create, rename, delete). Deleting a tag removes join rows; transactions stay.
+1. Manage tags on **Organize → Tags** (`/organize/tags`; `/tags` redirects). Create, rename, delete. Deleting a tag removes join rows; transactions stay.
 2. On the account ledger, use the **Tags** multi-select on create or double-click the Tags cell to edit (`tagIds`).
 3. API: `GET|POST /api/tags`, `PATCH|DELETE /api/tags/:id`; cash create/PATCH accept optional `tagIds: number[]`. Ledger/transfers CSV and statistics do not include tags yet.

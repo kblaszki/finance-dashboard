@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { fetchCategories } from "../api/categoriesApi";
 import {
   fetchCashflowHistory,
@@ -222,6 +223,11 @@ export function StatisticsPage() {
         onMonthChange={setMonth}
         onHistoryMonthsChange={setHistoryMonths}
       />
+      <p className="muted stats-cashflow-actions">
+        <Link to="/transfers">Record a transfer</Link>
+        {" · "}
+        <Link to="/accounts">Open an account ledger</Link>
+      </p>
 
       <StatusBlock
         loading={summaryLoading && !summary}

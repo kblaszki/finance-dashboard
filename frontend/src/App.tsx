@@ -2,6 +2,8 @@ import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AppShell } from "./components/AppShell";
 import { AuthSwapShell } from "./components/AuthSwapShell";
+import { OrganizeLayout } from "./components/OrganizeLayout";
+import { WealthLayout } from "./components/WealthLayout";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { LandingPage } from "./pages/LandingPage";
@@ -31,16 +33,40 @@ function App() {
         <Route element={<AppShell />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/home" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/accounts" element={<AccountsPage />} />
-          <Route path="/accounts/:id" element={<AccountDetailPage />} />
-          <Route path="/categories" element={<CategoriesPage />} />
-          <Route path="/tags" element={<TagsPage />} />
-          <Route path="/transfers" element={<TransfersPage />} />
-          <Route path="/statistics" element={<StatisticsPage />} />
-          <Route path="/markets" element={<MarketsPage />} />
+          <Route path="/cashflow" element={<StatisticsPage />} />
           <Route
-            path="/markets/:instrumentId"
-            element={<InstrumentDetailPage />}
+            path="/statistics"
+            element={<Navigate to="/cashflow" replace />}
+          />
+          <Route path="/transfers" element={<TransfersPage />} />
+          <Route path="/wealth" element={<Navigate to="/accounts" replace />} />
+          <Route element={<WealthLayout />}>
+            <Route path="/accounts" element={<AccountsPage />} />
+            <Route path="/accounts/:id" element={<AccountDetailPage />} />
+            <Route path="/markets" element={<MarketsPage />} />
+            <Route
+              path="/markets/:instrumentId"
+              element={<InstrumentDetailPage />}
+            />
+          </Route>
+          <Route
+            path="/organize"
+            element={<Navigate to="/organize/categories" replace />}
+          />
+          <Route element={<OrganizeLayout />}>
+            <Route
+              path="/organize/categories"
+              element={<CategoriesPage />}
+            />
+            <Route path="/organize/tags" element={<TagsPage />} />
+          </Route>
+          <Route
+            path="/categories"
+            element={<Navigate to="/organize/categories" replace />}
+          />
+          <Route
+            path="/tags"
+            element={<Navigate to="/organize/tags" replace />}
           />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>

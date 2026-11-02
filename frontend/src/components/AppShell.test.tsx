@@ -31,6 +31,8 @@ function renderShell(path = "/dashboard") {
           <Route element={<AppShell />}>
             <Route path="/dashboard" element={<p>Dashboard body</p>} />
             <Route path="/accounts" element={<p>Accounts body</p>} />
+            <Route path="/cashflow" element={<p>Cashflow body</p>} />
+            <Route path="/organize" element={<p>Organize body</p>} />
           </Route>
         </Routes>
       </MemoryRouter>
@@ -84,11 +86,22 @@ describe("AppShell drawer", () => {
     ).toBe(false);
 
     fireEvent.click(screen.getByRole("button", { name: "Open menu" }));
-    fireEvent.click(screen.getByRole("link", { name: "Accounts" }));
+    fireEvent.click(screen.getByRole("link", { name: "Wealth" }));
     expect(
       document.getElementById("shell-sidebar")?.classList.contains("shell-sidebar--open"),
     ).toBe(false);
     expect(screen.getByText("Accounts body")).toBeTruthy();
+  });
+
+  it("exposes the five-item IA nav", () => {
+    renderShell();
+    expect(screen.getByRole("link", { name: "Dashboard" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Cashflow" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Wealth" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Organize" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Settings" })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: "Transfers" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Statistics" })).toBeNull();
   });
 
   it("closes when the backdrop is clicked", () => {

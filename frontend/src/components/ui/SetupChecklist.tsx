@@ -47,7 +47,7 @@ function buildSteps(props: SetupChecklistProps): Step[] {
       id: "categories",
       label: "Add income or expense categories",
       done: props.hasCategories,
-      to: "/categories",
+      to: "/organize/categories",
     },
     {
       id: "transaction",

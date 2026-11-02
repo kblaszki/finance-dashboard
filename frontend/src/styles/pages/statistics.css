@@ -34,6 +34,10 @@
   font-size: var(--text-sm);
 }
 
+.stats-cashflow-actions {
+  margin: calc(-1 * var(--space-sm)) 0 var(--space-md);
+}
+
 .stats-facet-tabs {
   display: flex;
   flex-wrap: wrap;
