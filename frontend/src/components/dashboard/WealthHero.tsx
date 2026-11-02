@@ -60,6 +60,15 @@ export function WealthHero(props: {
     .map((r) => `${r.currency} ${r.rateDate}`)
     .join(", ");
 
+  const rangeChange = useMemo(() => {
+    if (series.length < 2) return null;
+    const first = series[0]!.netWorth;
+    const last = series[series.length - 1]!.netWorth;
+    const abs = last - first;
+    const pct = first !== 0 ? (abs / Math.abs(first)) * 100 : null;
+    return { abs, pct };
+  }, [series]);
+
   return (
     <section className="wealth-hero card">
       <div className="wealth-hero-copy">
@@ -67,6 +76,21 @@ export function WealthHero(props: {
         <h2 className="wealth-hero-value">
           {formatMoney(netWorth.netWorth, currency)}
         </h2>
+        {rangeChange ? (
+          <p
+            className={
+              rangeChange.abs >= 0
+                ? "wealth-hero-delta positive"
+                : "wealth-hero-delta negative"
+            }
+          >
+            {formatMoney(rangeChange.abs, currency)}
+            {rangeChange.pct != null
+              ? ` (${rangeChange.pct >= 0 ? "+" : ""}${rangeChange.pct.toFixed(1)}%)`
+              : ""}{" "}
+            over last {range}m
+          </p>
+        ) : null}
         <p className="muted wealth-hero-note">
           {netWorth.asOf
             ? `Cash + holdings MTM converted to ${currency} via NBP mid rates · as of ${netWorth.asOf}.`

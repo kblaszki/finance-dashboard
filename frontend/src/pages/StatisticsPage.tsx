@@ -237,28 +237,12 @@ export function StatisticsPage() {
         />
       ) : null}
 
-      <StatusBlock
-        loading={rollingLoading && !rolling}
-        error={rollingError}
-        loadingMessage="Loading rolling averages…"
-      />
-      {rolling ? (
-        <RollingCashflowStrip rolling={rolling} currency={currency} />
-      ) : null}
-
-      <StatusBlock
-        loading={historyLoading && !history}
-        error={historyError}
-        loadingMessage="Loading cashflow chart…"
-      />
-      {history ? (
-        <CashflowHistoryChart
-          series={chartSeries}
-          currency={currency}
-          historyMonths={historyMonths}
-          periodLabel={periodLabel}
-        />
-      ) : null}
+      <p className="stats-fx-mismatch-banner" role="note">
+        Category and tag breakdowns below list native-currency rows and keep
+        only the selected reporting currency ({currency}). Other currencies are
+        omitted — not FX-converted. Period KPIs and the cashflow chart convert
+        all accounts via NBP mids.
+      </p>
 
       <StatusBlock
         loading={analysisLoading}
@@ -281,6 +265,29 @@ export function StatisticsPage() {
           onCategoryFacetChange={setCategoryFacet}
           onTagFacetChange={setTagFacet}
         />
+      ) : null}
+
+      <StatusBlock
+        loading={historyLoading && !history}
+        error={historyError}
+        loadingMessage="Loading cashflow chart…"
+      />
+      {history ? (
+        <CashflowHistoryChart
+          series={chartSeries}
+          currency={currency}
+          historyMonths={historyMonths}
+          periodLabel={periodLabel}
+        />
+      ) : null}
+
+      <StatusBlock
+        loading={rollingLoading && !rolling}
+        error={rollingError}
+        loadingMessage="Loading rolling averages…"
+      />
+      {rolling ? (
+        <RollingCashflowStrip rolling={rolling} currency={currency} />
       ) : null}
     </>
   );

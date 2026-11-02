@@ -3,6 +3,45 @@
   gap: var(--space-lg);
 }
 
+.dash-top-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.dash-period-kpis-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-sm);
+}
+
+.dash-period-kpis-head .section-title {
+  margin: 0;
+}
+
+.dash-period-kpis-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.wealth-hero-delta {
+  margin: 0 0 var(--space-sm);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.wealth-hero-delta.positive {
+  color: var(--color-positive);
+}
+
+.wealth-hero-delta.negative {
+  color: var(--color-negative);
+}
+
 .wealth-hero {
   display: grid;
   grid-template-columns: minmax(14rem, 0.9fr) minmax(0, 1.4fr);

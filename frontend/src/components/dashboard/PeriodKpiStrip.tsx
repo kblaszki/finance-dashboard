@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import type { PeriodSummary } from "../../api/statisticsApi";
 import { formatMoney, formatPercent } from "../../utils/format";
 import { formatPeriodDelta } from "../../utils/periodCompare";
@@ -6,8 +7,10 @@ export function PeriodKpiStrip(props: {
   summary: PeriodSummary;
   prevSummary: PeriodSummary | null;
   currency: string;
+  /** Primary account for “record expense” deep link when known. */
+  firstAccountId?: number | null;
 }) {
-  const { summary, prevSummary, currency } = props;
+  const { summary, prevSummary, currency, firstAccountId } = props;
   const savingsRate =
     summary.income > 0 ? (summary.net / summary.income) * 100 : null;
   const prevRate =
@@ -19,11 +22,28 @@ export function PeriodKpiStrip(props: {
 
   return (
     <div className="dash-period-kpis">
+      <div className="dash-period-kpis-head">
+        <h2 className="section-title">This month · {label}</h2>
+        <div className="dash-period-kpis-actions">
+          <Link to="/statistics" className="btn-primary">
+            Open cashflow
+          </Link>
+          {firstAccountId != null ? (
+            <Link to={`/accounts/${firstAccountId}`} className="btn-secondary">
+              Record expense
+            </Link>
+          ) : (
+            <Link to="/accounts" className="btn-secondary">
+              Open accounts
+            </Link>
+          )}
+        </div>
+      </div>
       <div className="dash-stat-strip">
         <article className="dash-stat card">
           <div className="dash-stat-head">
             <span>
-              Income · {label} · {currency}
+              Income · {currency}
             </span>
           </div>
           <strong className="dash-stat-value positive">
@@ -31,14 +51,14 @@ export function PeriodKpiStrip(props: {
           </strong>
           <small className="dash-stat-sub">
             {prevSummary
-              ? formatPeriodDelta(summary.income, prevSummary.income)
+              ? formatPeriodDelta(summary.income, prevSummary.income, currency)
               : "—"}
           </small>
         </article>
         <article className="dash-stat card">
           <div className="dash-stat-head">
             <span>
-              Expense · {label} · {currency}
+              Expense · {currency}
             </span>
           </div>
           <strong className="dash-stat-value negative">
@@ -46,7 +66,11 @@ export function PeriodKpiStrip(props: {
           </strong>
           <small className="dash-stat-sub">
             {prevSummary
-              ? formatPeriodDelta(summary.expense, prevSummary.expense)
+              ? formatPeriodDelta(
+                  summary.expense,
+                  prevSummary.expense,
+                  currency,
+                )
               : "—"}
           </small>
         </article>
@@ -87,7 +111,7 @@ export function PeriodKpiStrip(props: {
           </strong>
           <small className="dash-stat-sub">
             {prevSummary
-              ? formatPeriodDelta(summary.net, prevSummary.net)
+              ? formatPeriodDelta(summary.net, prevSummary.net, currency)
               : "—"}
           </small>
         </article>

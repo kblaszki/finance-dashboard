@@ -146,13 +146,14 @@ describe("StatisticsPage period and analysis views", () => {
     });
   });
 
-  it("shows KPIs including transfers and switches period to quarter", async () => {
+  it("shows KPIs including savings ratio and switches period to quarter", async () => {
     renderStats();
-    expect(await screen.findByText(/Transfers ·/)).toBeTruthy();
+    expect(await screen.findByText("Savings ratio")).toBeTruthy();
+    expect(screen.getByText(/Transfers this period/)).toBeTruthy();
     expect(screen.getAllByText(/PLN\s*150\.00/).length).toBeGreaterThan(0);
     expect(screen.getByText("Rolling 12-month averages")).toBeTruthy();
     expect(
-      screen.getByText(/All accounts converted to PLN via NBP mid rates/),
+      screen.getByText(/Category and tag breakdowns below/),
     ).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Quarter" }));
@@ -167,7 +168,7 @@ describe("StatisticsPage period and analysis views", () => {
 
   it("switches to Tags view and shows tag totals", async () => {
     renderStats();
-    await screen.findByText(/Transfers ·/);
+    await screen.findByText("Savings ratio");
     fireEvent.click(screen.getByRole("tab", { name: "Tags" }));
     await waitFor(() => {
       expect(screen.getAllByText("Lidl").length).toBeGreaterThan(0);
@@ -185,7 +186,7 @@ describe("StatisticsPage period and analysis views", () => {
     );
 
     renderStats();
-    expect(await screen.findByText(/Transfers ·/)).toBeTruthy();
+    expect(await screen.findByText("Savings ratio")).toBeTruthy();
     expect(screen.getByText("Loading cashflow chart…")).toBeTruthy();
 
     resolveHistory({

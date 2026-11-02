@@ -13,7 +13,6 @@ import {
   type TransferListPage,
 } from "../api/transfersApi";
 import { AllocationCard } from "../components/dashboard/AllocationCard";
-import { GoalsEmptyCard } from "../components/dashboard/GoalsEmptyCard";
 import { IdeasPanel } from "../components/dashboard/IdeasPanel";
 import { PeriodKpiStrip } from "../components/dashboard/PeriodKpiStrip";
 import { RecentActivityCard } from "../components/dashboard/RecentActivityCard";
@@ -149,38 +148,39 @@ export function DashboardPage() {
 
   return (
     <div className="dashboard-page page-stack">
-      <StatusBlock
-        loading={netWorthLoading && !netWorth}
-        error={netWorthError || historyError}
-        loadingMessage="Loading net worth…"
-      />
-      {netWorth ? (
-        <WealthHero
-          netWorth={netWorth}
-          history={history}
-          currency={currency}
+      <div className="dash-top-row">
+        <StatusBlock
+          loading={netWorthLoading && !netWorth}
+          error={netWorthError || historyError}
+          loadingMessage="Loading net worth…"
         />
-      ) : null}
-      <StatusBlock
-        loading={summaryLoading && !summary}
-        error={summaryError || prevSummaryError}
-        loadingMessage="Loading period KPIs…"
-      />
-      {summary ? (
-        <PeriodKpiStrip
-          summary={summary}
-          prevSummary={prevSummary ?? null}
-          currency={currency}
+        {netWorth ? (
+          <WealthHero
+            netWorth={netWorth}
+            history={history}
+            currency={currency}
+          />
+        ) : null}
+        <StatusBlock
+          loading={summaryLoading && !summary}
+          error={summaryError || prevSummaryError}
+          loadingMessage="Loading period KPIs…"
         />
-      ) : null}
+        {summary ? (
+          <PeriodKpiStrip
+            summary={summary}
+            prevSummary={prevSummary ?? null}
+            currency={currency}
+            firstAccountId={firstAccountId}
+          />
+        ) : null}
+      </div>
       <div className="dash-exec-grid">
         {netWorth ? <AllocationCard netWorth={netWorth} /> : null}
-        <GoalsEmptyCard />
-        <IdeasPanel ideas={ideas} />
         <StatusBlock
           loading={transfersLoading && !transfersPage}
           error={transfersError}
-          loadingMessage="Loading recent activity…"
+          loadingMessage="Loading recent transfers…"
         />
         {transfersPage ? (
           <RecentActivityCard
@@ -189,6 +189,7 @@ export function DashboardPage() {
           />
         ) : null}
       </div>
+      <IdeasPanel ideas={ideas} />
     </div>
   );
 }

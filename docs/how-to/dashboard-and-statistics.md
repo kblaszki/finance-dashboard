@@ -23,20 +23,19 @@ related_code:
 
 Hub: [docs/README.md](../README.md).
 
-This page covers shipped dashboard KPIs (`/dashboard`) and statistics (`/statistics`). Currency is chosen once in the shell topbar (persisted in `localStorage`).
+This page covers shipped dashboard KPIs (`/dashboard`) and cashflow analysis (`/statistics`, nav label may say Cashflow after IA updates). Currency is chosen once in the shell topbar (persisted in `localStorage`).
 
-## Dashboard: executive overview (FR-002 / FR-005 / FR-038)
+## Dashboard: balanced overview (FR-002 / FR-005 / FR-038)
 
 1. Open **Dashboard** (or go to `/dashboard`). `/home` redirects here.
 2. Confirm the **reporting currency** in the top bar (`PLN` / `EUR` / `USD` — available once you have any account, even if you only hold one of them). Incomplete workspaces still show the **Setup checklist** first.
-3. Review **Wealth hero**: total net worth for **all** owned accounts (cash + holdings mark-to-market) converted into the topbar currency via stored NBP mids (valuation / rate dates shown), cash / invested / debt chips, and a **net-worth history** area chart. Range chips `6M` / `1Y` / `2Y` slice the fetched 24-month series client-side.
-4. Review **period KPI strip** for the current UTC month (labeled with the topbar **reporting** currency): income, expense, savings ratio (`net / income`), and monthly net from **all** owned accounts, converted via NBP mids on each transaction date, each with % vs the previous month when available.
-5. Review the **executive grid**:
+3. Review **Wealth hero**: total net worth for **all** owned accounts (cash + holdings mark-to-market) converted into the topbar currency via stored NBP mids (valuation / rate dates shown), cash / invested / debt chips, change over the selected chart range, and a **net-worth history** area chart. Range chips `6M` / `1Y` / `2Y` slice the fetched 24-month series client-side.
+4. Review **This month** KPIs (reporting currency): income, expense, savings ratio (`net / income`), and monthly net from **all** owned accounts, each with **absolute + %** vs the previous month when available. Use **Open cashflow** / **Record expense** for the next step.
+5. Review the **grid**:
    - **Portfolio allocation** — donut + legend by account-type bucket (after FX); link to Accounts.
-   - **Goals in motion** — empty placeholder until a goals feature exists.
-   - **Ideas** — heuristic educational tips from live surplus / savings ratio / liabilities (not advice).
-   - **Recent activity** — latest internal transfers (`GET /api/transfers?limit=8`).
-6. APIs:
+   - **Recent transfers** — latest internal transfers (`GET /api/transfers?limit=8`), including cross-currency amounts when present.
+6. **Ideas** (below the grid) — heuristic educational tips; goals are not available yet.
+7. APIs:
    - `GET /api/statistics/net-worth?currency=XXX`
    - `GET /api/statistics/net-worth-history?month=YYYY-MM&currency=XXX&months=24`
    - `GET /api/statistics/period-summary?month=YYYY-MM&currency=XXX` (current + previous month)
@@ -48,12 +47,13 @@ Net worth uses persisted NBP rates only (no live NBP during the request). Mappin
 
 ## Period KPIs and cashflow chart (FR-003 / FR-004)
 
-1. Open **Statistics** in the AppShell (or go to `/statistics`).
+1. Open **Statistics** / Cashflow in the AppShell (or go to `/statistics`).
 2. Choose **Month**, **Quarter**, or **Year**, then pick the anchor (month input, quarter + year, or year). Currency comes from the top bar. Optionally set history range (6 / 12 / 24 months).
-3. Review **Period summary**: income, expense, net, and **transfers** — all owned `PLN`/`EUR`/`USD` accounts converted into the topbar reporting currency (NBP mid on each row’s date). Transfers are the converted sum of outgoing `amountFrom` and do **not** change income/expense/net. Each KPI shows **% vs previous** period (prior month / quarter / year); when the previous total is zero the subtitle is `— vs prev`.
-4. Review **Rolling 12-month averages** (avg income/expense/net over the last 12 complete UTC months, excluding the current month) — same reporting-currency FX model.
-5. Review **Cashflow history**: monthly income/expense bars, net line, and savings-rate line (`net / income` per month) on a second axis (same all-account FX model). The series ends at the last month of the selected period.
-6. APIs:
+3. Review **Period summary**: income, expense, net, and **savings ratio** — all owned `PLN`/`EUR`/`USD` accounts converted into the topbar reporting currency (NBP mid on each row’s date). Transfer volume is noted under the KPIs and does **not** change income/expense/net. Each money KPI shows **absolute + % vs previous** period when available.
+4. Review **category/tag breakdown** next (native-currency filter — see the warning banner). Totals for other currencies are omitted until FX-converted breakdown ships.
+5. Review **Cashflow history**: monthly income/expense bars, net line, and savings-rate line (`net / income` per month) on a second axis (same all-account FX model).
+6. Review **Rolling 12-month averages** (avg income/expense/net over the last 12 complete UTC months, excluding the current month).
+7. APIs:
    - `GET /api/statistics/period-summary?month=YYYY-MM&currency=XXX&period=month|quarter|year`
    - `GET /api/statistics/cashflow-rolling-12m?currency=XXX`
    - `GET /api/statistics/cashflow-history?month=YYYY-MM&currency=XXX&months=12&period=…`
@@ -62,7 +62,7 @@ Bounds are UTC. `period` defaults to `month`. Quarter/year are calendar bounds c
 
 ## Category and tag breakdown (FR-016+)
 
-1. On `/statistics`, open the **Categories** or **Tags** tab under the charts.
+1. On `/statistics`, open the **Categories** or **Tags** tab (shown above the history chart).
 2. **Categories:** switch Income / Expense / Transfers. Donuts roll up to each **category tree root**; the detail table starts at **roots** (rolled-up totals) and expands with ▸ to show nested children (Food ≥ Groceries ≥ Supermarket). Transfer rows come from `CashTransfer` categories (not ledger `TRANSFER_*` legs).
 3. **Tags:** switch Income / Expense. Full amount is counted under each attached tag (a multi-tag transaction appears in each tag). **Untagged** is listed separately. Tags apply only to cash income/expense.
 4. Totals use the category/tag name currently stored (renames affect past periods).

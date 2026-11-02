@@ -1,6 +1,6 @@
 import type { PeriodSummary } from "../../api/statisticsApi";
 import { KpiCard } from "../ui/KpiCard";
-import { formatMoney } from "../../utils/format";
+import { formatMoney, formatPercent } from "../../utils/format";
 import { formatPeriodDelta } from "../../utils/periodCompare";
 
 export function StatisticsKpiGrid(props: {
@@ -10,6 +10,12 @@ export function StatisticsKpiGrid(props: {
   currency: string;
 }) {
   const { summary, prevSummary, periodLabel, currency } = props;
+  const savingsRate =
+    summary.income > 0 ? (summary.net / summary.income) * 100 : null;
+  const prevRate =
+    prevSummary && prevSummary.income > 0
+      ? (prevSummary.net / prevSummary.income) * 100
+      : null;
 
   return (
     <div className="stats-kpi-block">
@@ -20,7 +26,11 @@ export function StatisticsKpiGrid(props: {
           tone="positive"
           sub={
             prevSummary
-              ? formatPeriodDelta(summary.income, prevSummary.income)
+              ? formatPeriodDelta(
+                  summary.income,
+                  prevSummary.income,
+                  currency,
+                )
               : undefined
           }
         />
@@ -30,7 +40,11 @@ export function StatisticsKpiGrid(props: {
           tone="negative"
           sub={
             prevSummary
-              ? formatPeriodDelta(summary.expense, prevSummary.expense)
+              ? formatPeriodDelta(
+                  summary.expense,
+                  prevSummary.expense,
+                  currency,
+                )
               : undefined
           }
         />
@@ -40,23 +54,42 @@ export function StatisticsKpiGrid(props: {
           tone={summary.net >= 0 ? "positive" : "negative"}
           sub={
             prevSummary
-              ? formatPeriodDelta(summary.net, prevSummary.net)
+              ? formatPeriodDelta(summary.net, prevSummary.net, currency)
               : undefined
           }
         />
         <KpiCard
-          label={`Transfers · ${periodLabel}`}
-          value={formatMoney(summary.transfers, currency)}
+          label="Savings ratio"
+          value={formatPercent(savingsRate, { decimals: 1 })}
+          tone={
+            savingsRate == null
+              ? undefined
+              : savingsRate >= 0
+                ? "positive"
+                : "negative"
+          }
           sub={
-            prevSummary
-              ? formatPeriodDelta(summary.transfers, prevSummary.transfers)
+            savingsRate != null && prevRate != null
+              ? `${formatPercent(savingsRate - prevRate, {
+                  decimals: 1,
+                  signed: true,
+                })} pp vs prev`
               : undefined
           }
         />
       </div>
       <p className="muted stats-fx-note">
         All accounts converted to {currency} via NBP mid rates on each
-        transaction date.
+        transaction date. Transfers this period:{" "}
+        <strong>{formatMoney(summary.transfers, currency)}</strong>
+        {prevSummary
+          ? ` (${formatPeriodDelta(
+              summary.transfers,
+              prevSummary.transfers,
+              currency,
+            )})`
+          : ""}
+        ; transfers do not change income, expense, or net.
       </p>
     </div>
   );

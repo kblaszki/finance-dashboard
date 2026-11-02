@@ -40,4 +40,12 @@ describe("percentDelta / formatPeriodDelta", () => {
   it("formats with sign", () => {
     expect(formatPeriodDelta(120, 100)).toBe("+20% vs prev");
   });
+
+  it("formats absolute money and percent when currency is set", () => {
+    expect(formatPeriodDelta(120, 100, "PLN")).toMatch(
+      /PLN|zł|\+20%/,
+    );
+    expect(formatPeriodDelta(120, 100, "PLN")).toContain("+20%");
+    expect(formatPeriodDelta(120, 100, "PLN")).toContain("vs prev");
+  });
 });

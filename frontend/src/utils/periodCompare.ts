@@ -1,5 +1,5 @@
 import type { StatsPeriod } from "../api/statisticsApi";
-import { formatPercent } from "./format";
+import { formatMoney, formatPercent } from "./format";
 
 /** Previous calendar month as YYYY-MM. */
 export function shiftUtcMonth(month: string, deltaMonths: number): string {
@@ -39,8 +39,18 @@ export function percentDelta(
 export function formatPeriodDelta(
   current: number,
   previous: number,
+  currency?: string,
 ): string {
-  const delta = percentDelta(current, previous);
-  if (delta == null) return "— vs prev";
-  return `${formatPercent(delta, { decimals: 0, signed: true })} vs prev`;
+  if (!Number.isFinite(current) || !Number.isFinite(previous)) {
+    return "— vs prev";
+  }
+  const abs = current - previous;
+  const pct = percentDelta(current, previous);
+  if (currency) {
+    const money = formatMoney(abs, currency);
+    if (pct == null) return `${money} vs prev`;
+    return `${money} (${formatPercent(pct, { decimals: 0, signed: true })}) vs prev`;
+  }
+  if (pct == null) return "— vs prev";
+  return `${formatPercent(pct, { decimals: 0, signed: true })} vs prev`;
 }

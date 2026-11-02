@@ -14,8 +14,10 @@ export function RecentActivityCard(props: {
     <article className="card dash-panel dash-activity">
       <div className="chart-card-head">
         <div>
-          <h2 className="section-title">Recent activity</h2>
-          <p className="muted chart-card-subtitle">Latest internal transfers</p>
+          <h2 className="section-title">Recent transfers</h2>
+          <p className="muted chart-card-subtitle">
+            Latest internal moves between your accounts
+          </p>
         </div>
         <Link to="/transfers" className="btn-secondary">
           See all
@@ -25,7 +27,8 @@ export function RecentActivityCard(props: {
         <p className="empty-state" role="status">
           No transfers yet.{" "}
           <Link to="/transfers">Record a transfer</Link> or{" "}
-          <Link to="/accounts">open an account ledger</Link>.
+          <Link to="/accounts">open an account ledger</Link> to record
+          spending.
         </p>
       ) : (
         <ul className="dash-activity-list">
@@ -47,7 +50,12 @@ export function RecentActivityCard(props: {
                   </small>
                 </span>
                 <b className="dash-activity-amount">
-                  −{formatMoney(t.amountFrom, t.fromCurrency)}
+                  {t.fromCurrency !== t.toCurrency
+                    ? `${formatMoney(t.amountFrom, t.fromCurrency)} → ${formatMoney(t.amountTo, t.toCurrency)}`
+                    : `−${formatMoney(t.amountFrom, t.fromCurrency)}`}
+                  {t.fromCurrency !== t.toCurrency && t.fxRate != null
+                    ? ` · fx ${t.fxRate}`
+                    : ""}
                 </b>
               </li>
             );

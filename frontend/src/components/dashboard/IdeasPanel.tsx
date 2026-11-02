@@ -23,7 +23,7 @@ export function IdeasPanel(props: { ideas: DashboardIdea[] }) {
       </div>
       <small className="dash-idea-disclaimer muted">
         Illustrative education only — not individualized investment advice or a
-        product recommendation.
+        product recommendation. Savings goals are not available yet.
       </small>
     </article>
   );
