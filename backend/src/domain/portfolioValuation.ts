@@ -105,8 +105,33 @@ export type HoldingMtm = {
   lastClose: number | null;
   lastCloseAsOf: string | null;
   marketValue: number | null;
+  /** Open-lot cost: Σ qtyOpen×unitCost + remaining commissionOpen. */
+  costBasis: number;
+  /** costBasis / quantity when quantity > 0. */
+  averageCost: number | null;
+  /** marketValue − costBasis when a quote exists; else null. */
+  unrealizedPnl: number | null;
   currency: string;
 };
+
+export type OpenLotCostRow = {
+  quantityOpen: Prisma.Decimal | number | string;
+  unitCost: Prisma.Decimal | number | string;
+  commissionOpen: Prisma.Decimal | number | string;
+};
+
+/** FIFO open-lot cost basis including remaining open commission. */
+export function costBasisFromOpenLots(lots: OpenLotCostRow[]): Prisma.Decimal {
+  let total = new Prisma.Decimal(0);
+  for (const lot of lots) {
+    const qty = new Prisma.Decimal(lot.quantityOpen);
+    if (qty.lte(0)) continue;
+    total = total
+      .add(qty.mul(lot.unitCost))
+      .add(new Prisma.Decimal(lot.commissionOpen));
+  }
+  return total;
+}
 
 /**
  * Prefer the highest-priority source on the newest asOfDate among candidate rows.
@@ -164,6 +189,14 @@ export async function valueHoldingsForAccount(
       instrument: {
         select: { id: true, currency: true, symbol: true, name: true },
       },
+      lots: {
+        where: { quantityOpen: { gt: 0 } },
+        select: {
+          quantityOpen: true,
+          unitCost: true,
+          commissionOpen: true,
+        },
+      },
     },
   });
   const closeById = await latestCollapsedClosesByInstrumentIds(
@@ -185,6 +218,18 @@ export async function valueHoldingsForAccount(
         : null;
     if (marketValue) total = total.add(marketValue);
 
+    const costBasis = costBasisFromOpenLots(h.lots).toDecimalPlaces(
+      2,
+      Prisma.Decimal.ROUND_HALF_UP,
+    );
+    const averageCost = qty.gt(0)
+      ? costBasis.div(qty).toDecimalPlaces(6, Prisma.Decimal.ROUND_HALF_UP)
+      : null;
+    const unrealizedPnl =
+      marketValue != null
+        ? marketValue.sub(costBasis).toDecimalPlaces(2, Prisma.Decimal.ROUND_HALF_UP)
+        : null;
+
     result.push({
       holdingId: h.id,
       accountId: h.accountId,
@@ -195,6 +240,9 @@ export async function valueHoldingsForAccount(
       lastClose: picked?.close ?? null,
       lastCloseAsOf: picked?.asOf ?? null,
       marketValue: marketValue?.toNumber() ?? null,
+      costBasis: costBasis.toNumber(),
+      averageCost: averageCost?.toNumber() ?? null,
+      unrealizedPnl: unrealizedPnl?.toNumber() ?? null,
       currency,
     });
   }

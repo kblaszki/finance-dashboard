@@ -12,15 +12,12 @@ vi.mock("../api/categoriesApi", () => ({
   fetchCategories: vi.fn(),
 }));
 
-vi.mock("../api/transfersApi", () => ({
-  fetchTransfers: vi.fn(),
-}));
-
 vi.mock("../api/statisticsApi", () => ({
   fetchNetWorth: vi.fn(),
   fetchNetWorthHistory: vi.fn(),
   fetchPeriodSummary: vi.fn(),
   fetchCategoryBreakdown: vi.fn(),
+  fetchRecentActivity: vi.fn(),
 }));
 
 import { fetchAccounts } from "../api/accountsApi";
@@ -30,8 +27,8 @@ import {
   fetchNetWorth,
   fetchNetWorthHistory,
   fetchPeriodSummary,
+  fetchRecentActivity,
 } from "../api/statisticsApi";
-import { fetchTransfers } from "../api/transfersApi";
 
 const account = {
   id: 1,
@@ -76,7 +73,10 @@ describe("DashboardPage", () => {
         createdAt: "2026-01-01T00:00:00.000Z",
       },
     ]);
-    vi.mocked(fetchTransfers).mockResolvedValue({ items: [], nextCursor: null });
+    vi.mocked(fetchRecentActivity).mockResolvedValue({
+      items: [],
+      uncategorizedCount: 0,
+    });
     vi.mocked(fetchNetWorth).mockResolvedValue({
       currency: "PLN",
       asOf: "2026-10-30",

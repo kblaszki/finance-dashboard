@@ -3,11 +3,20 @@ import test from "node:test";
 import { Prisma } from "@prisma/client";
 import { utcDateFromYmd } from "./fx";
 import {
+  costBasisFromOpenLots,
   holdingsValuesAsOf,
   openQuantitiesAsOf,
   pickLatestCollapsedClose,
 } from "./portfolioValuation";
 import { VALUATION_SOURCE_TWELVE_DATA, VALUATION_SOURCE_YAHOO } from "./instrumentValuations";
+
+test("costBasisFromOpenLots includes remaining commission", () => {
+  const basis = costBasisFromOpenLots([
+    { quantityOpen: 6, unitCost: 100, commissionOpen: 3 },
+    { quantityOpen: 0, unitCost: 50, commissionOpen: 1 },
+  ]);
+  assert.equal(basis.toNumber(), 603);
+});
 
 test("pickLatestCollapsedClose prefers yahoo on same day", () => {
   const picked = pickLatestCollapsedClose([

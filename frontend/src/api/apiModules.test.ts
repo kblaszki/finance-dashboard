@@ -82,6 +82,7 @@ import {
   fetchNetWorth,
   fetchNetWorthHistory,
   fetchCashflowRolling12m,
+  fetchRecentActivity,
 } from './statisticsApi'
 import {
   fetchTransfers,
@@ -416,6 +417,11 @@ describe('API modules', () => {
     await fetchCashflowRolling12m('USD')
     expect(apiClient.get).toHaveBeenCalledWith(
       '/api/statistics/cashflow-rolling-12m?currency=USD',
+    )
+
+    await fetchRecentActivity(8)
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/statistics/recent-activity?limit=8',
     )
   })
 

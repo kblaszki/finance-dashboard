@@ -202,3 +202,30 @@ export async function fetchCashflowRolling12m(
     `/api/statistics/cashflow-rolling-12m?${params.toString()}`,
   );
 }
+
+export type RecentCashActivityItem = {
+  id: number;
+  accountId: number;
+  accountName: string;
+  type: "INCOME" | "EXPENSE";
+  amount: number;
+  currency: string;
+  occurredAt: string;
+  description: string | null;
+  categoryId: number | null;
+  categoryName: string | null;
+};
+
+export type RecentCashActivity = {
+  items: RecentCashActivityItem[];
+  uncategorizedCount: number;
+};
+
+export async function fetchRecentActivity(
+  limit = 8,
+): Promise<RecentCashActivity> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  return apiClient.get<RecentCashActivity>(
+    `/api/statistics/recent-activity?${params.toString()}`,
+  );
+}

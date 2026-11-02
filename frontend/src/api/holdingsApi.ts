@@ -10,6 +10,9 @@ export type AccountHolding = {
   lastClose: number | null;
   lastCloseAsOf: string | null;
   marketValue: number | null;
+  costBasis: number;
+  averageCost: number | null;
+  unrealizedPnl: number | null;
   currency: string;
 };
 

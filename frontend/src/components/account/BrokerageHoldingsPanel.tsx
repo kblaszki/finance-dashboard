@@ -194,34 +194,55 @@ export function BrokerageHoldingsPanel(props: Props) {
             <div className="table-wrap">
               <table className="data-table">
                 <thead>
-                  <tr>
-                    <th>Symbol</th>
-                    <th className="num">Qty</th>
-                    <th className="num">Last close</th>
-                    <th className="num">Value</th>
+                <tr>
+                  <th>Symbol</th>
+                  <th className="num">Qty</th>
+                  <th className="num">Last close</th>
+                  <th className="num">Cost</th>
+                  <th className="num">Value</th>
+                  <th className="num">Unrealized</th>
+                </tr>
+              </thead>
+              <tbody>
+                {holdings.map((h) => (
+                  <tr key={h.id}>
+                    <td className="col-text">
+                      {h.symbol ?? h.instrumentId}
+                      {h.name ? ` · ${h.name}` : ""}
+                    </td>
+                    <td className="num">{h.quantity}</td>
+                    <td className="num">
+                      {h.lastClose != null
+                        ? formatMoney(h.lastClose, h.currency)
+                        : "—"}
+                      {h.lastCloseAsOf ? ` (${h.lastCloseAsOf})` : ""}
+                    </td>
+                    <td className="num">
+                      {formatMoney(h.costBasis, h.currency)}
+                      {h.averageCost != null
+                        ? ` · avg ${formatMoney(h.averageCost, h.currency)}`
+                        : ""}
+                    </td>
+                    <td className="num">
+                      {h.marketValue != null
+                        ? formatMoney(h.marketValue, h.currency)
+                        : "—"}
+                    </td>
+                    <td
+                      className={
+                        h.unrealizedPnl == null
+                          ? "num"
+                          : h.unrealizedPnl >= 0
+                            ? "num positive"
+                            : "num negative"
+                      }
+                    >
+                      {h.unrealizedPnl != null
+                        ? formatMoney(h.unrealizedPnl, h.currency)
+                        : "—"}
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {holdings.map((h) => (
-                    <tr key={h.id}>
-                      <td className="col-text">
-                        {h.symbol ?? h.instrumentId}
-                        {h.name ? ` · ${h.name}` : ""}
-                      </td>
-                      <td className="num">{h.quantity}</td>
-                      <td className="num">
-                        {h.lastClose != null
-                          ? formatMoney(h.lastClose, h.currency)
-                          : "—"}
-                        {h.lastCloseAsOf ? ` (${h.lastCloseAsOf})` : ""}
-                      </td>
-                      <td className="num">
-                        {h.marketValue != null
-                          ? formatMoney(h.marketValue, h.currency)
-                          : "—"}
-                      </td>
-                    </tr>
-                  ))}
+                ))}
                 </tbody>
               </table>
             </div>

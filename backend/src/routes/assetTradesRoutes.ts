@@ -92,6 +92,9 @@ export function createAssetTradesRouter(deps: AssetTradesDeps): Router {
             lastClose: h.lastClose,
             lastCloseAsOf: h.lastCloseAsOf,
             marketValue: h.marketValue,
+            costBasis: h.costBasis,
+            averageCost: h.averageCost,
+            unrealizedPnl: h.unrealizedPnl,
             currency: h.currency,
           })),
         });

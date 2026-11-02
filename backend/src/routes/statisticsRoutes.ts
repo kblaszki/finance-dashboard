@@ -32,6 +32,10 @@ import {
 import { parseStatsPeriod } from "../domain/statsPeriod";
 import { aggregateTagBreakdown } from "../domain/tagBreakdown";
 import {
+  listRecentCashActivity,
+  parseRecentActivityLimit,
+} from "../domain/recentActivity";
+import {
   assertNetWorthHistoryTradeCap,
   assertNetWorthHistoryTxCap,
   assertStatsPeriodRowCap,
@@ -473,6 +477,20 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
         );
       } catch (e: unknown) {
         handleRouteError(res, e, "Failed to load rolling cashflow");
+      }
+    },
+  );
+
+  router.get(
+    "/api/statistics/recent-activity",
+    requireAuth,
+    async (req: AuthedRequest, res) => {
+      try {
+        const limit = parseRecentActivityLimit(req.query.limit);
+        const body = await listRecentCashActivity(prisma, uid(req), limit);
+        res.json(body);
+      } catch (e: unknown) {
+        handleRouteError(res, e, "Failed to load recent activity");
       }
     },
   );

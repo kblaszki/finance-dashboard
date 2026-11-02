@@ -346,6 +346,27 @@
   white-space: nowrap;
 }
 
+.dash-activity-amount.positive {
+  color: var(--color-positive);
+}
+
+.dash-activity-amount.negative {
+  color: var(--color-negative);
+}
+
+.dash-attention-note {
+  margin: 0 0 var(--space-sm);
+  font-size: var(--text-sm);
+}
+
+.num.positive {
+  color: var(--color-positive);
+}
+
+.num.negative {
+  color: var(--color-negative);
+}
+
 @media (max-width: 64rem) {
   .dash-stat-strip {
     grid-template-columns: repeat(2, minmax(0, 1fr));

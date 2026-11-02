@@ -119,6 +119,9 @@ test("POST BUY/SELL updates cash holdings equity; stats ignore ASSET_*", async (
   assert.equal(holdings.body.holdings.length, 1);
   assert.equal(holdings.body.holdings[0].quantity, 10);
   assert.equal(holdings.body.holdingsValue, 1100);
+  // 10×100 + commission 5
+  assert.equal(holdings.body.holdings[0].costBasis, 1005);
+  assert.equal(holdings.body.holdings[0].unrealizedPnl, 95);
 
   const detail = await request(app)
     .get(`/api/accounts/${accountId}`)
@@ -147,6 +150,9 @@ test("POST BUY/SELL updates cash holdings equity; stats ignore ASSET_*", async (
   assert.equal(afterSell.body.holdings[0].quantity, 6);
   // 6 * 110 = 660
   assert.equal(afterSell.body.holdingsValue, 660);
+  // remaining commission 5×6/10=3; cost 6×100+3=603; pnl 660-603=57
+  assert.equal(afterSell.body.holdings[0].costBasis, 603);
+  assert.equal(afterSell.body.holdings[0].unrealizedPnl, 57);
 
   await prisma.fxRateDaily.create({
     data: {

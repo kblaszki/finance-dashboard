@@ -1,61 +1,73 @@
 import { Link } from "react-router-dom";
-import type { Account } from "../../api/accountsApi";
-import type { CashTransfer } from "../../api/transfersApi";
+import type { RecentCashActivityItem } from "../../api/statisticsApi";
 import { formatOccurredAt } from "../account/occurredAt";
 import { formatMoney } from "../../utils/format";
 
 export function RecentActivityCard(props: {
-  transfers: CashTransfer[];
-  accounts: Account[];
+  items: RecentCashActivityItem[];
+  uncategorizedCount: number;
 }) {
-  const nameById = new Map(props.accounts.map((a) => [a.id, a.name]));
+  const { items, uncategorizedCount } = props;
 
   return (
     <article className="card dash-panel dash-activity">
       <div className="chart-card-head">
         <div>
-          <h2 className="section-title">Recent transfers</h2>
+          <h2 className="section-title">Recent cash activity</h2>
           <p className="muted chart-card-subtitle">
-            Latest internal moves between your accounts
+            Latest income and expense across accounts
+            {uncategorizedCount > 0
+              ? ` · ${uncategorizedCount} uncategorized`
+              : ""}
           </p>
         </div>
-        <Link to="/transfers" className="btn-secondary">
-          See all
+        <Link to="/cashflow" className="btn-secondary">
+          Open cashflow
         </Link>
       </div>
-      {props.transfers.length === 0 ? (
+      {uncategorizedCount > 0 ? (
+        <p className="muted dash-attention-note" role="status">
+          {uncategorizedCount} cash{" "}
+          {uncategorizedCount === 1 ? "transaction needs" : "transactions need"}{" "}
+          a category — open an account ledger to label them.
+        </p>
+      ) : null}
+      {items.length === 0 ? (
         <p className="empty-state" role="status">
-          No transfers yet.{" "}
-          <Link to="/transfers">Record a transfer</Link> or{" "}
-          <Link to="/accounts">open an account ledger</Link> to record
-          spending.
+          No cash activity yet.{" "}
+          <Link to="/accounts">Open an account ledger</Link> to record income
+          or spending.
         </p>
       ) : (
         <ul className="dash-activity-list">
-          {props.transfers.map((t) => {
-            const fromName = nameById.get(t.fromAccountId) ?? `Account ${t.fromAccountId}`;
-            const toName = nameById.get(t.toAccountId) ?? `Account ${t.toAccountId}`;
+          {items.map((row) => {
+            const signed =
+              row.type === "EXPENSE" ? -Math.abs(row.amount) : row.amount;
             return (
-              <li key={t.id} className="dash-activity-item">
+              <li key={row.id} className="dash-activity-item">
                 <span className="dash-activity-icon" aria-hidden>
-                  ↔
+                  {row.type === "INCOME" ? "+" : "−"}
                 </span>
                 <span className="dash-activity-copy">
                   <span className="dash-activity-title">
-                    {fromName} → {toName}
+                    {row.accountName}
+                    {row.categoryName
+                      ? ` · ${row.categoryName}`
+                      : " · Uncategorized"}
                   </span>
                   <small className="muted">
-                    {formatOccurredAt(t.occurredAt)}
-                    {t.description ? ` · ${t.description}` : " · Transfer"}
+                    {formatOccurredAt(row.occurredAt)}
+                    {row.description ? ` · ${row.description}` : ""}
                   </small>
                 </span>
-                <b className="dash-activity-amount">
-                  {t.fromCurrency !== t.toCurrency
-                    ? `${formatMoney(t.amountFrom, t.fromCurrency)} → ${formatMoney(t.amountTo, t.toCurrency)}`
-                    : `−${formatMoney(t.amountFrom, t.fromCurrency)}`}
-                  {t.fromCurrency !== t.toCurrency && t.fxRate != null
-                    ? ` · fx ${t.fxRate}`
-                    : ""}
+                <b
+                  className={
+                    row.type === "INCOME"
+                      ? "dash-activity-amount positive"
+                      : "dash-activity-amount negative"
+                  }
+                >
+                  {formatMoney(signed, row.currency)}
                 </b>
               </li>
             );

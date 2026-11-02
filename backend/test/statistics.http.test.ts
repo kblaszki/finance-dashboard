@@ -883,3 +883,54 @@ test("GET /api/statistics/cashflow-rolling-12m fails when required FX mid is mis
   assert.equal(res.status, 404);
   assert.match(res.body.error, /EUR|rate|mid/i);
 });
+
+test("GET /api/statistics/recent-activity lists cash txs and uncategorized count", async () => {
+  const noAuth = await request(app).get("/api/statistics/recent-activity");
+  assert.equal(noAuth.status, 401);
+
+  const { token, userId } = await createUserAndToken();
+  const account = await prisma.account.create({
+    data: {
+      userId,
+      accountType: "BANK",
+      name: "Activity checking",
+      currency: "PLN",
+      openingBalance: 0,
+    },
+  });
+  await prisma.cashTransaction.createMany({
+    data: [
+      {
+        accountId: account.id,
+        type: "EXPENSE",
+        amount: 2500,
+        occurredAt: new Date("2026-10-20T12:00:00.000Z"),
+        description: "Coffee",
+      },
+      {
+        accountId: account.id,
+        type: "INCOME",
+        amount: 10000,
+        occurredAt: new Date("2026-10-21T12:00:00.000Z"),
+        description: "Gift",
+      },
+    ],
+  });
+
+  const badLimit = await request(app)
+    .get("/api/statistics/recent-activity?limit=0")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(badLimit.status, 400);
+
+  const res = await request(app)
+    .get("/api/statistics/recent-activity?limit=8")
+    .set("Authorization", `Bearer ${token}`);
+  assert.equal(res.status, 200);
+  assert.equal(res.body.uncategorizedCount, 2);
+  assert.equal(res.body.items.length, 2);
+  assert.equal(res.body.items[0].type, "INCOME");
+  assert.equal(res.body.items[0].amount, 100);
+  assert.equal(res.body.items[0].accountName, "Activity checking");
+  assert.equal(res.body.items[1].type, "EXPENSE");
+  assert.equal(res.body.items[1].amount, 25);
+});

@@ -34,14 +34,14 @@ This page covers shipped dashboard KPIs (`/dashboard`) and cashflow analysis (`/
 5. Review the **grid**:
    - **Where money went** — top expense category horizontal bars for the current month (native-currency filter matching the topbar currency); link to Cashflow.
    - **What I own** — allocation donut + legend by account-type bucket (after FX); link to Accounts.
-6. **Recent transfers** — latest internal transfers (`GET /api/transfers?limit=8`), including cross-currency amounts when present.
+6. **Recent cash activity** — latest income/expense across accounts (`GET /api/statistics/recent-activity`), with an uncategorized attention note when needed.
 7. **Ideas** (below) — heuristic educational tips; goals are not available yet.
 8. APIs:
    - `GET /api/statistics/net-worth?currency=XXX`
    - `GET /api/statistics/net-worth-history?month=YYYY-MM&currency=XXX&months=24`
    - `GET /api/statistics/period-summary?month=YYYY-MM&currency=XXX` (current + previous month)
    - `GET /api/statistics/category-breakdown?month=YYYY-MM`
-   - `GET /api/transfers?limit=8`
+   - `GET /api/statistics/recent-activity?limit=8`
    - `GET /api/accounts` (shared via `CurrencyProvider`)
    - `GET /api/categories` (setup checklist + category rollup)
 

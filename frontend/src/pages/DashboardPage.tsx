@@ -5,15 +5,13 @@ import {
   fetchNetWorth,
   fetchNetWorthHistory,
   fetchPeriodSummary,
+  fetchRecentActivity,
   type CategoryBreakdown,
   type NetWorth,
   type NetWorthHistory,
   type PeriodSummary,
+  type RecentCashActivity,
 } from "../api/statisticsApi";
-import {
-  fetchTransfers,
-  type TransferListPage,
-} from "../api/transfersApi";
 import { AllocationCard } from "../components/dashboard/AllocationCard";
 import { IdeasPanel } from "../components/dashboard/IdeasPanel";
 import { PeriodKpiStrip } from "../components/dashboard/PeriodKpiStrip";
@@ -71,14 +69,14 @@ export function DashboardPage() {
   const { data: prevSummary, error: prevSummaryError } =
     useAsyncData(loadPrevSummary);
 
-  const loadTransfers = useCallback((): Promise<TransferListPage> => {
-    return fetchTransfers({ limit: 8 });
+  const loadRecent = useCallback((): Promise<RecentCashActivity> => {
+    return fetchRecentActivity(8);
   }, []);
   const {
-    data: transfersPage,
-    error: transfersError,
-    loading: transfersLoading,
-  } = useAsyncData(loadTransfers);
+    data: recentActivity,
+    error: recentError,
+    loading: recentLoading,
+  } = useAsyncData(loadRecent);
 
   const loadCategories = useCallback(() => fetchCategories(), []);
   const {
@@ -204,14 +202,14 @@ export function DashboardPage() {
         {netWorth ? <AllocationCard netWorth={netWorth} /> : null}
       </div>
       <StatusBlock
-        loading={transfersLoading && !transfersPage}
-        error={transfersError}
-        loadingMessage="Loading recent transfers…"
+        loading={recentLoading && !recentActivity}
+        error={recentError}
+        loadingMessage="Loading recent activity…"
       />
-      {transfersPage ? (
+      {recentActivity ? (
         <RecentActivityCard
-          transfers={transfersPage.items}
-          accounts={accounts ?? []}
+          items={recentActivity.items}
+          uncategorizedCount={recentActivity.uncategorizedCount}
         />
       ) : null}
       <IdeasPanel ideas={ideas} />
