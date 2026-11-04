@@ -26,6 +26,10 @@ import {
 import { aggregateNetWorthHistory } from "../domain/netWorthHistory";
 import { resolveOpeningEffectiveAt } from "../domain/accountBalanceHistory";
 import {
+  bondGrossByAccountIds,
+  mergeHoldingsWithBondGross,
+} from "../domain/bondPositions";
+import {
   holdingsValueByAccountIds,
   holdingsValuesAsOf,
 } from "../domain/portfolioValuation";
@@ -269,9 +273,10 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
             cashBalance: true,
           },
         });
-        const holdingsByAccount = await holdingsValueByAccountIds(
-          prisma,
-          accounts.map((a) => a.id),
+        const accountIds = accounts.map((a) => a.id);
+        const holdingsByAccount = mergeHoldingsWithBondGross(
+          await holdingsValueByAccountIds(prisma, accountIds),
+          await bondGrossByAccountIds(prisma, accountIds, asOfDay),
         );
         res.json(
           await aggregateNetWorth({
@@ -424,12 +429,15 @@ export function createStatisticsRouter(deps: StatisticsDeps): Router {
                 transactions,
               };
             }),
-            holdingsValueForExclusive: (exclusive) =>
-              holdingsValuesAsOf(
-                accountIds,
-                assetTrades,
-                valuations,
-                exclusive,
+            holdingsValueForExclusive: async (exclusive) =>
+              mergeHoldingsWithBondGross(
+                holdingsValuesAsOf(
+                  accountIds,
+                  assetTrades,
+                  valuations,
+                  exclusive,
+                ),
+                await bondGrossByAccountIds(prisma, accountIds, exclusive),
               ),
             getMidRow: async (code, asOfDate) => {
               const row = await getMidRowOnOrBefore(prisma, code, asOfDate);

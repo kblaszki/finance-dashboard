@@ -17,6 +17,10 @@ import {
 } from "../domain/accountBalanceHistory";
 import { loadValuationsForAsOfReplay } from "../domain/instrumentValuations";
 import {
+  bondGrossByAccountIds,
+  mergeHoldingsWithBondGross,
+} from "../domain/bondPositions";
+import {
   holdingsValueByAccountIds,
   holdingsValuesAsOf,
 } from "../domain/portfolioValuation";
@@ -108,9 +112,10 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
         where: { userId: uid(req) },
         orderBy: { createdAt: "desc" },
       });
-      const holdingsByAccount = await holdingsValueByAccountIds(
-        prisma,
-        accounts.map((a) => a.id),
+      const accountIds = accounts.map((a) => a.id);
+      const holdingsByAccount = mergeHoldingsWithBondGross(
+        await holdingsValueByAccountIds(prisma, accountIds),
+        await bondGrossByAccountIds(prisma, accountIds),
       );
       res.json(
         accounts.map((account) =>
@@ -165,7 +170,10 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
     try {
       const id = parseIdParam(req.params.id);
       const account = await findOwnedAccount(prisma, uid(req), id);
-      const holdingsByAccount = await holdingsValueByAccountIds(prisma, [id]);
+      const holdingsByAccount = mergeHoldingsWithBondGross(
+        await holdingsValueByAccountIds(prisma, [id]),
+        await bondGrossByAccountIds(prisma, [id]),
+      );
       res.json(
         accountPayload(account, {
           holdingsValue: holdingsByAccount.get(id) ?? 0,
@@ -230,11 +238,9 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
         const holdingsValueByMonth = new Map<string, number>();
         for (const monthKey of months) {
           const { end: exclusive } = parseMonthParam(monthKey);
-          const byAccount = holdingsValuesAsOf(
-            [id],
-            assetTrades,
-            valuations,
-            exclusive,
+          const byAccount = mergeHoldingsWithBondGross(
+            holdingsValuesAsOf([id], assetTrades, valuations, exclusive),
+            await bondGrossByAccountIds(prisma, [id], exclusive),
           );
           holdingsValueByMonth.set(monthKey, byAccount.get(id) ?? 0);
         }
@@ -299,7 +305,10 @@ export function createAccountsRouter(deps: AccountsDeps): Router {
           data,
         });
       });
-      const holdingsByAccount = await holdingsValueByAccountIds(prisma, [id]);
+      const holdingsByAccount = mergeHoldingsWithBondGross(
+        await holdingsValueByAccountIds(prisma, [id]),
+        await bondGrossByAccountIds(prisma, [id]),
+      );
       res.json(
         accountPayload(updated, {
           holdingsValue: holdingsByAccount.get(id) ?? 0,

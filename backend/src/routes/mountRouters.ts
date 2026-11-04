@@ -25,6 +25,7 @@ import { createCategoryDescriptionRulesRouter } from "./categoryDescriptionRules
 import { createMarketsRouter } from "./marketsRoutes";
 import { createAppConfigRouter } from "./appConfigRoutes";
 import { createAssetTradesRouter } from "./assetTradesRoutes";
+import { createBondPositionsRouter } from "./bondPositionsRoutes";
 
 export function mountApiRouters(app: Express, prisma: PrismaClient): void {
   const requireAuth = createRequireAuth(prisma);
@@ -120,6 +121,13 @@ export function mountApiRouters(app: Express, prisma: PrismaClient): void {
   );
   app.use(
     createAssetTradesRouter({
+      prisma,
+      requireAuth,
+      uid,
+    }),
+  );
+  app.use(
+    createBondPositionsRouter({
       prisma,
       requireAuth,
       uid,
