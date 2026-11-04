@@ -4,8 +4,10 @@ import {
   fetchAccount,
   fetchAccountBalanceHistory,
   supportsAssetTrades,
+  supportsTreasuryBonds,
 } from "../api/accountsApi";
 import { BrokerageHoldingsPanel } from "../components/account/BrokerageHoldingsPanel";
+import { TreasuryBondsPanel } from "../components/account/TreasuryBondsPanel";
 import { fetchCategories } from "../api/categoriesApi";
 import { fetchTags } from "../api/tagsApi";
 import {
@@ -298,6 +300,16 @@ export function AccountDetailPage() {
       {account && supportsAssetTrades(account.accountType) && (
         <div className="form-section-gap">
           <BrokerageHoldingsPanel
+            accountId={accountId}
+            currency={account.currency}
+            onChanged={() => void refresh()}
+          />
+        </div>
+      )}
+
+      {account && supportsTreasuryBonds(account.accountType) && (
+        <div className="form-section-gap">
+          <TreasuryBondsPanel
             accountId={accountId}
             currency={account.currency}
             onChanged={() => void refresh()}

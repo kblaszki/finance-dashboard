@@ -64,6 +64,10 @@ export function supportsAssetTrades(accountType: string): boolean {
   );
 }
 
+export function supportsTreasuryBonds(accountType: string): boolean {
+  return String(accountType).trim().toUpperCase() === "TREASURY_BONDS";
+}
+
 export type CreateAccountInput = {
   name: string;
   currency?: string;

@@ -29,6 +29,8 @@ import {
   fetchAccountBalanceHistory,
   updateAccount,
   deleteAccount,
+  supportsAssetTrades,
+  supportsTreasuryBonds,
 } from './accountsApi'
 import { fetchAccountHoldings } from './holdingsApi'
 import {
@@ -36,6 +38,12 @@ import {
   createAssetTrade,
   deleteAssetTrade,
 } from './assetTradesApi'
+import {
+  fetchBondPositions,
+  createBondPosition,
+  updateBondPosition,
+  deleteBondPosition,
+} from './bondPositionsApi'
 import {
   fetchTransactions,
   createTransaction,
@@ -557,6 +565,47 @@ describe('API modules', () => {
     await deleteAssetTrade(3, 9)
     expect(apiClient.delete).toHaveBeenCalledWith(
       '/api/accounts/3/asset-trades/9',
+    )
+  })
+
+  it('supportsAssetTrades and supportsTreasuryBonds gate account types', () => {
+    expect(supportsAssetTrades('BROKERAGE')).toBe(true)
+    expect(supportsAssetTrades('BANK')).toBe(false)
+    expect(supportsTreasuryBonds('TREASURY_BONDS')).toBe(true)
+    expect(supportsTreasuryBonds('BROKERAGE')).toBe(false)
+  })
+
+  it('bondPositionsApi calls correct endpoints', async () => {
+    await fetchBondPositions(4)
+    expect(apiClient.get).toHaveBeenCalledWith(
+      '/api/accounts/4/bond-positions',
+    )
+
+    await createBondPosition(4, {
+      seriesCode: 'COI0328',
+      quantity: 10,
+      unitPurchasePrice: 100,
+      purchasedAt: '2025-01-01T12:00:00.000Z',
+      rateKind: 'FIXED',
+      currentAnnualRatePct: 6.5,
+      couponFrequency: 'ANNUAL',
+      periodStart: '2025-01-01T12:00:00.000Z',
+      maturityDate: '2028-03-01T12:00:00.000Z',
+    })
+    expect(apiClient.post).toHaveBeenCalledWith(
+      '/api/accounts/4/bond-positions',
+      expect.objectContaining({ seriesCode: 'COI0328', quantity: 10 }),
+    )
+
+    await updateBondPosition(4, 2, { currentAnnualRatePct: 7 })
+    expect(apiClient.patch).toHaveBeenCalledWith(
+      '/api/accounts/4/bond-positions/2',
+      { currentAnnualRatePct: 7 },
+    )
+
+    await deleteBondPosition(4, 2)
+    expect(apiClient.delete).toHaveBeenCalledWith(
+      '/api/accounts/4/bond-positions/2',
     )
   })
 })
