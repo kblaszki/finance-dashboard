@@ -91,9 +91,41 @@ model Account {
   importBatches ImportBatch[]
   holdings        Holding[]
   assetTrades     AssetTrade[]
+  bondPositions   BondPosition[]
 
   @@unique([userId, name])
   @@index([userId, accountType])
+}
+
+/// Polish retail treasury bond lot on a TREASURY_BONDS account (not equity Holding).
+model BondPosition {
+  id                   Int      @id @default(autoincrement())
+  accountId            Int
+  /// Series code e.g. COI0328.
+  seriesCode           String
+  /// Default SKARB_PANSTWA for v1 retail SP.
+  issuer               String   @default("SKARB_PANSTWA")
+  quantity             Decimal
+  unitNominal          Decimal  @default(100)
+  unitPurchasePrice    Decimal
+  purchasedAt          DateTime
+  /// FIXED | FLOATING | INFLATION_LINKED
+  rateKind             String
+  /// Manual current-period annual rate percent (e.g. 6.5).
+  currentAnnualRatePct Decimal
+  /// ANNUAL | SEMI_ANNUAL | QUARTERLY | AT_MATURITY
+  couponFrequency      String
+  periodStart          DateTime
+  maturityDate         DateTime
+  /// Early redemption fee per unit (major units); default 1 PLN.
+  earlyExitFeePerUnit  Decimal  @default(1)
+  notes                String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  account              Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+  @@index([accountId, maturityDate])
 }
 
 /// Audit record for a cash ledger CSV import commit (deduped uploads).

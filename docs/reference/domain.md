@@ -72,7 +72,7 @@ User-scoped financial account. Create accepts allow-listed types; `accountType` 
 |-------|------|-------|
 | id | Int | PK, autoincrement |
 | userId | Int | FK → User |
-| accountType | String | `BANK`, `BROKERAGE`, `CRYPTO`, `PRECIOUS_METAL`, `REAL_ESTATE`, `CREDIT_CARD`, `IKE`, `IKZE`, `TREASURY_BONDS`, `OTHER`, `MANUAL` (omit/blank → `BANK`). `CREDIT_CARD` uses signed `cashBalance` (≤ 0 = debt). `BROKERAGE` / `IKE` / `IKZE` support asset trades + holdings MTM. `TREASURY_BONDS` and other types remain cash-only for trades. |
+| accountType | String | `BANK`, `BROKERAGE`, `CRYPTO`, `PRECIOUS_METAL`, `REAL_ESTATE`, `CREDIT_CARD`, `IKE`, `IKZE`, `TREASURY_BONDS`, `OTHER`, `MANUAL` (omit/blank → `BANK`). `CREDIT_CARD` uses signed `cashBalance` (≤ 0 = debt). `BROKERAGE` / `IKE` / `IKZE` support asset trades + holdings MTM. `TREASURY_BONDS` supports `BondPosition` (retail SP); other types remain cash-only for trades. |
 | name | String | Unique per user (`@@unique([userId, name])`) |
 | currency | String | FX whitelist only: `PLN`, `EUR`, or `USD` (stored uppercase). Create/PATCH reject other codes |
 | cashBalance | Int | Working cash in minor units (cents). API JSON uses major units |
@@ -82,7 +82,32 @@ User-scoped financial account. Create accepts allow-listed types; `accountType` 
 | createdAt | DateTime | Default now |
 | updatedAt | DateTime | `@updatedAt` |
 
-Indexes: `[userId, accountType]`. API responses expose `cashBalance`, `holdingsValue` (MTM), and `totalEquity` (= cash + holdings MTM in account currency); `totalBalance` remains an alias of cash for older clients. Allow-list: `backend/src/domain/accountTypes.ts`. Relations: `cashTransactions` → `CashTransaction[]` (`onDelete: Cascade`); `transfersFrom` / `transfersTo` → `CashTransfer[]` (`onDelete: Restrict` — delete account while transfers exist → API `409`); `holdings` → `Holding[]` (`onDelete: Cascade`); `assetTrades` → `AssetTrade[]` (`onDelete: Restrict`); `csvImportPresets` → `CsvImportPreset[]` (`onDelete: Cascade`); `importBatches` → `ImportBatch[]` (`onDelete: Cascade`).
+Indexes: `[userId, accountType]`. API responses expose `cashBalance`, `holdingsValue` (equity MTM **or** treasury bond gross for `TREASURY_BONDS`), and `totalEquity` (= cash + holdingsValue in account currency); `totalBalance` remains an alias of cash for older clients. Allow-list: `backend/src/domain/accountTypes.ts`. Relations: `cashTransactions` → `CashTransaction[]` (`onDelete: Cascade`); `transfersFrom` / `transfersTo` → `CashTransfer[]` (`onDelete: Restrict` — delete account while transfers exist → API `409`); `holdings` → `Holding[]` (`onDelete: Cascade`); `assetTrades` → `AssetTrade[]` (`onDelete: Restrict`); `bondPositions` → `BondPosition[]` (`onDelete: Cascade`); `csvImportPresets` → `CsvImportPreset[]` (`onDelete: Cascade`); `importBatches` → `ImportBatch[]` (`onDelete: Cascade`).
+
+## BondPosition
+
+Polish retail treasury bond lot on a `TREASURY_BONDS` account (not equity `Holding` / Markets). Currency = account currency; create API requires `PLN`. Valuation: `backend/src/domain/bondValuation.ts` (actual/365 accrual, early-exit fee, Belka 19% estimate). Net worth / account equity uses **gross** (nominal + accrued); liquidation net is list/detail only.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id | Int | PK |
+| accountId | Int | FK → Account (`onDelete: Cascade`) |
+| seriesCode | String | e.g. `COI0328` |
+| issuer | String | Default `SKARB_PANSTWA` |
+| quantity | Decimal | Number of units |
+| unitNominal | Decimal | Default 100 |
+| unitPurchasePrice | Decimal | Per-unit purchase price (cost basis) |
+| purchasedAt | DateTime | Purchase date |
+| rateKind | String | `FIXED` \| `FLOATING` \| `INFLATION_LINKED` |
+| currentAnnualRatePct | Decimal | Manual current-period annual rate % |
+| couponFrequency | String | `ANNUAL` \| `SEMI_ANNUAL` \| `QUARTERLY` \| `AT_MATURITY` |
+| periodStart | DateTime | Accrual period start |
+| maturityDate | DateTime | Cap for accrual |
+| earlyExitFeePerUnit | Decimal | Default 1 (PLN) |
+| notes | String? | Optional |
+| createdAt / updatedAt | DateTime | |
+
+Indexes: `[accountId]`, `[accountId, maturityDate]`. Domain helpers: `backend/src/domain/bondPositions.ts`.
 
 ## CsvImportPreset
 
