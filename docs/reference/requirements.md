@@ -22,7 +22,8 @@ Hub: [docs/README.md](../README.md).
 | MVP-050 | Health endpoint | `GET /api/health` |
 | MVP-051 | Private deploy tooling | `create-user`, `db:backup`, [private-deploy.md](../how-to/private-deploy.md) |
 | MVP-052 | Production auth rate limits | `app.ts` (login, register, password, email share one limiter) |
-| FR-006 | Extended account types | `Account` model; allow-list in `domain/accountTypes.ts` includes `CREDIT_CARD`, `IKE`, `IKZE`, `TREASURY_BONDS`; `/api/accounts`; `/accounts` UI type select — type-specific fields still planned |
+| FR-006 | Extended account types | `Account` model; allow-list in `domain/accountTypes.ts` includes `CREDIT_CARD`, `IKE`, `IKZE`, `TREASURY_BONDS`; `/api/accounts`; `/accounts` UI type select — type-specific fields still planned for some types |
+| MVP-026 | Polish retail treasury bond positions | `BondPosition` on `TREASURY_BONDS` + PLN; bond-positions CRUD; gross in equity/NW; Belka estimate on card; [treasury-bonds.md](../how-to/treasury-bonds.md) |
 | MVP-011 | Cash ledger INCOME/EXPENSE | `CashTransaction`; `domain/cashLedger.ts`; `/api/accounts/:id/transactions`; `/accounts/:id` |
 | MVP-013 | Cash ledger CSV export | `GET /api/accounts/:id/transactions/export`; `domain/cashLedgerCsv.ts`; Download CSV on `/accounts/:id` |
 | MVP-014 | Cash ledger CSV import | `POST /api/accounts/:id/transactions/import`; `domain/cashLedgerCsvImport.ts`; Upload CSV on `/accounts/:id` |

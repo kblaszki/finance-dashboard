@@ -2,7 +2,7 @@
 
 Token-aware index — open [docs/README.md](docs/README.md) for the Diátaxis compass; do not duplicate [README.md](README.md) here.
 
-**Code baseline:** JWT auth, multi-type accounts, category tree + tags, cash ledger + transfers, CSV import (column map, presets, dedup, description suggest), statistics, NBP FX domain, Markets (curated allowlist + TD catalog add, watchlist, EOD history), brokerage holdings MTM + FIFO asset trades (demo seed includes BUY/SELL history). Product backlog (may say “done” for future intent): [mvp/CHECKLIST.md](mvp/CHECKLIST.md) — do not treat checklist status as shipped code without checking the tree.
+**Code baseline:** JWT auth, multi-type accounts, category tree + tags, cash ledger + transfers, CSV import (column map, presets, dedup, description suggest), statistics, NBP FX domain, Markets (curated allowlist + TD catalog add, watchlist, EOD history), brokerage holdings MTM + FIFO asset trades (demo seed includes BUY/SELL history), Polish retail treasury bond positions on `TREASURY_BONDS` (gross in net worth; Belka estimate on card). Product backlog (may say “done” for future intent): [mvp/CHECKLIST.md](mvp/CHECKLIST.md) — do not treat checklist status as shipped code without checking the tree.
 
 ## MVP feature map
 
@@ -44,6 +44,7 @@ Shipped FR map: [docs/reference/requirements.md](docs/reference/requirements.md)
 | [docs/how-to/dashboard-and-statistics.md](docs/how-to/dashboard-and-statistics.md) | Dashboard KPIs, net worth, rolling 12m, statistics period/chart/breakdown |
 | [docs/how-to/markets-watchlist.md](docs/how-to/markets-watchlist.md) | Allowlist seed, history/quotes, `/markets` catalog add + favorites |
 | [docs/how-to/brokerage-asset-trades.md](docs/how-to/brokerage-asset-trades.md) | Brokerage BUY/SELL, holdings MTM, FIFO lots |
+| [docs/how-to/treasury-bonds.md](docs/how-to/treasury-bonds.md) | Polish retail SP bond lots on TREASURY_BONDS |
 | [docs/how-to/write-integration-tests.md](docs/how-to/write-integration-tests.md) | HTTP / integration tests |
 | [docs/how-to/private-deploy.md](docs/how-to/private-deploy.md) | Private single-user deploy |
 

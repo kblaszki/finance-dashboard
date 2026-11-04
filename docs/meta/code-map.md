@@ -44,10 +44,11 @@ JWT auth, multi-type accounts, category tree + tags, cash ledger + transfers, CS
 | FX sync CLI | `backend/src/scripts/syncFxRates.ts` |
 | Markets catalog / allowlist / watchlist / history chart | `backend/src/domain/{instruments,instrumentValuations,marketData,marketHistory,marketHistoryIo,marketUniverse,twelveDataClient,oanorGpwClient,stooqClient,yahooFinanceClient,yahooHistory,yahooGapSyncScheduler,watchlist,seedDemoMarkets}.ts`; routes `marketsRoutes.ts`; CLIs catalog/universe/quotes/history/yahoo/gaps/export/import; UI `MarketsPage`, `InstrumentDetailPage`; data `backend/data/market-universe/`, `backend/data/market-history/demo-eod.ndjson` |
 | Holdings / asset trades / MTM | `backend/src/domain/{holdings,lots,assetTrades,portfolioValuation,seedDemoAssetTrades}.ts`; routes `assetTradesRoutes.ts`; UI `BrokerageHoldingsPanel` on `AccountDetailPage`; clients `holdingsApi.ts` / `assetTradesApi.ts`. Spike notes: [holdings-market-architecture.md](../explanation/holdings-market-architecture.md) |
+| Treasury bonds (retail SP) | `backend/src/domain/{bondValuation,bondPositions}.ts`; routes `bondPositionsRoutes.ts`; UI `TreasuryBondsPanel` on `AccountDetailPage`; client `bondPositionsApi.ts`. How-to: [treasury-bonds.md](../how-to/treasury-bonds.md) |
 | Router mount | `backend/src/routes/mountRouters.ts` |
 | HTTP helpers / errors | `backend/src/routes/httpSupport.ts`, `backend/src/lib/errors.ts` |
 | Route uid helper | `backend/src/routes/routeSupport.ts` |
-| Prisma schema | `backend/prisma/schema.prisma` (`User`, `Category`, `CategoryDescriptionRule`, `Tag`, `CashTransactionTag`, `Account`, `CashTransfer`, `CashTransaction`, `CsvImportPreset`, `ImportBatch`, `FxRateDaily`, `Instrument`, `InstrumentValuation`, `WatchlistItem`, `Holding`, `Lot`, `LotClose`, `AssetTrade`, `AppConfig`) |
+| Prisma schema | `backend/prisma/schema.prisma` (`User`, `Category`, `CategoryDescriptionRule`, `Tag`, `CashTransactionTag`, `Account`, `BondPosition`, `CashTransfer`, `CashTransaction`, `CsvImportPreset`, `ImportBatch`, `FxRateDaily`, `Instrument`, `InstrumentValuation`, `WatchlistItem`, `Holding`, `Lot`, `LotClose`, `AssetTrade`, `AppConfig`) |
 | Migrations | `backend/prisma/migrations/` |
 | Demo user seed | `backend/prisma/seed.ts`, `backend/src/domain/seedDemoPortfolio.ts`, `seedDemoFxRates.ts`, `seedDemoMarkets.ts`, `seedDemoAssetTrades.ts` |
 | Create user CLI | `backend/src/scripts/createUser.ts` |
@@ -61,6 +62,7 @@ JWT auth, multi-type accounts, category tree + tags, cash ledger + transfers, CS
 | Auth API client | `frontend/src/api/authApi.ts`, `frontend/src/api/client.ts` |
 | Accounts API client | `frontend/src/api/accountsApi.ts` |
 | Holdings / asset trades clients | `frontend/src/api/holdingsApi.ts`, `frontend/src/api/assetTradesApi.ts` |
+| Treasury bonds client | `frontend/src/api/bondPositionsApi.ts` |
 | Categories API client | `frontend/src/api/categoriesApi.ts` |
 | Description rules API client | `frontend/src/api/categoryDescriptionRulesApi.ts` |
 | Tags API client | `frontend/src/api/tagsApi.ts` |

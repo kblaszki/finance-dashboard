@@ -31,6 +31,7 @@ Hub: [docs/README.md](../README.md). How-to: [brokerage-asset-trades.md](../how-
 - **Writes:** FIFO BUY/SELL via `domain/assetTrades.ts` + `lots.ts` inside `prisma.$transaction`; cash legs `ASSET_BUY` / `ASSET_SELL` (`assetTradeId`); period cashflow stats ignore those types.
 - **Reads:** Holdings MTM + account equity (`cash + holdingsValue`); net worth / history include holdings MTM by account-type bucket; balance-history series: cash / holdings / equity.
 - **HTTP:** `GET/POST/DELETE …/asset-trades`, `GET …/holdings` in [`assetTradesRoutes.ts`](../../backend/src/routes/assetTradesRoutes.ts). UI: `BrokerageHoldingsPanel` on `/accounts/:id`.
+- **Treasury bonds (separate model):** `BondPosition` on `TREASURY_BONDS` only (not `Holding` / Markets). Gross valuation (nominal + actual/365 accrued) folds into the same `holdingsValue` / net-worth equity path; liquidation net (fee + Belka 19% estimate) is position API/UI only. See [treasury-bonds.md](../how-to/treasury-bonds.md).
 
 Currency rule (v1): instrument quote currency must equal account currency (no cross-currency trades).
 
@@ -73,7 +74,7 @@ Mark-to-market never stores prices on `Holding`; it reads latest collapsed close
 ## Still out of scope / next
 
 - Full `/portfolio` page and bucket filters (FR-008)
-- CRYPTO / precious-metal / treasury asset trades
+- CRYPTO / precious-metal asset trades; IKE/IKZE bond sleeve; GUS auto rates / roll wizard / Catalyst
 - Cross-currency trades and holdings FX inside MTM
 - Corporate actions, tax lots UI, broker CSV import
 - React Query / global fetch cache

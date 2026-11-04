@@ -26,7 +26,7 @@ Classify accounts for net-worth buckets and future tax / holdings rules without 
 - [x] Create BANK account (CRUD + list UI)
 - [x] Create account with each remaining type
 - [x] CREDIT_CARD signed balance (negative = debt) contributes to net-worth `liabilities`
-- [x] IKE / IKZE map to stock bucket; TREASURY_BONDS to other (cash sleeve only for now)
+- [x] IKE / IKZE map to stock bucket; TREASURY_BONDS to other (bond gross via `BondPosition` — see MVP-026)
 
 ## Implementation notes
 
@@ -35,11 +35,11 @@ Classify accounts for net-worth buckets and future tax / holdings rules without 
 - Code map: [docs/meta/code-map.md](../../../docs/meta/code-map.md)
 - Allow-list: `backend/src/domain/accountTypes.ts`; create UI type select on `/accounts` (`accountTypeLabel`)
 - Net worth: `backend/src/domain/netWorth.ts`
-- Type-specific fields (grams, property, bond holdings, IKE/IKZE tax rules) remain follow-ups
+- Type-specific fields (grams, property, IKE/IKZE tax rules) remain follow-ups; retail SP bonds: [treasury-bond-positions.md](treasury-bond-positions.md)
 
 ## Out of scope / follow-ups
 
 - Debit cards as separate entities (stay on BANK)
 - Credit-card limits / billing cycles / interest
-- Bond / IKE / IKZE holdings
+- IKE/IKZE bond sleeve (beyond TREASURY_BONDS account type)
 - See related planned/stub rows in [CHECKLIST.md](../../CHECKLIST.md)
