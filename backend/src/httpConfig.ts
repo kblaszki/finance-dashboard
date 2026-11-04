@@ -56,9 +56,10 @@ export function mountSecurityMiddleware(app: Express, nodeEnv: string | undefine
   }
   const corsMode = resolveCorsMode(nodeEnv);
   if (corsMode.kind === "open") {
-    app.use(cors());
+    // Reflect request Origin so credentialed Vite → API (5173 → 4000) works.
+    app.use(cors({ origin: true, credentials: true }));
   } else if (corsMode.kind === "origin") {
-    app.use(cors({ origin: corsMode.origin }));
+    app.use(cors({ origin: corsMode.origin, credentials: true }));
   }
 }
 

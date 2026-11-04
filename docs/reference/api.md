@@ -51,15 +51,18 @@ Global instance settings (not per-user).
 
 ## Auth
 
+Protected routes accept an **HttpOnly session cookie** (SPA) or `Authorization: Bearer <jwt>` (tests/scripts). Cookie: `HttpOnly; SameSite=Lax; Path=/`; `Secure` + name `__Host-fd_token` when HTTPS/production, else `fd_token`. Max-Age aligned with JWT (7d).
+
 | Method | Path | Auth | Notes |
 |--------|------|------|-------|
 | GET | `/api/auth/config` | No | `{ allowRegister }` |
-| POST | `/api/auth/register` | No | Body: email, username, password. Creates an empty user (no default categories/tags). 403 if registration disabled. Duplicate email or username (any case) → `409` |
-| POST | `/api/auth/login` | No | Body: login (email or username) or email + password. Username match is case-insensitive |
-| GET | `/api/auth/me` | Bearer | Current user. Missing or revoked token → `401` |
-| PATCH | `/api/auth/profile` | Bearer | Body: username. Duplicate username → `409` |
-| PATCH | `/api/auth/password` | Bearer | Body: currentPassword, newPassword. Wrong current password → `400` (session stays). Success increments `tokenVersion` and older tokens get `401` |
-| PATCH | `/api/auth/email` | Bearer | Body: email, currentPassword. Wrong current password → `400`. Duplicate email → `409` |
+| POST | `/api/auth/register` | No | Body: email, username, password. Creates an empty user (no default categories/tags). Sets session cookie; body `{ user }` (no `token`). 403 if registration disabled. Duplicate email or username (any case) → `409` |
+| POST | `/api/auth/login` | No | Body: login (email or username) or email + password. Username match is case-insensitive. Sets session cookie; body `{ user }` |
+| POST | `/api/auth/logout` | No | Clears session cookie. `204` |
+| GET | `/api/auth/me` | Cookie/Bearer | Current user. Missing or revoked token → `401` |
+| PATCH | `/api/auth/profile` | Cookie/Bearer | Body: username. Duplicate username → `409` |
+| PATCH | `/api/auth/password` | Cookie/Bearer | Body: currentPassword, newPassword. Wrong current password → `400` (session stays). Success increments `tokenVersion`, re-issues cookie, older JWTs get `401` |
+| PATCH | `/api/auth/email` | Cookie/Bearer | Body: email, currentPassword. Wrong current password → `400`. Duplicate email → `409` |
 
 Password minimum length: 8. JWT expiry: 7 days (HS256). Account `name` is at most 100 characters. Account and cash-transaction `description` are at most 500 characters.
 

@@ -28,7 +28,7 @@ Hub: [docs/README.md](../README.md).
 
 | Variable | Role |
 |----------|------|
-| `CORS_ORIGIN` | Restrict CORS when set; in production, unset means CORS off (same-origin) |
+| `CORS_ORIGIN` | Restrict CORS when set; in production, unset means CORS off (same-origin). When CORS is on, responses use `credentials: true` so the SPA can send the auth cookie (e.g. Vite `5173` → API `4000`) |
 | `APP_ORIGIN` | Fallback CORS origin if `CORS_ORIGIN` is empty |
 | `JSON_BODY_LIMIT` | Express JSON body limit (default `1mb`) |
 | `BACKUP_DIR` / `BACKUP_GZIP` | Used by `npm run db:backup` (Compose: `BACKUP_DIR=/data/backups`) |

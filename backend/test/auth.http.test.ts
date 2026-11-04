@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import request from "supertest";
 import type { Express } from "express";
 import type { PrismaClient } from "@prisma/client";
+import { signToken } from "../src/auth";
+import { AUTH_COOKIE_NAME_INSECURE } from "../src/authCookie";
 import {
   createUserAndToken as createUserAndTokenHarness,
   registerAndLogin as registerAndLoginHarness,
@@ -84,20 +86,48 @@ test("POST /api/auth/register creates user without default categories or tags", 
     password: "password123",
   });
   assert.equal(res.status, 201);
-  assert.ok(res.body.token);
+  assert.equal(res.body.token, undefined);
   assert.equal(res.body.user.email, "newuser@test.local");
+  const setCookie = res.headers["set-cookie"];
+  assert.ok(setCookie);
+  const cookieHeader = Array.isArray(setCookie) ? setCookie.join(";") : String(setCookie);
+  assert.match(cookieHeader, new RegExp(`${AUTH_COOKIE_NAME_INSECURE}=`));
+
+  const user = await prisma.user.findUnique({ where: { email: "newuser@test.local" } });
+  assert.ok(user);
+  const token = signToken(user.id, user.tokenVersion);
 
   const cats = await request(app)
     .get("/api/categories")
-    .set("Authorization", `Bearer ${res.body.token}`);
+    .set("Authorization", `Bearer ${token}`);
   assert.equal(cats.status, 200);
   assert.equal(cats.body.length, 0);
 
   const tags = await request(app)
     .get("/api/tags")
-    .set("Authorization", `Bearer ${res.body.token}`);
+    .set("Authorization", `Bearer ${token}`);
   assert.equal(tags.status, 200);
   assert.equal(tags.body.length, 0);
+});
+
+test("auth cookie session works for /me and logout clears it", async () => {
+  const agent = request.agent(app);
+  const reg = await agent.post("/api/auth/register").send({
+    email: "cookie@test.local",
+    username: "cookieuser",
+    password: "password123",
+  });
+  assert.equal(reg.status, 201);
+
+  const me = await agent.get("/api/auth/me");
+  assert.equal(me.status, 200);
+  assert.equal(me.body.email, "cookie@test.local");
+
+  const logout = await agent.post("/api/auth/logout");
+  assert.equal(logout.status, 204);
+
+  const after = await agent.get("/api/auth/me");
+  assert.equal(after.status, 401);
 });
 
 test("POST /api/auth/register rejects short password", async () => {

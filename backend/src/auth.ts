@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import type { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { readAuthTokenFromRequest } from "./authCookie";
 
 const JWT_EXPIRES_IN = "7d";
 
@@ -77,18 +78,25 @@ export interface AuthedRequest extends Request {
   userId?: number;
 }
 
+function extractBearerToken(req: Request): string | null {
+  const header = req.headers.authorization;
+  if (!header?.startsWith("Bearer ")) return null;
+  const token = header.slice("Bearer ".length).trim();
+  return token.length > 0 ? token : null;
+}
+
 export function createRequireAuth(prisma: PrismaClient) {
   return async function requireAuth(
     req: AuthedRequest,
     res: Response,
     next: NextFunction,
   ): Promise<void> {
-    const header = req.headers.authorization;
-    if (!header?.startsWith("Bearer ")) {
+    const raw = readAuthTokenFromRequest(req) ?? extractBearerToken(req);
+    if (!raw) {
       res.status(401).json({ error: "Unauthorized" });
       return;
     }
-    const auth = verifyToken(header.slice("Bearer ".length));
+    const auth = verifyToken(raw);
     if (!auth) {
       res.status(401).json({ error: "Unauthorized" });
       return;

@@ -2,6 +2,7 @@ import { Router } from "express";
 import { Prisma as PrismaNS, type PrismaClient, type User } from "@prisma/client";
 import type { AuthedRequest } from "../auth";
 import { canonicalUsernameKey } from "../auth";
+import { clearAuthCookie, setAuthCookie } from "../authCookie";
 import { isRegisterAllowed } from "../authConfig";
 import { conflict, handleRouteError, forbidden } from "./httpSupport";
 
@@ -83,7 +84,8 @@ export function createAuthRouter(deps: AuthDeps): Router {
         },
       });
       const token = signToken(user.id, user.tokenVersion);
-      res.status(201).json({ token, user: userPayload(user) });
+      setAuthCookie(res, req, token);
+      res.status(201).json({ user: userPayload(user) });
     } catch (e: unknown) {
       if (isUniqueConstraintError(e)) {
         handleRouteError(res, conflict("Email or username already exists"), "Registration failed");
@@ -102,7 +104,13 @@ export function createAuthRouter(deps: AuthDeps): Router {
       return res.status(401).json({ error: "Invalid credentials" });
     }
     const token = signToken(user.id, user.tokenVersion);
-    res.json({ token, user: userPayload(user) });
+    setAuthCookie(res, req, token);
+    res.json({ user: userPayload(user) });
+  });
+
+  router.post("/api/auth/logout", (req, res) => {
+    clearAuthCookie(res, req);
+    res.status(204).send();
   });
 
   router.get("/api/auth/me", requireAuth, async (req: AuthedRequest, res) => {
@@ -145,6 +153,8 @@ export function createAuthRouter(deps: AuthDeps): Router {
         where: { id: uid(req) },
         data: { passwordHash, tokenVersion: { increment: 1 } },
       });
+      const token = signToken(updated.id, updated.tokenVersion);
+      setAuthCookie(res, req, token);
       res.json(userPayload(updated));
     } catch (e: unknown) {
       handleRouteError(res, e, "Password update failed");

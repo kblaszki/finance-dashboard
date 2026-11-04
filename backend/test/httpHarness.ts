@@ -2,7 +2,12 @@ import assert from "node:assert/strict";
 import request from "supertest";
 import type { Express } from "express";
 import type { PrismaClient } from "@prisma/client";
-import { canonicalUsernameKey, hashPassword, normalizeEmail } from "../src/auth";
+import {
+  canonicalUsernameKey,
+  hashPassword,
+  normalizeEmail,
+  signToken,
+} from "../src/auth";
 import { seedDefaultCategories } from "../src/domain/categories";
 import {
   createTestPrisma,
@@ -48,7 +53,10 @@ export async function createUserAndToken(
     .post("/api/auth/login")
     .send({ email: "http@test.local", password: "testpass123" });
   assert.equal(res.status, 200);
-  return { token: res.body.token, userId: user.id };
+  assert.equal(res.body.token, undefined);
+  assert.ok(res.body.user);
+  const token = signToken(user.id, user.tokenVersion);
+  return { token, userId: user.id };
 }
 
 export async function registerAndLogin(
@@ -61,12 +69,13 @@ export async function registerAndLogin(
     .post("/api/auth/register")
     .send({ email, username, password });
   assert.equal(reg.status, 201);
+  assert.equal(reg.body.token, undefined);
   const user = await suite.prisma.user.findUnique({
     where: { email: normalizeEmail(email) },
   });
   assert.ok(user);
   await seedDefaultCategories(suite.prisma, user.id);
-  return reg.body.token as string;
+  return signToken(user.id, user.tokenVersion);
 }
 
 export function noneDescriptionMappings(

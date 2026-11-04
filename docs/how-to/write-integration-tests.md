@@ -32,7 +32,7 @@ Pyramid and thresholds: [testing.md](../reference/testing.md). Gate: [run-tests-
 1. Use `createTestPrisma` / `resetDatabase` from `backend/test/prismaTestClient.ts` (`resetDatabase` clears `User`).
 2. Env is preloaded via `setupTestEnv.ts` (ephemeral SQLite) — do not require `backend/.env`.
 3. Tests run with `--test-concurrency=1` (SQLite).
-4. For HTTP tests, prefer `startHttpSuite` / `registerAndLogin` from `backend/test/httpHarness.ts` (sets `JWT_SECRET`, resets DB, starts the app).
+4. For HTTP tests, prefer `startHttpSuite` / `registerAndLogin` / `createUserAndToken` from `backend/test/httpHarness.ts` (sets `JWT_SECRET`, resets DB, starts the app). Login/register set an HttpOnly cookie and omit `token` from JSON; the harness returns a **Bearer** JWT via `signToken` for `.set("Authorization", …)` suites. Cookie-jar coverage belongs in `auth.http.test.ts` (`request.agent`).
 
 ## Frontend API coverage
 

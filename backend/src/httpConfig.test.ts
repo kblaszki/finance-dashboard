@@ -67,7 +67,8 @@ test("mountSecurityMiddleware allows open CORS outside production", async () => 
   });
   const res = await request(app).get("/ping").set("Origin", "http://localhost:5173");
   assert.equal(res.status, 200);
-  assert.equal(res.headers["access-control-allow-origin"], "*");
+  assert.equal(res.headers["access-control-allow-origin"], "http://localhost:5173");
+  assert.equal(res.headers["access-control-allow-credentials"], "true");
 });
 
 test("mountSecurityMiddleware skips CORS in production without origin", async () => {

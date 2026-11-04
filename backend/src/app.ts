@@ -1,5 +1,6 @@
 import express, { type Express } from "express";
 import rateLimit from "express-rate-limit";
+import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
 import {
@@ -27,6 +28,7 @@ if (trustProxy !== false) {
 }
 
 mountSecurityMiddleware(app);
+app.use(cookieParser());
 app.use(express.json({ limit: process.env.JSON_BODY_LIMIT ?? "1mb" }));
 
 const authRateLimiter = rateLimit({

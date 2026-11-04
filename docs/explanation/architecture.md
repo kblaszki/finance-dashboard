@@ -30,7 +30,7 @@ sequenceDiagram
   participant DB as SQLite_Prisma
 
   Browser->>SPA: UI action
-  SPA->>API: fetch /api/... Bearer JWT
+  SPA->>API: fetch /api/... credentials include cookie
   API->>API: requireAuth sets userId
   API->>DB: Prisma User query
   API-->>SPA: JSON
@@ -38,10 +38,10 @@ sequenceDiagram
 
 | Layer | Entry | Role |
 |-------|--------|------|
-| Frontend | `frontend/src/api/client.ts` | `fetch` + `Authorization: Bearer` from `localStorage` |
-| Auth helpers | `backend/src/auth.ts`, `authConfig.ts` | Password/JWT validation, `requireAuth`, register flag |
-| HTTP | `backend/src/app.ts`, `httpConfig.ts` + `routes/mountRouters.ts` | Health, Helmet/CORS, static SPA, rate limits, mounts all `/api` routers |
-| Auth routes | `backend/src/routes/authRoutes.ts` | Register/login/me/profile/email/password; register creates an empty user (no default categories/tags) |
+| Frontend | `frontend/src/api/client.ts` | `fetch` with `credentials: "include"` (HttpOnly JWT cookie); no token in `localStorage` |
+| Auth helpers | `backend/src/auth.ts`, `authCookie.ts`, `authConfig.ts` | Password/JWT validation, cookie set/clear, `requireAuth`, register flag |
+| HTTP | `backend/src/app.ts`, `httpConfig.ts` + `routes/mountRouters.ts` | Health, Helmet/CORS (`credentials: true`), cookie-parser, static SPA, rate limits, mounts all `/api` routers |
+| Auth routes | `backend/src/routes/authRoutes.ts` | Register/login/logout/me/profile/email/password; register creates an empty user (no default categories/tags) |
 | Accounts routes | `backend/src/routes/accountsRoutes.ts` | Account CRUD (user-scoped; type allow-list) |
 | Categories routes | `backend/src/routes/categoriesRoutes.ts` | Nested category CRUD + CSV export/import |
 | Tags routes | `backend/src/routes/tagsRoutes.ts` | Flat tag CRUD |
@@ -70,12 +70,13 @@ Money and FX conversion live in `domain/fx*.ts` / `nbpClient.ts` — not in rout
 
 ## Auth
 
-- Register/login return a JWT (`signToken`, HS256, 7-day expiry) that includes `userId` and `tokenVersion`.
+- Register/login issue a JWT (`signToken`, HS256, 7-day expiry) with `userId` + `tokenVersion`, set as an **HttpOnly** cookie (`SameSite=Lax; Path=/`; `Secure` + `__Host-fd_token` when HTTPS/production, else `fd_token`). JSON body is `{ user }` only (no `token` field).
+- `POST /api/auth/logout` clears the cookie. SPA uses `credentials: "include"` on all API fetches.
 - Register (when allowed) creates the user only — no default categories, tags, or accounts. Duplicate email or username (case-insensitive) returns `409`. Demo seed (`db:seed`) still installs sample category roots for the demo user.
-- Protected routes use `requireAuth`: header `Authorization: Bearer <token>`. The user must still exist and the token's `tokenVersion` must match. A password change increments `tokenVersion`, so older tokens receive `401`.
-- A wrong current password on email or password change is `400` and does not clear the session. The frontend logs out only when an API call returns session `401`.
+- Protected routes use `requireAuth`: cookie JWT first, else `Authorization: Bearer` (HTTP tests/scripts). The user must still exist and `tokenVersion` must match. A password change increments `tokenVersion` and re-issues the cookie; older JWTs get `401`.
+- A wrong current password on email or password change is `400` and does not clear the session. The frontend logs out on session `401` or explicit logout.
 - `ALLOW_REGISTER=false` blocks register and hides Sign up in the UI (`GET /api/auth/config`).
-- Frontend: `AuthProvider` loads `/api/auth/me` when a token exists; session `401` clears the token and redirects to `/login`. Token storage today is `localStorage` (`finance_dashboard_token`). Planned: same JWT in an HttpOnly cookie — [MVP-004](../../mvp/features/auth/jwt-httponly-cookie.md).
+- Frontend: `AuthProvider` always calls `/api/auth/me` on mount (cookie decides); 401 → logged out. Spec: [MVP-004](../../mvp/features/auth/jwt-httponly-cookie.md).
 
 ## Frontend shell
 
