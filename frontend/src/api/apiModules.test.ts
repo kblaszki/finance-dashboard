@@ -9,15 +9,14 @@ vi.mock('./client', () => ({
     delete: vi.fn(),
     getBlob: vi.fn(),
   },
-  setAuthToken: vi.fn(),
 }))
 
-import { apiClient, setAuthToken } from './client'
+import { apiClient } from './client'
 import {
   register,
   login,
   fetchMe,
-  logoutLocal,
+  logoutRemote,
   fetchAuthConfig,
   updateProfile,
   updatePassword,
@@ -108,7 +107,7 @@ import {
 describe('API modules', () => {
   beforeEach(() => {
     vi.mocked(apiClient.get).mockResolvedValue({})
-    vi.mocked(apiClient.post).mockResolvedValue({ token: 't', user: {} })
+    vi.mocked(apiClient.post).mockResolvedValue({ user: {} })
     vi.mocked(apiClient.put).mockResolvedValue({})
     vi.mocked(apiClient.patch).mockResolvedValue({})
     vi.mocked(apiClient.delete).mockResolvedValue(undefined)
@@ -154,8 +153,8 @@ describe('API modules', () => {
       currentPassword: 'old',
     })
 
-    logoutLocal()
-    expect(setAuthToken).toHaveBeenCalledWith(null)
+    await logoutRemote()
+    expect(apiClient.post).toHaveBeenCalledWith('/api/auth/logout', {})
   })
 
   it('accountsApi calls correct endpoints', async () => {

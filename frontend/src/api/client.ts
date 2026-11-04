@@ -1,5 +1,3 @@
-const TOKEN_KEY = "finance_dashboard_token";
-
 let onUnauthorized: (() => void) | null = null;
 
 export function getApiBaseUrl(): string {
@@ -12,18 +10,6 @@ export function getApiBaseUrl(): string {
 
 export function setUnauthorizedHandler(handler: (() => void) | null) {
   onUnauthorized = handler;
-}
-
-export function getAuthToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
-}
-
-export function setAuthToken(token: string | null) {
-  if (token) {
-    localStorage.setItem(TOKEN_KEY, token);
-  } else {
-    localStorage.removeItem(TOKEN_KEY);
-  }
 }
 
 function mergedHeaders(
@@ -55,14 +41,10 @@ async function fetchOrNetwork(url: string, init: RequestInit): Promise<Response>
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const headers = mergedHeaders({ "Content-Type": "application/json" }, options);
 
-  const token = getAuthToken();
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
   const response = await fetchOrNetwork(`${getApiBaseUrl()}${path}`, {
     ...options,
     headers,
+    credentials: "include",
   });
 
   if (response.status === 401) {
@@ -98,14 +80,10 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 async function requestBlob(path: string, options?: RequestInit): Promise<Blob> {
   const headers = mergedHeaders({}, options);
 
-  const token = getAuthToken();
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
   const response = await fetchOrNetwork(`${getApiBaseUrl()}${path}`, {
     ...options,
     headers,
+    credentials: "include",
   });
 
   if (response.status === 401) {

@@ -1,4 +1,4 @@
-import { apiClient, setAuthToken } from "./client";
+import { apiClient } from "./client";
 
 export type AuthConfig = {
   allowRegister: boolean;
@@ -15,7 +15,6 @@ export type AuthUser = {
 };
 
 type AuthResponse = {
-  token: string;
   user: AuthUser;
 };
 
@@ -24,19 +23,19 @@ export async function register(
   username: string,
   password: string,
 ): Promise<AuthResponse> {
-  const data = await apiClient.post<AuthResponse>("/api/auth/register", {
+  return apiClient.post<AuthResponse>("/api/auth/register", {
     email,
     username,
     password,
   });
-  setAuthToken(data.token);
-  return data;
 }
 
 export async function login(login: string, password: string): Promise<AuthResponse> {
-  const data = await apiClient.post<AuthResponse>("/api/auth/login", { login, password });
-  setAuthToken(data.token);
-  return data;
+  return apiClient.post<AuthResponse>("/api/auth/login", { login, password });
+}
+
+export async function logoutRemote(): Promise<void> {
+  await apiClient.post<void>("/api/auth/logout", {});
 }
 
 export async function fetchMe(): Promise<AuthUser> {
@@ -56,8 +55,4 @@ export async function updatePassword(
 
 export async function updateEmail(email: string, currentPassword: string): Promise<AuthUser> {
   return apiClient.patch<AuthUser>("/api/auth/email", { email, currentPassword });
-}
-
-export function logoutLocal() {
-  setAuthToken(null);
 }

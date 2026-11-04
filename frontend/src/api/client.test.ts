@@ -1,9 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { apiClient, getAuthToken, setAuthToken, setUnauthorizedHandler } from "./client";
+import { apiClient, setUnauthorizedHandler } from "./client";
 
 describe("apiClient", () => {
   beforeEach(() => {
-    setAuthToken(null);
     setUnauthorizedHandler(null);
     vi.stubGlobal("fetch", vi.fn());
   });
@@ -12,8 +11,7 @@ describe("apiClient", () => {
     vi.unstubAllGlobals();
   });
 
-  it("sends Authorization header when token is set", async () => {
-    setAuthToken("test-token");
+  it("sends credentials include without Authorization header", async () => {
     vi.mocked(fetch).mockResolvedValue(
       new Response(JSON.stringify({ ok: true }), { status: 200 }),
     );
@@ -23,12 +21,12 @@ describe("apiClient", () => {
     expect(fetch).toHaveBeenCalledWith(
       expect.stringContaining("/api/test"),
       expect.objectContaining({
-        headers: expect.objectContaining({
-          Authorization: "Bearer test-token",
-        }),
+        credentials: "include",
       }),
     );
-    expect(getAuthToken()).toBe("test-token");
+    const init = vi.mocked(fetch).mock.calls[0]?.[1] as RequestInit;
+    const headers = init.headers as Record<string, string>;
+    expect(headers.Authorization).toBeUndefined();
   });
 
   it("parses API error message from response body", async () => {
@@ -52,16 +50,15 @@ describe("apiClient", () => {
     expect(onUnauthorized).not.toHaveBeenCalled();
   });
 
-  it("keeps Authorization when the caller also sets headers", async () => {
-    setAuthToken("test-token");
+  it("keeps Content-Type when posting JSON", async () => {
     vi.mocked(fetch).mockResolvedValue(new Response("{}", { status: 200 }));
 
     await apiClient.post("/api/test", { name: "A" });
 
     const init = vi.mocked(fetch).mock.calls[0]?.[1] as RequestInit;
     const headers = init.headers as Record<string, string>;
-    expect(headers.Authorization).toBe("Bearer test-token");
     expect(headers["Content-Type"]).toBe("application/json");
+    expect(init.credentials).toBe("include");
   });
 
   it("maps a failed fetch to a network error", async () => {

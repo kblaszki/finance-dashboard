@@ -1,8 +1,13 @@
 import { useCallback, useContext, useEffect, useMemo, useState, createContext } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { AuthUser } from "../api/authApi";
-import { fetchMe, login as apiLogin, logoutLocal, register as apiRegister } from "../api/authApi";
-import { getAuthToken, setUnauthorizedHandler } from "../api/client";
+import {
+  fetchMe,
+  login as apiLogin,
+  logoutRemote,
+  register as apiRegister,
+} from "../api/authApi";
+import { setUnauthorizedHandler } from "../api/client";
 
 const DEFAULT_AFTER_AUTH = "/dashboard";
 
@@ -35,42 +40,50 @@ export function AuthProvider(props: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const logout = useCallback(() => {
-    logoutLocal();
-    setUser(null);
-    navigate("/login", { replace: true });
-  }, [navigate]);
-
-  useEffect(() => {
-    setUnauthorizedHandler(() => {
-      logoutLocal();
+  const clearSessionAndGoLogin = useCallback(
+    (returnTo?: string) => {
       setUser(null);
-      const returnTo = window.location.pathname + window.location.search;
       const safeReturn =
-        returnTo.startsWith("/") && !returnTo.startsWith("//") && returnTo !== "/login"
+        returnTo &&
+        returnTo.startsWith("/") &&
+        !returnTo.startsWith("//") &&
+        returnTo !== "/login"
           ? returnTo
           : undefined;
       navigate("/login", {
         replace: true,
         state: safeReturn ? { from: safeReturn } : undefined,
       });
-    });
-    return () => setUnauthorizedHandler(null);
-  }, [navigate]);
+    },
+    [navigate],
+  );
+
+  const logout = useCallback(() => {
+    void (async () => {
+      try {
+        await logoutRemote();
+      } catch {
+        // Still clear client state if logout request fails.
+      } finally {
+        clearSessionAndGoLogin();
+      }
+    })();
+  }, [clearSessionAndGoLogin]);
 
   useEffect(() => {
-    const token = getAuthToken();
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+    setUnauthorizedHandler(() => {
+      const returnTo = window.location.pathname + window.location.search;
+      clearSessionAndGoLogin(returnTo);
+    });
+    return () => setUnauthorizedHandler(null);
+  }, [clearSessionAndGoLogin]);
 
+  useEffect(() => {
     void (async () => {
       try {
         const me = await fetchMe();
         setUser(me);
       } catch {
-        logoutLocal();
         setUser(null);
       } finally {
         setLoading(false);

@@ -29,8 +29,9 @@ Hub: [docs/README.md](../README.md).
 ## Landing / login
 
 - `/` — marketing landing for guests; authed users redirect to `/dashboard`.
-- `/login` — email or username + password.
+- `/login` — email or username + password (session cookie; no token in `localStorage`).
 - `/register` — when registration is allowed.
+- Logout — `POST /api/auth/logout` clears the cookie, then UI goes to `/login`.
 - First success: [first-run.md](../tutorials/first-run.md).
 
 | Area | Path |

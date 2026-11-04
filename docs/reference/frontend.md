@@ -82,8 +82,8 @@ Production Docker serves `frontend/dist` from Express (`STATIC_DIR`); deep links
 
 | Module | Role |
 |--------|------|
-| `frontend/src/api/client.ts` | `fetch` + Bearer token. Session `401` clears auth. Other errors use `body.error`. A failed `fetch` throws `Network request failed`. |
-| `frontend/src/api/authApi.ts` | config, register, login, me, profile, email, password |
+| `frontend/src/api/client.ts` | `fetch` with `credentials: "include"` (HttpOnly cookie). Session `401` clears auth. Other errors use `body.error`. A failed `fetch` throws `Network request failed`. |
+| `frontend/src/api/authApi.ts` | config, register, login, logout, me, profile, email, password |
 | `frontend/src/api/accountsApi.ts` | list/create/get/patch/delete accounts; `fetchAccountBalanceHistory`; `ACCOUNT_TYPES` / `supportsAssetTrades`; `ACCOUNT_CURRENCIES` (`PLN`\|`EUR`\|`USD`); equity fields `holdingsValue` / `totalEquity` |
 | `frontend/src/api/holdingsApi.ts` | `fetchAccountHoldings` → `/api/accounts/:id/holdings` (includes `costBasis` / `averageCost` / `unrealizedPnl`) |
 | `frontend/src/api/assetTradesApi.ts` | `fetchAssetTrades`, `createAssetTrade`, `deleteAssetTrade` → `/api/accounts/:id/asset-trades` |
